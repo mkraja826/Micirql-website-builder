@@ -1,4 +1,4 @@
-import type { DesignRegistryEntry } from "@micirql/registry";
+import type { DesignPreferenceQuery, DesignRegistryEntry } from "@micirql/registry";
 import type { SitePlan } from "@micirql/schema";
 import { composeSiteFromRegistry } from "./composition-engine";
 import { decideSiteComponents } from "./decision";
@@ -11,6 +11,7 @@ export type SelectionOrchestratorInput = {
   compositionModel?: PlannerModel;
   minimumSelectionScore?: number;
   shortlistSize?: number;
+  preferences?: DesignPreferenceQuery;
 };
 
 export type SelectionOrchestratorResult = {
@@ -46,6 +47,7 @@ export async function selectSiteComponents(input: SelectionOrchestratorInput): P
     registry: input.registryEntries,
     model: input.compositionModel,
     ...(input.shortlistSize === undefined ? {} : { shortlistSize: input.shortlistSize }),
+    ...(input.preferences ? { preferences: input.preferences } : {}),
   });
 
   const selections: SectionSelection[] = [];

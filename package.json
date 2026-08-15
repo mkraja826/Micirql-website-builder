@@ -17,6 +17,7 @@
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
     "qa:sections:evidence": "node qa/build-evidence.mjs",
     "qa:sections:certification": "node qa/build-certification-report.mjs",
+    "qa:sections:visual-review": "node qa/build-visual-review-queue.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

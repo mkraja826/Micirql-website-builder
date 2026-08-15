@@ -128,25 +128,23 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
   const selection = decideSiteComponents({
     sitePlan: planning.plan,
     registryEntries: input.registryEntries,
-    minimumSelectionScore: input.minimumSelectionScore,
+    ...(input.minimumSelectionScore === undefined ? {} : { minimumSelectionScore: input.minimumSelectionScore }),
     mode: "library-preferred",
   });
 
-  const blockingGaps = selection.gaps.filter((gap) => {
-    const decision = evaluateCodeGeneration(gap);
-    return !decision.allowed;
-  });
-  const hardGaps = selection.gaps.filter((gap) => evaluateCodeGeneration(gap).allowed);
-
-  if (blockingGaps.length > 0 || hardGaps.length > 0) {
-    const issues = [
-      ...blockingGaps.map((gap) => `${gap.pagePath} / ${gap.family}: ${gap.reason}`),
-      ...hardGaps.map((gap) => `${gap.pagePath} / ${gap.family}: verified library gap requires a new Registry draft before this build can complete`),
-    ];
+  if (selection.gaps.length > 0) {
+    const generation = evaluateCodeGeneration(selection);
+    const hardGapKeys = new Set(generation.gaps.map((gap) => `${gap.pagePath}|${gap.family}`));
+    const issues = selection.gaps.map((gap) => {
+      const key = `${gap.pagePath}|${gap.family}`;
+      return hardGapKeys.has(key)
+        ? `${gap.pagePath} / ${gap.family}: verified library gap requires a new Registry draft before this build can complete`
+        : `${gap.pagePath} / ${gap.family}: ${gap.reason}; review or re-rank before generation`;
+    });
     return {
       ok: false,
       stage: "selection",
-      code: hardGaps.length > 0 ? "LIBRARY_GAP_REQUIRES_COMPONENT" : "NO_ACCEPTABLE_LIBRARY_MATCH",
+      code: generation.allowed ? "LIBRARY_GAP_REQUIRES_COMPONENT" : "NO_ACCEPTABLE_LIBRARY_MATCH",
       issues,
       plan: planning.plan,
     };

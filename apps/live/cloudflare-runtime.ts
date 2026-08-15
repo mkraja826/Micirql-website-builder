@@ -1,6 +1,6 @@
 import { createCloudflareEdgeCache, createSqlLiveSiteStore, type CloudflareCacheLike, type LiveRuntimeDependencies, type LiveSqlDriver } from "@micirql/live-runtime";
 import type { FunctionBindingResolver, RendererRegistry } from "@micirql/renderer";
-import { configureLiveRuntime } from "./runtime";
+import { configureLiveHostRuntime } from "./live-runtime";
 
 export type CloudflareLiveBindings = {
   sql: LiveSqlDriver;
@@ -18,6 +18,6 @@ export function configureCloudflareLiveRuntime(bindings: CloudflareLiveBindings)
     cache: createCloudflareEdgeCache(bindings.cache),
     cacheTtlSeconds: bindings.cacheTtlSeconds ?? 300,
   };
-  configureLiveRuntime(dependencies);
+  configureLiveHostRuntime(dependencies);
   return dependencies;
 }

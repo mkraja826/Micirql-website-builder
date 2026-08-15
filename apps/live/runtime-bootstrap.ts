@@ -5,7 +5,7 @@ import {
   type PreparedPage,
   type RendererRegistry,
 } from "@micirql/renderer";
-import { renderToStaticMarkup } from "react-dom/server";
+import { prerender } from "react-dom/static";
 import { configureLiveHostRuntime } from "./live-runtime";
 
 let configured = false;
@@ -70,11 +70,27 @@ export function ensureLiveRuntimeConfigured() {
     store,
     registry: emptyProductionRegistry,
     functions: createFunctionBindingResolver({ actionIds: [] }),
-    renderPage(page: PreparedPage) {
-      return renderToStaticMarkup(renderPreparedPage(page));
+    async renderPage(page: PreparedPage) {
+      const { prelude } = await prerender(renderPreparedPage(page));
+      return streamToString(prelude);
     },
     cacheTtlSeconds: 300,
   });
 
   configured = true;
+}
+
+async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let output = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    output += decoder.decode(value, { stream: true });
+  }
+
+  output += decoder.decode();
+  return output;
 }

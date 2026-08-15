@@ -17,25 +17,29 @@ export type UniversalSectionProps = {
   formAction?: string;
 };
 
+function InlineField({ path, children }: { path: string; children: ReactNode }) {
+  return <span data-mi-prop-path={path}>{children}</span>;
+}
+
 function Actions({ primaryAction, secondaryAction }: Pick<UniversalSectionProps, "primaryAction" | "secondaryAction">) {
   if (!primaryAction && !secondaryAction) return null;
-  return <div className="mi-section__actions">{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}>{primaryAction.label}</a> : null}{secondaryAction ? <a className="mi-section__action mi-section__action--secondary" href={secondaryAction.href}>{secondaryAction.label}</a> : null}</div>;
+  return <div className="mi-section__actions">{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}><InlineField path="primaryAction.label">{primaryAction.label}</InlineField></a> : null}{secondaryAction ? <a className="mi-section__action mi-section__action--secondary" href={secondaryAction.href}><InlineField path="secondaryAction.label">{secondaryAction.label}</InlineField></a> : null}</div>;
 }
 
 function Heading(props: UniversalSectionProps) {
-  return <Stack gap="sm" className="mi-section__heading">{props.eyebrow ? <Typography variant="eyebrow">{props.eyebrow}</Typography> : null}<Typography as="h2" variant="h2">{props.title}</Typography>{props.description ? <Typography variant="body">{props.description}</Typography> : null}</Stack>;
+  return <Stack gap="sm" className="mi-section__heading">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h2" variant="h2"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}</Stack>;
 }
 
 function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
-  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" /> : null}<Typography as="h3" variant="h3">{item.title}</Typography>{item.description ? <Typography variant="body-sm">{item.description}</Typography> : null}</Card>)}</div>;
+  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}<Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
 }
 
 function NavbarSection({ title, items = [], primaryAction }: UniversalSectionProps) {
-  return <header className="mi-section mi-section--navbar"><Container><div className="mi-navbar"><a href="/" className="mi-navbar__brand">{title}</a><NavigationMenu items={items.map((item, i) => ({ label: item.title, href: `#section-${i + 1}` }))} />{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}>{primaryAction.label}</a> : null}</div></Container></header>;
+  return <header className="mi-section mi-section--navbar"><Container><div className="mi-navbar"><a href="/" className="mi-navbar__brand"><InlineField path="title">{title}</InlineField></a><NavigationMenu items={items.map((item, i) => ({ label: item.title, href: `#section-${i + 1}` }))} />{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}><InlineField path="primaryAction.label">{primaryAction.label}</InlineField></a> : null}</div></Container></header>;
 }
 
 function HeroSection(props: UniversalSectionProps) {
-  return <section className="mi-section mi-section--hero"><Container><div className="mi-section__layout"><div><Stack gap="md">{props.eyebrow ? <Typography variant="eyebrow">{props.eyebrow}</Typography> : null}<Typography as="h1" variant="display">{props.title}</Typography>{props.description ? <Typography variant="body">{props.description}</Typography> : null}<Actions {...props} /></Stack></div>{props.image ? <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" /></figure> : null}</div></Container></section>;
+  return <section className="mi-section mi-section--hero"><Container><div className="mi-section__layout"><div><Stack gap="md">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h1" variant="display"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}<Actions {...props} /></Stack></div>{props.image ? <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" data-mi-image-field="image" /></figure> : null}</div></Container></section>;
 }
 
 function StandardSection(props: UniversalSectionProps) {
@@ -61,7 +65,7 @@ function ContactSection(props: UniversalSectionProps) {
 }
 
 function FooterSection(props: UniversalSectionProps) {
-  return <footer className="mi-section mi-section--footer"><Container><div className="mi-footer"><div><strong>{props.title}</strong>{props.description ? <p>{props.description}</p> : null}</div><nav aria-label="Footer navigation">{(props.items ?? []).map((item, index) => <a key={`${item.title}-${index}`} href={`#section-${index + 1}`}>{item.title}</a>)}</nav></div></Container></footer>;
+  return <footer className="mi-section mi-section--footer"><Container><div className="mi-footer"><div><strong><InlineField path="title">{props.title}</InlineField></strong>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div><nav aria-label="Footer navigation">{(props.items ?? []).map((item, index) => <a key={`${item.title}-${index}`} href={`#section-${index + 1}`}>{item.title}</a>)}</nav></div></Container></footer>;
 }
 
 const renderers: Record<SectionFamily, (props: UniversalSectionProps) => ReactNode> = {

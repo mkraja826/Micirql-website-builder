@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Site } from "@micirql/schema";
+import { readStoredSession } from "./auth-client";
 import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
 
 export function AiEditorAssistant({
@@ -23,8 +24,13 @@ export function AiEditorAssistant({
 
   useEffect(() => {
     let cancelled = false;
+    const session = readStoredSession();
+    if (!session?.access_token) return () => { cancelled = true; };
     const query = new URLSearchParams({ workspaceId: site.workspaceId, siteId: site.siteId });
-    fetch(`/api/design-preferences?${query}`, { cache: "no-store" })
+    fetch(`/api/design-preferences?${query}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      cache: "no-store",
+    })
       .then((response) => response.ok ? response.json() : null)
       .then((payload) => { if (!cancelled) setPreferenceProfile(payload?.profile ?? null); })
       .catch(() => {});
@@ -34,13 +40,21 @@ export function AiEditorAssistant({
   async function ask(value = prompt) {
     const next = value.trim();
     if (!next || busy) return;
+    const session = readStoredSession();
+    if (!session?.access_token) {
+      setError("Your session has expired. Sign in again to use AI editing.");
+      return;
+    }
     setBusy(true);
     setError("");
     setProposal(undefined);
     try {
       const response = await fetch("/api/ai-edit", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "content-type": "application/json",
+        },
         body: JSON.stringify({ prompt: next, site, pageId, sectionId, preferenceProfile }),
       });
       const payload = await response.json() as AiEditorResponse & { error?: string };
@@ -61,7 +75,7 @@ export function AiEditorAssistant({
   }
 
   return <section className="ai-editor-assistant">
-    <div className="ai-editor-heading"><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Uses structured edits only — no arbitrary code generation.</small></div>
+    <div className="ai-editor-heading"><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your existing design system and undo history stay intact.</small></div>
     <div className="ai-editor-chips">
       {sectionId ? <><button type="button" onClick={() => void ask("Give me another layout for this section")}>Another layout</button><button type="button" onClick={() => void ask("Make this section feel more premium")}>More premium</button><button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve copy</button></> : null}
       <button type="button" onClick={() => setPrompt("Create an About page")}>Add About page</button>

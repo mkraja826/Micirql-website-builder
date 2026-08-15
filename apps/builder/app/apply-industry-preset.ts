@@ -4,7 +4,12 @@ import type { IndustryDesignPreset } from "./industry-design-preset-data";
 
 export function applyIndustryPreset(site: Site, preset: IndustryDesignPreset): Site {
   const next = structuredClone(site);
+  const existingColors = structuredClone(next.theme.brand.colors);
   next.theme = structuredClone(preset.theme);
+  // The uploaded/logo-derived palette is authoritative. Design directions may
+  // change layout, typography, density, shape and motion, but must not silently
+  // replace the user's brand colors.
+  next.theme.brand.colors = existingColors;
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);

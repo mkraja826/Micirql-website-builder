@@ -10,8 +10,8 @@ export type DesignQuery = {
   requiredCapabilities?: string[];
   conversionGoals?: string[];
   placementRole?: "opening" | "early-proof" | "core-content" | "visual-break" | "decision-support" | "conversion" | "closing";
-  previousFamily?: ComponentFamily;
-  nextFamily?: ComponentFamily;
+  previousFamily?: ComponentFamily | undefined;
+  nextFamily?: ComponentFamily | undefined;
   preferImage?: boolean;
   targetContentDensity?: "low" | "medium" | "high";
   targetVisualWeight?: "light" | "medium" | "heavy";

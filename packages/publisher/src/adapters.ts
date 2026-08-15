@@ -7,23 +7,23 @@ import type {
 } from "./types";
 
 export type PublishingSqlDriver = {
-  nextVersionNumber(siteId: string): Promise<number>;
   getVersion(siteId: string, versionId: string): Promise<PublishedVersionRecord | undefined>;
   getPublishedVersion(siteId: string): Promise<PublishedVersionRecord | undefined>;
   publishVersion(args: {
-    version: PublishedVersionRecord;
-    previousPublishedVersionId?: string;
-  }): Promise<void>;
+    versionId: string;
+    siteId: string;
+    snapshot: Site;
+    snapshotHash: string;
+    createdBy: string;
+  }): Promise<PublishedVersionRecord>;
   rollbackVersion(args: {
     siteId: string;
     targetVersionId: string;
-    previousPublishedVersionId?: string;
-  }): Promise<void>;
+  }): Promise<PublishedVersionRecord>;
 };
 
 export function createPublishingStore(driver: PublishingSqlDriver): PublishingStore {
   return {
-    nextVersionNumber: (siteId) => driver.nextVersionNumber(siteId),
     getVersion: (siteId, versionId) => driver.getVersion(siteId, versionId),
     getPublishedVersion: (siteId) => driver.getPublishedVersion(siteId),
     publishAtomically: (args) => driver.publishVersion(args),
@@ -43,8 +43,8 @@ export function createCryptoSnapshotHasher(): SnapshotHasher {
 
 export function createVersionIdFactory(): VersionIdFactory {
   return {
-    create(siteId, versionNumber) {
-      return `${siteId}:v${versionNumber}`;
+    create(siteId) {
+      return `${siteId}:${globalThis.crypto.randomUUID()}`;
     },
   };
 }

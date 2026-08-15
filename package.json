@@ -11,10 +11,13 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "qa:sections": "playwright test qa/sections.spec.ts",
+    "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@playwright/test": "latest",
     "prettier": "latest",
     "turbo": "latest",
     "typescript": "latest"

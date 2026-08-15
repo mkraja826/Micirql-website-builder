@@ -7,3 +7,10 @@ export const DEMO_ASSETS: AssetRecord[] = [
 ];
 
 export function demoAssetById(assetId: string) { return DEMO_ASSETS.find((asset) => asset.id === assetId); }
+
+export function addDemoAsset(asset: AssetRecord) {
+  const existingIndex = DEMO_ASSETS.findIndex((item) => item.id === asset.id);
+  if (existingIndex >= 0) DEMO_ASSETS[existingIndex] = asset;
+  else DEMO_ASSETS.unshift(asset);
+  return asset;
+}

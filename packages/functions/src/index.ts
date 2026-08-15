@@ -7,3 +7,4 @@ export * from "./record-store";
 export * from "./gateway";
 export * from "./notifications";
 export * from "./integrations";
+export * from "./backend-config";

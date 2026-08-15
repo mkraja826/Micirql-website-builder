@@ -11,6 +11,9 @@ export function textProviderConfigFromEnvironment(env: TextProviderEnvironment):
   if (!apiKey) throw new Error("MICIRQL_TEXT_MODEL_API_KEY is required when text AI is configured.");
   if (!model) throw new Error("MICIRQL_TEXT_MODEL is required when text AI is configured.");
 
+  const temperature = optionalNumber(env.MICIRQL_TEXT_MODEL_TEMPERATURE, "MICIRQL_TEXT_MODEL_TEMPERATURE");
+  const maxOutputTokens = optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS");
+
   return {
     id: clean(env.MICIRQL_TEXT_MODEL_PROFILE_ID) ?? "primary-text",
     endpoint,
@@ -20,12 +23,8 @@ export function textProviderConfigFromEnvironment(env: TextProviderEnvironment):
       inputUsdPerMillionTokens: requiredPrice(env.MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION, "MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION"),
       outputUsdPerMillionTokens: requiredPrice(env.MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION, "MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION"),
     },
-    ...(optionalNumber(env.MICIRQL_TEXT_MODEL_TEMPERATURE, "MICIRQL_TEXT_MODEL_TEMPERATURE") !== undefined
-      ? { temperature: optionalNumber(env.MICIRQL_TEXT_MODEL_TEMPERATURE, "MICIRQL_TEXT_MODEL_TEMPERATURE") }
-      : {}),
-    ...(optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS") !== undefined
-      ? { maxOutputTokens: optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS") }
-      : {}),
+    ...(temperature !== undefined ? { temperature } : {}),
+    ...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
   };
 }
 

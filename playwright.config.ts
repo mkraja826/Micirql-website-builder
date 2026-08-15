@@ -2,8 +2,9 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  timeout: 30_000,
-  fullyParallel: false,
+  timeout: 45_000,
+  fullyParallel: true,
+  workers: process.env.CI ? 4 : undefined,
   retries: 0,
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {

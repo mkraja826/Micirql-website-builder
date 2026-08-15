@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
+import { FAMILY_CODES, SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
 import {
   createEditorHistory,
   createEditorState,
@@ -15,6 +16,7 @@ import {
   type EditorViewport,
 } from "@micirql/workspace";
 import { RendererPreview } from "./renderer-preview";
+import { SectionDesignSwitcher } from "./section-design-switcher";
 
 type Mode = "content" | "images" | "design" | "pages" | "seo" | "functions" | "domain";
 type SaveState = "loading" | "saved" | "unsaved" | "saving" | "conflict" | "error";
@@ -120,6 +122,7 @@ export default function WorkspaceClient() {
   const activeSection = state.selected.kind === "section"
     ? activePage.sections.find((section) => section.id === state.selected.sectionId)
     : undefined;
+  const activeSectionFamily = activeSection ? sectionFamilyFromComponentId(activeSection.component.componentId) : undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -282,6 +285,20 @@ export default function WorkspaceClient() {
           <div className="inspector-form">
             <label>Primary color<input type="color" value={state.site.theme.brand.colors.primary} onChange={(event) => commit({ type: "brand.patch", patch: { colors: { ...state.site.theme.brand.colors, primary: event.target.value } } })} /></label>
             <label>Background<input type="color" value={state.site.theme.brand.colors.background} onChange={(event) => commit({ type: "brand.patch", patch: { colors: { ...state.site.theme.brand.colors, background: event.target.value } } })} /></label>
+            {activeSection && activeSectionFamily ? (
+              <SectionDesignSwitcher
+                family={activeSectionFamily}
+                theme={state.site.theme.family}
+                currentComponentId={activeSection.component.componentId}
+                onSelect={(componentId, version) => commit({
+                  type: "section.component.set",
+                  pageId: activePage.id,
+                  sectionId: activeSection.id,
+                  componentId,
+                  version,
+                })}
+              />
+            ) : <div className="inspector-empty"><p>Select a section to change its design.</p></div>}
           </div>
         ) : (
           <div className="inspector-empty"><p>{activeSection ? "This section is selected." : "Select a section in the preview."}</p><span>{mode} controls will connect to their dedicated registry/API in the next slice.</span></div>
@@ -295,6 +312,14 @@ export default function WorkspaceClient() {
       </nav>
     </main>
   );
+}
+
+function sectionFamilyFromComponentId(componentId: string): SectionFamily | undefined {
+  const normalized = componentId.toLowerCase();
+  const legacy = SECTION_FAMILIES.find((family) => normalized === `${family}.placeholder` || normalized.startsWith(`${family}.`));
+  if (legacy) return legacy;
+  const upper = componentId.toUpperCase();
+  return SECTION_FAMILIES.find((family) => upper.includes(`-${FAMILY_CODES[family]}-`));
 }
 
 function saveLabel(state: SaveState) {

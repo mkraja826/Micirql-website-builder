@@ -20,11 +20,11 @@ const FAMILY_DOMAIN_BONUS: Partial<Record<SectionFamily, Partial<Record<Domain, 
   services: { clinic: 100, corporate: 98, construction: 98, hospitality: 94, education: 92 },
   features: { saas: 100, corporate: 96, education: 92, clinic: 90 },
   process: { construction: 100, clinic: 96, corporate: 94, education: 92 },
-  testimonials: { clinic: 100, hospitality: 98, real-estate: 96, restaurant: 94, education: 94 },
-  gallery: { hospitality: 100, restaurant: 100, real-estate: 98, portfolio: 98, clinic: 92 },
-  team: { clinic: 100, corporate: 98, education: 98, real-estate: 94 },
-  cta: { "landing-page": 100, saas: 98, clinic: 96, real-estate: 96 },
-  contact: { clinic: 100, real-estate: 100, corporate: 98, construction: 98, hospitality: 98 },
+  testimonials: { clinic: 100, hospitality: 98, "real-estate": 96, restaurant: 94, education: 94 },
+  gallery: { hospitality: 100, restaurant: 100, "real-estate": 98, portfolio: 98, clinic: 92 },
+  team: { clinic: 100, corporate: 98, education: 98, "real-estate": 94 },
+  cta: { "landing-page": 100, saas: 98, clinic: 96, "real-estate": 96 },
+  contact: { clinic: 100, "real-estate": 100, corporate: 98, construction: 98, hospitality: 98 },
 };
 
 const THEME_MODIFIERS: Record<ThemeFamily, ThemeModifier[]> = {
@@ -155,7 +155,7 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
     performance: 90,
     accessibility: 90,
     visual: 0,
-    conversion: ["hero", "cta", "contact"].includes(seed.family) ? 0 : undefined,
+    ...( ["hero", "cta", "contact"].includes(seed.family) ? { conversion: 0 } : {}),
   },
   technical: {
     clientJavascript: seed.family === "navbar" || seed.family === "contact" ? "low" : "none",

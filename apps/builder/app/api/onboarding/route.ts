@@ -134,18 +134,34 @@ export async function POST(request: NextRequest) {
       const contentResponse = await fetch(`${url}/functions/v1/enrich-site-content`, {
         method: "POST",
         headers: commonHeaders,
-        body: JSON.stringify({
-          workspace_id: workspaceId,
-          site_id: siteId,
-          build_id: buildId,
-          brief,
-        }),
+        body: JSON.stringify({ workspace_id: workspaceId, site_id: siteId, build_id: buildId, brief }),
       });
       if (!contentResponse.ok) throw await remoteError(contentResponse);
       content = await contentResponse.json();
     } catch (error) {
       contentWarning = error instanceof Error ? error.message : "Content enrichment failed.";
       console.error("MiCirql content enrichment failed; continuing with structural draft.", error);
+    }
+
+    let images: unknown = null;
+    let imageWarning: string | null = null;
+    if (!contentWarning) {
+      try {
+        const imageResponse = await fetch(`${url}/functions/v1/generate-site-images`, {
+          method: "POST",
+          headers: commonHeaders,
+          body: JSON.stringify({ workspace_id: workspaceId, site_id: siteId, build_id: buildId }),
+        });
+        if (!imageResponse.ok) throw await remoteError(imageResponse);
+        images = await imageResponse.json();
+        if (images && typeof images === "object" && "warning" in images) {
+          const warning = (images as { warning?: unknown }).warning;
+          imageWarning = typeof warning === "string" ? warning : null;
+        }
+      } catch (error) {
+        imageWarning = error instanceof Error ? error.message : "Image generation failed.";
+        console.error("MiCirql image generation failed; continuing with content draft.", error);
+      }
     }
 
     const profile = {
@@ -185,6 +201,8 @@ export async function POST(request: NextRequest) {
       planningWarning: advice.warning ?? null,
       content,
       contentWarning,
+      images,
+      imageWarning,
       profile: savedProfiles[0] ?? profile,
     });
   } catch (error) {

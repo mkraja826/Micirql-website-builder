@@ -9,6 +9,8 @@ export * from "./metered-executor";
 export * from "./build-orchestrator";
 export * from "./materializers";
 export * from "./image-generation";
+export * from "./image-provider";
+export * from "./image-provider-env";
 export * from "./pricing";
 export * from "./text-provider";
 export * from "./text-provider-env";

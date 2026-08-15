@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { readStoredSession } from "./auth-client";
 import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
+import styles from "./ai-editor-assistant.module.css";
 
 export function AiEditorAssistant({
   site,
@@ -74,14 +75,14 @@ export function AiEditorAssistant({
     setPrompt("");
   }
 
-  return <section className="ai-editor-assistant">
-    <div className="ai-editor-heading"><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your existing design system and undo history stay intact.</small></div>
-    <div className="ai-editor-chips">
+  return <section className={styles.shell}>
+    <div className={styles.heading}><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your existing design system and undo history stay intact.</small></div>
+    <div className={styles.chips}>
       {sectionId ? <><button type="button" onClick={() => void ask("Give me another layout for this section")}>Another layout</button><button type="button" onClick={() => void ask("Make this section feel more premium")}>More premium</button><button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve copy</button></> : null}
       <button type="button" onClick={() => setPrompt("Create an About page")}>Add About page</button>
     </div>
-    <div className="ai-editor-input"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "e.g. Make this hero more editorial and concise" : "e.g. Create an About page"} /><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Thinking…" : "Generate edit"}</button></div>
-    {proposal ? <div className="ai-editor-proposal"><div><span>{proposal.source === "ai" ? "AI proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{proposal.operation.type.replace(".", " · ")}{proposal.model ? ` · ${proposal.model}` : ""}</small></div><div><button type="button" onClick={() => setProposal(undefined)}>Dismiss</button><button type="button" className="primary" onClick={apply}>Apply change</button></div></div> : null}
-    {error ? <p className="ai-editor-error">{error}</p> : null}
+    <div className={styles.input}><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "e.g. Make this hero more editorial and concise" : "e.g. Create an About page"} /><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Thinking…" : "Generate edit"}</button></div>
+    {proposal ? <div className={styles.proposal}><div><span>{proposal.source === "ai" ? "AI proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{proposal.operation.type.replace(".", " · ")}{proposal.model ? ` · ${proposal.model}` : ""}</small></div><div><button type="button" onClick={() => setProposal(undefined)}>Dismiss</button><button type="button" className={styles.primary} onClick={apply}>Apply change</button></div></div> : null}
+    {error ? <p className={styles.error}>{error}</p> : null}
   </section>;
 }

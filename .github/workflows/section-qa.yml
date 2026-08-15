@@ -56,6 +56,14 @@ jobs:
         if: always()
         run: pnpm qa:sections:evidence
 
+      - name: Build certification report
+        if: always()
+        run: pnpm qa:sections:certification
+
+      - name: Add certification summary
+        if: always()
+        run: cat test-results/certification/summary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload QA report and evidence
         if: always()
         uses: actions/upload-artifact@v4

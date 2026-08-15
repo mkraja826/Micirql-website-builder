@@ -27,6 +27,7 @@ export type WorkspaceCommand =
   | { type: "section.remove"; pageId: string; sectionId: string }
   | { type: "page.add"; page: SitePage; navigationLabel?: string }
   | { type: "page.remove"; pageId: string }
+  | { type: "page.reorder"; pageId: string; toIndex: number }
   | { type: "page.path.set"; pageId: string; path: string }
   | { type: "page.seo.patch"; pageId: string; patch: Partial<SitePage["seo"]> }
   | { type: "binding.set"; pageId: string; sectionId: string; bindingKey: string; actionId: string; inputMap?: Record<string, string> }
@@ -115,6 +116,16 @@ export function applyWorkspaceCommand(
       assertAllowed(policy.canRemovePage?.(next, page), "Page removal is not allowed.");
       next.pages = next.pages.filter((item) => item.id !== command.pageId);
       next.navigation = next.navigation.filter((item) => item.href !== page.path);
+      break;
+    }
+    case "page.reorder": {
+      const index = next.pages.findIndex((page) => page.id === command.pageId);
+      if (index < 0) throw new Error(`Unknown page ${command.pageId}.`);
+      const [page] = next.pages.splice(index, 1);
+      const target = Math.max(0, Math.min(command.toIndex, next.pages.length));
+      next.pages.splice(target, 0, page!);
+      const order = new Map(next.pages.map((item, idx) => [item.path, idx]));
+      next.navigation.sort((a, b) => (order.get(a.href) ?? 9999) - (order.get(b.href) ?? 9999));
       break;
     }
     case "page.path.set": {

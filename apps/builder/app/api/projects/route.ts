@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       const source=await getSupabaseDraft(request,workspaceId,siteId); if(!source) throw new Error("Source draft not found.");
       const rows=await writeJson<Array<{id:string;workspace_id:string;name:string}>>(`${url}/rest/v1/sites?select=id,workspace_id,name`,headers,"POST",{workspace_id:workspaceId,name:text(body.name)||`${source.snapshot.name} Copy`,status:"draft"},true);
       const created=rows[0]; if(!created) throw new Error("Duplicate site creation failed.");
-      const snapshot={...source.snapshot,siteId:created.id,workspaceId,name:created.name,domain:`${source.snapshot.domain}-copy`};
+      const snapshot={...source.snapshot,siteId:created.id,workspaceId,name:created.name};
       await saveSupabaseDraft(request,{snapshot,expectedRevision:0,updatedBy:authenticatedUserId(request)});
       return NextResponse.json({project:created});
     }

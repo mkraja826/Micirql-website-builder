@@ -10,6 +10,7 @@ export type SupabaseSession = {
 };
 
 const STORAGE_KEY = "micirql.supabase.session";
+const ACCESS_COOKIE = "micirql_access_token";
 
 function config() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -30,8 +31,14 @@ export function readStoredSession(): SupabaseSession | undefined {
 
 export function storeSession(session?: SupabaseSession) {
   if (typeof window === "undefined") return;
-  if (!session) window.localStorage.removeItem(STORAGE_KEY);
-  else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  if (!session) {
+    window.localStorage.removeItem(STORAGE_KEY);
+    document.cookie = `${ACCESS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return;
+  }
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  const ttl = Math.max(60, (session.expires_at ?? Math.floor(Date.now() / 1000) + session.expires_in) - Math.floor(Date.now() / 1000));
+  document.cookie = `${ACCESS_COOKIE}=${encodeURIComponent(session.access_token)}; Path=/; Max-Age=${ttl}; SameSite=Lax`;
 }
 
 export async function signIn(email: string, password: string): Promise<SupabaseSession> {
@@ -82,7 +89,10 @@ export async function refreshSession(session: SupabaseSession): Promise<Supabase
 
 export async function ensureFreshSession(session: SupabaseSession): Promise<SupabaseSession> {
   const expiresAt = session.expires_at ?? 0;
-  if (expiresAt > Math.floor(Date.now() / 1000) + 60) return session;
+  if (expiresAt > Math.floor(Date.now() / 1000) + 60) {
+    storeSession(session);
+    return session;
+  }
   return refreshSession(session);
 }
 

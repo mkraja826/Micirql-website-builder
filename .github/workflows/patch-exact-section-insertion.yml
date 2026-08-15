@@ -1,0 +1,36 @@
+name: Patch exact section insertion
+
+on:
+  push:
+    paths:
+      - .github/workflows/patch-exact-section-insertion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve chosen component id and version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('apps/builder/app/workspace-client.tsx')
+          text = path.read_text()
+          old = 'const section:SiteSection={id,component:{componentId:sectionDesignId(state.site.theme.family,operation.family,2),version:"1.0.0"},props:seedSectionProps(operation.family),bindings:{},hidden:false};'
+          new = 'const section:SiteSection={id,component:{componentId:operation.componentId??sectionDesignId(state.site.theme.family,operation.family,operation.variant??2),version:operation.version??"1.0.0"},props:seedSectionProps(operation.family),bindings:{},hidden:false};'
+          if old not in text:
+              raise SystemExit('Expected insertion line not found; refusing unsafe patch')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "micirql-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add apps/builder/app/workspace-client.tsx
+          git commit -m "Preserve exact chosen section component"
+          git push origin HEAD:main

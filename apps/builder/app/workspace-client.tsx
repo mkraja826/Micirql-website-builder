@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useMemo,useRef,useState } from "react";
-import { SCHEMA_VERSION,siteSchema,type Site } from "@micirql/schema";
+import { SCHEMA_VERSION,siteSchema,type Site,type SitePage } from "@micirql/schema";
 import { FAMILY_CODES,SECTION_FAMILIES,sectionDesignId,type SectionFamily,type SectionVariant } from "@micirql/sections";
 import { createEditorHistory,createEditorState,executeEditorCommand,markEditorSaved,redoEditor,setEditorSelection,setEditorViewport,undoEditor,type EditorHistory,type EditorViewport } from "@micirql/workspace";
 import { RendererPreview } from "./renderer-preview";
@@ -13,6 +13,8 @@ import { PagesManager } from "./pages-manager";
 import { FunctionsManager } from "./functions-manager";
 import { PublishReadinessManager,publishReadiness } from "./publish-readiness";
 import { PublishController } from "./publish-controller";
+import { AiEditorAssistant } from "./ai-editor-assistant";
+import type { AiEditorOperation } from "./ai-edit-types";
 
 type Mode="content"|"images"|"design"|"pages"|"seo"|"functions"|"domain";
 type SaveState="loading"|"saved"|"unsaved"|"saving"|"conflict"|"error";
@@ -55,6 +57,26 @@ export default function WorkspaceClient(){
  function selectPage(pageId:string){setHistory(c=>({...c,present:setEditorSelection(c.present,{kind:"page",pageId})}))}
  function selectSection(pageId:string,sectionId:string){setHistory(c=>({...c,present:setEditorSelection(c.present,{kind:"section",pageId,sectionId})}))}
  function setViewport(viewport:EditorViewport){setHistory(c=>({...c,present:setEditorViewport(c.present,viewport)}))}
+ function applyAiOperation(operation:AiEditorOperation){
+  if(operation.type==="page.add"){
+   if(state.site.pages.some(page=>page.path===operation.path)){window.alert("A page with that URL already exists.");return}
+   const id=`${operation.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"page"}-${crypto.randomUUID().slice(0,8)}`;
+   const page:SitePage={id,path:operation.path,name:operation.name,sections:[
+    {id:`hero-${crypto.randomUUID().slice(0,8)}`,component:{componentId:sectionDesignId(state.site.theme.family,"hero",2),version:"1.0.0"},props:{heading:operation.name,body:"Add your business-specific message here, then refine it with MiCirql AI or the visual editor."},bindings:{},hidden:false},
+    {id:`about-${crypto.randomUUID().slice(0,8)}`,component:{componentId:sectionDesignId(state.site.theme.family,"about",1),version:"1.0.0"},props:{heading:`About ${state.site.name}`,body:"Use this section to explain the information visitors need on this page."},bindings:{},hidden:false},
+    {id:`cta-${crypto.randomUUID().slice(0,8)}`,component:{componentId:sectionDesignId(state.site.theme.family,"cta",2),version:"1.0.0"},props:{heading:"Ready for the next step?",body:"Choose the action you want visitors to take and connect it in the Functions panel."},bindings:{},hidden:false},
+   ],seo:{title:`${operation.name} | ${state.site.name}`,description:`Learn more about ${operation.name.toLowerCase()} from ${state.site.name}.`,canonicalPath:operation.path,indexable:true,structuredDataTypes:[]}};
+   commit({type:"page.add",page,navigationLabel:operation.name});selectPage(id);setMode("content");return;
+  }
+  if(!activeSection||!activeSectionFamily){window.alert("Select a section before applying this AI edit.");return}
+  if(operation.type==="section.variant"){
+   commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId:sectionDesignId(state.site.theme.family,activeSectionFamily,operation.variant),version:activeSection.component.version});
+  }
+  const heading=operation.heading;
+  const body=operation.body;
+  if(heading)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.title!==undefined?"title":"heading",value:heading});
+  if(body)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.description!==undefined?"description":"body",value:body});
+ }
  async function persist(snapshot:Site,sentEditorRevision:number):Promise<boolean>{if(saveState==="conflict"||saveState==="saving")return false;setSaveState("saving");try{const r=await fetch("/api/drafts",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({snapshot,expectedRevision:persistedRevision,updatedBy:"workspace-user"})});const p=await r.json() as {draft?:DraftApiRecord;error?:string};if(r.status===409){setConflictDraft(p.draft);setSaveState("conflict");return false}if(!r.ok||!p.draft)throw new Error(p.error??`Draft save failed (${r.status}).`);setPersistedRevision(p.draft.revision);setHistory(c=>({...c,present:c.present.revision===sentEditorRevision?markEditorSaved(c.present):c.present}));setSaveState(c=>c==="conflict"?c:"saved");return true}catch(e){console.error(e);setSaveState("error");return false}}
  async function ensureSaved(){if(!state.dirty&&saveState==="saved")return true;return persist(state.site,state.revision)}
  async function leaveEditor(){if(saveState==="conflict"){if(!window.confirm("This draft has a save conflict. Leaving now may discard local edits. Leave editor anyway?"))return;window.location.href="/";return}if(state.dirty||saveState==="unsaved"||saveState==="error"){const saved=await ensureSaved();if(!saved&&!window.confirm("Your latest changes could not be saved. Leave editor anyway?"))return}window.location.href="/"}
@@ -62,42 +84,18 @@ export default function WorkspaceClient(){
 
  return <main className="workspace-shell editor-v2">
   <header className="workspace-topbar">
-   <div className="editor-brand-lockup">
-    <button type="button" className="editor-back-button" onClick={()=>void leaveEditor()} aria-label="Back to projects">← <span>Projects</span></button>
-    <div className="editor-project-title"><strong>MiCirql</strong><span>{state.site.name}</span></div>
-   </div>
+   <div className="editor-brand-lockup"><button type="button" className="editor-back-button" onClick={()=>void leaveEditor()} aria-label="Back to projects">← <span>Projects</span></button><div className="editor-project-title"><strong>MiCirql</strong><span>{state.site.name}</span></div></div>
    <div className="page-switcher" aria-label="Pages">{state.site.pages.map(p=><button key={p.id} className={p.id===activePage.id?"is-active":""} onClick={()=>selectPage(p.id)}>{p.name}</button>)}</div>
-   <div className="workspace-actions">
-    <span className={`save-state ${saveState}`}>{saveLabel(saveState)}</span>
-    <button className="editor-icon-button" title="Undo" onClick={()=>{setHistory(c=>undoEditor(c));setSaveState("unsaved")}} disabled={!history.past.length}>↶</button>
-    <button className="editor-icon-button" title="Redo" onClick={()=>{setHistory(c=>redoEditor(c));setSaveState("unsaved")}} disabled={!history.future.length}>↷</button>
-    <button className="editor-save-button" onClick={()=>void persist(state.site,state.revision)} disabled={saveState==="saving"||saveState==="loading"}>Save</button>
-    <PublishController site={state.site} disabled={!readiness.ready||saveState==="loading"||saveState==="conflict"} ensureSaved={ensureSaved}/>
-   </div>
+   <div className="workspace-actions"><span className={`save-state ${saveState}`}>{saveLabel(saveState)}</span><button className="editor-icon-button" title="Undo" onClick={()=>{setHistory(c=>undoEditor(c));setSaveState("unsaved")}} disabled={!history.past.length}>↶</button><button className="editor-icon-button" title="Redo" onClick={()=>{setHistory(c=>redoEditor(c));setSaveState("unsaved")}} disabled={!history.future.length}>↷</button><button className="editor-save-button" onClick={()=>void persist(state.site,state.revision)} disabled={saveState==="saving"||saveState==="loading"}>Save</button><PublishController site={state.site} disabled={!readiness.ready||saveState==="loading"||saveState==="conflict"} ensureSaved={ensureSaved}/></div>
   </header>
-
   {saveState==="conflict"?<section className="draft-conflict" role="alert"><div><strong>This draft changed elsewhere.</strong><span>Your local edits were not overwritten.</span></div><button onClick={loadServerVersion}>Load latest saved version</button></section>:null}
-
   <div className="workspace-main">
-   <aside className="workspace-rail" aria-label="Editor tools">
-    <div className="rail-heading"><span>Editor</span><strong>Build visually</strong></div>
-    {MODE_GROUPS.map(group=><div className="rail-group" key={group.label}><span className="rail-group-label">{group.label}</span>{group.items.map(item=><button key={item} className={mode===item?"is-active":""} onClick={()=>setMode(item)}><span className="rail-tool-icon" aria-hidden="true">{modeIcon(item)}</span><span><strong>{MODE_LABELS[item]}</strong><small>{MODE_HELP[item]}</small></span></button>)}</div>)}
-   </aside>
-
-   <section className="workspace-canvas">
-    <div className="canvas-toolbar">
-     <div className="canvas-context"><span>{activePage.name}</span><strong>{activeSection?sectionDisplayName(activeSection.component.componentId):"Page preview"}</strong></div>
-     <div className="viewport-switcher" aria-label="Preview size">{(["mobile","tablet","desktop"] as EditorViewport[]).map(v=><button key={v} className={state.viewport===v?"is-active":""} onClick={()=>setViewport(v)}>{viewportLabel(v)}</button>)}</div>
-    </div>
-    <div className="canvas-stage">
-     <RendererPreview site={state.site} path={activePage.path} viewport={state.viewport} {...(activeSection?{selectedSectionId:activeSection.id}:{})} onSelectSection={id=>selectSection(activePage.id,id)} onInlineTextChange={(sectionId,propPath,value)=>commit({type:"content.set",pageId:activePage.id,sectionId,propPath,value})} onRequestImageChange={(sectionId)=>{selectSection(activePage.id,sectionId);setMode("images")}} onReorderSection={(sectionId,toIndex)=>commit({type:"section.reorder",pageId:activePage.id,sectionId,toIndex})}/>
-    </div>
-   </section>
-
+   <aside className="workspace-rail" aria-label="Editor tools"><div className="rail-heading"><span>Editor</span><strong>Build visually</strong></div>{MODE_GROUPS.map(group=><div className="rail-group" key={group.label}><span className="rail-group-label">{group.label}</span>{group.items.map(item=><button key={item} className={mode===item?"is-active":""} onClick={()=>setMode(item)}><span className="rail-tool-icon" aria-hidden="true">{modeIcon(item)}</span><span><strong>{MODE_LABELS[item]}</strong><small>{MODE_HELP[item]}</small></span></button>)}</div>)}</aside>
+   <section className="workspace-canvas"><div className="canvas-toolbar"><div className="canvas-context"><span>{activePage.name}</span><strong>{activeSection?sectionDisplayName(activeSection.component.componentId):"Page preview"}</strong></div><div className="viewport-switcher" aria-label="Preview size">{(["mobile","tablet","desktop"] as EditorViewport[]).map(v=><button key={v} className={state.viewport===v?"is-active":""} onClick={()=>setViewport(v)}>{viewportLabel(v)}</button>)}</div></div><div className="canvas-stage"><RendererPreview site={state.site} path={activePage.path} viewport={state.viewport} {...(activeSection?{selectedSectionId:activeSection.id}:{})} onSelectSection={id=>selectSection(activePage.id,id)} onInlineTextChange={(sectionId,propPath,value)=>commit({type:"content.set",pageId:activePage.id,sectionId,propPath,value})} onRequestImageChange={(sectionId)=>{selectSection(activePage.id,sectionId);setMode("images")}} onReorderSection={(sectionId,toIndex)=>commit({type:"section.reorder",pageId:activePage.id,sectionId,toIndex})}/></div></section>
    <aside className="workspace-inspector">
     <div className="inspector-heading"><div><span>{MODE_LABELS[mode]}</span><strong>{activeSection?sectionDisplayName(activeSection.component.componentId):activePage.name}</strong></div><small>{MODE_HELP[mode]}</small></div>
+    <AiEditorAssistant site={state.site} pageId={activePage.id} {...(activeSection?{sectionId:activeSection.id}:{})} onApply={applyAiOperation}/>
     {activeSection?<div className="context-quick-actions" aria-label="Section quick actions"><button className={mode==="content"?"is-active":""} onClick={()=>setMode("content")}>Edit copy</button><button className={mode==="images"?"is-active":""} onClick={()=>setMode("images")}>Image</button><button className={mode==="design"?"is-active":""} onClick={()=>setMode("design")}>Design</button><button className={mode==="functions"?"is-active":""} onClick={()=>setMode("functions")}>Action</button></div>:null}
-
     {mode==="content"?<><SectionControls page={activePage} {...(activeSection?{selectedSectionId:activeSection.id}:{})} onSelect={id=>selectSection(activePage.id,id)} onAdd={section=>{commit({type:"section.add",pageId:activePage.id,section});selectSection(activePage.id,section.id)}} onMove={(sectionId,toIndex)=>commit({type:"section.reorder",pageId:activePage.id,sectionId,toIndex})} onToggleHidden={(sectionId,hidden)=>commit({type:"section.hidden.set",pageId:activePage.id,sectionId,hidden})} onRemove={sectionId=>{commit({type:"section.remove",pageId:activePage.id,sectionId});selectPage(activePage.id)}}/>{activeSection?<div className="inspector-form"><label>Heading<input value={String(activeSection.props.heading??activeSection.props.title??"")} onChange={e=>commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.title!==undefined?"title":"heading",value:e.target.value})}/></label><label>Body<textarea value={String(activeSection.props.body??activeSection.props.description??"")} onChange={e=>commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.description!==undefined?"description":"body",value:e.target.value})}/></label></div>:<div className="inspector-empty"><p>Select a section in the preview to edit it.</p></div>}</>
     :mode==="images"&&activeSection&&activeSectionFamily?<AssetPicker workspaceId={state.site.workspaceId} siteId={state.site.siteId} pagePath={activePage.path} sectionId={activeSection.id} domain={state.site.domain} theme={state.site.theme.family} family={activeSectionFamily} {...(currentAssetId?{currentAssetId}:{})} onSelect={(asset,o)=>commit({type:"asset.set",pageId:activePage.id,sectionId:activeSection.id,propPath:"image",asset:{assetId:asset.id,alt:o?.alt??asset.alt,focalPoint:o?.focalPoint??asset.focalPoint}})}/>
     :mode==="pages"?<PagesManager site={state.site} activePageId={activePage.id} onSelect={selectPage} onAdd={p=>{commit({type:"page.add",page:p});selectPage(p.id)}} onRemove={id=>{commit({type:"page.remove",pageId:id});if(id===activePage.id)selectPage(state.site.pages[0]!.id)}} onDuplicate={p=>{commit({type:"page.add",page:p});selectPage(p.id)}} onPathChange={(id,path)=>commit({type:"page.path.set",pageId:id,path})} onReorder={(id,toIndex)=>commit({type:"page.reorder",pageId:id,toIndex})}/>
@@ -108,7 +106,6 @@ export default function WorkspaceClient(){
     :<div className="inspector-empty"><p>{mode==="images"?"Select a section with an image to manage its media.":mode==="functions"?"Select a section to connect functionality.":"Select a section to configure this area."}</p></div>}
    </aside>
   </div>
-
   <nav className="mobile-editor-bar" aria-label="Editor tools">{MOBILE_MODES.map(item=><button key={item} className={mode===item?"is-active":""} onClick={()=>setMode(item)}><span>{modeIcon(item)}</span><small>{MODE_LABELS[item]}</small></button>)}</nav>
  </main>;
 }

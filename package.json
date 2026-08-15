@@ -13,6 +13,7 @@
     "test": "turbo test",
     "qa:sections": "playwright test qa/sections.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
+    "qa:sections:evidence": "node qa/build-evidence.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

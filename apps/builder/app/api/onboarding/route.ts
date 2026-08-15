@@ -155,13 +155,15 @@ export async function POST(request: NextRequest) {
         const preset = topRecommendation.preset;
         const nextSnapshot = structuredClone(current.snapshot);
         nextSnapshot.theme = structuredClone(preset.theme);
-        const [primary, accent, secondary] = advice.brandColors;
-        if (primary || accent || secondary) {
+        const [primary, accent, secondary, surface, border] = advice.brandColors;
+        if (primary || accent || secondary || surface || border) {
           nextSnapshot.theme.brand.colors = {
             ...nextSnapshot.theme.brand.colors,
             ...(primary ? { primary } : {}),
             ...(accent ? { accent } : {}),
-            ...(secondary ? { secondary } : {}),
+            ...(secondary ? { secondary, textPrimary: secondary } : {}),
+            ...(surface ? { surface } : {}),
+            ...(border ? { border } : {}),
           };
         }
         for (const page of nextSnapshot.pages) {

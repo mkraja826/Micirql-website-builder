@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { ThemeFamily } from "@micirql/schema";
 import { LAYOUT_VARIANTS, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
+import styles from "./section-library-browser.module.css";
 
 const ADDABLE = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
 const VARIANTS: SectionVariant[] = [1, 2, 3, 4, 5];
@@ -37,30 +38,30 @@ export function SectionLibraryBrowser({ theme, onAdd, onClose }: {
     });
   }, [family, query]);
 
-  return <div className="section-library-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-    <section className="section-library" role="dialog" aria-modal="true" aria-label="Add section">
-      <header className="section-library-header">
+  return <div className={styles.backdrop} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <section className={styles.library} role="dialog" aria-modal="true" aria-label="Add section">
+      <header className={styles.header}>
         <div><span>MiCirql library</span><h2>Add a section</h2><p>Choose a section type and one of five layout structures. The current <strong>{title(theme)}</strong> theme is applied automatically.</p></div>
-        <button type="button" className="section-library-close" onClick={onClose} aria-label="Close section library">×</button>
+        <button type="button" className={styles.close} onClick={onClose} aria-label="Close section library">×</button>
       </header>
 
-      <div className="section-library-tools">
-        <label className="section-library-search"><span>⌕</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search hero, services, gallery…" /></label>
-        <div className="section-library-filters" aria-label="Section categories">
-          <button className={family === "all" ? "is-active" : ""} onClick={() => setFamily("all")}>All</button>
-          {ADDABLE.map((item) => <button key={item} className={family === item ? "is-active" : ""} onClick={() => setFamily(item)}>{title(item)}</button>)}
+      <div className={styles.tools}>
+        <label className={styles.search}><span>⌕</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search hero, services, gallery…" /></label>
+        <div className={styles.filters} aria-label="Section categories">
+          <button className={family === "all" ? styles.active : ""} onClick={() => setFamily("all")}>All</button>
+          {ADDABLE.map((item) => <button key={item} className={family === item ? styles.active : ""} onClick={() => setFamily(item)}>{title(item)}</button>)}
         </div>
       </div>
 
-      <div className="section-library-results">
+      <div className={styles.results}>
         {filtered.map((item) => {
           const meta = FAMILY_META[item as keyof typeof FAMILY_META];
-          return <article className="section-family-block" key={item}>
-            <div className="section-family-heading"><span className="section-family-icon">{meta.icon}</span><div><h3>{title(item)}</h3><p>{meta.description}</p></div></div>
-            <div className="section-variant-grid">
+          return <article className={styles.familyBlock} key={item}>
+            <div className={styles.familyHeading}><span className={styles.familyIcon}>{meta.icon}</span><div><h3>{title(item)}</h3><p>{meta.description}</p></div></div>
+            <div className={styles.variantGrid}>
               {VARIANTS.map((variant) => {
                 const componentId = sectionDesignId(theme, item, variant);
-                return <button key={variant} type="button" className="section-variant-card" onClick={() => onAdd(item, variant, componentId)}>
+                return <button key={variant} type="button" className={styles.variantCard} onClick={() => onAdd(item, variant, componentId)}>
                   <SectionMiniature family={item} variant={variant} />
                   <span><strong>{title(LAYOUT_VARIANTS[variant])}</strong><small>{componentId}</small></span>
                 </button>;
@@ -68,18 +69,20 @@ export function SectionLibraryBrowser({ theme, onAdd, onClose }: {
             </div>
           </article>;
         })}
-        {!filtered.length ? <div className="section-library-empty"><strong>No sections found</strong><span>Try another search or category.</span></div> : null}
+        {!filtered.length ? <div className={styles.empty}><strong>No sections found</strong><span>Try another search or category.</span></div> : null}
       </div>
     </section>
   </div>;
 }
 
 function SectionMiniature({ family, variant }: { family: SectionFamily; variant: SectionVariant }) {
-  return <div className={`section-miniature family-${family} variant-${variant}`} aria-hidden="true">
-    <i className="mini-kicker" />
-    <i className="mini-title" />
-    <i className="mini-copy" />
-    <div className="mini-layout"><i /><i /><i /></div>
+  const familyClass = styles[`family${title(family).replace(/\s/g, "")}`] ?? "";
+  const variantClass = styles[`variant${variant}`] ?? "";
+  return <div className={`${styles.miniature} ${familyClass} ${variantClass}`} aria-hidden="true">
+    <i className={styles.kicker} />
+    <i className={styles.title} />
+    <i className={styles.copy} />
+    <div className={styles.miniLayout}><i /><i /><i /></div>
     <b />
   </div>;
 }

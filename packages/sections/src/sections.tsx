@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Card, Gallery, NavigationMenu, Stats } from "@micirql/components";
-import { Button, Container, Stack, Typography } from "@micirql/primitives";
+import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
 
 type Action = { label: string; href: string };
@@ -30,7 +30,7 @@ function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
 }
 
 function NavbarSection({ title, items = [], primaryAction }: UniversalSectionProps) {
-  return <header className="mi-section mi-section--navbar"><Container><div className="mi-navbar"><a href="/" className="mi-navbar__brand">{title}</a><NavigationMenu items={items.map((item, i) => ({ label: item.title, href: `#section-${i + 1}` }))} />{primaryAction ? <Button as="button" onClick={() => { location.href = primaryAction.href; }}>{primaryAction.label}</Button> : null}</div></Container></header>;
+  return <header className="mi-section mi-section--navbar"><Container><div className="mi-navbar"><a href="/" className="mi-navbar__brand">{title}</a><NavigationMenu items={items.map((item, i) => ({ label: item.title, href: `#section-${i + 1}` }))} />{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}>{primaryAction.label}</a> : null}</div></Container></header>;
 }
 
 function HeroSection(props: UniversalSectionProps) {

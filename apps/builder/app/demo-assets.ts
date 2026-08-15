@@ -1,0 +1,9 @@
+import type { AssetRecord } from "@micirql/assets";
+
+export const DEMO_ASSETS: AssetRecord[] = [
+  { id:"mi-placeholder-clean-hero", source:"micirql-placeholder", kind:"image", name:"Clean business hero", alt:"Modern bright business interior", width:1600, height:1000, orientation:"landscape", aspectRatio:1.6, focalPoint:{x:.5,y:.45}, domains:["landing-page","corporate","clinic","hospitality"], subtypes:[], sectionFamilies:["hero","about"], themes:["minimalist","corporate","glass"], tags:["clean","bright","professional"], license:"micirql-owned", originalUrl:"/assets/placeholders/clean-hero.svg", variants:[], active:true, createdAt:"2026-08-15T00:00:00.000Z" },
+  { id:"mi-placeholder-service-grid", source:"micirql-placeholder", kind:"image", name:"Service detail", alt:"Abstract professional service visual", width:1200, height:900, orientation:"landscape", aspectRatio:1.333, focalPoint:{x:.5,y:.5}, domains:["landing-page","corporate","construction","education"], subtypes:[], sectionFamilies:["services","features"], themes:["minimalist","corporate","editorial"], tags:["service","structured","neutral"], license:"micirql-owned", originalUrl:"/assets/placeholders/service-grid.svg", variants:[], active:true, createdAt:"2026-08-15T00:00:00.000Z" },
+  { id:"workspace-upload-demo", workspaceId:"workspace-demo", source:"user-upload", kind:"image", name:"My uploaded image", alt:"User uploaded workspace image", width:1200, height:800, orientation:"landscape", aspectRatio:1.5, focalPoint:{x:.5,y:.5}, domains:[], subtypes:[], sectionFamilies:["hero","about","services","gallery"], themes:[], tags:["upload"], license:"user-owned", originalUrl:"/assets/placeholders/user-upload.svg", variants:[], active:true, createdAt:"2026-08-15T00:00:00.000Z" },
+];
+
+export function demoAssetById(assetId: string) { return DEMO_ASSETS.find((asset) => asset.id === assetId); }

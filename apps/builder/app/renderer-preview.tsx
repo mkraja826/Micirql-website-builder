@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
 import { SeedSection, seedSectionCatalog } from "@micirql/sections";
@@ -34,6 +34,7 @@ export function RendererPreview({
   onRequestCopyEdit,
   onRequestMove,
   onRequestVisibility,
+  onRequestAddSection,
   onReorderSection,
 }: {
   site: Site;
@@ -47,12 +48,14 @@ export function RendererPreview({
   onRequestCopyEdit?(sectionId: string): void;
   onRequestMove?(sectionId: string, direction: "up" | "down"): void;
   onRequestVisibility?(sectionId: string, hidden: boolean): void;
+  onRequestAddSection?(afterSectionId?: string): void;
   onReorderSection?(sectionId: string, toIndex: number): void;
 }) {
   const [preview, setPreview] = useState<PreviewPayload>();
   const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
   const [error, setError] = useState("");
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
+  const [dropIndex, setDropIndex] = useState<number>();
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -88,35 +91,38 @@ export function RendererPreview({
     const inline = target.closest<HTMLElement>("[data-mi-prop-path]");
     const image = target.closest<HTMLElement>("[data-mi-image-field]");
     if (inline && onInlineTextChange) {
-      event.preventDefault();
-      event.stopPropagation();
-      onSelectSection(sectionId);
-      beginInlineEditing(inline, sectionId, onInlineTextChange);
-      return;
+      event.preventDefault(); event.stopPropagation(); onSelectSection(sectionId); beginInlineEditing(inline, sectionId, onInlineTextChange); return;
     }
     if (image && onRequestImageChange) {
-      event.preventDefault();
-      event.stopPropagation();
-      onSelectSection(sectionId);
-      onRequestImageChange(sectionId, image.dataset.miImageField ?? "image");
-      return;
+      event.preventDefault(); event.stopPropagation(); onSelectSection(sectionId); onRequestImageChange(sectionId, image.dataset.miImageField ?? "image"); return;
     }
-    event.preventDefault();
-    event.stopPropagation();
-    onSelectSection(sectionId);
+    event.preventDefault(); event.stopPropagation(); onSelectSection(sectionId);
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>, targetIndex: number) {
     event.preventDefault();
     const sectionId = draggedSectionId ?? event.dataTransfer.getData("text/mi-section-id");
     if (sectionId && onReorderSection) onReorderSection(sectionId, targetIndex);
-    setDraggedSectionId(undefined);
+    setDraggedSectionId(undefined); setDropIndex(undefined);
   }
 
   function runAction(event: MouseEvent<HTMLButtonElement>, action: () => void) {
-    event.preventDefault();
-    event.stopPropagation();
-    action();
+    event.preventDefault(); event.stopPropagation(); action();
+  }
+
+  function insertionZone(afterSectionId: string | undefined, index: number) {
+    if (!onRequestAddSection && !onReorderSection) return null;
+    return <div
+      className={`mi-editor-insert-zone${dropIndex === index ? " is-drop-target" : ""}`}
+      data-mi-canvas-action="insert-zone"
+      onDragOver={(event) => { if (onReorderSection) { event.preventDefault(); setDropIndex(index); } }}
+      onDragLeave={() => { if (dropIndex === index) setDropIndex(undefined); }}
+      onDrop={(event) => handleDrop(event, index)}
+    >
+      <span className="mi-editor-insert-line" />
+      {onRequestAddSection ? <button type="button" data-mi-canvas-action="add-section" onClick={(event) => runAction(event, () => onRequestAddSection(afterSectionId))}>+ Add section</button> : null}
+      {dropIndex === index ? <em>Drop section here</em> : null}
+    </div>;
   }
 
   return (
@@ -124,38 +130,27 @@ export function RendererPreview({
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
       {status === "ready" && preview?.sections ? (
-        <main
-          className="renderer-preview-document"
-          data-mi-site={preview.siteId}
-          data-mi-page={preview.pageId}
-          data-mi-theme={preview.theme}
-          style={(preview.themeStyle ?? {}) as CSSProperties}
-        >
+        <main className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} style={(preview.themeStyle ?? {}) as CSSProperties}>
+          {insertionZone(undefined, 0)}
           {preview.sections.map((section, index) => {
             const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
             if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
             const selected = section.id === selectedSectionId;
             const sourceSection = site.pages.find((page) => page.path === path)?.sections.find((candidate) => candidate.id === section.id);
             const hidden = sourceSection?.hidden ?? false;
-            return (
+            return <Fragment key={section.id}>
               <div
-                key={section.id}
                 data-mi-section-id={section.id}
                 data-mi-component-id={section.componentId}
                 data-mi-component-version={section.componentVersion}
                 className={`mi-editor-section${selected ? " mi-editor-selected" : ""}${hidden ? " mi-editor-hidden" : ""}`}
                 draggable={Boolean(onReorderSection)}
-                onDragStart={(event) => {
-                  setDraggedSectionId(section.id);
-                  event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("text/mi-section-id", section.id);
-                }}
-                onDragEnd={() => setDraggedSectionId(undefined)}
-                onDragOver={(event) => { if (onReorderSection) event.preventDefault(); }}
-                onDrop={(event) => handleDrop(event, index)}
+                onDragStart={(event) => { setDraggedSectionId(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/mi-section-id", section.id); }}
+                onDragEnd={() => { setDraggedSectionId(undefined); setDropIndex(undefined); }}
                 onClick={(event) => handleSectionClick(event, section.id)}
               >
                 {selected ? <div className="mi-editor-canvas-toolbar" data-mi-canvas-action="toolbar">
+                  <span className="mi-editor-drag-handle" title="Drag section" aria-hidden="true">⋮⋮</span>
                   <span className="mi-editor-canvas-label">{seed.family}</span>
                   <div className="mi-editor-canvas-actions">
                     {onRequestDesignChange ? <button type="button" data-mi-canvas-action="design" onClick={(event) => runAction(event, () => onRequestDesignChange(section.id))}>Replace design</button> : null}
@@ -167,7 +162,8 @@ export function RendererPreview({
                 </div> : null}
                 <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />
               </div>
-            );
+              {insertionZone(section.id, index + 1)}
+            </Fragment>;
           })}
         </main>
       ) : null}
@@ -175,46 +171,13 @@ export function RendererPreview({
   );
 }
 
-function beginInlineEditing(
-  element: HTMLElement,
-  sectionId: string,
-  onChange: (sectionId: string, propPath: string, value: string) => void,
-) {
+function beginInlineEditing(element: HTMLElement, sectionId: string, onChange: (sectionId: string, propPath: string, value: string) => void) {
   if (element.dataset.miEditing === "true") return;
-  const propPath = element.dataset.miPropPath;
-  if (!propPath) return;
+  const propPath = element.dataset.miPropPath; if (!propPath) return;
   const original = element.innerText;
-  element.dataset.miEditing = "true";
-  element.contentEditable = "true";
-  element.spellcheck = true;
-  element.focus();
-  const selection = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  selection?.removeAllRanges();
-  selection?.addRange(range);
-
-  const finish = () => {
-    element.removeEventListener("blur", finish);
-    element.removeEventListener("keydown", keydown);
-    const next = element.innerText.trim();
-    element.contentEditable = "false";
-    delete element.dataset.miEditing;
-    if (next && next !== original) onChange(sectionId, propPath, next);
-    else if (!next) element.innerText = original;
-  };
-  const keydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      element.innerText = original;
-      element.blur();
-    }
-    if (event.key === "Enter" && !event.shiftKey && !propPath.includes("description")) {
-      event.preventDefault();
-      element.blur();
-    }
-  };
-  element.addEventListener("blur", finish);
-  element.addEventListener("keydown", keydown);
+  element.dataset.miEditing = "true"; element.contentEditable = "true"; element.spellcheck = true; element.focus();
+  const selection = window.getSelection(); const range = document.createRange(); range.selectNodeContents(element); range.collapse(false); selection?.removeAllRanges(); selection?.addRange(range);
+  const finish = () => { element.removeEventListener("blur", finish); element.removeEventListener("keydown", keydown); const next = element.innerText.trim(); element.contentEditable = "false"; delete element.dataset.miEditing; if (next && next !== original) onChange(sectionId, propPath, next); else if (!next) element.innerText = original; };
+  const keydown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); element.innerText = original; element.blur(); } if (event.key === "Enter" && !event.shiftKey && !propPath.includes("description")) { event.preventDefault(); element.blur(); } };
+  element.addEventListener("blur", finish); element.addEventListener("keydown", keydown);
 }

@@ -4,3 +4,4 @@ export * from "./workspace";
 export * from "./catalog";
 export * from "./coverage";
 export * from "./ingestion";
+export * from "./slot-resolver";

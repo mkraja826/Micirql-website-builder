@@ -104,10 +104,18 @@ export async function saveSupabaseDraft(
     cache: "no-store",
   });
   if (!response.ok) throw httpError(response.status, await response.text());
-  const payload = await response.json() as RemoteDraft | RemoteDraft[];
-  const row = Array.isArray(payload) ? payload[0] : payload;
-  if (!row) throw new Error("Supabase did not return the saved draft.");
-  return normalize(row);
+
+  const savedRevision = Number(await response.json());
+  if (!Number.isInteger(savedRevision) || savedRevision < 1) {
+    throw new Error("Supabase did not return a valid saved revision.");
+  }
+
+  const saved = await getSupabaseDraft(request, input.snapshot.workspaceId, input.snapshot.siteId);
+  if (!saved) throw new Error("Saved draft could not be reloaded from Supabase.");
+  if (saved.revision !== savedRevision) {
+    throw new Error(`Saved draft revision mismatch: expected ${savedRevision}, received ${saved.revision}.`);
+  }
+  return saved;
 }
 
 function normalize(row: RemoteDraft): DraftRecord {

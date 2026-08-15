@@ -1,6 +1,6 @@
 create table if not exists public.site_versions (
   id text primary key,
-  site_id text not null references public.sites(id) on delete cascade,
+  site_id uuid not null references public.sites(id) on delete cascade,
   version_number integer not null check (version_number > 0),
   status text not null check (status in ('draft','preview','published','archived')),
   snapshot jsonb not null,

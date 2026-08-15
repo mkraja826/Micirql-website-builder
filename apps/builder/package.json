@@ -11,6 +11,7 @@
     "@micirql/assets": "workspace:*",
     "@micirql/components": "workspace:*",
     "@micirql/domains": "workspace:*",
+    "@micirql/functions": "workspace:*",
     "@micirql/primitives": "workspace:*",
     "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",

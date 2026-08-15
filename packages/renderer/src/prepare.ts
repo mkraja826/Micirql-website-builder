@@ -109,8 +109,11 @@ export async function preparePage(args: {
       secondary: site.theme.brand.colors.secondary,
       secondaryContrast: contrastFor(site.theme.brand.colors.secondary),
       accent: site.theme.brand.colors.accent,
-      surface: site.theme.brand.colors.background,
-      surfaceElevated: site.theme.brand.colors.surface,
+      // `surface` is the visible page/section canvas. It must use the
+      // logo-derived surface role. The neutral background remains available
+      // as the elevated/card layer so brand extraction is visible in render.
+      surface: site.theme.brand.colors.surface,
+      surfaceElevated: site.theme.brand.colors.background,
       text: site.theme.brand.colors.textPrimary,
       textMuted: site.theme.brand.colors.textSecondary,
       border: site.theme.brand.colors.border,

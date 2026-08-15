@@ -5,3 +5,5 @@ export * from "./execute";
 export * from "./runtime-utils";
 export * from "./record-store";
 export * from "./gateway";
+export * from "./notifications";
+export * from "./integrations";

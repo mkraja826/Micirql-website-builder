@@ -150,3 +150,5 @@
     font-size: clamp(2.15rem, 11vw, 3rem);
   }
 }
+
+/* deployment fingerprint: auth-ui-v2 */

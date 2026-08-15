@@ -1,12 +1,13 @@
 "use client";
 
-import type { SitePage, SiteSection } from "@micirql/schema";
-import { SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
+import { useState } from "react";
+import type { SitePage, SiteSection, ThemeFamily } from "@micirql/schema";
+import { type SectionFamily, type SectionVariant } from "@micirql/sections";
+import { SectionLibraryBrowser } from "./section-library-browser";
 
-const ADDABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
-
-export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
+export function SectionControls({ page, theme, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
+  theme: ThemeFamily;
   selectedSectionId?: string;
   onSelect(sectionId: string): void;
   onAdd(section: SiteSection): void;
@@ -14,38 +15,39 @@ export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMo
   onToggleHidden(sectionId: string, hidden: boolean): void;
   onRemove(sectionId: string): void;
 }) {
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedIndex = selectedSectionId ? page.sections.findIndex((section) => section.id === selectedSectionId) : -1;
   const selected = selectedIndex >= 0 ? page.sections[selectedIndex] : undefined;
 
   return <div className="section-controls">
-    <label>Sections
-      <select value={selectedSectionId ?? ""} onChange={(event) => event.target.value && onSelect(event.target.value)}>
-        <option value="">Choose a section…</option>
-        {page.sections.map((section, index) => <option key={section.id} value={section.id}>{index + 1}. {labelFor(section)}{section.hidden ? " (hidden)" : ""}</option>)}
-      </select>
-    </label>
-    <div className="section-controls-row">
-      <select defaultValue="" aria-label="Add section" onChange={(event) => {
-        const family = event.target.value as SectionFamily;
-        if (!family) return;
-        onAdd(newSection(family));
-        event.target.value = "";
-      }}>
-        <option value="">+ Add section</option>
-        {ADDABLE_FAMILIES.map((family) => <option key={family} value={family}>{title(family)}</option>)}
-      </select>
+    <div className="section-controls-heading">
+      <div><span>Page structure</span><strong>{page.sections.length} sections</strong></div>
+      <button type="button" className="section-add-button" onClick={() => setLibraryOpen(true)}>＋ Add section</button>
     </div>
-    {selected ? <div className="section-controls-row">
-      <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>Move up</button>
-      <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>Move down</button>
+
+    <div className="section-layer-list">
+      {page.sections.map((section, index) => <button type="button" key={section.id} className={`section-layer ${section.id === selectedSectionId ? "is-active" : ""} ${section.hidden ? "is-hidden" : ""}`} onClick={() => onSelect(section.id)}>
+        <span className="section-layer-index">{String(index + 1).padStart(2, "0")}</span>
+        <span><strong>{labelFor(section)}</strong><small>{section.hidden ? "Hidden" : section.component.componentId}</small></span>
+      </button>)}
+    </div>
+
+    {selected ? <div className="section-controls-actions">
+      <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>↑ Up</button>
+      <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
-      <button type="button" className="danger" onClick={() => onRemove(selected.id)}>Remove</button>
+      <button type="button" className="danger" onClick={() => onRemove(selected.id)}>Delete</button>
     </div> : null}
+
+    {libraryOpen ? <SectionLibraryBrowser theme={theme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {
+      onAdd(newSection(family, variant, componentId));
+      setLibraryOpen(false);
+    }} /> : null}
   </div>;
 }
 
-function newSection(family: SectionFamily): SiteSection {
-  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId: `${family}.placeholder`, version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
+function newSection(family: SectionFamily, _variant: SectionVariant, componentId: string): SiteSection {
+  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId, version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
 }
 
 function defaultProps(family: SectionFamily): Record<string, unknown> {
@@ -66,6 +68,13 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
 }
 
 function labelFor(section: SiteSection): string {
-  return title(section.component.componentId.split(".")[0] || section.id);
+  const componentId = section.component.componentId;
+  const codeMatch = componentId.match(/^[A-Z]{3}-(?:HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT)-/);
+  if (codeMatch) {
+    const familyCode = componentId.split("-")[1];
+    const names: Record<string, string> = { HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", CTA: "Call to action", CONT: "Contact" };
+    return names[familyCode] ?? componentId;
+  }
+  return title(componentId.split(".")[0] || section.id);
 }
 function title(value: string): string { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()); }

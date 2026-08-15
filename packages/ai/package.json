@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@micirql/assets": "workspace:*",
     "@micirql/domains": "workspace:*",
     "@micirql/registry": "workspace:*",
     "@micirql/schema": "workspace:*",

@@ -2,6 +2,7 @@
 
 import type { ThemeConfig } from "@micirql/schema";
 import type { SectionFamily, SectionVariant } from "@micirql/sections";
+import styles from "./industry-design-presets.module.css";
 
 export type IndustryDesignPreset = {
   id: string;
@@ -140,9 +141,9 @@ export const INDUSTRY_DESIGN_PRESETS: IndustryDesignPreset[] = [
 ];
 
 export function IndustryDesignPresets({ onApply }: { onApply(preset: IndustryDesignPreset): void }) {
-  return <section className="industry-presets">
-    <span className="theme-studio-label">Industry presets</span>
-    <div className="industry-preset-grid">
+  return <section className={styles.root}>
+    <span className={styles.label}>Industry presets</span>
+    <div className={styles.grid}>
       {INDUSTRY_DESIGN_PRESETS.map((preset) => <button type="button" key={preset.id} onClick={() => onApply(preset)}>
         <strong>{preset.name}</strong>
         <small>{preset.description}</small>

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import type { OnboardingProfile } from "./recommended-presets";
+import { OnboardingProfileProvider } from "./onboarding-profile-context";
 import WorkspaceClient from "./workspace-client";
 
 type DraftContext = { workspaceId: string; siteId: string; snapshot?: { name?: string } };
@@ -59,7 +60,7 @@ export function OnboardingGate({ session }: { session: SupabaseSession }) {
   }
 
   if (loading) return <main style={shellStyle}><div style={cardStyle}>Preparing your MiCirql workspace…</div></main>;
-  if (ready) return <WorkspaceClient onboardingProfile={profile} />;
+  if (ready) return <OnboardingProfileProvider profile={profile}><WorkspaceClient /></OnboardingProfileProvider>;
 
   return <main style={shellStyle}><form onSubmit={submit} style={{ ...cardStyle, maxWidth: 920 }}>
     <div><div style={{ fontSize: 14, opacity: .65 }}>MiCirql business discovery</div><h1 style={{ marginBottom: 8 }}>Tell us what you need. We’ll assemble the right site.</h1><p style={{ marginTop: 0, opacity: .72 }}>We use this brief to choose the industry pack, theme, sections and functionality before the editor opens.</p></div>

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { adviseOnboardingPlan } from "../../ai-planning";
 import { rankPresets } from "../../preset-ranking";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
@@ -69,7 +68,40 @@ export async function POST(request: NextRequest) {
     const logoUrl = optionalString(body.logoUrl);
     const brandColors = hexArray(body.brandColors);
 
-    const advice = await adviseOnboardingPlan({ businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, brandColors });
+    const aiResponse = await fetch(`${url}/functions/v1/ai-plan-site`, {
+      method: "POST",
+      headers: commonHeaders,
+      body: JSON.stringify({
+        workspace_id: workspaceId,
+        site_id: siteId,
+        business_name: businessName,
+        industry,
+        subindustry,
+        location,
+        services,
+        goals,
+        style_tags: styleTags,
+        required_capabilities: requiredCapabilities,
+        languages,
+        notes,
+        brand_colors: brandColors,
+      }),
+    });
+    if (!aiResponse.ok) throw await remoteError(aiResponse);
+    const advice = await aiResponse.json() as {
+      industry: string;
+      subindustry: string | null;
+      styleTags: string[];
+      requiredCapabilities: string[];
+      goals: string[];
+      brandColors: string[];
+      source: "ai" | "deterministic";
+      warning?: string | null;
+      provider?: string | null;
+      model?: string | null;
+      usage?: { inputTokens?: number; outputTokens?: number };
+    };
+
     const requestPayload = { workspace_id: workspaceId, site_id: siteId, industry: advice.industry, subindustry: advice.subindustry, style_tags: advice.styleTags, required_capabilities: advice.requiredCapabilities, goals: advice.goals };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify(requestPayload) });
@@ -153,7 +185,25 @@ export async function POST(request: NextRequest) {
     if (!profileResponse.ok) throw await remoteError(profileResponse);
     const savedProfiles = await profileResponse.json() as unknown[];
 
-    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, planningSource: advice.source, planningWarning: advice.warning ?? null, brandPalette: advice.brandColors, content, contentWarning, images, imageWarning, initialPreset, presetWarning, profile: savedProfiles[0] ?? profile });
+    return NextResponse.json({
+      ok: true,
+      planId: plan.plan_id,
+      build,
+      blueprint: plan.blueprint,
+      planningSource: advice.source,
+      planningProvider: advice.provider ?? null,
+      planningModel: advice.model ?? null,
+      planningUsage: advice.usage ?? null,
+      planningWarning: advice.warning ?? null,
+      brandPalette: advice.brandColors,
+      content,
+      contentWarning,
+      images,
+      imageWarning,
+      initialPreset,
+      presetWarning,
+      profile: savedProfiles[0] ?? profile,
+    });
   } catch (error) { return errorResponse(error); }
 }
 

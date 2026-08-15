@@ -40,7 +40,7 @@ export function PublishController({ site, disabled, ensureSaved }: {
         return;
       }
       setPreviousVersionId(payload.previousVersionId);
-      setCurrent({ versionId: payload.version.versionId, liveUrl: payload.liveUrl });
+      setCurrent({ versionId: payload.version.versionId, ...(payload.liveUrl === undefined ? {} : { liveUrl: payload.liveUrl }) });
       setState("success");
     } catch (error) {
       setIssues([{ message: error instanceof Error ? error.message : "Publishing failed." }]);
@@ -62,7 +62,7 @@ export function PublishController({ site, disabled, ensureSaved }: {
       setState("error");
       return;
     }
-    setCurrent({ versionId: payload.version.versionId, liveUrl: payload.liveUrl });
+    setCurrent({ versionId: payload.version.versionId, ...(payload.liveUrl === undefined ? {} : { liveUrl: payload.liveUrl }) });
     setPreviousVersionId(undefined);
     setState("success");
   }

@@ -1,7 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import type { Site } from "@micirql/schema";
+import { SeedSection, seedSectionCatalog } from "@micirql/sections";
+
+type PreviewSection = {
+  id: string;
+  componentId: string;
+  componentVersion: string;
+  props: Record<string, unknown>;
+};
+
+type PreviewPayload = {
+  ok: boolean;
+  siteId?: string;
+  pageId?: string;
+  theme?: string;
+  themeStyle?: Record<string, string>;
+  sections?: PreviewSection[];
+  issues?: Array<{ message: string }>;
+};
 
 export function RendererPreview({
   site,
@@ -16,11 +35,10 @@ export function RendererPreview({
   selectedSectionId?: string;
   onSelectSection(sectionId: string): void;
 }) {
-  const [html, setHtml] = useState("");
+  const [preview, setPreview] = useState<PreviewPayload>();
   const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
   const [error, setError] = useState("");
   const requestId = useRef(0);
-  const documentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -32,12 +50,12 @@ export function RendererPreview({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ site, path }),
         });
-        const payload = await response.json() as { ok: boolean; html?: string; issues?: Array<{ message: string }> };
+        const payload = await response.json() as PreviewPayload;
         if (id !== requestId.current) return;
-        if (!response.ok || !payload.ok || typeof payload.html !== "string") {
+        if (!response.ok || !payload.ok || !Array.isArray(payload.sections)) {
           throw new Error(payload.issues?.map((issue) => issue.message).join(" ") || `Preview failed (${response.status}).`);
         }
-        setHtml(payload.html);
+        setPreview(payload);
         setError("");
         setStatus("ready");
       } catch (caught) {
@@ -49,36 +67,36 @@ export function RendererPreview({
     return () => window.clearTimeout(timer);
   }, [site, path]);
 
-  useEffect(() => {
-    const root = documentRef.current;
-    if (!root) return;
-    root.querySelectorAll("[data-mi-section-id]").forEach((element) => element.classList.remove("mi-editor-selected"));
-    if (!selectedSectionId) return;
-    const selected = Array.from(root.querySelectorAll<HTMLElement>("[data-mi-section-id]")).find(
-      (element) => element.dataset.miSectionId === selectedSectionId,
-    );
-    selected?.classList.add("mi-editor-selected");
-  }, [html, selectedSectionId]);
-
-  function handleClick(event: React.MouseEvent<HTMLDivElement>) {
-    const element = event.target as HTMLElement;
-    const section = element.closest<HTMLElement>("[data-mi-section-id]");
-    if (!section?.dataset.miSectionId) return;
-    event.preventDefault();
-    onSelectSection(section.dataset.miSectionId);
-  }
-
   return (
     <div className={`site-preview renderer-site-preview viewport-${viewport}`}>
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
-      {status === "ready" ? (
-        <div
-          ref={documentRef}
+      {status === "ready" && preview?.sections ? (
+        <main
           className="renderer-preview-document"
-          onClick={handleClick}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+          data-mi-site={preview.siteId}
+          data-mi-page={preview.pageId}
+          data-mi-theme={preview.theme}
+          style={(preview.themeStyle ?? {}) as CSSProperties}
+        >
+          {preview.sections.map((section) => {
+            const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
+            if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
+            const selected = section.id === selectedSectionId;
+            return (
+              <div
+                key={section.id}
+                data-mi-section-id={section.id}
+                data-mi-component-id={section.componentId}
+                data-mi-component-version={section.componentVersion}
+                className={selected ? "mi-editor-selected" : undefined}
+                onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectSection(section.id); }}
+              >
+                <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />
+              </div>
+            );
+          })}
+        </main>
       ) : null}
     </div>
   );

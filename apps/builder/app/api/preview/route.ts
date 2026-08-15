@@ -1,14 +1,11 @@
-import { createElement, type ComponentType } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import type { ComponentType } from "react";
 import { siteSchema, type Site } from "@micirql/schema";
 import {
   createFunctionBindingResolver,
   createStaticRendererRegistry,
   preparePage,
-  renderPreparedPage,
 } from "@micirql/renderer";
 import {
-  SeedSection,
   seedSectionCatalog,
   seedSectionRegistryEntries,
   sectionDesignId,
@@ -22,12 +19,7 @@ const previewEntries = seedSectionRegistryEntries.map((entry) => ({
 }));
 
 const components: Record<string, ComponentType<Record<string, unknown>>> = Object.fromEntries(
-  seedSectionCatalog.map((seed) => [
-    seed.id,
-    function PreviewSeedComponent(props: Record<string, unknown>) {
-      return createElement(SeedSection, { family: seed.family, variant: seed.variant, props: normalizeProps(props) });
-    },
-  ]),
+  seedSectionCatalog.map((seed) => [seed.id, function PreviewComponent() { return null; }]),
 );
 
 const registry = createStaticRendererRegistry({ entries: previewEntries, components });
@@ -46,8 +38,20 @@ export async function POST(request: Request) {
     const prepared = await preparePage({ site, path, origin: "https://preview.micirql.local", registry, functions, mode: "preview" });
     if (!prepared.ok) return Response.json({ ok: false, issues: prepared.issues }, { status: 422 });
 
-    const html = renderToStaticMarkup(createElement(() => renderPreparedPage(prepared.value)));
-    return Response.json({ ok: true, html, pageId: prepared.value.page.id, sectionIds: prepared.value.sections.map((item) => item.section.id), seo: prepared.value.seo });
+    return Response.json({
+      ok: true,
+      pageId: prepared.value.page.id,
+      siteId: prepared.value.site.siteId,
+      theme: prepared.value.site.theme.family,
+      themeStyle: prepared.value.themeStyle,
+      sections: prepared.value.sections.map(({ section, component, props }) => ({
+        id: section.id,
+        componentId: component.registry.id,
+        componentVersion: component.registry.version,
+        props: normalizeProps(props),
+      })),
+      seo: prepared.value.seo,
+    });
   } catch (error) {
     return Response.json({ ok: false, issues: [{ code: "PREVIEW_FAILED", message: error instanceof Error ? error.message : "Preview rendering failed." }] }, { status: 500 });
   }
@@ -74,7 +78,7 @@ function normalizeProps(props: Record<string, unknown>) {
   const title = stringValue(props.title) ?? stringValue(props.heading) ?? "Untitled section";
   const description = stringValue(props.description) ?? stringValue(props.body);
   const image = resolveImage(props.image);
-  return { ...props, title, ...(description ? { description } : {}), ...(image ? { image } : {}) } as Parameters<typeof SeedSection>[0]["props"];
+  return { ...props, title, ...(description ? { description } : {}), ...(image ? { image } : {}) };
 }
 
 function resolveImage(value: unknown): { src: string; alt: string } | undefined {

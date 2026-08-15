@@ -70,7 +70,7 @@ export default function WorkspaceClient(){
   }
   if(operation.type==="section.add"){
    const id=`${operation.family}-${crypto.randomUUID().slice(0,8)}`;
-   const section:SiteSection={id,component:{componentId:sectionDesignId(state.site.theme.family,operation.family,2),version:"1.0.0"},props:seedSectionProps(operation.family),bindings:{},hidden:false};
+   const section:SiteSection={id,component:{componentId:operation.componentId??sectionDesignId(state.site.theme.family,operation.family,operation.variant??2),version:operation.version??"1.0.0"},props:seedSectionProps(operation.family),bindings:{},hidden:false};
    const selectedIndex=activeSection?activePage.sections.findIndex(item=>item.id===activeSection.id):-1;
    const toIndex=operation.position==="after-selected"&&selectedIndex>=0?selectedIndex+1:activePage.sections.length;
    commit({type:"section.add",pageId:activePage.id,section,toIndex});selectSection(activePage.id,id);setMode("content");return;

@@ -68,7 +68,7 @@ export async function recordDomainHealth(
 ): Promise<DomainIncident | undefined> {
   const checkedAt = health.checkedAt;
   const failureClass = health.healthy ? undefined : classifyHealthFailure(health);
-  const event: DomainHealthEvent = stripUndefined({
+  const event: DomainHealthEvent = {
     id: createId(dependencies, "health"),
     domainId: domain.id,
     siteId: domain.siteId,
@@ -76,12 +76,12 @@ export async function recordDomainHealth(
     checkedAt,
     status: domain.status,
     healthy: health.healthy,
-    ownershipOk: health.ownershipOk,
-    delegationOk: health.delegationOk,
-    sslOk: health.sslOk,
-    failureClass,
-    message: health.healthy ? undefined : domain.lastError ?? "Domain health check failed.",
-  });
+    ...(health.ownershipOk === undefined ? {} : { ownershipOk: health.ownershipOk }),
+    ...(health.delegationOk === undefined ? {} : { delegationOk: health.delegationOk }),
+    ...(health.sslOk === undefined ? {} : { sslOk: health.sslOk }),
+    ...(failureClass === undefined ? {} : { failureClass }),
+    ...(health.healthy ? {} : { message: domain.lastError ?? "Domain health check failed." }),
+  };
   await dependencies.store.appendHealthEvent(event);
 
   const open = await dependencies.store.getOpenIncident(domain.id);
@@ -186,8 +186,4 @@ async function safeNotify(callback: () => Promise<void> | undefined): Promise<vo
   } catch {
     // Notification delivery must not alter domain health state or incident persistence.
   }
-}
-
-function stripUndefined<T extends object>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
 }

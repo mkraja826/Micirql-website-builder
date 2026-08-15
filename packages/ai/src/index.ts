@@ -11,3 +11,4 @@ export * from "./materializers";
 export * from "./image-generation";
 export * from "./pricing";
 export * from "./text-provider";
+export * from "./text-provider-env";

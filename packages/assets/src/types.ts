@@ -56,3 +56,4 @@ export const assetSlotSchema = z.object({
 export type AssetRecord = z.infer<typeof assetRecordSchema>;
 export type AssetSlot = z.infer<typeof assetSlotSchema>;
 export type AssetSource = z.infer<typeof assetSourceSchema>;
+export type AssetOrientation = z.infer<typeof assetOrientationSchema>;

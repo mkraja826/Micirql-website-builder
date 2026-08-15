@@ -30,6 +30,20 @@ export function AuthGate({ children }: { children(session: SupabaseSession): Rea
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!session?.access_token) return;
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const target = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const isBuilderApi = target.startsWith("/api/") || target.startsWith(`${window.location.origin}/api/`);
+      if (!isBuilderApi) return nativeFetch(input, init);
+      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+      if (!headers.has("Authorization")) headers.set("Authorization", `Bearer ${session.access_token}`);
+      return nativeFetch(input, { ...init, headers });
+    };
+    return () => { window.fetch = nativeFetch; };
+  }, [session?.access_token]);
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSubmitting(true);

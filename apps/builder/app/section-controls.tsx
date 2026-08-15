@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { SitePage, SiteSection, ThemeFamily } from "@micirql/schema";
 import { type SectionFamily, type SectionVariant } from "@micirql/sections";
 import { SectionLibraryBrowser } from "./section-library-browser";
+import styles from "./section-controls.module.css";
 
 export function SectionControls({ page, theme, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
@@ -20,24 +21,24 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
   const selected = selectedIndex >= 0 ? page.sections[selectedIndex] : undefined;
   const activeTheme = theme ?? inferTheme(page);
 
-  return <div className="section-controls">
-    <div className="section-controls-heading">
+  return <div className={styles.root}>
+    <div className={styles.heading}>
       <div><span>Page structure</span><strong>{page.sections.length} sections</strong></div>
-      <button type="button" className="section-add-button" onClick={() => setLibraryOpen(true)}>＋ Add section</button>
+      <button type="button" className={styles.add} onClick={() => setLibraryOpen(true)}>＋ Add section</button>
     </div>
 
-    <div className="section-layer-list">
-      {page.sections.map((section, index) => <button type="button" key={section.id} className={`section-layer ${section.id === selectedSectionId ? "is-active" : ""} ${section.hidden ? "is-hidden" : ""}`} onClick={() => onSelect(section.id)}>
-        <span className="section-layer-index">{String(index + 1).padStart(2, "0")}</span>
+    <div className={styles.layers}>
+      {page.sections.map((section, index) => <button type="button" key={section.id} className={`${styles.layer} ${section.id === selectedSectionId ? styles.active : ""} ${section.hidden ? styles.hidden : ""}`} onClick={() => onSelect(section.id)}>
+        <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
         <span><strong>{labelFor(section)}</strong><small>{section.hidden ? "Hidden" : section.component.componentId}</small></span>
       </button>)}
     </div>
 
-    {selected ? <div className="section-controls-actions">
+    {selected ? <div className={styles.actions}>
       <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>↑ Up</button>
       <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
-      <button type="button" className="danger" onClick={() => onRemove(selected.id)}>Delete</button>
+      <button type="button" className={styles.danger} onClick={() => onRemove(selected.id)}>Delete</button>
     </div> : null}
 
     {libraryOpen ? <SectionLibraryBrowser theme={activeTheme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {

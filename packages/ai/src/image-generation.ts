@@ -1,4 +1,5 @@
 import type { AssetGenerationRequest, AssetRecord, AssetIngestionPipeline } from "@micirql/assets";
+import { siteSchema, type Site } from "@micirql/schema";
 import type { AiBudget, AiUsageScope, AiUsageStore } from "./usage";
 import type { AiCostEstimator } from "./metered-executor";
 import { executeMeteredTask } from "./metered-executor";
@@ -119,6 +120,22 @@ export async function generateAndIngestAssets(args: {
   return results;
 }
 
+export function bindGeneratedAssets(site: Site, generated: readonly GeneratedAssetResult[]): Site {
+  const next = structuredClone(site);
+  for (const result of generated) {
+    const slot = result.request.slot;
+    const page = next.pages.find((item) => item.path === slot.pagePath);
+    const section = page?.sections.find((item) => item.id === slot.sectionId);
+    if (!section) throw new Error(`Generated asset slot ${slot.slotId} points to a missing section.`);
+    setPath(section.props, slot.propPath, {
+      assetId: result.asset.id,
+      alt: result.asset.alt,
+      focalPoint: result.asset.focalPoint,
+    });
+  }
+  return siteSchema.parse(next);
+}
+
 function buildPrompt(request: AssetGenerationRequest): string {
   return [
     `Create a production-ready website image for ${request.domain}.`,
@@ -130,4 +147,17 @@ function buildPrompt(request: AssetGenerationRequest): string {
     "No text, logos, watermarks, fake awards, fabricated ratings, prices, credentials, availability, testimonials, medical outcomes, property inventory, or other unsupported business claims.",
     "Keep the subject crop-safe for responsive web use and leave useful negative space when appropriate.",
   ].filter(Boolean).join("\n");
+}
+
+function setPath(target: Record<string, unknown>, path: string, value: unknown): void {
+  const parts = path.split(".").filter(Boolean);
+  if (parts.length === 0) throw new Error("Asset slot propPath cannot be empty.");
+  let cursor = target;
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    const key = parts[index]!;
+    const child = cursor[key];
+    if (!child || typeof child !== "object" || Array.isArray(child)) cursor[key] = {};
+    cursor = cursor[key] as Record<string, unknown>;
+  }
+  cursor[parts[parts.length - 1]!] = value;
 }

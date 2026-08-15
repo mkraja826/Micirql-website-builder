@@ -48,6 +48,27 @@ export const contentFieldSchema = z.object({
   recommendedMaxCharacters: z.number().int().positive().optional(),
 });
 
+export const componentIntelligenceSchema = z.object({
+  conversionGoals: z.array(z.string()).default([]),
+  placementRoles: z.array(z.enum(["opening", "early-proof", "core-content", "visual-break", "decision-support", "conversion", "closing"])).default([]),
+  visualWeight: z.enum(["light", "medium", "heavy"]),
+  contentDensity: z.enum(["low", "medium", "high"]),
+  imageRequirement: z.enum(["none", "optional", "recommended", "required"]),
+  preferredImageRatios: z.array(z.string()).default([]),
+  idealPredecessors: z.array(componentFamilySchema).default([]),
+  idealSuccessors: z.array(componentFamilySchema).default([]),
+  avoidAdjacent: z.array(componentFamilySchema).default([]),
+  maxRecommendedPerPage: z.number().int().positive().default(1),
+  aiPriority: z.number().min(0).max(100).default(50),
+  mobileSuitability: z.number().min(0).max(100).default(90),
+  contentCapacity: z.object({
+    headlineMaxWords: z.number().int().positive().optional(),
+    bodyMaxWords: z.number().int().positive().optional(),
+    minItems: z.number().int().nonnegative().optional(),
+    maxItems: z.number().int().positive().optional(),
+  }).default({}),
+}).optional();
+
 export const designRegistryEntrySchema = z.object({
   id: z.string().regex(/^[A-Z]{3,5}-[A-Z-]+-\d{3}$/),
   family: componentFamilySchema,
@@ -63,6 +84,7 @@ export const designRegistryEntrySchema = z.object({
   domainCompatibility: z.record(domainSchema, z.number().min(0).max(100)),
   capabilities: z.record(z.string(), z.boolean()).default({}),
   contentSchema: z.array(contentFieldSchema).default([]),
+  intelligence: componentIntelligenceSchema,
   quality: z.object({
     mobile: z.number().min(0).max(100),
     performance: z.number().min(0).max(100),
@@ -97,3 +119,4 @@ export const designRegistryEntrySchema = z.object({
 
 export type DesignRegistryEntry = z.infer<typeof designRegistryEntrySchema>;
 export type ComponentFamily = z.infer<typeof componentFamilySchema>;
+export type ComponentIntelligence = z.infer<typeof componentIntelligenceSchema>;

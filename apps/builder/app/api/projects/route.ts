@@ -40,7 +40,28 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  try { const body=await request.json() as Record<string,unknown>; const siteId=text(body.siteId); if(!siteId) throw new Error("siteId is required."); const {url}=supabaseConfig(); const headers=supabaseHeaders(request); const patch:Record<string,unknown>={updated_at:new Date().toISOString()}; if(text(body.name)) patch.name=text(body.name); if(body.archived===true) patch.status="archived"; const rows=await writeJson<unknown[]>(`${url}/rest/v1/sites?id=eq.${siteId}&select=*`,headers,"PATCH",patch,true); return NextResponse.json({project:rows[0]??null}); } catch(e){ return fail(e); }
+  try {
+    const body=await request.json() as Record<string,unknown>; const siteId=text(body.siteId); if(!siteId) throw new Error("siteId is required.");
+    const {url}=supabaseConfig(); const headers=supabaseHeaders(request);
+    const patch:Record<string,unknown>={updated_at:new Date().toISOString()};
+    if(text(body.name)) patch.name=text(body.name);
+    if(body.archived===true) patch.status="archived";
+    const rows=await writeJson<unknown[]>(`${url}/rest/v1/sites?id=eq.${encodeURIComponent(siteId)}&select=*`,headers,"PATCH",patch,true);
+    if(!rows.length) throw new Error("Project update was not applied.");
+    return NextResponse.json({project:rows[0]});
+  } catch(e){ return fail(e); }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body=await request.json() as Record<string,unknown>; const siteId=text(body.siteId); if(!siteId) throw new Error("siteId is required.");
+    const {url}=supabaseConfig(); const headers=supabaseHeaders(request);
+    const response=await fetch(`${url}/rest/v1/sites?id=eq.${encodeURIComponent(siteId)}`,{method:"DELETE",headers:{...headers,Prefer:"return=representation"},cache:"no-store"});
+    if(!response.ok) throw new Error(`Supabase delete failed (${response.status}).`);
+    const rows=await response.json().catch(()=>[]) as unknown[];
+    if(!rows.length) throw new Error("Project was not deleted. Owner or admin access is required.");
+    return NextResponse.json({ok:true});
+  } catch(e){ return fail(e); }
 }
 
 async function ensureWorkspace(url:string, headers:Record<string,string>) {

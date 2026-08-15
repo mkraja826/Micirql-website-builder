@@ -20,6 +20,7 @@ export type WorkspaceCommand =
   | { type: "content.set"; pageId: string; sectionId: string; propPath: string; value: string | number | boolean | null }
   | { type: "asset.set"; pageId: string; sectionId: string; propPath: string; asset: { assetId: string; alt?: string; focalPoint?: { x: number; y: number } } }
   | { type: "theme.set"; theme: ThemeConfig }
+  | { type: "design.preset.apply"; theme: ThemeConfig; components: Array<{ pageId: string; sectionId: string; componentId: string; version: string }> }
   | { type: "brand.patch"; patch: Partial<ThemeConfig["brand"]> }
   | { type: "section.add"; pageId: string; section: SiteSection; toIndex?: number }
   | { type: "section.component.set"; pageId: string; sectionId: string; componentId: string; version: string }
@@ -71,6 +72,16 @@ export function applyWorkspaceCommand(
     case "theme.set":
       next.theme = command.theme;
       break;
+    case "design.preset.apply": {
+      next.theme = command.theme;
+      for (const component of command.components) {
+        const page = findPage(next, component.pageId);
+        const section = findSection(next, component.pageId, component.sectionId);
+        assertAllowed(policy.canUseComponent?.({ site: next, page, section, componentId: component.componentId, version: component.version }), "Component swap is not allowed.");
+        section.component = { componentId: component.componentId, version: component.version };
+      }
+      break;
+    }
     case "brand.patch":
       next.theme.brand = {
         ...next.theme.brand,

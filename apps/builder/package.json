@@ -10,6 +10,7 @@
   "dependencies": {
     "@micirql/assets": "workspace:*",
     "@micirql/components": "workspace:*",
+    "@micirql/domains": "workspace:*",
     "@micirql/primitives": "workspace:*",
     "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",

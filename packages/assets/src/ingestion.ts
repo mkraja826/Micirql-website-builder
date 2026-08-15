@@ -1,6 +1,6 @@
 import { assetRecordSchema, type AssetOrientation, type AssetRecord, type AssetSource } from "./types";
 import type { Domain, ThemeFamily } from "@micirql/schema";
-import { auditPlaceholderCoverage, type PlaceholderCoverageReport } from "./coverage";
+import { auditPlaceholderCoverage, type CoverageAuditReport } from "./coverage";
 
 export type AssetBinary = {
   bytes: Uint8Array;
@@ -79,7 +79,7 @@ export type AssetWriter = {
 };
 
 export type IngestionResult =
-  | { ok: true; asset: AssetRecord; coverage?: PlaceholderCoverageReport }
+  | { ok: true; asset: AssetRecord; coverage?: CoverageAuditReport }
   | { ok: false; stage: "provenance" | "inspection" | "classification" | "optimization" | "persistence"; reason: string };
 
 export type AssetIngestionPipeline = {
@@ -160,7 +160,10 @@ export function createAssetIngestionPipeline(deps: {
 
         if (asset.source === "micirql-placeholder") {
           const placeholders = await deps.writer.listPlaceholders();
-          return { ok: true, asset, coverage: auditPlaceholderCoverage(placeholders) };
+          const coverageDomain = asset.domains[0];
+          return coverageDomain
+            ? { ok: true, asset, coverage: auditPlaceholderCoverage(coverageDomain, placeholders) }
+            : { ok: true, asset };
         }
         return { ok: true, asset };
       } catch (error) {

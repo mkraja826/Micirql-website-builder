@@ -1,5 +1,5 @@
 import type { Domain, ThemeFamily } from "@micirql/schema";
-import type { AssetOrientation } from "./catalog-types";
+import type { AssetOrientation } from "./types";
 
 export type PlaceholderPurpose =
   | "hero"

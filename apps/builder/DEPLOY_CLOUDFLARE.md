@@ -12,10 +12,10 @@ Use these settings:
 - Root directory: `/`
 - Install command: `pnpm install --no-frozen-lockfile`
 - Build command: leave empty
-- Deploy command: `pnpm --filter @micirql/builder deploy`
+- Deploy command: `pnpm --filter @micirql/builder run deploy`
 - Preview deploy command: `pnpm --filter @micirql/builder exec opennextjs-cloudflare build && pnpm --filter @micirql/builder exec wrangler versions upload`
 
-The Worker name in `apps/builder/wrangler.jsonc` is `micirql-builder`.
+The Worker name in `apps/builder/wrangler.jsonc` is `micirql-website-builder`.
 
 ## Required build variables
 
@@ -35,7 +35,7 @@ After the Worker has one successful deployment, add the custom domain:
 
 `builder.micirql.com`
 
-from Cloudflare Workers > `micirql-builder` > Settings > Domains & Routes > Add > Custom domain.
+from Cloudflare Workers > `micirql-website-builder` > Settings > Domains & Routes > Add > Custom domain.
 
 Because `micirql.com` is already managed in Cloudflare, Cloudflare can create/manage the DNS record and TLS certificate for this hostname.
 

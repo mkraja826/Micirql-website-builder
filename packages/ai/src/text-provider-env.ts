@@ -2,11 +2,32 @@ import { createOpenAiCompatibleJsonPlannerModel, type OpenAiCompatibleTextProvid
 
 export type TextProviderEnvironment = Record<string, string | undefined>;
 
+const GEMINI_OPENAI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
+
 export function textProviderConfigFromEnvironment(env: TextProviderEnvironment): OpenAiCompatibleTextProviderConfig | undefined {
   const endpoint = clean(env.MICIRQL_TEXT_MODEL_ENDPOINT);
   const apiKey = clean(env.MICIRQL_TEXT_MODEL_API_KEY);
   const model = clean(env.MICIRQL_TEXT_MODEL);
-  if (!endpoint && !apiKey && !model) return undefined;
+
+  if (!endpoint && !apiKey && !model) {
+    const geminiApiKey = clean(env.GEMINI_API_KEY);
+    if (!geminiApiKey) return undefined;
+
+    return {
+      id: clean(env.MICIRQL_TEXT_MODEL_PROFILE_ID) ?? "gemini-testing",
+      endpoint: GEMINI_OPENAI_ENDPOINT,
+      apiKey: geminiApiKey,
+      model: clean(env.GEMINI_MODEL) ?? DEFAULT_GEMINI_MODEL,
+      pricing: {
+        inputUsdPerMillionTokens: 0,
+        outputUsdPerMillionTokens: 0,
+      },
+      temperature: optionalNumber(env.MICIRQL_TEXT_MODEL_TEMPERATURE, "MICIRQL_TEXT_MODEL_TEMPERATURE") ?? 0.2,
+      maxOutputTokens: optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS") ?? 1200,
+    };
+  }
+
   if (!endpoint) throw new Error("MICIRQL_TEXT_MODEL_ENDPOINT is required when text AI is configured.");
   if (!apiKey) throw new Error("MICIRQL_TEXT_MODEL_API_KEY is required when text AI is configured.");
   if (!model) throw new Error("MICIRQL_TEXT_MODEL is required when text AI is configured.");

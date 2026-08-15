@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@micirql/ai": "workspace:*",
     "@micirql/assets": "workspace:*",
     "@micirql/components": "workspace:*",
     "@micirql/domains": "workspace:*",

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { adviseOnboardingPlan } from "../../ai-planning";
 
 function config() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -72,14 +73,27 @@ export async function POST(request: NextRequest) {
     const location = optionalString(body.location);
     const notes = optionalString(body.notes);
 
+    const advice = await adviseOnboardingPlan({
+      businessName,
+      industry,
+      subindustry,
+      location,
+      services,
+      goals,
+      styleTags,
+      requiredCapabilities,
+      languages,
+      notes,
+    });
+
     const requestPayload = {
       workspace_id: workspaceId,
       site_id: siteId,
-      industry,
-      subindustry,
-      style_tags: styleTags,
-      required_capabilities: requiredCapabilities,
-      goals,
+      industry: advice.industry,
+      subindustry: advice.subindustry,
+      style_tags: advice.styleTags,
+      required_capabilities: advice.requiredCapabilities,
+      goals: advice.goals,
     };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, {
@@ -167,6 +181,8 @@ export async function POST(request: NextRequest) {
       planId: plan.plan_id,
       build,
       blueprint: plan.blueprint,
+      planningSource: advice.source,
+      planningWarning: advice.warning ?? null,
       content,
       contentWarning,
       profile: savedProfiles[0] ?? profile,

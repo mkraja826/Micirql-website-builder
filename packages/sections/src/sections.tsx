@@ -39,17 +39,21 @@ function HeroSection(props: UniversalSectionProps) {
 }
 
 function StandardSection(props: UniversalSectionProps) {
-  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items} /><Actions {...props} /></Stack></Container></section>;
+  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items ?? []} /><Actions {...props} /></Stack></Container></section>;
 }
 
 function StatsSection(props: UniversalSectionProps) {
-  const statItems = (props.items ?? []).map((item, index) => ({ value: String(index + 1).padStart(2, "0"), label: item.title, detail: item.description }));
+  const statItems = (props.items ?? []).map((item, index) => ({
+    value: String(index + 1).padStart(2, "0"),
+    label: item.title,
+    ...(item.description === undefined ? {} : { detail: item.description }),
+  }));
   return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><Stats items={statItems} /></Stack></Container></section>;
 }
 
 function GallerySection(props: UniversalSectionProps) {
   const galleryItems = (props.items ?? []).filter((item): item is Item & { image: string } => Boolean(item.image)).map((item) => ({ src: item.image, alt: item.title }));
-  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{galleryItems.length ? <Gallery items={galleryItems} /> : <ItemGrid items={props.items} />}</Stack></Container></section>;
+  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{galleryItems.length ? <Gallery items={galleryItems} /> : <ItemGrid items={props.items ?? []} />}</Stack></Container></section>;
 }
 
 function ContactSection(props: UniversalSectionProps) {

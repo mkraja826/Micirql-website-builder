@@ -7,6 +7,7 @@ export * from "./subtypes";
 export * from "./discovery-types";
 export * from "./discovery";
 export * from "./transform";
+export * from "./planning-policy";
 export { rawDomainPacks as domainPacks };
 
 const validatedDomainPacks = rawDomainPacks.map((pack) => domainPackSchema.parse(pack));

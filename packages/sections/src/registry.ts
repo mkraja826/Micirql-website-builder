@@ -134,22 +134,22 @@ function personalities(theme: ThemeFamily): string[] {
 }
 
 function intelligence(family: SectionFamily, variant: SectionVariant): NonNullable<DesignRegistryEntry["intelligence"]> {
-  const visualWeight = variant >= 4 ? "heavy" : variant === 3 ? "medium" : "light";
-  const contentDensity = variant === 4 ? "high" : variant === 5 ? "low" : "medium";
-  const base = {
+  const visualWeight: NonNullable<DesignRegistryEntry["intelligence"]>["visualWeight"] = variant >= 4 ? "heavy" : variant === 3 ? "medium" : "light";
+  const contentDensity: NonNullable<DesignRegistryEntry["intelligence"]>["contentDensity"] = variant === 4 ? "high" : variant === 5 ? "low" : "medium";
+  const base: NonNullable<DesignRegistryEntry["intelligence"]> = {
     visualWeight,
     contentDensity,
-    imageRequirement: "optional" as const,
-    preferredImageRatios: [] as string[],
-    idealPredecessors: [] as SectionFamily[],
-    idealSuccessors: [] as SectionFamily[],
-    avoidAdjacent: [] as SectionFamily[],
+    imageRequirement: "optional",
+    preferredImageRatios: [],
+    idealPredecessors: [],
+    idealSuccessors: [],
+    avoidAdjacent: [],
     maxRecommendedPerPage: 1,
     aiPriority: 60,
     mobileSuitability: variant === 5 ? 86 : variant === 4 ? 90 : 96,
-    contentCapacity: {} as NonNullable<DesignRegistryEntry["intelligence"]>["contentCapacity"],
-    conversionGoals: [] as string[],
-    placementRoles: [] as NonNullable<DesignRegistryEntry["intelligence"]>["placementRoles"],
+    contentCapacity: {},
+    conversionGoals: [],
+    placementRoles: [],
   };
 
   switch (family) {

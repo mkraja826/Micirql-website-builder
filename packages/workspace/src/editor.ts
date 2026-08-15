@@ -21,6 +21,7 @@ export type WorkspaceCommand =
   | { type: "asset.set"; pageId: string; sectionId: string; propPath: string; asset: { assetId: string; alt?: string; focalPoint?: { x: number; y: number } } }
   | { type: "theme.set"; theme: ThemeConfig }
   | { type: "brand.patch"; patch: Partial<ThemeConfig["brand"]> }
+  | { type: "section.add"; pageId: string; section: SiteSection; toIndex?: number }
   | { type: "section.component.set"; pageId: string; sectionId: string; componentId: string; version: string }
   | { type: "section.hidden.set"; pageId: string; sectionId: string; hidden: boolean }
   | { type: "section.reorder"; pageId: string; sectionId: string; toIndex: number }
@@ -78,6 +79,15 @@ export function applyWorkspaceCommand(
         typography: { ...next.theme.brand.typography, ...(command.patch.typography ?? {}) },
       };
       break;
+    case "section.add": {
+      const page = findPage(next, command.pageId);
+      if (page.sections.some((item) => item.id === command.section.id)) throw new Error("Section id already exists on this page.");
+      const target = command.toIndex === undefined
+        ? page.sections.length
+        : Math.max(0, Math.min(command.toIndex, page.sections.length));
+      page.sections.splice(target, 0, command.section);
+      break;
+    }
     case "section.component.set": {
       const page = findPage(next, command.pageId);
       const section = findSection(next, command.pageId, command.sectionId);

@@ -49,8 +49,8 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run representative section QA
-        run: pnpm qa:sections
+      - name: Run premium core section QA
+        run: pnpm qa:sections:core
 
       - name: Build registry QA evidence
         if: always()

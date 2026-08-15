@@ -25,8 +25,12 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED.has(contentType)) return NextResponse.json({ error: "Unsupported logo format." }, { status: 415 });
 
     const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!match || match[1] !== contentType) return NextResponse.json({ error: "Invalid logo image data." }, { status: 400 });
-    const bytes = Buffer.from(match[2], "base64");
+    const detectedType = match?.[1];
+    const encoded = match?.[2];
+    if (!detectedType || !encoded || detectedType !== contentType) {
+      return NextResponse.json({ error: "Invalid logo image data." }, { status: 400 });
+    }
+    const bytes = Buffer.from(encoded, "base64");
     if (!bytes.length || bytes.length > MAX_BYTES) return NextResponse.json({ error: "Logo must be smaller than 5 MB." }, { status: 413 });
 
     const { url, key } = supabaseConfig();
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
         "content-type": contentType,
         "x-upsert": "false",
       },
-      body: bytes,
+      body: Uint8Array.from(bytes),
       cache: "no-store",
     });
     if (!upload.ok) {

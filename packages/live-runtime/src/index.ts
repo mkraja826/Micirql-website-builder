@@ -27,7 +27,7 @@ export type LiveRuntimeDependencies = {
 
 export async function handleLiveRequest(request: Request, dependencies: LiveRuntimeDependencies): Promise<Response> {
   const url = new URL(request.url);
-  const hostname = normalizeHostname(request.headers.get("host") ?? url.hostname);
+  const hostname = normalizeHostname(request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? request.headers.get("host") ?? url.hostname);
   if (!hostname) return textResponse("Invalid hostname", 400);
 
   const resolved = await dependencies.store.resolveHostname(hostname);
@@ -62,6 +62,7 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   const document = pageDocument(prepared.value.seo, content);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
+    "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
     "x-micirql-site": site.siteId,
     "x-micirql-version": published.versionId,
   });
@@ -103,3 +104,4 @@ function escapeXml(value: string) { return escapeAttr(value).replace(/'/g, "&apo
 function escapeScriptJson(value: string) { return value.replace(/</g, "\\u003c"); }
 
 export * from "./sql-store";
+export * from "./cloudflare";

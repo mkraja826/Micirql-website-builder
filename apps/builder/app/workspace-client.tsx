@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useMemo,useRef,useState } from "react";
-import { SCHEMA_VERSION,siteSchema,type Site,type SitePage } from "@micirql/schema";
+import { SCHEMA_VERSION,siteSchema,type Site,type SitePage,type SiteSection } from "@micirql/schema";
 import { FAMILY_CODES,SECTION_FAMILIES,sectionDesignId,type SectionFamily,type SectionVariant } from "@micirql/sections";
 import { createEditorHistory,createEditorState,executeEditorCommand,markEditorSaved,redoEditor,setEditorSelection,setEditorViewport,undoEditor,type EditorHistory,type EditorViewport } from "@micirql/workspace";
 import { RendererPreview } from "./renderer-preview";
@@ -14,7 +14,7 @@ import { FunctionsManager } from "./functions-manager";
 import { PublishReadinessManager,publishReadiness } from "./publish-readiness";
 import { PublishController } from "./publish-controller";
 import { AiEditorAssistant } from "./ai-editor-assistant";
-import type { AiEditorOperation } from "./ai-edit-types";
+import type { AiEditorOperation,AiEditorSectionFamily } from "./ai-edit-types";
 
 type Mode="content"|"images"|"design"|"pages"|"seo"|"functions"|"domain";
 type SaveState="loading"|"saved"|"unsaved"|"saving"|"conflict"|"error";
@@ -68,14 +68,37 @@ export default function WorkspaceClient(){
    ],seo:{title:`${operation.name} | ${state.site.name}`,description:`Learn more about ${operation.name.toLowerCase()} from ${state.site.name}.`,canonicalPath:operation.path,indexable:true,structuredDataTypes:[]}};
    commit({type:"page.add",page,navigationLabel:operation.name});selectPage(id);setMode("content");return;
   }
-  if(!activeSection||!activeSectionFamily){window.alert("Select a section before applying this AI edit.");return}
+  if(operation.type==="section.add"){
+   const id=`${operation.family}-${crypto.randomUUID().slice(0,8)}`;
+   const section:SiteSection={id,component:{componentId:sectionDesignId(state.site.theme.family,operation.family,2),version:"1.0.0"},props:seedSectionProps(operation.family),bindings:{},hidden:false};
+   const selectedIndex=activeSection?activePage.sections.findIndex(item=>item.id===activeSection.id):-1;
+   const toIndex=operation.position==="after-selected"&&selectedIndex>=0?selectedIndex+1:activePage.sections.length;
+   commit({type:"section.add",pageId:activePage.id,section,toIndex});selectSection(activePage.id,id);setMode("content");return;
+  }
+  if(operation.type==="seo.patch"){
+   commit({type:"page.seo.patch",pageId:activePage.id,patch:{...(operation.title?{title:operation.title}:{}),...(operation.description?{description:operation.description}:{})}});setMode("seo");return;
+  }
+  if(!activeSection){window.alert("Select a section before applying this AI edit.");return}
+  if(operation.type==="media.open"){setMode("images");return}
+  if(operation.type==="functions.open"){setMode("functions");return}
+  if(operation.type==="section.visibility"){commit({type:"section.hidden.set",pageId:activePage.id,sectionId:activeSection.id,hidden:operation.hidden});setMode("content");return}
+  if(operation.type==="section.remove"){commit({type:"section.remove",pageId:activePage.id,sectionId:activeSection.id});selectPage(activePage.id);setMode("content");return}
+  if(operation.type==="section.move"){
+   const index=activePage.sections.findIndex(item=>item.id===activeSection.id);
+   const toIndex=operation.direction==="top"?0:operation.direction==="bottom"?activePage.sections.length-1:operation.direction==="up"?Math.max(0,index-1):Math.min(activePage.sections.length-1,index+1);
+   commit({type:"section.reorder",pageId:activePage.id,sectionId:activeSection.id,toIndex});return;
+  }
+  if(!activeSectionFamily){window.alert("This section does not have a recognized MiCirql design family yet.");return}
   if(operation.type==="section.variant"){
    commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId:sectionDesignId(state.site.theme.family,activeSectionFamily,operation.variant),version:activeSection.component.version});
+   if(operation.heading)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.title!==undefined?"title":"heading",value:operation.heading});
+   if(operation.body)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.description!==undefined?"description":"body",value:operation.body});
+   return;
   }
-  const heading=operation.heading;
-  const body=operation.body;
-  if(heading)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.title!==undefined?"title":"heading",value:heading});
-  if(body)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.description!==undefined?"description":"body",value:body});
+  if(operation.type==="section.copy"){
+   if(operation.heading)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.title!==undefined?"title":"heading",value:operation.heading});
+   if(operation.body)commit({type:"content.set",pageId:activePage.id,sectionId:activeSection.id,propPath:activeSection.props.description!==undefined?"description":"body",value:operation.body});
+  }
  }
  async function persist(snapshot:Site,sentEditorRevision:number):Promise<boolean>{if(saveState==="conflict"||saveState==="saving")return false;setSaveState("saving");try{const r=await fetch("/api/drafts",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({snapshot,expectedRevision:persistedRevision,updatedBy:"workspace-user"})});const p=await r.json() as {draft?:DraftApiRecord;error?:string};if(r.status===409){setConflictDraft(p.draft);setSaveState("conflict");return false}if(!r.ok||!p.draft)throw new Error(p.error??`Draft save failed (${r.status}).`);setPersistedRevision(p.draft.revision);setHistory(c=>({...c,present:c.present.revision===sentEditorRevision?markEditorSaved(c.present):c.present}));setSaveState(c=>c==="conflict"?c:"saved");return true}catch(e){console.error(e);setSaveState("error");return false}}
  async function ensureSaved(){if(!state.dirty&&saveState==="saved")return true;return persist(state.site,state.revision)}
@@ -110,6 +133,17 @@ export default function WorkspaceClient(){
  </main>;
 }
 
+function seedSectionProps(family:AiEditorSectionFamily):SiteSection["props"]{
+ if(family==="about")return{heading:"About us",body:"Add the business story, approach and details visitors should understand here."};
+ if(family==="services")return{heading:"Services",body:"Introduce the services that matter most to your visitors.",items:[{title:"Service one",description:"Add a clear service description."},{title:"Service two",description:"Add a clear service description."},{title:"Service three",description:"Add a clear service description."}]};
+ if(family==="features")return{heading:"Why choose us",items:[{title:"Benefit one",description:"Explain a real customer benefit."},{title:"Benefit two",description:"Explain a real customer benefit."},{title:"Benefit three",description:"Explain a real customer benefit."}]};
+ if(family==="process")return{heading:"How it works",items:[{title:"Step one",description:"Describe the first step."},{title:"Step two",description:"Describe the next step."},{title:"Step three",description:"Describe what happens next."}]};
+ if(family==="testimonials")return{heading:"What customers say",items:[]};
+ if(family==="gallery")return{heading:"Gallery",items:[]};
+ if(family==="team")return{heading:"Meet the team",items:[]};
+ if(family==="cta")return{heading:"Ready for the next step?",body:"Connect the right action for this page in the Functions panel."};
+ return{heading:"Contact us",body:"Add the contact details and enquiry action visitors should use."};
+}
 function sectionFamilyFromComponentId(componentId:string):SectionFamily|undefined{const n=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>n===`${f}.placeholder`||n.startsWith(`${f}.`));if(legacy)return legacy;const u=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>u.includes(`-${FAMILY_CODES[f]}-`))}
 function sectionVariantFromComponentId(componentId:string):SectionVariant{const match=componentId.match(/-(00[1-5])$/);const value=match?Number(match[1]):1;return value>=1&&value<=5?value as SectionVariant:1}
 function saveLabel(s:SaveState){return s==="loading"?"Loading…":s==="saving"?"Saving…":s==="unsaved"?"Unsaved":s==="conflict"?"Conflict":s==="error"?"Save error":"Saved"}

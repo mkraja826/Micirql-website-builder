@@ -13,6 +13,7 @@
   "dependencies": {
     "@micirql/components": "workspace:*",
     "@micirql/primitives": "workspace:*",
+    "@micirql/registry": "workspace:*",
     "@micirql/schema": "workspace:*",
     "react": "latest"
   },

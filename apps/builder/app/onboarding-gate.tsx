@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import type { OnboardingProfile } from "./recommended-presets";
 import { OnboardingProfileProvider } from "./onboarding-profile-context";
+import { FirstBuildReview } from "./first-build-review";
 import WorkspaceClient from "./workspace-client";
 
 type DraftContext = { workspaceId: string; siteId: string; snapshot?: { name?: string } };
@@ -15,6 +16,7 @@ export function OnboardingGate({ session }: { session: SupabaseSession }) {
   const [context, setContext] = useState<DraftContext>();
   const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const [ready, setReady] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
   const [error, setError] = useState("");
@@ -53,13 +55,16 @@ export function OnboardingGate({ session }: { session: SupabaseSession }) {
       const response = await fetch("/api/onboarding", { method: "POST", headers: { ...authHeaders, "content-type": "application/json" }, body: JSON.stringify({ workspaceId: context.workspaceId, siteId: context.siteId, businessName: form.businessName, industry: form.industry, subindustry: form.subindustry, location: form.location, services: commaList(form.services), goals: form.goals, styleTags: form.styleTags, requiredCapabilities: form.requiredCapabilities, languages: commaList(form.languages), notes: form.notes }) });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
-      setProfile((payload.profile ?? null) as OnboardingProfile | null);
-      setReady(true);
+      const nextProfile = (payload.profile ?? null) as OnboardingProfile | null;
+      setProfile(nextProfile);
+      if (nextProfile) setReviewing(true);
+      else setReady(true);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Website build failed."); }
     finally { setBuilding(false); }
   }
 
   if (loading) return <main style={shellStyle}><div style={cardStyle}>Preparing your MiCirql workspace…</div></main>;
+  if (reviewing && context && profile) return <FirstBuildReview session={session} workspaceId={context.workspaceId} siteId={context.siteId} profile={profile} onComplete={() => { setReviewing(false); setReady(true); }} />;
   if (ready) return <OnboardingProfileProvider profile={profile}><WorkspaceClient /></OnboardingProfileProvider>;
 
   return <main style={shellStyle}><form onSubmit={submit} style={{ ...cardStyle, maxWidth: 920 }}>

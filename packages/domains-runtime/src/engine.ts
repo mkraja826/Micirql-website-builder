@@ -214,7 +214,7 @@ function normalizeNameservers(values: string[]): string[] {
   return values.map((value) => value.trim().toLowerCase().replace(/\.$/, "")).sort();
 }
 
-function withoutLastError<T extends DomainRecord>(domain: T): DomainRecord {
+function withoutLastError(domain: DomainRecord): DomainRecord {
   const { lastError: _lastError, ...rest } = domain;
-  return rest;
+  return rest as DomainRecord;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type { Site } from "@micirql/schema";
 import { SeedSection, seedSectionCatalog } from "@micirql/sections";
 import { readStoredSession } from "./auth-client";
@@ -14,6 +15,8 @@ type Candidate = {
   reasons: string[];
   previewOnly: boolean;
 };
+
+type SeedProps = Parameters<typeof SeedSection>[0]["props"];
 
 export function SectionCompositionPicker({ site, pageId, family, afterSectionId, onChoose, onCancel }: {
   site: Site;
@@ -57,6 +60,16 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
     () => selected ? seedSectionCatalog.find((item) => item.id === selected.componentId) : undefined,
     [selected],
   );
+  const themeStyle = useMemo(() => ({
+    "--mi-color-primary": site.theme.brand.colors.primary,
+    "--mi-color-secondary": site.theme.brand.colors.secondary,
+    "--mi-color-accent": site.theme.brand.colors.accent,
+    "--mi-color-background": site.theme.brand.colors.background,
+    "--mi-color-surface": site.theme.brand.colors.surface,
+    "--mi-color-text-primary": site.theme.brand.colors.textPrimary,
+    "--mi-color-text-secondary": site.theme.brand.colors.textSecondary,
+    "--mi-color-border": site.theme.brand.colors.border,
+  } as CSSProperties), [site.theme.brand.colors]);
 
   return <section className="section-composition-picker">
     <div className="section-composition-head"><div><span>Choose a direction</span><strong>{label(family)} section</strong><small>Ranked from your page context and learned design taste. Preview the real component before inserting it.</small></div><button type="button" onClick={onCancel}>×</button></div>
@@ -64,7 +77,7 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
     {error ? <div className="section-composition-state is-error">{error}</div> : null}
     {!busy && !error && selected ? <div className="section-composition-stage">
       <div className="section-composition-stage-bar"><div><strong>{selected.displayName}</strong><span>{selected.previewOnly ? "Preview library" : "Certified"} · {selected.score.toFixed(1)}</span></div><button type="button" onClick={() => onChoose(selected)}>Use this section</button></div>
-      <div className="section-composition-live-preview" style={site.theme.brand.colors as unknown as React.CSSProperties}>
+      <div className="section-composition-live-preview" style={themeStyle}>
         {selectedSeed ? <SeedSection family={selectedSeed.family} variant={selectedSeed.variant} props={previewProps(family, site.name)} /> : <div className="section-composition-state is-error">Renderer unavailable for {selected.componentId}</div>}
       </div>
     </div> : null}
@@ -82,14 +95,14 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
 }
 
 function label(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); }
-function previewProps(family: AiEditorSectionFamily, siteName: string): Record<string, unknown> {
-  if (family === "about") return { eyebrow: "Our story", heading: `About ${siteName}`, body: "A clear introduction to the business, its approach and what makes it worth choosing." };
-  if (family === "services") return { eyebrow: "What we do", heading: "Services", body: "Explore the services designed around what customers need most.", items: [{ title: "Primary service", description: "A concise explanation of the core offer." }, { title: "Specialist service", description: "A second service with a clear customer benefit." }, { title: "Supporting service", description: "Another useful option for visitors to explore." }] };
-  if (family === "features") return { eyebrow: "Why choose us", heading: "Built around better outcomes", items: [{ title: "Clear benefit", description: "A meaningful reason customers choose this business." }, { title: "Trusted approach", description: "A second proof point that supports confidence." }, { title: "Easy experience", description: "A practical benefit visitors can understand quickly." }] };
-  if (family === "process") return { eyebrow: "How it works", heading: "A simple path forward", items: [{ title: "Discover", description: "Understand the customer requirement." }, { title: "Plan", description: "Recommend the right next step." }, { title: "Deliver", description: "Complete the service with clear communication." }] };
-  if (family === "testimonials") return { eyebrow: "Customer stories", heading: "What customers say", items: [{ quote: "The experience felt clear, professional and easy from start to finish.", name: "Customer", role: "Verified client" }, { quote: "Everything was explained well and the final result exceeded expectations.", name: "Customer", role: "Verified client" }] };
-  if (family === "gallery") return { eyebrow: "Selected work", heading: "Gallery", body: "A visual selection of work, spaces or results." };
-  if (family === "team") return { eyebrow: "Our people", heading: "Meet the team", items: [{ name: "Team member", role: "Specialist" }, { name: "Team member", role: "Specialist" }, { name: "Team member", role: "Specialist" }] };
-  if (family === "cta") return { eyebrow: "Next step", heading: "Ready to get started?", body: "Take the next step with a clear, low-friction action.", primaryCta: { label: "Get started", href: "#contact" } };
-  return { eyebrow: "Contact", heading: "Let’s talk", body: "Tell us what you need and we’ll help you choose the right next step.", primaryCta: { label: "Send enquiry", href: "#contact" } };
+function previewProps(family: AiEditorSectionFamily, siteName: string): SeedProps {
+  if (family === "about") return { eyebrow: "Our story", title: `About ${siteName}`, description: "A clear introduction to the business, its approach and what makes it worth choosing." };
+  if (family === "services") return { eyebrow: "What we do", title: "Services", description: "Explore the services designed around what customers need most.", items: [{ title: "Primary service", description: "A concise explanation of the core offer." }, { title: "Specialist service", description: "A second service with a clear customer benefit." }, { title: "Supporting service", description: "Another useful option for visitors to explore." }] };
+  if (family === "features") return { eyebrow: "Why choose us", title: "Built around better outcomes", items: [{ title: "Clear benefit", description: "A meaningful reason customers choose this business." }, { title: "Trusted approach", description: "A second proof point that supports confidence." }, { title: "Easy experience", description: "A practical benefit visitors can understand quickly." }] };
+  if (family === "process") return { eyebrow: "How it works", title: "A simple path forward", items: [{ title: "Discover", description: "Understand the customer requirement." }, { title: "Plan", description: "Recommend the right next step." }, { title: "Deliver", description: "Complete the service with clear communication." }] };
+  if (family === "testimonials") return { eyebrow: "Customer stories", title: "What customers say", items: [{ title: "Clear and professional", description: "The experience felt easy from start to finish." }, { title: "A result worth recommending", description: "Everything was explained clearly and handled with care." }] };
+  if (family === "gallery") return { eyebrow: "Selected work", title: "Gallery", description: "A visual selection of work, spaces or results.", items: [{ title: "Selected work" }, { title: "Recent project" }, { title: "Featured result" }] };
+  if (family === "team") return { eyebrow: "Our people", title: "Meet the team", items: [{ title: "Team member", description: "Specialist" }, { title: "Team member", description: "Specialist" }, { title: "Team member", description: "Specialist" }] };
+  if (family === "cta") return { eyebrow: "Next step", title: "Ready to get started?", description: "Take the next step with a clear, low-friction action.", primaryAction: { label: "Get started", href: "#contact" } };
+  return { eyebrow: "Contact", title: "Let’s talk", description: "Tell us what you need and we’ll help you choose the right next step.", primaryAction: { label: "Send enquiry", href: "#contact" } };
 }

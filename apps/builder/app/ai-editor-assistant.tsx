@@ -70,19 +70,31 @@ export function AiEditorAssistant({
 
   function apply() {
     if (!proposal) return;
+    if (proposal.operation.type === "section.remove" && !window.confirm("Remove this section? You can still undo the change immediately after applying it.")) return;
     onApply(proposal.operation);
     setProposal(undefined);
     setPrompt("");
   }
 
+  const destructive = proposal?.operation.type === "section.remove";
+
   return <section className={styles.shell}>
-    <div className={styles.heading}><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your existing design system and undo history stay intact.</small></div>
+    <div className={styles.heading}><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your design system, safety rules and undo history stay intact.</small></div>
     <div className={styles.chips}>
-      {sectionId ? <><button type="button" onClick={() => void ask("Give me another layout for this section")}>Another layout</button><button type="button" onClick={() => void ask("Make this section feel more premium")}>More premium</button><button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve copy</button></> : null}
+      {sectionId ? <>
+        <button type="button" onClick={() => void ask("Give me another layout for this section")}>Another layout</button>
+        <button type="button" onClick={() => void ask("Make this section feel more premium")}>More premium</button>
+        <button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve copy</button>
+        <button type="button" onClick={() => void ask("Change the image in this section")}>Change image</button>
+        <button type="button" onClick={() => void ask("Move this section down")}>Move down</button>
+        <button type="button" onClick={() => void ask("Connect an action to this section")}>Connect action</button>
+      </> : null}
+      <button type="button" onClick={() => setPrompt("Add a testimonials section")}>Add section</button>
       <button type="button" onClick={() => setPrompt("Create an About page")}>Add About page</button>
+      <button type="button" onClick={() => setPrompt("Improve this page SEO title and description")}>Improve SEO</button>
     </div>
-    <div className={styles.input}><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "e.g. Make this hero more editorial and concise" : "e.g. Create an About page"} /><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Thinking…" : "Generate edit"}</button></div>
-    {proposal ? <div className={styles.proposal}><div><span>{proposal.source === "ai" ? "AI proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{proposal.operation.type.replace(".", " · ")}{proposal.model ? ` · ${proposal.model}` : ""}</small></div><div><button type="button" onClick={() => setProposal(undefined)}>Dismiss</button><button type="button" className={styles.primary} onClick={apply}>Apply change</button></div></div> : null}
+    <div className={styles.input}><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "e.g. Add testimonials below this section" : "e.g. Create an About page or add a testimonials section"} /><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Thinking…" : "Generate edit"}</button></div>
+    {proposal ? <div className={`${styles.proposal}${destructive ? ` ${styles.destructive}` : ""}`}><div><span>{proposal.source === "ai" ? "AI proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{proposal.operation.type.replace(".", " · ")}{proposal.model ? ` · ${proposal.model}` : ""}{destructive ? " · confirmation required" : ""}</small></div><div><button type="button" onClick={() => setProposal(undefined)}>Dismiss</button><button type="button" className={destructive ? styles.danger : styles.primary} onClick={apply}>{destructive ? "Confirm remove" : "Apply change"}</button></div></div> : null}
     {error ? <p className={styles.error}>{error}</p> : null}
   </section>;
 }

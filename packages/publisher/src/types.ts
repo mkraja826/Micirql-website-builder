@@ -11,18 +11,19 @@ export type PublishedVersionRecord = SiteVersion & {
 };
 
 export type PublishingStore = {
-  nextVersionNumber(siteId: string): Promise<number>;
   getVersion(siteId: string, versionId: string): Promise<PublishedVersionRecord | undefined>;
   getPublishedVersion(siteId: string): Promise<PublishedVersionRecord | undefined>;
   publishAtomically(args: {
-    version: PublishedVersionRecord;
-    previousPublishedVersionId?: string;
-  }): Promise<void>;
+    versionId: string;
+    siteId: string;
+    snapshot: Site;
+    snapshotHash: string;
+    createdBy: string;
+  }): Promise<PublishedVersionRecord>;
   rollbackAtomically(args: {
     siteId: string;
     targetVersionId: string;
-    previousPublishedVersionId?: string;
-  }): Promise<void>;
+  }): Promise<PublishedVersionRecord>;
 };
 
 export type SnapshotHasher = {
@@ -30,7 +31,7 @@ export type SnapshotHasher = {
 };
 
 export type VersionIdFactory = {
-  create(siteId: string, versionNumber: number): string;
+  create(siteId: string): string;
 };
 
 export type PublishCache = {

@@ -63,14 +63,23 @@ export async function POST(request: NextRequest) {
     const user = await userResponse.json() as { id?: string };
     if (!user.id) throw new Error("Authenticated user could not be resolved.");
 
+    const services = stringArray(body.services);
+    const goals = stringArray(body.goals);
+    const styleTags = stringArray(body.styleTags);
+    const requiredCapabilities = stringArray(body.requiredCapabilities);
+    const languages = stringArray(body.languages).length ? stringArray(body.languages) : ["en"];
+    const subindustry = optionalString(body.subindustry);
+    const location = optionalString(body.location);
+    const notes = optionalString(body.notes);
+
     const requestPayload = {
       workspace_id: workspaceId,
       site_id: siteId,
       industry,
-      subindustry: optionalString(body.subindustry),
-      style_tags: stringArray(body.styleTags),
-      required_capabilities: stringArray(body.requiredCapabilities),
-      goals: stringArray(body.goals),
+      subindustry,
+      style_tags: styleTags,
+      required_capabilities: requiredCapabilities,
+      goals,
     };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, {
@@ -92,20 +101,53 @@ export async function POST(request: NextRequest) {
     const build = buildPayload.build;
     const buildId = typeof build === "object" && build ? (build.id ?? build.build_id ?? null) : null;
 
+    const brief = {
+      businessName,
+      industry,
+      subindustry,
+      location,
+      services,
+      goals,
+      styleTags,
+      requiredCapabilities,
+      languages,
+      notes,
+    };
+
+    let content: unknown = null;
+    let contentWarning: string | null = null;
+    try {
+      const contentResponse = await fetch(`${url}/functions/v1/enrich-site-content`, {
+        method: "POST",
+        headers: commonHeaders,
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          site_id: siteId,
+          build_id: buildId,
+          brief,
+        }),
+      });
+      if (!contentResponse.ok) throw await remoteError(contentResponse);
+      content = await contentResponse.json();
+    } catch (error) {
+      contentWarning = error instanceof Error ? error.message : "Content enrichment failed.";
+      console.error("MiCirql content enrichment failed; continuing with structural draft.", error);
+    }
+
     const profile = {
       workspace_id: workspaceId,
       site_id: siteId,
       created_by: user.id,
       business_name: businessName,
       industry,
-      subindustry: optionalString(body.subindustry),
-      location: optionalString(body.location),
-      services: stringArray(body.services),
-      goals: stringArray(body.goals),
-      style_tags: stringArray(body.styleTags),
-      required_capabilities: stringArray(body.requiredCapabilities),
-      languages: stringArray(body.languages).length ? stringArray(body.languages) : ["en"],
-      notes: optionalString(body.notes),
+      subindustry,
+      location,
+      services,
+      goals,
+      style_tags: styleTags,
+      required_capabilities: requiredCapabilities,
+      languages,
+      notes,
       plan_id: plan.plan_id,
       build_id: buildId,
       completed_at: new Date().toISOString(),
@@ -120,7 +162,15 @@ export async function POST(request: NextRequest) {
     if (!profileResponse.ok) throw await remoteError(profileResponse);
     const savedProfiles = await profileResponse.json() as unknown[];
 
-    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, profile: savedProfiles[0] ?? profile });
+    return NextResponse.json({
+      ok: true,
+      planId: plan.plan_id,
+      build,
+      blueprint: plan.blueprint,
+      content,
+      contentWarning,
+      profile: savedProfiles[0] ?? profile,
+    });
   } catch (error) {
     return errorResponse(error);
   }

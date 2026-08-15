@@ -1,10 +1,19 @@
 import type { DesignRegistryEntry } from "./design";
+import type { DesignQaEvidence } from "./qa";
+import { canPromoteWithEvidence } from "./qa";
+import type { VisualReviewRecord } from "./review";
+import { visualReviewPassed, visualReviewScore } from "./review";
 
 export type PromotionTarget = "review" | "approved" | "production" | "deprecated";
 
 export type PromotionResult = {
   allowed: boolean;
   reasons: string[];
+};
+
+export type PromotionEvidence = {
+  qa?: DesignQaEvidence;
+  visualReview?: VisualReviewRecord;
 };
 
 const allowedTransitions: Record<DesignRegistryEntry["status"], PromotionTarget[]> = {
@@ -15,13 +24,13 @@ const allowedTransitions: Record<DesignRegistryEntry["status"], PromotionTarget[
   deprecated: [],
 };
 
-export function canPromoteDesign(entry: DesignRegistryEntry, target: PromotionTarget): PromotionResult {
-  const reasons: string[] = [];
-
+function validateLifecycle(entry: DesignRegistryEntry, target: PromotionTarget, reasons: string[]) {
   if (!allowedTransitions[entry.status].includes(target)) {
     reasons.push(`Invalid lifecycle transition: ${entry.status} -> ${target}`);
   }
+}
 
+function validateRegistryMetadata(entry: DesignRegistryEntry, target: PromotionTarget, reasons: string[]) {
   if (target === "review") {
     if (!entry.previews.thumbnail) reasons.push("Review requires a thumbnail preview.");
     if (entry.contentSchema.length === 0) reasons.push("Review requires a declared content schema.");
@@ -42,12 +51,59 @@ export function canPromoteDesign(entry: DesignRegistryEntry, target: PromotionTa
     if (entry.technical.clientJavascript === "high") reasons.push("High client JavaScript designs cannot enter production.");
     if (entry.technical.animationCost === "high") reasons.push("High animation-cost designs cannot enter production.");
   }
-
-  return { allowed: reasons.length === 0, reasons };
 }
 
-export function promoteDesign(entry: DesignRegistryEntry, target: PromotionTarget): DesignRegistryEntry {
-  const result = canPromoteDesign(entry, target);
+function validateEvidence(entry: DesignRegistryEntry, target: PromotionTarget, evidence: PromotionEvidence, reasons: string[]) {
+  if (target === "review") {
+    if (!evidence.qa) {
+      reasons.push("Review requires matching machine QA evidence.");
+    } else {
+      const qa = canPromoteWithEvidence(entry, { ...evidence.qa, visualReviewed: true, visualScore: 100 });
+      for (const reason of qa.reasons.filter((reason) => !reason.startsWith("Visual review"))) reasons.push(reason);
+    }
+    return;
+  }
+
+  if (target === "approved" || target === "production") {
+    if (!evidence.qa) {
+      reasons.push(`${target === "approved" ? "Approval" : "Production"} requires matching machine QA evidence.`);
+    } else {
+      const qa = canPromoteWithEvidence(entry, evidence.qa);
+      for (const reason of qa.reasons.filter((reason) => !reason.startsWith("Visual review"))) reasons.push(reason);
+    }
+
+    if (!evidence.visualReview) {
+      reasons.push(`${target === "approved" ? "Approval" : "Production"} requires an approved visual review.`);
+    } else {
+      if (evidence.visualReview.designId !== entry.id || evidence.visualReview.version !== entry.version) {
+        reasons.push("Visual review does not match design id/version.");
+      }
+      if (!visualReviewPassed(evidence.visualReview)) {
+        const score = visualReviewScore(evidence.visualReview);
+        reasons.push(`Visual review must be approved with score >= 80${typeof score === "number" ? ` (current ${score})` : ""}.`);
+      }
+    }
+  }
+}
+
+export function canPromoteDesign(
+  entry: DesignRegistryEntry,
+  target: PromotionTarget,
+  evidence: PromotionEvidence = {},
+): PromotionResult {
+  const reasons: string[] = [];
+  validateLifecycle(entry, target, reasons);
+  validateRegistryMetadata(entry, target, reasons);
+  validateEvidence(entry, target, evidence, reasons);
+  return { allowed: reasons.length === 0, reasons: [...new Set(reasons)] };
+}
+
+export function promoteDesign(
+  entry: DesignRegistryEntry,
+  target: PromotionTarget,
+  evidence: PromotionEvidence = {},
+): DesignRegistryEntry {
+  const result = canPromoteDesign(entry, target, evidence);
   if (!result.allowed) {
     throw new Error(`Design ${entry.id}@${entry.version} cannot move to ${target}: ${result.reasons.join(" ")}`);
   }

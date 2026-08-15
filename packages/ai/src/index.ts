@@ -8,3 +8,4 @@ export * from "./usage";
 export * from "./metered-executor";
 export * from "./build-orchestrator";
 export * from "./materializers";
+export * from "./image-generation";

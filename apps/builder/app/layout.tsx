@@ -3,6 +3,7 @@ import "@micirql/primitives/styles.css";
 import "@micirql/components/styles.css";
 import "@micirql/sections/styles.css";
 import "./globals.css";
+import "./auth.css";
 import "./workspace-interactive.css";
 
 export const metadata: Metadata = {

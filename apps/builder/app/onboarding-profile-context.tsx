@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { OnboardingProfile } from "./recommended-presets";
+import type { OnboardingProfile } from "./onboarding-profile";
 
 const OnboardingProfileContext = createContext<OnboardingProfile | null>(null);
 

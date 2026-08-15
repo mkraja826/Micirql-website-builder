@@ -1,4 +1,5 @@
 export type AiEditorSectionFamily =
+  | "hero"
   | "about"
   | "services"
   | "features"

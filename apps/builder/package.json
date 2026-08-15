@@ -13,6 +13,7 @@
     "@micirql/domains": "workspace:*",
     "@micirql/functions": "workspace:*",
     "@micirql/primitives": "workspace:*",
+    "@micirql/publisher": "workspace:*",
     "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",
     "@micirql/sections": "workspace:*",

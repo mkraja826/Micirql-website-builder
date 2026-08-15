@@ -4,7 +4,7 @@ import { getDomainPack } from "@micirql/domains";
 import type { Site, SitePage } from "@micirql/schema";
 import { duplicatePage, missingPageSuggestions, requiredPageIssues } from "@micirql/workspace";
 
-export function PagesManager({ site, activePageId, onSelect, onAdd, onRemove, onDuplicate, onPathChange }: {
+export function PagesManager({ site, activePageId, onSelect, onAdd, onRemove, onDuplicate, onPathChange, onReorder }: {
   site: Site;
   activePageId: string;
   onSelect(pageId: string): void;
@@ -12,6 +12,7 @@ export function PagesManager({ site, activePageId, onSelect, onAdd, onRemove, on
   onRemove(pageId: string): void;
   onDuplicate(page: SitePage): void;
   onPathChange(pageId: string, path: string): void;
+  onReorder(pageId: string, toIndex: number): void;
 }) {
   const pack = getDomainPack(site.domain);
   const suggestions = missingPageSuggestions(site, pack.defaultPages);
@@ -21,10 +22,10 @@ export function PagesManager({ site, activePageId, onSelect, onAdd, onRemove, on
     {blockers.length ? <div className="page-required-warning"><strong>{blockers.length} required page{blockers.length === 1 ? "" : "s"} missing</strong><span>These must be added before publishing.</span></div> : null}
 
     <div className="page-list">
-      {site.pages.map((page) => <div key={page.id} className={`page-row ${page.id === activePageId ? "is-active" : ""}`}>
+      {site.pages.map((page, index) => <div key={page.id} className={`page-row ${page.id === activePageId ? "is-active" : ""}`}>
         <button className="page-main" onClick={() => onSelect(page.id)}><strong>{page.name}</strong><span>{page.path}</span></button>
         <input aria-label={`${page.name} URL`} value={page.path} onChange={(event) => onPathChange(page.id, normalizePath(event.target.value))} />
-        <div className="page-row-actions"><button onClick={() => onDuplicate(duplicatePage(page, site.pages))}>Duplicate</button><button disabled={site.pages.length <= 1 || page.path === "/"} onClick={() => onRemove(page.id)}>Remove</button></div>
+        <div className="page-row-actions"><button disabled={index === 0} onClick={() => onReorder(page.id, index - 1)}>↑</button><button disabled={index === site.pages.length - 1} onClick={() => onReorder(page.id, index + 1)}>↓</button><button onClick={() => onDuplicate(duplicatePage(page, site.pages))}>Duplicate</button><button disabled={site.pages.length <= 1 || page.path === "/"} onClick={() => onRemove(page.id)}>Remove</button></div>
       </div>)}
     </div>
 

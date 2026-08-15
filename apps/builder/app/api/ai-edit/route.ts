@@ -7,6 +7,10 @@ const VARIANTS = new Set([1, 2, 3, 4, 5]);
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization");
+    if (!auth?.startsWith("Bearer ")) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+    await verifyUser(auth);
+
     const body = await request.json() as Record<string, unknown>;
     const prompt = text(body.prompt);
     if (!prompt) return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
@@ -55,11 +59,24 @@ export async function POST(request: NextRequest) {
     }
 
     const operation = deterministicOperation(prompt, Boolean(section));
-    if (!operation) return NextResponse.json({ error: section ? "Try asking for another layout, a copy rewrite, or a new page." : "Select a section or ask MiCirql to add a page." }, { status: 422 });
+    if (!operation) return NextResponse.json({ error: section ? "This edit needs the configured AI model, or ask for another layout/new page." : "Select a section or ask MiCirql to add a page." }, { status: 422 });
     const response: AiEditorResponse = { operation, source: "deterministic" };
     return NextResponse.json(response);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "AI edit failed." }, { status: 500 });
+    const status = (error as Error & { status?: number }).status ?? 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "AI edit failed." }, { status });
+  }
+}
+
+async function verifyUser(authorization: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("Supabase configuration is missing.");
+  const response = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, authorization }, cache: "no-store" });
+  if (!response.ok) {
+    const error = new Error("AUTH_REQUIRED") as Error & { status?: number };
+    error.status = 401;
+    throw error;
   }
 }
 
@@ -79,7 +96,9 @@ function normalizeOperation(raw: unknown, hasSection: boolean): AiEditorOperatio
   if (type === "section.variant" && hasSection) {
     const variant = Number(obj.variant);
     if (!VARIANTS.has(variant)) return null;
-    return { type, variant: variant as 1|2|3|4|5, ...(optionalText(obj.heading) ? { heading: optionalText(obj.heading)! } : {}), ...(optionalText(obj.body) ? { body: optionalText(obj.body)! } : {}), rationale };
+    const heading = optionalText(obj.heading);
+    const body = optionalText(obj.body);
+    return { type, variant: variant as 1|2|3|4|5, ...(heading ? { heading } : {}), ...(body ? { body } : {}), rationale };
   }
   if (type === "section.copy" && hasSection) {
     const heading = optionalText(obj.heading);
@@ -104,9 +123,6 @@ function deterministicOperation(prompt: string, hasSection: boolean): AiEditorOp
   if (hasSection && /(another|different|layout|variant|design|premium|bolder|minimal|editorial|cinematic)/i.test(prompt)) {
     const variant = /cinematic|immersive|bold/i.test(prompt) ? 5 : /editorial/i.test(prompt) ? 4 : /center/i.test(prompt) ? 3 : /split/i.test(prompt) ? 2 : 2;
     return { type: "section.variant", variant, rationale: "Changed the selected section to a different library composition." };
-  }
-  if (hasSection && /(rewrite|copy|headline|heading|shorter|clearer|text|body)/i.test(prompt)) {
-    return { type: "section.copy", rationale: "Copy editing needs the configured AI model to generate new wording." } as AiEditorOperation;
   }
   return null;
 }

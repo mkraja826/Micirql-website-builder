@@ -8,6 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@micirql/schema": "workspace:*",
+    "@micirql/workspace": "workspace:*",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

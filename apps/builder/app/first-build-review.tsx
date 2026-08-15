@@ -9,8 +9,8 @@ import type { OnboardingProfile } from "./preset-ranking";
 import styles from "./first-build-review.module.css";
 
 type DraftRecord = { workspaceId: string; siteId: string; revision: number; snapshot: Site };
-
 type Viewport = "desktop" | "mobile";
+type PreferenceSignal = "more_like_this" | "compare" | "regenerate" | "selected";
 
 export function FirstBuildReview({
   session,
@@ -74,6 +74,7 @@ export function FirstBuildReview({
         const payload = await response.json() as { draft?: DraftRecord; error?: string };
         if (!response.ok || !payload.draft) throw new Error(payload.error ?? "Could not save this design direction.");
       }
+      await recordPreference("selected", direction, { comparedWith: compareIds.filter((id) => id !== direction.id) });
       onComplete();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save this design direction.");
@@ -83,6 +84,7 @@ export function FirstBuildReview({
   }
 
   function regenerate(direction: ReviewDirection) {
+    void recordPreference("regenerate", direction);
     const unused = pool.find((candidate) => candidate.themeFamily === direction.themeFamily && !visibleIds.includes(candidate.id))
       ?? pool.find((candidate) => !visibleIds.includes(candidate.id));
     if (!unused) return;
@@ -92,13 +94,41 @@ export function FirstBuildReview({
   }
 
   function moreLike(direction: ReviewDirection) {
+    void recordPreference("more_like_this", direction);
     const sameFamily = pool.filter((candidate) => candidate.themeFamily === direction.themeFamily);
     const others = pool.filter((candidate) => candidate.themeFamily !== direction.themeFamily);
     setVisibleIds([...sameFamily, ...others].slice(0, 20).map((item) => item.id));
   }
 
-  function toggleCompare(id: string) {
-    setCompareIds((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length < 2 ? [...current, id] : [current[1]!, id]);
+  function toggleCompare(direction: ReviewDirection) {
+    const adding = !compareIds.includes(direction.id);
+    if (adding) void recordPreference("compare", direction, { currentCompareIds: compareIds });
+    setCompareIds((current) => current.includes(direction.id) ? current.filter((item) => item !== direction.id) : current.length < 2 ? [...current, direction.id] : [current[1]!, direction.id]);
+  }
+
+  async function recordPreference(signalType: PreferenceSignal, direction: ReviewDirection, metadata: Record<string, unknown> = {}) {
+    try {
+      await fetch("/api/design-preferences", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          siteId,
+          signalType,
+          directionId: direction.id,
+          directionSignature: designSignature(direction.site),
+          themeFamily: direction.site.theme.family,
+          density: direction.site.theme.brand.density,
+          shape: direction.site.theme.brand.shape,
+          motion: direction.site.theme.brand.motion,
+          typographyDisplay: direction.site.theme.brand.typography.display,
+          typographyBody: direction.site.theme.brand.typography.body,
+          metadata: { variantSeed: direction.variantSeed, name: direction.name, ...metadata },
+        }),
+      });
+    } catch (caught) {
+      console.warn("MiCirql preference signal could not be stored.", caught);
+    }
   }
 
   if (!draft) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Generating a broad set of design directions from your business brief and brand…"}</p></div></main>;
@@ -129,7 +159,7 @@ export function FirstBuildReview({
         </button>
         <div className={styles.utilityActions}>
           <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
-          <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction.id)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
+          <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
           <button type="button" onClick={() => moreLike(direction)}>More like this</button>
           <button type="button" onClick={() => regenerate(direction)}>Regenerate</button>
         </div>
@@ -167,6 +197,10 @@ export function FirstBuildReview({
       </div>
     </div> : null}
   </main>;
+}
+
+function designSignature(site: Site) {
+  return [site.theme.family, site.theme.brand.density, site.theme.brand.shape, site.theme.brand.motion, ...site.pages.flatMap((page) => page.sections.map((section) => section.component.componentId))].join("|");
 }
 
 function sameDesign(a: Site, b: Site) {

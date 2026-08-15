@@ -8,9 +8,10 @@ import {
   type AssetSlot,
   type AssetGenerationRequest,
 } from "@micirql/assets";
-import { decideSiteComponents } from "./decision";
 import { runPlannerAdapter, type PlannerModel } from "./planner-adapter";
 import { evaluateCodeGeneration } from "./codegen-policy";
+import { selectSiteComponents } from "./selection-orchestrator";
+import type { AiDecisionOutput } from "./types";
 
 export type BuildContext = {
   workspaceId: string;
@@ -71,6 +72,8 @@ export type AssetSlotPlanner = {
 export type AiBuildOrchestratorInput = {
   context: BuildContext;
   plannerModel: PlannerModel;
+  compositionModel?: PlannerModel;
+  compositionShortlistSize?: number;
   registryEntries: readonly DesignRegistryEntry[];
   brandTokens: BrandTokenResolver;
   sections: SectionMaterializer;
@@ -90,7 +93,9 @@ export type AiBuildResult =
       images: ImageRequirement[];
       generationRequests: AssetGenerationRequest[];
       warnings: string[];
-      selectionSummary: ReturnType<typeof decideSiteComponents>;
+      selectionSource: "ai-composition" | "deterministic";
+      selectionFallbackUsed: boolean;
+      selectionSummary: AiDecisionOutput;
     }
   | {
       ok: false;
@@ -129,12 +134,14 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
 
   if (!planning.ok) return { ok: false, stage: "planning", code: planning.code, issues: planning.issues };
 
-  const selection = decideSiteComponents({
+  const selectionResult = await selectSiteComponents({
     sitePlan: planning.plan,
     registryEntries: input.registryEntries,
+    ...(input.compositionModel ? { compositionModel: input.compositionModel } : {}),
     ...(input.minimumSelectionScore === undefined ? {} : { minimumSelectionScore: input.minimumSelectionScore }),
-    mode: "library-preferred",
+    ...(input.compositionShortlistSize === undefined ? {} : { shortlistSize: input.compositionShortlistSize }),
   });
+  const selection = selectionResult.selection;
 
   if (selection.gaps.length > 0) {
     const generation = evaluateCodeGeneration(selection);
@@ -242,11 +249,24 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
       })),
     ];
 
-    const warnings = selection.selections
-      .filter((item) => item.confidence !== "high")
-      .map((item) => `${item.pagePath} / ${item.family} selected with ${item.confidence} confidence (${item.score}).`);
+    const warnings = [
+      ...selectionResult.warnings,
+      ...selection.selections
+        .filter((item) => item.confidence !== "high")
+        .map((item) => `${item.pagePath} / ${item.family} selected with ${item.confidence} confidence (${item.score}).`),
+    ];
 
-    return { ok: true, site: candidate, plan: planning.plan, images, generationRequests, warnings, selectionSummary: selection };
+    return {
+      ok: true,
+      site: candidate,
+      plan: planning.plan,
+      images,
+      generationRequests,
+      warnings,
+      selectionSource: selectionResult.source,
+      selectionFallbackUsed: selectionResult.fallbackUsed,
+      selectionSummary: selection,
+    };
   } catch (error) {
     return {
       ok: false,
@@ -260,7 +280,7 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
 
 function buildSectionFamilyMap(
   site: Site,
-  selections: ReturnType<typeof decideSiteComponents>["selections"],
+  selections: AiDecisionOutput["selections"],
 ): Record<string, string> {
   const output: Record<string, string> = {};
   for (const page of site.pages) {

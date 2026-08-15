@@ -1,3 +1,10 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
-export default defineCloudflareConfig();
+const config = defineCloudflareConfig();
+
+export default {
+  ...config,
+  buildOutputPath: ".",
+  appPath: ".",
+  packageJsonPath: "package.json",
+};

@@ -1,5 +1,5 @@
 import type { Domain, SitePlan, ThemeFamily, ThemeModifier } from "@micirql/schema";
-import { rankDesigns, type ComponentFamily, type DesignRegistryEntry, type RankedDesign } from "@micirql/registry";
+import { rankDesigns, type ComponentFamily, type DesignPreferenceQuery, type DesignRegistryEntry, type RankedDesign } from "@micirql/registry";
 import type { PlannerModel } from "./planner-adapter";
 
 export type CompositionCandidate = {
@@ -41,6 +41,7 @@ export type CompositionInput = {
   registry: readonly DesignRegistryEntry[];
   model?: PlannerModel;
   shortlistSize?: number;
+  preferences?: DesignPreferenceQuery;
 };
 
 type AiChoice = { family: string; componentId: string };
@@ -58,7 +59,7 @@ const KNOWN_FAMILIES = new Set<ComponentFamily>([
 export async function composeSiteFromRegistry(input: CompositionInput): Promise<CompositionResult> {
   const shortlistSize = Math.max(2, Math.min(input.shortlistSize ?? 6, 12));
   const warnings: string[] = [];
-  const shortlistByPage = buildPageShortlists(input.plan, input.registry, shortlistSize);
+  const shortlistByPage = buildPageShortlists(input.plan, input.registry, shortlistSize, input.preferences);
 
   for (const page of shortlistByPage) {
     for (const item of page.sections) {
@@ -75,12 +76,14 @@ export async function composeSiteFromRegistry(input: CompositionInput): Promise<
           "Do not invent component IDs, sections, copy, CSS, code, or business facts.",
           "Preserve the supplied section-family order. Do not add or remove required families.",
           "Prefer visual rhythm: avoid consecutive heavy sections and consecutive high-density sections when alternatives exist.",
+          "Learned user taste is already reflected in candidate scores; respect it without sacrificing page purpose or visual rhythm.",
           "Return JSON only with shape: { pages: [{ path, sections: [{ family, componentId }] }] }.",
         ].join("\n"),
         input: {
           business: input.plan.business,
           brand: input.plan.brand,
           design: input.plan.design,
+          preferences: input.preferences ?? null,
           pages: shortlistByPage.map(({ page, sections }) => ({
             path: page.path,
             purpose: page.purpose,
@@ -113,7 +116,7 @@ export async function composeSiteFromRegistry(input: CompositionInput): Promise<
   };
 }
 
-function buildShortlists(plan: SitePlan, requestedFamilies: string[], registry: readonly DesignRegistryEntry[], limit: number) {
+function buildShortlists(plan: SitePlan, requestedFamilies: string[], registry: readonly DesignRegistryEntry[], limit: number, preferences?: DesignPreferenceQuery) {
   const families = requestedFamilies.map(toFamily).filter((value): value is ComponentFamily => Boolean(value));
   return families.map((family, index) => {
     const previousFamily = index > 0 ? families[index - 1] : undefined;
@@ -131,6 +134,7 @@ function buildShortlists(plan: SitePlan, requestedFamilies: string[], registry: 
       nextFamily,
       preferImage: prefersImage(plan.brand.imageryDirection),
       targetVisualWeight: plan.brand.visualWeight,
+      ...(preferences ? { preferences } : {}),
       limit,
     });
     return { family, candidates: ranked.map(toCandidate) };
@@ -256,6 +260,6 @@ function requiredCapabilitiesForFamily(family: ComponentFamily, requiredFunction
   return out;
 }
 
-function buildPageShortlists(plan: SitePlan, registry: readonly DesignRegistryEntry[], limit: number) {
-  return plan.pages.map((page) => ({ page, sections: buildShortlists(plan, page.requiredSectionFamilies, registry, limit) }));
+function buildPageShortlists(plan: SitePlan, registry: readonly DesignRegistryEntry[], limit: number, preferences?: DesignPreferenceQuery) {
+  return plan.pages.map((page) => ({ page, sections: buildShortlists(plan, page.requiredSectionFamilies, registry, limit, preferences) }));
 }

@@ -58,7 +58,7 @@ export function discoveryQuestionsFor(domain: Domain, subtype?: string): Discove
   questions.push({ id: "business.domain-goal", group: "business", label: `Which outcomes matter most for your ${pack.label.toLowerCase()} website?`, type: "multi-select", required: true, options: pack.primaryGoals, aiPurpose: "Rank domain-specific conversion goals." });
   questions.push(...(domainSpecific[domain] ?? []));
 
-  for (const fact of subtypeRule?.extraRequiredBusinessFacts ?? []) {
+  for (const fact of subtypeRule?.extraRequiredFacts ?? []) {
     questions.push({ id: `subtype.fact.${slugify(fact)}`, group: "business", label: `Tell us about ${fact}.`, type: "long-text", required: true, aiPurpose: `Required ${subtype} business fact for accurate planning.` });
   }
 

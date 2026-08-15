@@ -110,6 +110,17 @@ button { color: inherit; }
 .preview-placeholder-grid article { min-height: 112px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e5e5e8; border-radius: 16px; background: white; }
 .preview-placeholder-grid span { color: #94949d; font-size: .7rem; }
 
+.mi-editor-section { position: relative; outline: 1px solid transparent; outline-offset: -1px; transition: outline-color .15s ease, box-shadow .15s ease; }
+.mi-editor-section:hover { outline-color: rgba(124,58,237,.38); }
+.mi-editor-selected { outline: 2px solid #7c3aed; outline-offset: -2px; }
+.mi-editor-canvas-toolbar { position: absolute; top: 8px; right: 8px; z-index: 8; display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 9px; border-radius: 999px; background: rgba(17,17,21,.92); color: white; box-shadow: 0 8px 24px rgba(0,0,0,.2); font: 600 11px/1.1 Inter, ui-sans-serif, system-ui, sans-serif; }
+.mi-editor-canvas-toolbar button { border: 0; border-radius: 999px; padding: 6px 9px; background: #7c3aed; color: #fff; cursor: pointer; }
+[data-mi-prop-path] { cursor: text; border-radius: 4px; }
+[data-mi-prop-path]:hover { box-shadow: 0 0 0 2px rgba(124,58,237,.28); }
+[data-mi-prop-path][data-mi-editing="true"] { outline: 2px solid #7c3aed; outline-offset: 3px; box-shadow: 0 0 0 5px rgba(124,58,237,.12); }
+[data-mi-image-field] { cursor: pointer; }
+[data-mi-image-field]:hover { outline: 3px solid rgba(124,58,237,.55); outline-offset: -3px; }
+
 .mobile-editor-nav {
   position: fixed;
   left: 0;

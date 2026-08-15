@@ -4,7 +4,6 @@ import type {
   PublishDraft,
   PublishIssue,
   PublishResult,
-  PublishedVersionRecord,
   PublishingDependencies,
 } from "./types";
 
@@ -56,26 +55,14 @@ export async function publishSite(
     }
   }
 
-  const versionNumber = await dependencies.store.nextVersionNumber(site.siteId);
-  const versionId = dependencies.versionIds.create(site.siteId, versionNumber);
   const frozenSnapshot = immutableSnapshot(site);
   const snapshotHash = await dependencies.hasher.hash(frozenSnapshot);
-  const previous = await dependencies.store.getPublishedVersion(site.siteId);
-
-  const version: PublishedVersionRecord = {
-    versionId,
+  const version = await dependencies.store.publishAtomically({
+    versionId: dependencies.versionIds.create(site.siteId),
     siteId: site.siteId,
-    versionNumber,
-    status: "published",
-    createdAt: new Date().toISOString(),
-    createdBy: draft.createdBy,
     snapshot: frozenSnapshot,
     snapshotHash,
-  };
-
-  await dependencies.store.publishAtomically({
-    version,
-    ...(previous ? { previousPublishedVersionId: previous.versionId } : {}),
+    createdBy: draft.createdBy,
   });
 
   await dependencies.cache?.invalidateSite(site.siteId);
@@ -126,17 +113,13 @@ export async function rollbackSite(
     }
   }
 
-  const previous = await dependencies.store.getPublishedVersion(args.siteId);
-  await dependencies.store.rollbackAtomically({
+  const version = await dependencies.store.rollbackAtomically({
     siteId: args.siteId,
     targetVersionId: target.versionId,
-    ...(previous && previous.versionId !== target.versionId
-      ? { previousPublishedVersionId: previous.versionId }
-      : {}),
   });
 
   await dependencies.cache?.invalidateSite(args.siteId);
-  return { ok: true, version: { ...target, status: "published" } };
+  return { ok: true, version };
 }
 
 function immutableSnapshot(site: Site): Site {

@@ -211,10 +211,7 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
     let generationRequests: AssetGenerationRequest[] = [];
     if (input.assetRegistry && input.assetSlots) {
       const slots = await input.assetSlots.slots({ plan: planning.plan, site: candidate, context: input.context });
-      const sectionFamilies = Object.fromEntries(selection.selections.map((item, index) => [
-        `${slug(item.pagePath)}-${slug(item.family)}-${indexForFamily(selection.selections, item.pagePath, item.family, index)}`,
-        item.family,
-      ]));
+      const sectionFamilies = buildSectionFamilyMap(candidate, selection.selections);
       const resolution = await resolveAssetSlots({
         registry: input.assetRegistry,
         context: {
@@ -261,6 +258,22 @@ export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promi
   }
 }
 
+function buildSectionFamilyMap(
+  site: Site,
+  selections: ReturnType<typeof decideSiteComponents>["selections"],
+): Record<string, string> {
+  const output: Record<string, string> = {};
+  for (const page of site.pages) {
+    const pageSelections = selections.filter((item) => item.pagePath === page.path);
+    for (let index = 0; index < page.sections.length; index += 1) {
+      const section = page.sections[index];
+      const selected = pageSelections[index];
+      if (section && selected) output[section.id] = selected.family;
+    }
+  }
+  return output;
+}
+
 function applyAssetReference(site: Site, slot: AssetSlot, reference: unknown): void {
   const page = site.pages.find((item) => item.path === slot.pagePath);
   const section = page?.sections.find((item) => item.id === slot.sectionId);
@@ -279,20 +292,6 @@ function setPath(target: Record<string, unknown>, path: string, value: unknown):
     cursor = cursor[key] as Record<string, unknown>;
   }
   cursor[parts[parts.length - 1]!] = value;
-}
-
-function indexForFamily(
-  selections: ReturnType<typeof decideSiteComponents>["selections"],
-  pagePath: string,
-  family: string,
-  currentIndex: number,
-): number {
-  let count = 0;
-  for (let index = 0; index <= currentIndex; index += 1) {
-    const item = selections[index];
-    if (item?.pagePath === pagePath && item.family === family) count += 1;
-  }
-  return count;
 }
 
 function normalizeBindings(

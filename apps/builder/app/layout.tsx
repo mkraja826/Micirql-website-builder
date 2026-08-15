@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./workspace-interactive.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",

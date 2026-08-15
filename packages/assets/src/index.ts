@@ -2,3 +2,4 @@ export * from "./types";
 export * from "./registry";
 export * from "./workspace";
 export * from "./catalog";
+export * from "./coverage";

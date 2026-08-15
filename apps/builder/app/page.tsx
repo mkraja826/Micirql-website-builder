@@ -1,8 +1,8 @@
 "use client";
 
 import { AuthGate } from "./auth-gate";
-import { OnboardingGate } from "./onboarding-gate";
+import { ProjectDashboard } from "./project-dashboard";
 
 export default function BuilderHome() {
-  return <AuthGate>{(session) => <OnboardingGate session={session} />}</AuthGate>;
+  return <AuthGate>{(session) => <ProjectDashboard session={session} />}</AuthGate>;
 }

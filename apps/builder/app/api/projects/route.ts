@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { url } = supabaseConfig(); const headers = supabaseHeaders(request);
     if (action === "create") {
       let workspaceId = text(body.workspaceId) || (await getJson<Array<{workspace_id:string}>>(`${url}/rest/v1/workspace_members?select=workspace_id&order=created_at.asc&limit=1`,headers))[0]?.workspace_id;
-      if (!workspaceId) workspaceId = await createFirstWorkspace(request, url, headers);
+      if (!workspaceId) workspaceId = await ensureWorkspace(url, headers);
       const rows = await writeJson<Array<{id:string;workspace_id:string;name:string}>>(`${url}/rest/v1/sites?select=id,workspace_id,name`,headers,"POST",{workspace_id:workspaceId,name:text(body.name)||"Untitled website",status:"draft"},true);
       return NextResponse.json({project:rows[0]});
     }
@@ -43,12 +43,11 @@ export async function PATCH(request: NextRequest) {
   try { const body=await request.json() as Record<string,unknown>; const siteId=text(body.siteId); if(!siteId) throw new Error("siteId is required."); const {url}=supabaseConfig(); const headers=supabaseHeaders(request); const patch:Record<string,unknown>={updated_at:new Date().toISOString()}; if(text(body.name)) patch.name=text(body.name); if(body.archived===true) patch.status="archived"; const rows=await writeJson<unknown[]>(`${url}/rest/v1/sites?id=eq.${siteId}&select=*`,headers,"PATCH",patch,true); return NextResponse.json({project:rows[0]??null}); } catch(e){ return fail(e); }
 }
 
-async function createFirstWorkspace(request: NextRequest, url: string, headers: Record<string,string>) {
-  const userId = authenticatedUserId(request);
-  const workspaces = await writeJson<Array<{id:string}>>(`${url}/rest/v1/workspaces?select=id`, headers, "POST", { name: "My Workspace", status: "active" }, true);
-  const workspaceId = workspaces[0]?.id;
-  if (!workspaceId) throw new Error("Workspace creation failed.");
-  await writeJson(`${url}/rest/v1/workspace_members`, headers, "POST", { workspace_id: workspaceId, user_id: userId, role: "owner" });
+async function ensureWorkspace(url:string, headers:Record<string,string>) {
+  const response = await fetch(`${url}/rest/v1/rpc/ensure_user_workspace`, { method:"POST", headers, body:JSON.stringify({p_name:"My Workspace"}), cache:"no-store" });
+  if (!response.ok) throw new Error(`Workspace bootstrap failed (${response.status}).`);
+  const workspaceId = await response.json() as string;
+  if (!workspaceId) throw new Error("Workspace bootstrap returned no workspace.");
   return workspaceId;
 }
 

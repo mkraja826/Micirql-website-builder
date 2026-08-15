@@ -16,7 +16,7 @@ export const subtypeRuleSchema = z.object({
   avoidByDefault: z.array(z.string()).default([]),
 });
 
-export type SubtypeRule = z.infer<typeof subtypeRuleSchema> & { domain: Domain };
+export type SubtypeRule = z.input<typeof subtypeRuleSchema> & { domain: Domain };
 
 export const subtypeRules = [
   { id: "dental", domain: "clinic", label: "Dental Clinic", aliases: ["dentist", "dental hospital"], extraRequiredFacts: ["treatments", "dentists", "implant or specialist services where applicable"], extraRecommendedFacts: ["before-after cases", "technology", "specialist experience"], extraActions: ["case.enquiry"], extraPages: [{ slug: "/treatments", label: "Treatments", purpose: "Treatment discovery and SEO", seoIntent: "commercial" }], seoTopics: ["dental implants", "root canal", "cosmetic dentistry", "guided implants"], structuredDataTypes: ["Dentist"], preferredSections: ["services", "team", "gallery", "testimonials"], avoidByDefault: ["guaranteed treatment outcomes"] },

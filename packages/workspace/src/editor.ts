@@ -24,6 +24,7 @@ export type WorkspaceCommand =
   | { type: "brand.patch"; patch: Partial<ThemeConfig["brand"]> }
   | { type: "section.add"; pageId: string; section: SiteSection; toIndex?: number }
   | { type: "section.component.set"; pageId: string; sectionId: string; componentId: string; version: string }
+  | { type: "section.components.batch.set"; pageId: string; components: Array<{ sectionId: string; componentId: string; version: string }> }
   | { type: "section.hidden.set"; pageId: string; sectionId: string; hidden: boolean }
   | { type: "section.reorder"; pageId: string; sectionId: string; toIndex: number }
   | { type: "section.remove"; pageId: string; sectionId: string }
@@ -104,6 +105,20 @@ export function applyWorkspaceCommand(
       const section = findSection(next, command.pageId, command.sectionId);
       assertAllowed(policy.canUseComponent?.({ site: next, page, section, componentId: command.componentId, version: command.version }), "Component swap is not allowed.");
       section.component = { componentId: command.componentId, version: command.version };
+      break;
+    }
+    case "section.components.batch.set": {
+      const page = findPage(next, command.pageId);
+      const seen = new Set<string>();
+      for (const component of command.components) {
+        if (seen.has(component.sectionId)) throw new Error(`Duplicate section replacement ${component.sectionId}.`);
+        seen.add(component.sectionId);
+        const section = findSection(next, command.pageId, component.sectionId);
+        assertAllowed(policy.canUseComponent?.({ site: next, page, section, componentId: component.componentId, version: component.version }), "Component swap is not allowed.");
+      }
+      for (const component of command.components) {
+        findSection(next, command.pageId, component.sectionId).component = { componentId: component.componentId, version: component.version };
+      }
       break;
     }
     case "section.hidden.set":

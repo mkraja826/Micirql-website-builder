@@ -27,17 +27,20 @@ export function createRecordStoreAdapter(store: RecordStore): FunctionAdapter {
       context: FunctionExecutionContext;
     }): Promise<TOutput> {
       const payload = toRecord(input);
+      const contactName = stringField(payload, "name");
+      const contactEmail = stringField(payload, "email");
+      const contactPhone = stringField(payload, "phone");
       const record = await store.create({
         workspaceId: context.workspaceId,
         siteId: context.siteId,
         actionId: definition.id,
         actionVersion: definition.version,
-        idempotencyKey: context.idempotencyKey,
         payload,
-        contactName: stringField(payload, "name"),
-        contactEmail: stringField(payload, "email"),
-        contactPhone: stringField(payload, "phone"),
         status: "received",
+        ...(context.idempotencyKey ? { idempotencyKey: context.idempotencyKey } : {}),
+        ...(contactName ? { contactName } : {}),
+        ...(contactEmail ? { contactEmail } : {}),
+        ...(contactPhone ? { contactPhone } : {}),
       });
 
       return definition.output.parse({ recordId: record.id, status: record.status }) as TOutput;

@@ -9,3 +9,5 @@ export * from "./metered-executor";
 export * from "./build-orchestrator";
 export * from "./materializers";
 export * from "./image-generation";
+export * from "./pricing";
+export * from "./text-provider";

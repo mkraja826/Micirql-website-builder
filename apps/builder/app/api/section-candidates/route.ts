@@ -10,6 +10,8 @@ export type SectionCandidate = {
   score: number;
   reasons: string[];
   previewOnly: boolean;
+  theme: DesignRegistryEntry["theme"];
+  modifiers: DesignRegistryEntry["modifiers"];
 };
 
 export async function POST(request: NextRequest) {
@@ -33,6 +35,9 @@ export async function POST(request: NextRequest) {
     const previousFamily = previous ? familyFromComponent(previous.component.componentId) : undefined;
     const nextFamily = next ? familyFromComponent(next.component.componentId) : undefined;
     const preferences = normalizePreferences(body.preferenceProfile);
+    const excluded = new Set(stringArray(body.excludeComponentIds));
+    const anchorId = optionalText(body.anchorComponentId);
+    const anchor = anchorId ? seedSectionRegistryEntries.find((entry) => entry.id === anchorId) : undefined;
 
     const ranked = rankDesigns(seedSectionRegistryEntries, {
       family,
@@ -43,20 +48,24 @@ export async function POST(request: NextRequest) {
       ...(previousFamily ? { previousFamily } : {}),
       ...(nextFamily ? { nextFamily } : {}),
       ...(preferences ? { preferences } : {}),
-      limit: 5,
-    });
+      limit: 50,
+    })
+      .filter(({ entry }) => !excluded.has(entry.id))
+      .map((item) => ({ ...item, score: item.score + anchorBonus(item.entry, anchor) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
 
     if (ranked.length) {
-      return NextResponse.json({ candidates: ranked.map(({ entry, score, reasons }) => candidate(entry, score, reasons, false)) });
+      return NextResponse.json({ candidates: ranked.map(({ entry, score, reasons }) => candidate(entry, score, anchor ? [...reasons, ...anchorReasons(entry, anchor)] : reasons, false)) });
     }
 
     const fallback = seedSectionRegistryEntries
-      .filter((entry) => entry.family === family)
-      .map((entry) => ({ entry, score: previewScore(entry, site.theme.family, site.domain, previousFamily, nextFamily, preferences) }))
+      .filter((entry) => entry.family === family && !excluded.has(entry.id))
+      .map((entry) => ({ entry, score: previewScore(entry, site.theme.family, site.domain, previousFamily, nextFamily, preferences) + anchorBonus(entry, anchor) }))
       .sort((a, b) => b.score - a.score)
       .filter((item, index, all) => all.findIndex((other) => other.entry.id === item.entry.id) === index)
       .slice(0, 5)
-      .map(({ entry, score }) => candidate(entry, score, previewReasons(entry, site.theme.family, previousFamily, nextFamily, preferences), true));
+      .map(({ entry, score }) => candidate(entry, score, [...previewReasons(entry, site.theme.family, previousFamily, nextFamily, preferences), ...anchorReasons(entry, anchor)], true));
 
     return NextResponse.json({ candidates: fallback });
   } catch (error) {
@@ -66,7 +75,25 @@ export async function POST(request: NextRequest) {
 }
 
 function candidate(entry: DesignRegistryEntry, score: number, reasons: string[], previewOnly: boolean): SectionCandidate {
-  return { componentId: entry.id, version: entry.version, displayName: entry.displayName, score: Math.round(score * 10) / 10, reasons, previewOnly };
+  return { componentId: entry.id, version: entry.version, displayName: entry.displayName, score: Math.round(score * 10) / 10, reasons: [...new Set(reasons)].slice(0, 4), previewOnly, theme: entry.theme, modifiers: entry.modifiers };
+}
+
+function anchorBonus(entry: DesignRegistryEntry, anchor?: DesignRegistryEntry) {
+  if (!anchor || entry.id === anchor.id) return 0;
+  let score = 0;
+  if (entry.theme === anchor.theme) score += 20;
+  score += entry.modifiers.filter((modifier) => anchor.modifiers.includes(modifier)).length * 5;
+  if (entry.intelligence?.contentDensity === anchor.intelligence?.contentDensity) score += 4;
+  if (entry.intelligence?.visualWeight === anchor.intelligence?.visualWeight) score += 4;
+  return score;
+}
+
+function anchorReasons(entry: DesignRegistryEntry, anchor?: DesignRegistryEntry) {
+  if (!anchor || entry.id === anchor.id) return [];
+  const reasons: string[] = [];
+  if (entry.theme === anchor.theme) reasons.push("similar visual direction");
+  if (entry.modifiers.some((modifier) => anchor.modifiers.includes(modifier))) reasons.push("shares styling traits");
+  return reasons;
 }
 
 function previewScore(entry: DesignRegistryEntry, theme: DesignRegistryEntry["theme"], domain: keyof DesignRegistryEntry["domainCompatibility"], previous?: DesignRegistryEntry["family"], next?: DesignRegistryEntry["family"], preferences?: DesignPreferenceQuery) {
@@ -124,3 +151,4 @@ async function verifyUser(authorization: string) {
 }
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function optionalText(value: unknown) { const result = text(value); return result || undefined; }
+function stringArray(value: unknown) { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : []; }

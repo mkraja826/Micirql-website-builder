@@ -8,7 +8,7 @@ export type CompositionCandidate = {
   score: number;
   reasons: string[];
   visualWeight: "light" | "medium" | "heavy";
-  contentDensity: "sparse" | "balanced" | "dense";
+  contentDensity: "low" | "medium" | "high";
   imageRequirement: "none" | "optional" | "recommended" | "required";
 };
 
@@ -44,6 +44,7 @@ export type CompositionInput = {
 type AiChoice = { family: string; componentId: string };
 type AiPageChoice = { path: string; sections: AiChoice[] };
 type AiComposition = { pages: AiPageChoice[] };
+type PlacementRole = "opening" | "early-proof" | "core-content" | "visual-break" | "decision-support" | "conversion" | "closing";
 
 const KNOWN_FAMILIES = new Set<ComponentFamily>([
   "navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "portfolio",
@@ -55,10 +56,7 @@ const KNOWN_FAMILIES = new Set<ComponentFamily>([
 export async function composeSiteFromRegistry(input: CompositionInput): Promise<CompositionResult> {
   const shortlistSize = Math.max(2, Math.min(input.shortlistSize ?? 6, 12));
   const warnings: string[] = [];
-  const shortlistByPage = input.plan.pages.map((page) => ({
-    page,
-    sections: buildShortlists(input.plan, page.requiredSectionFamilies, input.registry, shortlistSize),
-  }));
+  const shortlistByPage = buildPageShortlists(input.plan, input.registry, shortlistSize);
 
   for (const page of shortlistByPage) {
     for (const item of page.sections) {
@@ -73,8 +71,8 @@ export async function composeSiteFromRegistry(input: CompositionInput): Promise<
           "You are the MiCirql composition selector.",
           "Choose only component IDs supplied in candidate lists.",
           "Do not invent component IDs, sections, copy, CSS, code, or business facts.",
-          "Preserve the supplied section-family order unless changing order is explicitly unnecessary; do not add or remove required families.",
-          "Prefer visual rhythm: avoid consecutive heavy sections and consecutive dense sections when alternatives exist.",
+          "Preserve the supplied section-family order. Do not add or remove required families.",
+          "Prefer visual rhythm: avoid consecutive heavy sections and consecutive high-density sections when alternatives exist.",
           "Return JSON only with shape: { pages: [{ path, sections: [{ family, componentId }] }] }.",
         ].join("\n"),
         input: {
@@ -93,7 +91,7 @@ export async function composeSiteFromRegistry(input: CompositionInput): Promise<
       const validated = validateAiChoice(parsed, shortlistByPage);
       if (validated.ok) {
         return {
-          pages: materializeAiComposition(input.plan, validated.value, shortlistByPage),
+          pages: materializeAiComposition(validated.value, shortlistByPage),
           modelId: input.model.id,
           fallbackUsed: false,
           warnings,
@@ -106,7 +104,7 @@ export async function composeSiteFromRegistry(input: CompositionInput): Promise<
   }
 
   return {
-    pages: materializeDeterministic(input.plan, shortlistByPage),
+    pages: materializeDeterministic(shortlistByPage),
     ...(input.model ? { modelId: input.model.id } : {}),
     fallbackUsed: Boolean(input.model),
     warnings,
@@ -125,12 +123,12 @@ function buildShortlists(plan: SitePlan, requestedFamilies: string[], registry: 
       modifiers: plan.design.modifiers as ThemeModifier[],
       brandPersonalities: plan.brand.personalities,
       requiredCapabilities: requiredCapabilitiesForFamily(family, plan.business.requiredFunctions),
-      conversionGoal: normalizeGoal(plan.business.primaryGoal),
+      conversionGoals: [normalizeGoal(plan.business.primaryGoal)],
       placementRole: placementRole(index, families.length, family),
       previousFamily,
       nextFamily,
-      desiredVisualWeight: plan.brand.visualWeight,
-      imageryDirection: plan.brand.imageryDirection,
+      preferImage: prefersImage(plan.brand.imageryDirection),
+      targetVisualWeight: plan.brand.visualWeight,
       limit,
     });
     return { family, candidates: ranked.map(toCandidate) };
@@ -143,34 +141,36 @@ function toCandidate(ranked: RankedDesign): CompositionCandidate {
     componentId: ranked.entry.id,
     family: ranked.entry.family,
     score: ranked.score,
-    reasons: ranked.reasons ?? [],
+    reasons: ranked.reasons,
     visualWeight: intelligence?.visualWeight ?? "medium",
-    contentDensity: intelligence?.contentDensity ?? "balanced",
+    contentDensity: intelligence?.contentDensity ?? "medium",
     imageRequirement: intelligence?.imageRequirement ?? "optional",
   };
 }
 
-function materializeDeterministic(plan: SitePlan, pages: ReturnType<typeof buildPageShortlists>): ComposedPage[] {
-  return pages.map(({ page, sections }) => ({
-    name: page.name,
-    path: page.path,
-    purpose: page.purpose,
-    sections: sections.flatMap((item) => {
-      const choice = chooseWithRhythm(item.candidates, []);
-      return choice ? [{ family: item.family, componentId: choice.componentId, source: "ranker" as const, score: choice.score, reasons: choice.reasons }] : [];
-    }),
-  }));
+function materializeDeterministic(pages: ReturnType<typeof buildPageShortlists>): ComposedPage[] {
+  return pages.map(({ page, sections }) => {
+    const selected: CompositionCandidate[] = [];
+    const output: ComposedSection[] = [];
+    for (const item of sections) {
+      const choice = chooseWithRhythm(item.candidates, selected);
+      if (!choice) continue;
+      selected.push(choice);
+      output.push({ family: item.family, componentId: choice.componentId, source: "ranker", score: choice.score, reasons: choice.reasons });
+    }
+    return { name: page.name, path: page.path, purpose: page.purpose, sections: output };
+  });
 }
 
-function materializeAiComposition(plan: SitePlan, ai: AiComposition, shortlists: ReturnType<typeof buildPageShortlists>): ComposedPage[] {
+function materializeAiComposition(ai: AiComposition, shortlists: ReturnType<typeof buildPageShortlists>): ComposedPage[] {
   return shortlists.map(({ page, sections }) => {
     const selectedPage = ai.pages.find((candidate) => candidate.path === page.path)!;
     return {
       name: page.name,
       path: page.path,
       purpose: page.purpose,
-      sections: selectedPage.sections.map((choice) => {
-        const shortlist = sections.find((item) => item.family === choice.family)!;
+      sections: selectedPage.sections.map((choice, index) => {
+        const shortlist = sections[index]!;
         const selected = shortlist.candidates.find((candidate) => candidate.componentId === choice.componentId)!;
         return { family: shortlist.family, componentId: selected.componentId, source: "ai" as const, score: selected.score, reasons: selected.reasons };
       }),
@@ -182,7 +182,10 @@ function chooseWithRhythm(candidates: CompositionCandidate[], previous: Composit
   if (!candidates.length) return undefined;
   const last = previous.at(-1);
   if (!last) return candidates[0];
-  return candidates.find((candidate) => !(candidate.visualWeight === "heavy" && last.visualWeight === "heavy") && !(candidate.contentDensity === "dense" && last.contentDensity === "dense")) ?? candidates[0];
+  return candidates.find((candidate) =>
+    !(candidate.visualWeight === "heavy" && last.visualWeight === "heavy") &&
+    !(candidate.contentDensity === "high" && last.contentDensity === "high")
+  ) ?? candidates[0];
 }
 
 function validateAiChoice(value: AiComposition | null, shortlists: ReturnType<typeof buildPageShortlists>): { ok: true; value: AiComposition } | { ok: false; issues: string[] } {
@@ -231,11 +234,16 @@ function normalizeGoal(goal: string): string {
   return "conversion";
 }
 
-function placementRole(index: number, total: number, family: ComponentFamily): string {
+function placementRole(index: number, total: number, family: ComponentFamily): PlacementRole {
   if (family === "hero" || index === 0) return "opening";
   if (family === "cta" || family === "contact") return index >= total - 2 ? "closing" : "conversion";
   if (["testimonials", "stats", "team"].includes(family)) return index < Math.ceil(total / 2) ? "early-proof" : "decision-support";
-  return index < total / 2 ? "exploration" : "decision-support";
+  if (["gallery", "portfolio", "carousel"].includes(family)) return "visual-break";
+  return index < total / 2 ? "core-content" : "decision-support";
+}
+
+function prefersImage(imageryDirection: SitePlan["brand"]["imageryDirection"]): boolean {
+  return ["photography", "mixed", "product", "architectural", "editorial"].includes(imageryDirection);
 }
 
 function requiredCapabilitiesForFamily(family: ComponentFamily, requiredFunctions: string[]): string[] {

@@ -6,6 +6,7 @@ import { createEditorHistory,createEditorState,executeEditorCommand,markEditorSa
 import { RendererPreview } from "./renderer-preview";
 import { SectionDesignSwitcher } from "./section-design-switcher";
 import { SectionControls } from "./section-controls";
+import { ThemeStudio } from "./theme-studio";
 import { AssetPicker } from "./asset-picker";
 import { PagesManager } from "./pages-manager";
 import { FunctionsManager } from "./functions-manager";
@@ -39,7 +40,7 @@ export default function WorkspaceClient(){
  :mode==="functions"&&activeSection?<FunctionsManager site={state.site} section={activeSection} onBind={(bindingKey,actionId)=>commit({type:"binding.set",pageId:activePage.id,sectionId:activeSection.id,bindingKey,actionId})} onRemove={bindingKey=>commit({type:"binding.remove",pageId:activePage.id,sectionId:activeSection.id,bindingKey})}/>
  :mode==="domain"?<PublishReadinessManager site={state.site}/>
  :mode==="seo"?<div className="inspector-form"><label>SEO title<input value={activePage.seo.title} onChange={e=>commit({type:"page.seo.patch",pageId:activePage.id,patch:{title:e.target.value}})}/></label><label>Description<textarea value={activePage.seo.description} onChange={e=>commit({type:"page.seo.patch",pageId:activePage.id,patch:{description:e.target.value}})}/></label></div>
- :mode==="design"?<div className="inspector-form"><label>Primary color<input type="color" value={state.site.theme.brand.colors.primary} onChange={e=>commit({type:"brand.patch",patch:{colors:{...state.site.theme.brand.colors,primary:e.target.value}}})}/></label><label>Background<input type="color" value={state.site.theme.brand.colors.background} onChange={e=>commit({type:"brand.patch",patch:{colors:{...state.site.theme.brand.colors,background:e.target.value}}})}/></label>{activeSection&&activeSectionFamily?<SectionDesignSwitcher family={activeSectionFamily} theme={state.site.theme.family} currentComponentId={activeSection.component.componentId} onSelect={(componentId,version)=>commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId,version})}/>:null}</div>
+ :mode==="design"?<div className="inspector-form"><ThemeStudio theme={state.site.theme} onChange={theme=>commit({type:"theme.set",theme})}/>{activeSection&&activeSectionFamily?<SectionDesignSwitcher family={activeSectionFamily} theme={state.site.theme.family} currentComponentId={activeSection.component.componentId} onSelect={(componentId,version)=>commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId,version})}/>:null}</div>
  :<div className="inspector-empty"><p>Select a section to configure this area.</p></div>}</aside>
  <nav className="mobile-editor-bar">{(["content","images","design","pages","seo","functions","domain"] as Mode[]).map(item=><button key={item} className={mode===item?"is-active":""} onClick={()=>setMode(item)}>{item}</button>)}</nav>
  </main>;

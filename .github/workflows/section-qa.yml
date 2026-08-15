@@ -12,6 +12,7 @@ on:
       - "qa/**"
       - "playwright.config.ts"
       - "package.json"
+      - ".github/workflows/section-qa.yml"
   push:
     branches: [main]
     paths:
@@ -23,6 +24,7 @@ on:
       - "qa/**"
       - "playwright.config.ts"
       - "package.json"
+      - ".github/workflows/section-qa.yml"
 
 jobs:
   section-qa:
@@ -38,7 +40,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile

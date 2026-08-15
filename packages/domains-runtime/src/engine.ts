@@ -11,9 +11,9 @@ export async function beginDomainConnection(
   if (domain.mode === "micirql-subdomain") {
     const zone = await dependencies.provider.createZone({ hostname: domain.hostname, siteId: domain.siteId });
     await dependencies.provider.ensureOriginRecords({ zoneId: zone.zoneId, hostname: domain.hostname });
-    const next = {
+    const next: DomainRecord = {
       ...domain,
-      status: "ssl_pending" as const,
+      status: "ssl_pending",
       providerZoneId: zone.zoneId,
       expectedNameservers: zone.nameservers,
       lastCheckedAt: nowIso(dependencies),
@@ -22,9 +22,9 @@ export async function beginDomainConnection(
     return next;
   }
 
-  const next = {
+  const next: DomainRecord = {
     ...domain,
-    status: "ownership_verifying" as const,
+    status: "ownership_verifying",
     lastCheckedAt: nowIso(dependencies),
   };
   await dependencies.store.saveDomain(next);
@@ -44,11 +44,11 @@ export async function verifyOwnership(
   });
 
   const next: DomainRecord = verified
-    ? { ...domain, status: "ownership_verified", lastCheckedAt: nowIso(dependencies), lastError: undefined }
+    ? withoutLastError({ ...domain, status: "ownership_verified", lastCheckedAt: nowIso(dependencies) })
     : { ...domain, status: "ownership_verifying", lastCheckedAt: nowIso(dependencies), lastError: "Ownership TXT record not verified." };
 
-  await dependencies.store.saveDomain(stripUndefined(next));
-  return stripUndefined(next);
+  await dependencies.store.saveDomain(next);
+  return next;
 }
 
 export async function provisionManagedZone(
@@ -63,11 +63,11 @@ export async function provisionManagedZone(
 
   if (!domain.providerZoneId) {
     const zone = await dependencies.provider.createZone({ hostname: domain.hostname, siteId: domain.siteId });
-    const next = {
+    const next: DomainRecord = {
       ...domain,
       providerZoneId: zone.zoneId,
       expectedNameservers: zone.nameservers,
-      status: "delegation_pending" as const,
+      status: "delegation_pending",
       lastCheckedAt: nowIso(dependencies),
     };
     await dependencies.store.saveDomain(next);
@@ -90,22 +90,21 @@ export async function verifyDelegation(
   const delegated = expected.every((nameserver) => actual.includes(nameserver));
 
   if (!delegated) {
-    const next = stripUndefined({
+    const next: DomainRecord = {
       ...domain,
-      status: "delegation_pending" as const,
+      status: "delegation_pending",
       lastCheckedAt: nowIso(dependencies),
       lastError: "Authoritative nameservers do not yet match MiCirql DNS.",
-    });
+    };
     await dependencies.store.saveDomain(next);
     return next;
   }
 
   await dependencies.provider.ensureOriginRecords({ zoneId: domain.providerZoneId, hostname: domain.hostname });
-  const next = stripUndefined({
+  const next = withoutLastError({
     ...domain,
     status: "ssl_pending" as const,
     lastCheckedAt: nowIso(dependencies),
-    lastError: undefined,
   });
   await dependencies.store.saveDomain(next);
   return next;
@@ -117,13 +116,14 @@ export async function activateWhenReady(
 ): Promise<DomainRecord> {
   const domain = await mustGetDomain(dependencies, domainId);
   const ssl = await dependencies.provider.checkSsl({ hostname: domain.hostname });
-  const next = stripUndefined({
+  const base: DomainRecord = {
     ...domain,
     sslStatus: ssl,
-    status: ssl === "active" ? ("active" as const) : ssl === "failed" ? ("failed" as const) : ("ssl_pending" as const),
+    status: ssl === "active" ? "active" : ssl === "failed" ? "failed" : "ssl_pending",
     lastCheckedAt: nowIso(dependencies),
-    lastError: ssl === "failed" ? "SSL provisioning failed." : undefined,
-  });
+    ...(ssl === "failed" ? { lastError: "SSL provisioning failed." } : {}),
+  };
+  const next = ssl === "failed" ? base : withoutLastError(base);
   await dependencies.store.saveDomain(next);
   return next;
 }
@@ -156,7 +156,7 @@ export async function checkDomainHealth(
   }
 
   const sslOk = (await dependencies.provider.checkSsl({ hostname: domain.hostname })) === "active";
-  const health = {
+  const health: DomainHealth = {
     ownershipOk,
     delegationOk,
     sslOk,
@@ -164,13 +164,14 @@ export async function checkDomainHealth(
     checkedAt: nowIso(dependencies),
   };
 
-  const next = stripUndefined({
+  const base: DomainRecord = {
     ...domain,
-    status: health.healthy ? ("active" as const) : domain.status === "active" ? ("degraded" as const) : domain.status,
-    sslStatus: sslOk ? ("active" as const) : domain.sslStatus,
+    status: health.healthy ? "active" : domain.status === "active" ? "degraded" : domain.status,
+    sslStatus: sslOk ? "active" : domain.sslStatus,
     lastCheckedAt: health.checkedAt,
-    lastError: health.healthy ? undefined : "Domain health check failed.",
-  });
+    ...(health.healthy ? {} : { lastError: "Domain health check failed." }),
+  };
+  const next = health.healthy ? withoutLastError(base) : base;
   await dependencies.store.saveDomain(next);
   return health;
 }
@@ -180,24 +181,21 @@ export async function disconnectDomain(
   domainId: string,
 ): Promise<DomainRecord> {
   const domain = await mustGetDomain(dependencies, domainId);
-  const siteDomains = await dependencies.store.listSiteDomains(domain.siteId);
-  if (domain.primary && siteDomains.some((candidate) => candidate.id !== domain.id && candidate.status === "active")) {
+  if (domain.primary) {
     throw new Error("Move the canonical domain before disconnecting the current primary domain.");
   }
 
-  const disconnecting = { ...domain, status: "disconnecting" as const, lastCheckedAt: nowIso(dependencies) };
+  const disconnecting: DomainRecord = { ...domain, status: "disconnecting", lastCheckedAt: nowIso(dependencies) };
   await dependencies.store.saveDomain(disconnecting);
 
   if (domain.providerZoneId) await dependencies.provider.deleteZone({ zoneId: domain.providerZoneId });
 
-  const disconnected = stripUndefined({
-    ...disconnecting,
-    status: "disconnected" as const,
+  const { providerZoneId: _providerZoneId, expectedNameservers: _expectedNameservers, lastError: _lastError, ...rest } = disconnecting;
+  const disconnected: DomainRecord = {
+    ...rest,
+    status: "disconnected",
     primary: false,
-    providerZoneId: undefined,
-    expectedNameservers: undefined,
-    lastError: undefined,
-  });
+  };
   await dependencies.store.saveDomain(disconnected);
   return disconnected;
 }
@@ -216,6 +214,7 @@ function normalizeNameservers(values: string[]): string[] {
   return values.map((value) => value.trim().toLowerCase().replace(/\.$/, "")).sort();
 }
 
-function stripUndefined<T extends object>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
+function withoutLastError<T extends DomainRecord>(domain: T): DomainRecord {
+  const { lastError: _lastError, ...rest } = domain;
+  return rest;
 }

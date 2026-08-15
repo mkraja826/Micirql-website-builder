@@ -30,6 +30,10 @@ export function RendererPreview({
   onSelectSection,
   onInlineTextChange,
   onRequestImageChange,
+  onRequestDesignChange,
+  onRequestCopyEdit,
+  onRequestMove,
+  onRequestVisibility,
   onReorderSection,
 }: {
   site: Site;
@@ -39,6 +43,10 @@ export function RendererPreview({
   onSelectSection(sectionId: string): void;
   onInlineTextChange?(sectionId: string, propPath: string, value: string): void;
   onRequestImageChange?(sectionId: string, propPath: string): void;
+  onRequestDesignChange?(sectionId: string): void;
+  onRequestCopyEdit?(sectionId: string): void;
+  onRequestMove?(sectionId: string, direction: "up" | "down"): void;
+  onRequestVisibility?(sectionId: string, hidden: boolean): void;
   onReorderSection?(sectionId: string, toIndex: number): void;
 }) {
   const [preview, setPreview] = useState<PreviewPayload>();
@@ -76,6 +84,7 @@ export function RendererPreview({
 
   function handleSectionClick(event: MouseEvent<HTMLDivElement>, sectionId: string) {
     const target = event.target as HTMLElement;
+    if (target.closest("[data-mi-canvas-action]")) return;
     const inline = target.closest<HTMLElement>("[data-mi-prop-path]");
     const image = target.closest<HTMLElement>("[data-mi-image-field]");
     if (inline && onInlineTextChange) {
@@ -104,6 +113,12 @@ export function RendererPreview({
     setDraggedSectionId(undefined);
   }
 
+  function runAction(event: MouseEvent<HTMLButtonElement>, action: () => void) {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  }
+
   return (
     <div className={`site-preview renderer-site-preview viewport-${viewport}`}>
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
@@ -120,13 +135,15 @@ export function RendererPreview({
             const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
             if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
             const selected = section.id === selectedSectionId;
+            const sourceSection = site.pages.find((page) => page.path === path)?.sections.find((candidate) => candidate.id === section.id);
+            const hidden = sourceSection?.hidden ?? false;
             return (
               <div
                 key={section.id}
                 data-mi-section-id={section.id}
                 data-mi-component-id={section.componentId}
                 data-mi-component-version={section.componentVersion}
-                className={`mi-editor-section${selected ? " mi-editor-selected" : ""}`}
+                className={`mi-editor-section${selected ? " mi-editor-selected" : ""}${hidden ? " mi-editor-hidden" : ""}`}
                 draggable={Boolean(onReorderSection)}
                 onDragStart={(event) => {
                   setDraggedSectionId(section.id);
@@ -138,7 +155,16 @@ export function RendererPreview({
                 onDrop={(event) => handleDrop(event, index)}
                 onClick={(event) => handleSectionClick(event, section.id)}
               >
-                {selected ? <div className="mi-editor-canvas-toolbar"><span>Drag to move</span>{onRequestImageChange ? <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onRequestImageChange(section.id, "image"); }}>Replace image</button> : null}</div> : null}
+                {selected ? <div className="mi-editor-canvas-toolbar" data-mi-canvas-action="toolbar">
+                  <span className="mi-editor-canvas-label">{seed.family}</span>
+                  <div className="mi-editor-canvas-actions">
+                    {onRequestDesignChange ? <button type="button" data-mi-canvas-action="design" onClick={(event) => runAction(event, () => onRequestDesignChange(section.id))}>Replace design</button> : null}
+                    {onRequestCopyEdit ? <button type="button" data-mi-canvas-action="copy" onClick={(event) => runAction(event, () => onRequestCopyEdit(section.id))}>Edit copy</button> : null}
+                    {onRequestImageChange ? <button type="button" data-mi-canvas-action="image" onClick={(event) => runAction(event, () => onRequestImageChange(section.id, "image"))}>Change image</button> : null}
+                    {onRequestMove ? <span className="mi-editor-move-actions"><button type="button" title="Move section up" aria-label="Move section up" data-mi-canvas-action="move-up" disabled={index === 0} onClick={(event) => runAction(event, () => onRequestMove(section.id, "up"))}>↑</button><button type="button" title="Move section down" aria-label="Move section down" data-mi-canvas-action="move-down" disabled={index === preview.sections!.length - 1} onClick={(event) => runAction(event, () => onRequestMove(section.id, "down"))}>↓</button></span> : null}
+                    {onRequestVisibility ? <button type="button" className="is-muted" data-mi-canvas-action="visibility" onClick={(event) => runAction(event, () => onRequestVisibility(section.id, !hidden))}>{hidden ? "Show" : "Hide"}</button> : null}
+                  </div>
+                </div> : null}
                 <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />
               </div>
             );

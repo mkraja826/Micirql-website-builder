@@ -14,6 +14,7 @@ import {
   type EditorHistory,
   type EditorViewport,
 } from "@micirql/workspace";
+import { RendererPreview } from "./renderer-preview";
 
 type Mode = "content" | "images" | "design" | "pages" | "seo" | "functions" | "domain";
 type SaveState = "loading" | "saved" | "unsaved" | "saving" | "conflict" | "error";
@@ -80,6 +81,11 @@ const initialSite: Site = {
         props: {
           heading: "Everything stays editable",
           body: "The live draft is a validated Site Schema. Changes update the preview immediately and remain safe to publish.",
+          items: [
+            { title: "Mobile first", description: "Every layout begins with the smallest screen." },
+            { title: "Fast by default", description: "Approved components stay within the MiCirql performance protocol." },
+            { title: "Fully editable", description: "Content, assets, design and functionality remain workspace-controlled." },
+          ],
         },
         bindings: {}, hidden: false,
       },
@@ -152,7 +158,6 @@ export default function WorkspaceClient() {
     if (!loaded.current || !state.dirty || saveState === "saving" || saveState === "conflict") return;
     const timer = window.setTimeout(() => { void persist(state.site, state.revision); }, 700);
     return () => window.clearTimeout(timer);
-    // persistedRevision is intentionally captured so stale saves receive a 409 rather than overwriting.
   }, [state.site, state.revision, state.dirty, persistedRevision, saveState]);
 
   function commit(command: Parameters<typeof executeEditorCommand>[1]) {
@@ -252,30 +257,21 @@ export default function WorkspaceClient() {
             <button key={viewport} className={state.viewport === viewport ? "is-active" : ""} onClick={() => setViewport(viewport)}>{viewport}</button>
           ))}
         </div>
-        <div className={`site-preview viewport-${state.viewport}`} style={{ background: state.site.theme.brand.colors.background, color: state.site.theme.brand.colors.textPrimary }}>
-          {activePage.sections.filter((section) => !section.hidden).map((section) => {
-            const heading = String(section.props.heading ?? section.props.title ?? section.component.componentId);
-            const eyebrow = section.props.eyebrow ? String(section.props.eyebrow) : undefined;
-            const body = section.props.body ? String(section.props.body) : undefined;
-            const selected = activeSection?.id === section.id;
-            return (
-              <button key={section.id} className={`preview-section ${selected ? "is-selected" : ""}`} onClick={() => selectSection(activePage.id, section.id)}>
-                {eyebrow ? <span className="preview-eyebrow">{eyebrow}</span> : null}
-                <h2>{heading}</h2>
-                {body ? <p>{body}</p> : null}
-                <small>{section.component.componentId}</small>
-              </button>
-            );
-          })}
-        </div>
+        <RendererPreview
+          site={state.site}
+          path={activePage.path}
+          viewport={state.viewport}
+          selectedSectionId={activeSection?.id}
+          onSelectSection={(sectionId) => selectSection(activePage.id, sectionId)}
+        />
       </section>
 
       <aside className="workspace-inspector">
         <div className="inspector-heading"><span>{mode}</span><strong>{activeSection ? activeSection.id : activePage.name}</strong></div>
         {mode === "content" && activeSection ? (
           <div className="inspector-form">
-            <label>Heading<input value={String(activeSection.props.heading ?? "")} onChange={(event) => commit({ type: "content.set", pageId: activePage.id, sectionId: activeSection.id, propPath: "heading", value: event.target.value })} /></label>
-            <label>Body<textarea value={String(activeSection.props.body ?? "")} onChange={(event) => commit({ type: "content.set", pageId: activePage.id, sectionId: activeSection.id, propPath: "body", value: event.target.value })} /></label>
+            <label>Heading<input value={String(activeSection.props.heading ?? activeSection.props.title ?? "")} onChange={(event) => commit({ type: "content.set", pageId: activePage.id, sectionId: activeSection.id, propPath: activeSection.props.title !== undefined ? "title" : "heading", value: event.target.value })} /></label>
+            <label>Body<textarea value={String(activeSection.props.body ?? activeSection.props.description ?? "")} onChange={(event) => commit({ type: "content.set", pageId: activePage.id, sectionId: activeSection.id, propPath: activeSection.props.description !== undefined ? "description" : "body", value: event.target.value })} /></label>
           </div>
         ) : mode === "seo" ? (
           <div className="inspector-form">

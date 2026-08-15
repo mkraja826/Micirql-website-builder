@@ -4,6 +4,7 @@ import type { PlannerModel } from "./planner-adapter";
 
 export type CompositionCandidate = {
   componentId: string;
+  version: string;
   family: ComponentFamily;
   score: number;
   reasons: string[];
@@ -15,6 +16,7 @@ export type CompositionCandidate = {
 export type ComposedSection = {
   family: ComponentFamily;
   componentId: string;
+  version: string;
   source: "ai" | "ranker";
   score: number;
   reasons: string[];
@@ -139,6 +141,7 @@ function toCandidate(ranked: RankedDesign): CompositionCandidate {
   const intelligence = ranked.entry.intelligence;
   return {
     componentId: ranked.entry.id,
+    version: ranked.entry.version,
     family: ranked.entry.family,
     score: ranked.score,
     reasons: ranked.reasons,
@@ -156,7 +159,7 @@ function materializeDeterministic(pages: ReturnType<typeof buildPageShortlists>)
       const choice = chooseWithRhythm(item.candidates, selected);
       if (!choice) continue;
       selected.push(choice);
-      output.push({ family: item.family, componentId: choice.componentId, source: "ranker", score: choice.score, reasons: choice.reasons });
+      output.push({ family: item.family, componentId: choice.componentId, version: choice.version, source: "ranker", score: choice.score, reasons: choice.reasons });
     }
     return { name: page.name, path: page.path, purpose: page.purpose, sections: output };
   });
@@ -172,7 +175,7 @@ function materializeAiComposition(ai: AiComposition, shortlists: ReturnType<type
       sections: selectedPage.sections.map((choice, index) => {
         const shortlist = sections[index]!;
         const selected = shortlist.candidates.find((candidate) => candidate.componentId === choice.componentId)!;
-        return { family: shortlist.family, componentId: selected.componentId, source: "ai" as const, score: selected.score, reasons: selected.reasons };
+        return { family: shortlist.family, componentId: selected.componentId, version: selected.version, source: "ai" as const, score: selected.score, reasons: selected.reasons };
       }),
     };
   });
@@ -226,7 +229,7 @@ function toFamily(value: string): ComponentFamily | undefined {
 
 function normalizeGoal(goal: string): string {
   const value = goal.toLowerCase();
-  if (/book|appointment|reservation/.test(value)) return "booking";
+  if (/book|appointment|reservation/.test(value)) return "appointments";
   if (/lead|enquir|contact|quote/.test(value)) return "lead-generation";
   if (/sell|sale|purchase|checkout/.test(value)) return "sales";
   if (/trust|credib|authority/.test(value)) return "trust";

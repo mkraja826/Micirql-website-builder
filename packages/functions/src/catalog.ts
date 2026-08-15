@@ -146,6 +146,21 @@ export const nativeFunctionCatalog = [
     adapterKey: "records.bookingRequests.create",
     audit: true,
   },
+  {
+    id: "enrollment.enquiry",
+    version: "1.0.0",
+    description: "Capture an education or training programme enquiry.",
+    input: contactSchema.extend({
+      course: z.string().trim().max(180).optional(),
+      deliveryMode: z.enum(["online", "in-person", "hybrid", "unsure"]).optional(),
+    }),
+    output: createdOutputSchema,
+    access: "public",
+    rateLimit: publicRateLimit,
+    idempotent: true,
+    adapterKey: "records.enrollmentEnquiries.create",
+    audit: true,
+  },
 ] satisfies RuntimeFunctionDefinition[];
 
 export function getNativeFunction(actionId: string) {

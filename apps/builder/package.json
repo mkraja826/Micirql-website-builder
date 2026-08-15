@@ -18,6 +18,7 @@
     "@micirql/functions": "workspace:*",
     "@micirql/primitives": "workspace:*",
     "@micirql/publisher": "workspace:*",
+    "@micirql/registry": "workspace:*",
     "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",
     "@micirql/sections": "workspace:*",

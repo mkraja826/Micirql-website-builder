@@ -8,7 +8,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@micirql/components": "workspace:*",
+    "@micirql/primitives": "workspace:*",
+    "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",
+    "@micirql/sections": "workspace:*",
     "@micirql/workspace": "workspace:*",
     "next": "latest",
     "react": "latest",

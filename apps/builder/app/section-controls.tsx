@@ -7,7 +7,7 @@ import { SectionLibraryBrowser } from "./section-library-browser";
 
 export function SectionControls({ page, theme, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
-  theme: ThemeFamily;
+  theme?: ThemeFamily;
   selectedSectionId?: string;
   onSelect(sectionId: string): void;
   onAdd(section: SiteSection): void;
@@ -18,6 +18,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
   const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedIndex = selectedSectionId ? page.sections.findIndex((section) => section.id === selectedSectionId) : -1;
   const selected = selectedIndex >= 0 ? page.sections[selectedIndex] : undefined;
+  const activeTheme = theme ?? inferTheme(page);
 
   return <div className="section-controls">
     <div className="section-controls-heading">
@@ -39,7 +40,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
       <button type="button" className="danger" onClick={() => onRemove(selected.id)}>Delete</button>
     </div> : null}
 
-    {libraryOpen ? <SectionLibraryBrowser theme={theme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {
+    {libraryOpen ? <SectionLibraryBrowser theme={activeTheme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {
       onAdd(newSection(family, variant, componentId));
       setLibraryOpen(false);
     }} /> : null}
@@ -48,6 +49,12 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
 
 function newSection(family: SectionFamily, _variant: SectionVariant, componentId: string): SiteSection {
   return { id: `${family}-${crypto.randomUUID()}`, component: { componentId, version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
+}
+
+function inferTheme(page: SitePage): ThemeFamily {
+  const prefix = page.sections.map((section) => section.component.componentId.split("-")[0]).find((value) => value && value.length === 3)?.toUpperCase();
+  const themes: Record<string, ThemeFamily> = { MIN: "minimalist", COR: "corporate", LUX: "luxury", EDT: "editorial", GLS: "glass", MAX: "maximalist", ORG: "organic", FUT: "futuristic", PLY: "playful", CIN: "cinematic" };
+  return prefix && themes[prefix] ? themes[prefix] : "minimalist";
 }
 
 function defaultProps(family: SectionFamily): Record<string, unknown> {

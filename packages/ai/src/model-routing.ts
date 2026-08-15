@@ -1,6 +1,6 @@
-export type AiTaskKind = "plan-site" | "generate-image" | "build-component";
+export type AiTaskKind = "plan-site" | "generate-content" | "generate-image" | "build-component";
 
-export type ModelCapability = "structured-planning" | "image-generation" | "component-codegen";
+export type ModelCapability = "structured-planning" | "content-generation" | "image-generation" | "component-codegen";
 
 export type ModelProfile = {
   id: string;
@@ -65,6 +65,14 @@ export function defaultRoutingPolicy(task: AiTaskKind): RoutingPolicy {
         task,
         requiredCapability: "structured-planning",
         minimumQualityScore: 85,
+        preferredLatency: "low",
+        maximumCostClass: "medium",
+      };
+    case "generate-content":
+      return {
+        task,
+        requiredCapability: "content-generation",
+        minimumQualityScore: 88,
         preferredLatency: "low",
         maximumCostClass: "medium",
       };

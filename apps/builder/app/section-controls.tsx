@@ -79,7 +79,7 @@ function labelFor(section: SiteSection): string {
   const componentId = section.component.componentId;
   const codeMatch = componentId.match(/^[A-Z]{3}-(?:HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT)-/);
   if (codeMatch) {
-    const familyCode = componentId.split("-")[1];
+    const familyCode = componentId.split("-")[1] ?? "";
     const names: Record<string, string> = { HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", CTA: "Call to action", CONT: "Contact" };
     return names[familyCode] ?? componentId;
   }

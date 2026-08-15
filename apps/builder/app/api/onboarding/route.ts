@@ -66,8 +66,10 @@ export async function POST(request: NextRequest) {
     const subindustry = optionalString(body.subindustry);
     const location = optionalString(body.location);
     const notes = optionalString(body.notes);
+    const logoUrl = optionalString(body.logoUrl);
+    const brandColors = hexArray(body.brandColors);
 
-    const advice = await adviseOnboardingPlan({ businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes });
+    const advice = await adviseOnboardingPlan({ businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, brandColors });
     const requestPayload = { workspace_id: workspaceId, site_id: siteId, industry: advice.industry, subindustry: advice.subindustry, style_tags: advice.styleTags, required_capabilities: advice.requiredCapabilities, goals: advice.goals };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify(requestPayload) });
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest) {
     const buildPayload = await buildResponse.json() as { build?: any };
     const build = buildPayload.build;
     const buildId = typeof build === "object" && build ? (build.id ?? build.build_id ?? null) : null;
-    const brief = { businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes };
+    const brief = { businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, logoUrl, brandColors: advice.brandColors };
 
     let content: unknown = null;
     let contentWarning: string | null = null;
@@ -120,7 +122,16 @@ export async function POST(request: NextRequest) {
         if (!current) throw new Error("Generated draft could not be loaded for design preset application.");
         const preset = topRecommendation.preset;
         const nextSnapshot = structuredClone(current.snapshot);
-        nextSnapshot.theme = preset.theme;
+        nextSnapshot.theme = structuredClone(preset.theme);
+        const [primary, accent, secondary] = advice.brandColors;
+        if (primary || accent || secondary) {
+          nextSnapshot.theme.brand.colors = {
+            ...nextSnapshot.theme.brand.colors,
+            ...(primary ? { primary } : {}),
+            ...(accent ? { accent } : {}),
+            ...(secondary ? { secondary } : {}),
+          };
+        }
         for (const page of nextSnapshot.pages) {
           for (const section of page.sections) {
             const family = sectionFamilyFromComponentId(section.component.componentId);
@@ -137,12 +148,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const profile = { workspace_id: workspaceId, site_id: siteId, created_by: user.id, business_name: businessName, industry, subindustry, location, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities, languages, notes, plan_id: plan.plan_id, build_id: buildId, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const profile = { workspace_id: workspaceId, site_id: siteId, created_by: user.id, business_name: businessName, industry, subindustry, location, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities, languages, notes, logo_url: logoUrl, brand_colors: advice.brandColors, plan_id: plan.plan_id, build_id: buildId, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     const profileResponse = await fetch(`${url}/rest/v1/business_onboarding_profiles?on_conflict=workspace_id,site_id`, { method: "POST", headers: { ...commonHeaders, Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify(profile) });
     if (!profileResponse.ok) throw await remoteError(profileResponse);
     const savedProfiles = await profileResponse.json() as unknown[];
 
-    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, planningSource: advice.source, planningWarning: advice.warning ?? null, content, contentWarning, images, imageWarning, initialPreset, presetWarning, profile: savedProfiles[0] ?? profile });
+    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, planningSource: advice.source, planningWarning: advice.warning ?? null, brandPalette: advice.brandColors, content, contentWarning, images, imageWarning, initialPreset, presetWarning, profile: savedProfiles[0] ?? profile });
   } catch (error) { return errorResponse(error); }
 }
 
@@ -166,6 +177,9 @@ function stringArray(value: unknown) {
   if (Array.isArray(value)) return value.map(string).filter(Boolean);
   if (typeof value === "string") return value.split(",").map((item) => item.trim()).filter(Boolean);
   return [];
+}
+function hexArray(value: unknown) {
+  return stringArray(value).filter((item) => /^#[0-9a-f]{6}$/i.test(item)).slice(0, 5);
 }
 async function remoteError(response: Response) {
   const body = await response.text();

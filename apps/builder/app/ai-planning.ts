@@ -11,6 +11,7 @@ export type OnboardingPlanningInput = {
   requiredCapabilities: string[];
   languages: string[];
   notes: string | null;
+  brandColors: string[];
 };
 
 export type PlanningAdvice = {
@@ -19,6 +20,7 @@ export type PlanningAdvice = {
   styleTags: string[];
   requiredCapabilities: string[];
   goals: string[];
+  brandColors: string[];
   source: "ai" | "deterministic";
   warning?: string;
 };
@@ -38,9 +40,10 @@ export async function adviseOnboardingPlan(input: OnboardingPlanningInput): Prom
       system: [
         "You are MiCirql's website planning advisor. Return JSON only.",
         "Do not invent business facts, services, locations, credentials, prices, claims, or capabilities.",
-        "You may normalize the industry/subindustry wording and prioritize the supplied goals, style tags, and capabilities.",
+        "You may normalize the industry/subindustry wording and prioritize the supplied goals, style tags, capabilities and brand colors.",
         "Every array item in your response MUST come from the corresponding supplied array.",
-        "Return exactly: industry, subindustry, styleTags, requiredCapabilities, goals.",
+        "When brandColors are supplied, reorder only those supplied colors by suitability: primary first, accent second, supporting/secondary third. Do not invent new colors.",
+        "Return exactly: industry, subindustry, styleTags, requiredCapabilities, goals, brandColors.",
       ].join("\n"),
       input,
       responseFormat: "json",
@@ -53,6 +56,7 @@ export async function adviseOnboardingPlan(input: OnboardingPlanningInput): Prom
       styleTags: allowedArray(record.styleTags, input.styleTags),
       requiredCapabilities: allowedArray(record.requiredCapabilities, input.requiredCapabilities),
       goals: allowedArray(record.goals, input.goals),
+      brandColors: allowedArray(record.brandColors, input.brandColors),
       source: "ai",
     };
   } catch (error) {
@@ -67,6 +71,7 @@ function deterministic(input: OnboardingPlanningInput): PlanningAdvice {
     styleTags: input.styleTags,
     requiredCapabilities: input.requiredCapabilities,
     goals: input.goals,
+    brandColors: input.brandColors,
     source: "deterministic",
   };
 }

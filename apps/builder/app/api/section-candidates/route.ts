@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
       domain: site.domain,
       modifiers: site.theme.modifiers,
       conversionGoals: goalsForFamily(family),
-      previousFamily,
-      nextFamily,
-      preferences,
+      ...(previousFamily ? { previousFamily } : {}),
+      ...(nextFamily ? { nextFamily } : {}),
+      ...(preferences ? { preferences } : {}),
       limit: 5,
     });
 
@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ candidates: ranked.map(({ entry, score, reasons }) => candidate(entry, score, reasons, false)) });
     }
 
-    // Until enough entries are certified, keep exploration usable without mislabeling drafts as production.
     const fallback = seedSectionRegistryEntries
       .filter((entry) => entry.family === family)
       .map((entry) => ({ entry, score: previewScore(entry, site.theme.family, site.domain, previousFamily, nextFamily, preferences) }))

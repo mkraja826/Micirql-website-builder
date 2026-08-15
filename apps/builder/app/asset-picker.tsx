@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AssetRecord } from "@micirql/assets";
+import { uploadWorkspaceImage } from "./upload-client";
 
 export function AssetPicker({ workspaceId, siteId, pagePath, sectionId, domain, theme, family, currentAssetId, onSelect }: {
   workspaceId: string;
@@ -22,6 +23,7 @@ export function AssetPicker({ workspaceId, siteId, pagePath, sectionId, domain, 
   const [focalY, setFocalY] = useState(.5);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState("");
+  const [uploadPercent, setUploadPercent] = useState<number | undefined>();
 
   useEffect(() => { void refresh(); }, [workspaceId, domain, theme, family, source]);
   useEffect(() => {
@@ -44,23 +46,26 @@ export function AssetPicker({ workspaceId, siteId, pagePath, sectionId, domain, 
   }
 
   async function upload(file: File) {
-    setStatus("Uploading…");
+    setStatus("Preparing upload…");
+    setUploadPercent(0);
     try {
-      const dataUrl = await readDataUrl(file);
-      const dimensions = await imageDimensions(dataUrl);
-      const response = await fetch("/api/assets/upload", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height, sectionFamily: family }),
+      const asset = await uploadWorkspaceImage({
+        workspaceId,
+        siteId,
+        file,
+        onProgress(progress) {
+          setUploadPercent(progress.percent);
+          setStatus(progress.phase === "processing" ? "Optimizing image…" : progress.phase === "complete" ? "Uploaded" : `Uploading… ${progress.percent}%`);
+        },
       });
-      const payload = await response.json() as { asset?: AssetRecord; error?: string };
-      if (!response.ok || !payload.asset) throw new Error(payload.error ?? "Upload failed.");
       setSource("user-upload");
-      choose(payload.asset);
+      choose(asset);
       await refresh();
       setStatus("Uploaded");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setUploadPercent(undefined);
     }
   }
 
@@ -89,6 +94,7 @@ export function AssetPicker({ workspaceId, siteId, pagePath, sectionId, domain, 
     </div>
 
     {source === "user-upload" ? <label className="asset-upload">Upload image<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} /></label> : null}
+    {uploadPercent !== undefined ? <progress className="asset-upload-progress" max={100} value={uploadPercent}>{uploadPercent}%</progress> : null}
     {source === "ai-generated" ? <div className="asset-generate"><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Describe the image you need" /><button onClick={() => void generate()}>Generate image</button></div> : null}
 
     {source !== "ai-generated" ? <div className="asset-grid">
@@ -106,22 +112,4 @@ export function AssetPicker({ workspaceId, siteId, pagePath, sectionId, domain, 
     </div> : null}
     {status ? <p className="asset-status" role="status">{status}</p> : null}
   </div>;
-}
-
-function readDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error ?? new Error("Could not read image."));
-    reader.readAsDataURL(file);
-  });
-}
-
-function imageDimensions(src: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-    image.onerror = () => reject(new Error("Could not inspect image dimensions."));
-    image.src = src;
-  });
 }

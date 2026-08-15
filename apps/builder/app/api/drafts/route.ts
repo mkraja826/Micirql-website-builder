@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { siteSchema, type Site } from "@micirql/schema";
 import { getSupabaseDraft, saveSupabaseDraft, usesSupabaseDraftStore, type DraftRecord } from "./supabase-store";
+import { resolveOrBootstrapDraft } from "./bootstrap-context";
 
 type DraftGlobal = typeof globalThis & { __micirqlDrafts?: Map<string, DraftRecord> };
 const globalDrafts = globalThis as DraftGlobal;
@@ -8,15 +9,21 @@ const drafts = globalDrafts.__micirqlDrafts ?? new Map<string, DraftRecord>();
 globalDrafts.__micirqlDrafts = drafts;
 
 function key(workspaceId: string, siteId: string) { return `${workspaceId}:${siteId}`; }
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function GET(request: NextRequest) {
   const workspaceId = request.nextUrl.searchParams.get("workspaceId")?.trim();
   const siteId = request.nextUrl.searchParams.get("siteId")?.trim();
   if (!workspaceId || !siteId) return NextResponse.json({ error: "workspaceId and siteId are required" }, { status: 400 });
   try {
-    const record = usesSupabaseDraftStore()
-      ? await getSupabaseDraft(request, workspaceId, siteId)
-      : drafts.get(key(workspaceId, siteId));
+    if (usesSupabaseDraftStore()) {
+      let record: DraftRecord | undefined;
+      if (UUID_RE.test(workspaceId) && UUID_RE.test(siteId)) record = await getSupabaseDraft(request, workspaceId, siteId);
+      if (!record) record = await resolveOrBootstrapDraft(request, workspaceId, siteId);
+      if (!record) return NextResponse.json({ found: false }, { status: 404 });
+      return NextResponse.json({ found: true, draft: record });
+    }
+    const record = drafts.get(key(workspaceId, siteId));
     if (!record) return NextResponse.json({ found: false }, { status: 404 });
     return NextResponse.json({ found: true, draft: record });
   } catch (error) {

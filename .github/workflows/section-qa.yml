@@ -60,9 +60,16 @@ jobs:
         if: always()
         run: pnpm qa:sections:certification
 
+      - name: Build visual review queue
+        if: always()
+        run: pnpm qa:sections:visual-review
+
       - name: Add certification summary
         if: always()
-        run: cat test-results/certification/summary.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          cat test-results/certification/summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cat test-results/visual-review/review-guide.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload QA report and evidence
         if: always()

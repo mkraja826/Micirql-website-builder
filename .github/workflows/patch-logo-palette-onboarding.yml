@@ -21,26 +21,8 @@ jobs:
           from pathlib import Path
           path = Path('apps/builder/app/api/onboarding/route.ts')
           text = path.read_text()
-          old = '''        const [primary, accent, secondary] = advice.brandColors;
-        if (primary || accent || secondary) {
-          nextSnapshot.theme.brand.colors = {
-            ...nextSnapshot.theme.brand.colors,
-            ...(primary ? { primary } : {}),
-            ...(accent ? { accent } : {}),
-            ...(secondary ? { secondary } : {}),
-          };
-        }'''
-          new = '''        const [primary, accent, secondary, surface, border] = advice.brandColors;
-        if (primary || accent || secondary || surface || border) {
-          nextSnapshot.theme.brand.colors = {
-            ...nextSnapshot.theme.brand.colors,
-            ...(primary ? { primary } : {}),
-            ...(accent ? { accent } : {}),
-            ...(secondary ? { secondary, textPrimary: secondary } : {}),
-            ...(surface ? { surface } : {}),
-            ...(border ? { border } : {}),
-          };
-        }'''
+          old = "        const [primary, accent, secondary] = advice.brandColors;\n        if (primary || accent || secondary) {\n          nextSnapshot.theme.brand.colors = {\n            ...nextSnapshot.theme.brand.colors,\n            ...(primary ? { primary } : {}),\n            ...(accent ? { accent } : {}),\n            ...(secondary ? { secondary } : {}),\n          };\n        }"
+          new = "        const [primary, accent, secondary, surface, border] = advice.brandColors;\n        if (primary || accent || secondary || surface || border) {\n          nextSnapshot.theme.brand.colors = {\n            ...nextSnapshot.theme.brand.colors,\n            ...(primary ? { primary } : {}),\n            ...(accent ? { accent } : {}),\n            ...(secondary ? { secondary, textPrimary: secondary } : {}),\n            ...(surface ? { surface } : {}),\n            ...(border ? { border } : {}),\n          };\n        }"
           if old not in text:
               raise SystemExit('Expected palette block not found; refusing unsafe patch')
           path.write_text(text.replace(old, new, 1))

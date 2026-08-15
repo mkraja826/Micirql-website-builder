@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { SCHEMA_VERSION, type Site } from "@micirql/schema";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import {
   createEditorHistory,
   createEditorState,
   executeEditorCommand,
+  markEditorSaved,
   redoEditor,
   setEditorSelection,
   setEditorViewport,
@@ -15,6 +16,16 @@ import {
 } from "@micirql/workspace";
 
 type Mode = "content" | "images" | "design" | "pages" | "seo" | "functions" | "domain";
+type SaveState = "loading" | "saved" | "unsaved" | "saving" | "conflict" | "error";
+
+type DraftApiRecord = {
+  workspaceId: string;
+  siteId: string;
+  revision: number;
+  snapshot: Site;
+  updatedAt: string;
+  updatedBy: string;
+};
 
 const initialSite: Site = {
   schemaVersion: SCHEMA_VERSION,
@@ -34,74 +45,64 @@ const initialSite: Site = {
         surface: "#f5f5f7",
         textPrimary: "#111111",
         textSecondary: "#65656b",
-        border: "#ddddE3",
+        border: "#dddde3",
         success: "#168a4a",
         warning: "#ad6a00",
-        error: "#c93636"
+        error: "#c93636",
       },
       typography: { display: "Arial", body: "Arial", ui: "Arial" },
       density: "comfortable",
       shape: "balanced",
-      motion: "subtle"
-    }
+      motion: "subtle",
+    },
   },
   seoBlueprint: {
     primaryGoal: "Present the business clearly and convert visitors",
-    targetLocations: [],
-    priorityTopics: [],
-    audiences: [],
-    languages: ["en"],
-    localSeo: false,
-    servicePages: true,
-    locationPages: false,
-    blog: false
+    targetLocations: [], priorityTopics: [], audiences: [], languages: ["en"],
+    localSeo: false, servicePages: true, locationPages: false, blog: false,
   },
-  pages: [
-    {
-      id: "home",
-      path: "/",
-      name: "Home",
-      sections: [
-        {
-          id: "hero-1",
-          component: { componentId: "hero.placeholder", version: "1.0.0" },
-          props: {
-            eyebrow: "Built with MiCirql",
-            heading: "A website your business can grow into.",
-            body: "Select any section to edit its content, images, design and actions without touching code."
-          },
-          bindings: {},
-          hidden: false
+  pages: [{
+    id: "home", path: "/", name: "Home",
+    sections: [
+      {
+        id: "hero-1",
+        component: { componentId: "hero.placeholder", version: "1.0.0" },
+        props: {
+          eyebrow: "Built with MiCirql",
+          heading: "A website your business can grow into.",
+          body: "Select any section to edit its content, images, design and actions without touching code.",
         },
-        {
-          id: "features-1",
-          component: { componentId: "features.placeholder", version: "1.0.0" },
-          props: {
-            heading: "Everything stays editable",
-            body: "The live draft is a validated Site Schema. Changes update the preview immediately and remain safe to publish."
-          },
-          bindings: {},
-          hidden: false
-        }
-      ],
-      seo: {
-        title: "Your website",
-        description: "A website created with MiCirql.",
-        canonicalPath: "/",
-        indexable: true,
-        structuredDataTypes: []
-      }
-    }
-  ],
+        bindings: {}, hidden: false,
+      },
+      {
+        id: "features-1",
+        component: { componentId: "features.placeholder", version: "1.0.0" },
+        props: {
+          heading: "Everything stays editable",
+          body: "The live draft is a validated Site Schema. Changes update the preview immediately and remain safe to publish.",
+        },
+        bindings: {}, hidden: false,
+      },
+    ],
+    seo: {
+      title: "Your website",
+      description: "A website created with MiCirql.",
+      canonicalPath: "/",
+      indexable: true,
+      structuredDataTypes: [],
+    },
+  }],
   navigation: [{ label: "Home", href: "/" }],
-  integrations: [],
-  domains: []
+  integrations: [], domains: [],
 };
 
 export default function WorkspaceClient() {
   const [history, setHistory] = useState<EditorHistory>(() => createEditorHistory(createEditorState(initialSite)));
   const [mode, setMode] = useState<Mode>("content");
-  const [saveState, setSaveState] = useState<"saved" | "unsaved" | "saving">("saved");
+  const [saveState, setSaveState] = useState<SaveState>("loading");
+  const [persistedRevision, setPersistedRevision] = useState(0);
+  const [conflictDraft, setConflictDraft] = useState<DraftApiRecord | undefined>();
+  const loaded = useRef(false);
 
   const state = history.present;
   const activePage = useMemo(() => {
@@ -113,6 +114,46 @@ export default function WorkspaceClient() {
   const activeSection = state.selected.kind === "section"
     ? activePage.sections.find((section) => section.id === state.selected.sectionId)
     : undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDraft() {
+      try {
+        const query = new URLSearchParams({ workspaceId: initialSite.workspaceId, siteId: initialSite.siteId });
+        const response = await fetch(`/api/drafts?${query.toString()}`, { cache: "no-store" });
+        if (cancelled) return;
+        if (response.status === 404) {
+          setSaveState("saved");
+          loaded.current = true;
+          return;
+        }
+        if (!response.ok) throw new Error(`Draft load failed (${response.status}).`);
+        const payload = await response.json() as { draft: DraftApiRecord };
+        const site = siteSchema.parse(payload.draft.snapshot);
+        const editor = createEditorState(site);
+        editor.revision = payload.draft.revision;
+        setHistory(createEditorHistory(editor));
+        setPersistedRevision(payload.draft.revision);
+        setSaveState("saved");
+        loaded.current = true;
+      } catch (error) {
+        if (!cancelled) {
+          console.error(error);
+          setSaveState("error");
+          loaded.current = true;
+        }
+      }
+    }
+    void loadDraft();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded.current || !state.dirty || saveState === "saving" || saveState === "conflict") return;
+    const timer = window.setTimeout(() => { void persist(state.site, state.revision); }, 700);
+    return () => window.clearTimeout(timer);
+    // persistedRevision is intentionally captured so stale saves receive a 409 rather than overwriting.
+  }, [state.site, state.revision, state.dirty, persistedRevision, saveState]);
 
   function commit(command: Parameters<typeof executeEditorCommand>[1]) {
     try {
@@ -135,9 +176,43 @@ export default function WorkspaceClient() {
     setHistory((current) => ({ ...current, present: setEditorViewport(current.present, viewport) }));
   }
 
-  function save() {
+  async function persist(snapshot: Site, sentEditorRevision: number) {
+    if (saveState === "saving" || saveState === "conflict") return;
     setSaveState("saving");
-    window.setTimeout(() => setSaveState("saved"), 250);
+    try {
+      const response = await fetch("/api/drafts", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ snapshot, expectedRevision: persistedRevision, updatedBy: "workspace-user" }),
+      });
+      const payload = await response.json() as { draft?: DraftApiRecord; error?: string };
+      if (response.status === 409) {
+        setConflictDraft(payload.draft);
+        setSaveState("conflict");
+        return;
+      }
+      if (!response.ok || !payload.draft) throw new Error(payload.error ?? `Draft save failed (${response.status}).`);
+      setPersistedRevision(payload.draft.revision);
+      setHistory((current) => ({
+        ...current,
+        present: current.present.revision === sentEditorRevision ? markEditorSaved(current.present) : current.present,
+      }));
+      setSaveState((current) => current === "conflict" ? current : "saved");
+    } catch (error) {
+      console.error(error);
+      setSaveState("error");
+    }
+  }
+
+  function loadServerVersion() {
+    if (!conflictDraft) return;
+    const site = siteSchema.parse(conflictDraft.snapshot);
+    const editor = createEditorState(site);
+    editor.revision = conflictDraft.revision;
+    setHistory(createEditorHistory(editor));
+    setPersistedRevision(conflictDraft.revision);
+    setConflictDraft(undefined);
+    setSaveState("saved");
   }
 
   return (
@@ -150,13 +225,20 @@ export default function WorkspaceClient() {
           ))}
         </div>
         <div className="workspace-actions">
-          <span className={`save-state ${saveState}`}>{saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : "Unsaved"}</span>
-          <button onClick={() => setHistory((current) => undoEditor(current))} disabled={!history.past.length}>Undo</button>
-          <button onClick={() => setHistory((current) => redoEditor(current))} disabled={!history.future.length}>Redo</button>
-          <button onClick={save}>Save</button>
+          <span className={`save-state ${saveState}`}>{saveLabel(saveState)}</span>
+          <button onClick={() => { setHistory((current) => undoEditor(current)); setSaveState("unsaved"); }} disabled={!history.past.length}>Undo</button>
+          <button onClick={() => { setHistory((current) => redoEditor(current)); setSaveState("unsaved"); }} disabled={!history.future.length}>Redo</button>
+          <button onClick={() => void persist(state.site, state.revision)} disabled={saveState === "saving" || saveState === "loading"}>Save</button>
           <button className="publish-button">Publish</button>
         </div>
       </header>
+
+      {saveState === "conflict" ? (
+        <section className="draft-conflict" role="alert">
+          <div><strong>This draft changed elsewhere.</strong><span>Your local edits were not overwritten.</span></div>
+          <button type="button" onClick={loadServerVersion}>Load latest saved version</button>
+        </section>
+      ) : null}
 
       <aside className="workspace-rail" aria-label="Editing tools">
         {(["content", "images", "design", "pages", "seo", "functions", "domain"] as Mode[]).map((item) => (
@@ -217,4 +299,13 @@ export default function WorkspaceClient() {
       </nav>
     </main>
   );
+}
+
+function saveLabel(state: SaveState) {
+  if (state === "loading") return "Loading…";
+  if (state === "saving") return "Saving…";
+  if (state === "unsaved") return "Unsaved";
+  if (state === "conflict") return "Conflict";
+  if (state === "error") return "Save error";
+  return "Saved";
 }

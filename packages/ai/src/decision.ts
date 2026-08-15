@@ -18,14 +18,12 @@ export function decideSiteComponents(input: AiDecisionInput): AiDecisionOutput {
   for (const page of plan.pages) {
     for (const familyName of page.requiredSectionFamilies) {
       const family = familyName as ComponentFamily;
-      const requiredCapabilities = capabilitiesForFamily(familyName, page.requiredFunctions);
       const ranked = rankDesigns(input.registryEntries, {
         family,
         theme: plan.design.theme,
         domain: plan.business.domain,
         modifiers: plan.design.modifiers as ThemeModifier[],
         brandPersonalities: plan.brand.personalities,
-        requiredCapabilities,
         limit: 4,
       });
 
@@ -34,8 +32,8 @@ export function decideSiteComponents(input: AiDecisionInput): AiDecisionOutput {
         gaps.push({
           pagePath: page.path,
           family: familyName,
-          reason: requiredCapabilities.length > 0 ? "MISSING_CAPABILITY" : "NO_PRODUCTION_MATCH",
-          requiredCapabilities,
+          reason: "NO_PRODUCTION_MATCH",
+          requiredCapabilities: [],
           allowCodeGeneration: mode === "library-preferred",
         });
         continue;
@@ -47,7 +45,7 @@ export function decideSiteComponents(input: AiDecisionInput): AiDecisionOutput {
           pagePath: page.path,
           family: familyName,
           reason: "LOW_CONFIDENCE",
-          requiredCapabilities,
+          requiredCapabilities: [],
           allowCodeGeneration: mode === "library-preferred",
         });
         if (mode === "library-only") continue;
@@ -81,10 +79,4 @@ function confidenceFor(score: number, threshold: number): SelectionConfidence {
   if (score >= Math.max(88, threshold + 8)) return "high";
   if (score >= threshold) return "medium";
   return "low";
-}
-
-function capabilitiesForFamily(family: string, functions: string[]): string[] {
-  const interactiveFamilies = new Set(["contact", "lead-capture", "form", "cta"]);
-  if (!interactiveFamilies.has(family)) return [];
-  return functions.map((action) => `action:${action}`);
 }

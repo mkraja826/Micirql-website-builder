@@ -27,6 +27,9 @@ export type AiEditorOperation =
       type: "section.add";
       family: AiEditorSectionFamily;
       position: "after-selected" | "end";
+      variant?: 1 | 2 | 3 | 4 | 5;
+      componentId?: string;
+      version?: string;
       rationale: string;
     }
   | {

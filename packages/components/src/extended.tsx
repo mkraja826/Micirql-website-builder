@@ -1,4 +1,4 @@
-import type { ChangeEvent, ReactNode } from "react";
+import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 import { Button, Input, Label, Select, Typography } from "@micirql/primitives";
 
 export function Breadcrumbs({ items }: { items: Array<{ label: string; href?: string }> }) {
@@ -45,7 +45,7 @@ export function LogoCloud({ items, label = "Trusted by" }: { items: Array<{ src:
 
 export function BeforeAfter({ before, after, split = 50 }: { before: { src: string; alt: string }; after: { src: string; alt: string }; split?: number }) {
   const safeSplit = Math.max(0, Math.min(split, 100));
-  return <figure className="mi-before-after" style={{ "--mi-before-after-split": `${safeSplit}%` } as React.CSSProperties}><img className="mi-before-after__before" src={before.src} alt={before.alt} loading="lazy" /><div className="mi-before-after__after-wrap"><img className="mi-before-after__after" src={after.src} alt={after.alt} loading="lazy" /></div><span className="mi-before-after__handle" aria-hidden="true" /></figure>;
+  return <figure className="mi-before-after" style={{ "--mi-before-after-split": `${safeSplit}%` } as CSSProperties}><img className="mi-before-after__before" src={before.src} alt={before.alt} loading="lazy" /><div className="mi-before-after__after-wrap"><img className="mi-before-after__after" src={after.src} alt={after.alt} loading="lazy" /></div><span className="mi-before-after__handle" aria-hidden="true" /></figure>;
 }
 
 export function VideoFrame({ src, title, poster, controls = true }: { src: string; title: string; poster?: string; controls?: boolean }) {

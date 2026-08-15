@@ -1,6 +1,4 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { preparePage, renderPreparedPage, type FunctionBindingResolver, type RendererRegistry } from "@micirql/renderer";
+import { preparePage, type FunctionBindingResolver, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
 import { siteSchema, type Site } from "@micirql/schema";
 
 export type PublishedSiteRecord = {
@@ -18,6 +16,7 @@ export type LiveRuntimeDependencies = {
   store: LiveSiteStore;
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
+  renderPage: (page: PreparedPage) => Promise<string> | string;
   cache?: {
     get(key: string): Promise<Response | undefined>;
     put(key: string, response: Response, ttlSeconds: number): Promise<void>;
@@ -27,7 +26,8 @@ export type LiveRuntimeDependencies = {
 
 export async function handleLiveRequest(request: Request, dependencies: LiveRuntimeDependencies): Promise<Response> {
   const url = new URL(request.url);
-  const hostname = normalizeHostname(request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? request.headers.get("host") ?? url.hostname);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const hostname = normalizeHostname(forwardedHost ?? request.headers.get("host") ?? url.hostname);
   if (!hostname) return textResponse("Invalid hostname", 400);
 
   const resolved = await dependencies.store.resolveHostname(hostname);
@@ -58,7 +58,7 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
     });
   }
 
-  const content = renderToStaticMarkup(createElement(() => renderPreparedPage(prepared.value)));
+  const content = await dependencies.renderPage(prepared.value);
   const document = pageDocument(prepared.value.seo, content);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,

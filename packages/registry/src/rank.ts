@@ -1,6 +1,15 @@
 import type { Domain, ThemeFamily, ThemeModifier } from "@micirql/schema";
 import type { ComponentFamily, DesignRegistryEntry } from "./design";
 
+export type DesignPreferenceQuery = {
+  preferredThemes?: ThemeFamily[];
+  preferredModifiers?: ThemeModifier[];
+  preferredContentDensity?: "low" | "medium" | "high";
+  preferredVisualWeight?: "light" | "medium" | "heavy";
+  strength?: number;
+  allowThemeExploration?: boolean;
+};
+
 export type DesignQuery = {
   family: ComponentFamily;
   theme: ThemeFamily;
@@ -15,6 +24,7 @@ export type DesignQuery = {
   preferImage?: boolean;
   targetContentDensity?: "low" | "medium" | "high";
   targetVisualWeight?: "light" | "medium" | "heavy";
+  preferences?: DesignPreferenceQuery;
   minimumMobileScore?: number;
   minimumPerformanceScore?: number;
   minimumAccessibilityScore?: number;
@@ -40,11 +50,14 @@ export function rankDesigns(entries: readonly DesignRegistryEntry[], query: Desi
   const minMobile = query.minimumMobileScore ?? 90;
   const minPerformance = query.minimumPerformanceScore ?? 90;
   const minAccessibility = query.minimumAccessibilityScore ?? 90;
+  const preferenceStrength = Math.max(0, Math.min(query.preferences?.strength ?? 0, 1));
+  const exploreThemes = Boolean(query.preferences?.allowThemeExploration && preferenceStrength > 0);
 
   const ranked = entries
     .filter((entry) => entry.status === "production")
     .filter((entry) => entry.protocol.passed)
-    .filter((entry) => entry.family === query.family && entry.theme === query.theme)
+    .filter((entry) => entry.family === query.family)
+    .filter((entry) => exploreThemes || entry.theme === query.theme)
     .filter((entry) => entry.quality.mobile >= minMobile)
     .filter((entry) => entry.quality.performance >= minPerformance)
     .filter((entry) => entry.quality.accessibility >= minAccessibility)
@@ -73,6 +86,20 @@ export function rankDesigns(entries: readonly DesignRegistryEntry[], query: Desi
       const aiPriority = intelligence?.aiPriority ?? 50;
       const mobileSuitability = intelligence?.mobileSuitability ?? entry.quality.mobile;
 
+      const preferredThemes = query.preferences?.preferredThemes ?? [];
+      const preferredModifiers = query.preferences?.preferredModifiers ?? [];
+      const themePreference = entry.theme === query.theme ? 70 : preferredThemes.includes(entry.theme) ? 100 : 25;
+      const preferenceModifierFit = preferredModifiers.length
+        ? Math.min(100, (preferredModifiers.filter((modifier) => entry.modifiers.includes(modifier)).length / preferredModifiers.length) * 100)
+        : 50;
+      const preferenceDensityFit = query.preferences?.preferredContentDensity
+        ? intelligence?.contentDensity === query.preferences.preferredContentDensity ? 100 : 35
+        : 50;
+      const preferenceVisualFit = query.preferences?.preferredVisualWeight
+        ? intelligence?.visualWeight === query.preferences.preferredVisualWeight ? 100 : 35
+        : 50;
+      const preferenceScore = themePreference * 0.45 + preferenceModifierFit * 0.25 + preferenceDensityFit * 0.15 + preferenceVisualFit * 0.15;
+
       if (domain >= 95) reasons.push("strong industry fit");
       if (conversion >= 90 && (query.conversionGoals?.length ?? 0) > 0) reasons.push("matches conversion goal");
       if (placement === 100) reasons.push(`fits ${query.placementRole} placement`);
@@ -80,8 +107,9 @@ export function rankDesigns(entries: readonly DesignRegistryEntry[], query: Desi
       if (successor === 100) reasons.push(`works before ${query.nextFamily}`);
       if (imageFit === 100 && query.preferImage !== undefined) reasons.push(query.preferImage ? "supports image-led composition" : "works without imagery");
       if (mobileSuitability >= 95) reasons.push("excellent mobile suitability");
+      if (preferenceStrength > 0 && preferenceScore >= 80) reasons.push("matches learned design taste");
 
-      const score =
+      const baseScore =
         domain * 0.20 +
         conversion * 0.12 +
         placement * 0.08 +
@@ -99,6 +127,7 @@ export function rankDesigns(entries: readonly DesignRegistryEntry[], query: Desi
         Math.min(100, personalityMatches * 25) * 0.025 +
         retention * 0.02 +
         aiPriority * 0.02;
+      const score = baseScore + preferenceScore * 0.10 * preferenceStrength;
 
       return { entry, score: Math.round(score * 100) / 100, reasons };
     })

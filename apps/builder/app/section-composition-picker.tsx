@@ -14,9 +14,12 @@ type Candidate = {
   score: number;
   reasons: string[];
   previewOnly: boolean;
+  theme: string;
+  modifiers: string[];
 };
 
 type SeedProps = Parameters<typeof SeedSection>[0]["props"];
+type PreviewViewport = "desktop" | "mobile";
 
 export function SectionCompositionPicker({ site, pageId, family, afterSectionId, onChoose, onCancel }: {
   site: Site;
@@ -30,31 +33,75 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Candidate>();
+  const [viewport, setViewport] = useState<PreviewViewport>("desktop");
+  const [preferenceProfile, setPreferenceProfile] = useState<unknown>();
+  const [seenIds, setSeenIds] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    const session = readStoredSession();
-    if (!session?.access_token) { setError("Sign in again to load section directions."); setBusy(false); return; }
-    const query = new URLSearchParams({ workspaceId: site.workspaceId, siteId: site.siteId });
-    Promise.all([
-      fetch(`/api/design-preferences?${query}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" }).then((r) => r.ok ? r.json() : null),
-    ]).then(async ([preferences]) => {
-      const response = await fetch("/api/section-candidates", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" },
-        body: JSON.stringify({ site, pageId, family, afterSectionId, preferenceProfile: preferences?.profile ?? null }),
-      });
-      const payload = await response.json() as { candidates?: Candidate[]; error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "Could not rank section directions.");
-      if (!cancelled) {
-        const next = payload.candidates ?? [];
+    void loadInitial(cancelled);
+    return () => { cancelled = true; };
+
+    async function loadInitial(cancelledAtStart: boolean) {
+      setBusy(true);
+      setError("");
+      try {
+        const session = readStoredSession();
+        if (!session?.access_token) throw new Error("Sign in again to load section directions.");
+        const query = new URLSearchParams({ workspaceId: site.workspaceId, siteId: site.siteId });
+        const preferenceResponse = await fetch(`/api/design-preferences?${query}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
+        const preferences = preferenceResponse.ok ? await preferenceResponse.json() as { profile?: unknown } : null;
+        if (cancelledAtStart) return;
+        setPreferenceProfile(preferences?.profile);
+        const next = await fetchCandidates({ token: session.access_token, preferences: preferences?.profile });
+        if (cancelledAtStart) return;
         setCandidates(next);
         setSelected(next[0]);
+        setSeenIds(next.map((item) => item.componentId));
+      } catch (caught) {
+        if (!cancelledAtStart) setError(caught instanceof Error ? caught.message : "Could not rank section directions.");
+      } finally {
+        if (!cancelledAtStart) setBusy(false);
       }
-    }).catch((caught) => { if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not rank section directions."); })
-      .finally(() => { if (!cancelled) setBusy(false); });
-    return () => { cancelled = true; };
+    }
   }, [site, pageId, family, afterSectionId]);
+
+  async function explore(mode: "similar" | "fresh") {
+    const session = readStoredSession();
+    if (!session?.access_token) { setError("Sign in again to load section directions."); return; }
+    setBusy(true);
+    setError("");
+    try {
+      const next = await fetchCandidates({
+        token: session.access_token,
+        preferences: preferenceProfile,
+        ...(mode === "similar" && selected ? { anchorComponentId: selected.componentId } : {}),
+        excludeComponentIds: mode === "fresh" ? seenIds : selected ? [selected.componentId] : [],
+      });
+      if (!next.length) {
+        setError(mode === "fresh" ? "You have explored the available section directions for this family." : "No additional similar directions are available yet.");
+        return;
+      }
+      setCandidates(next);
+      setSelected(next[0]);
+      setSeenIds((current) => [...new Set([...current, ...next.map((item) => item.componentId)])]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not load more section directions.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function fetchCandidates({ token, preferences, anchorComponentId, excludeComponentIds = [] }: { token: string; preferences?: unknown; anchorComponentId?: string; excludeComponentIds?: string[] }) {
+    const response = await fetch("/api/section-candidates", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ site, pageId, family, afterSectionId, preferenceProfile: preferences ?? null, anchorComponentId, excludeComponentIds }),
+    });
+    const payload = await response.json() as { candidates?: Candidate[]; error?: string };
+    if (!response.ok) throw new Error(payload.error ?? "Could not rank section directions.");
+    return payload.candidates ?? [];
+  }
 
   const selectedSeed = useMemo(
     () => selected ? seedSectionCatalog.find((item) => item.id === selected.componentId) : undefined,
@@ -73,15 +120,24 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
 
   return <section className="section-composition-picker">
     <div className="section-composition-head"><div><span>Choose a direction</span><strong>{label(family)} section</strong><small>Ranked from your page context and learned design taste. Preview the real component before inserting it.</small></div><button type="button" onClick={onCancel}>×</button></div>
-    {busy ? <div className="section-composition-state">Ranking compatible library directions…</div> : null}
     {error ? <div className="section-composition-state is-error">{error}</div> : null}
-    {!busy && !error && selected ? <div className="section-composition-stage">
-      <div className="section-composition-stage-bar"><div><strong>{selected.displayName}</strong><span>{selected.previewOnly ? "Preview library" : "Certified"} · {selected.score.toFixed(1)}</span></div><button type="button" onClick={() => onChoose(selected)}>Use this section</button></div>
-      <div className="section-composition-live-preview" style={themeStyle}>
-        {selectedSeed ? <SeedSection family={selectedSeed.family} variant={selectedSeed.variant} props={previewProps(family, site.name)} /> : <div className="section-composition-state is-error">Renderer unavailable for {selected.componentId}</div>}
+    {selected ? <div className="section-composition-stage">
+      <div className="section-composition-stage-bar">
+        <div><strong>{selected.displayName}</strong><span>{selected.previewOnly ? "Preview library" : "Certified"} · {selected.score.toFixed(1)} · {label(selected.theme)}</span></div>
+        <div className="section-composition-stage-actions">
+          <div className="section-composition-viewport" aria-label="Section preview size"><button type="button" className={viewport === "desktop" ? "is-active" : ""} onClick={() => setViewport("desktop")}>Desktop</button><button type="button" className={viewport === "mobile" ? "is-active" : ""} onClick={() => setViewport("mobile")}>Mobile</button></div>
+          <button type="button" className="is-secondary" onClick={() => void explore("similar")} disabled={busy}>More like this</button>
+          <button type="button" onClick={() => onChoose(selected)} disabled={busy}>Use this section</button>
+        </div>
+      </div>
+      <div className={`section-composition-preview-shell is-${viewport}`}>
+        <div className="section-composition-live-preview" style={themeStyle}>
+          {selectedSeed ? <SeedSection family={selectedSeed.family} variant={selectedSeed.variant} props={previewProps(family, site.name)} /> : <div className="section-composition-state is-error">Renderer unavailable for {selected.componentId}</div>}
+        </div>
       </div>
     </div> : null}
-    {!busy && !error ? <div className="section-composition-grid">{candidates.map((candidate, index) => <article key={`${candidate.componentId}@${candidate.version}`} className={`section-composition-card${selected?.componentId === candidate.componentId ? " is-selected" : ""}`}>
+    {busy ? <div className="section-composition-state">Finding more compatible directions…</div> : null}
+    {!busy ? <div className="section-composition-grid">{candidates.map((candidate, index) => <article key={`${candidate.componentId}@${candidate.version}`} className={`section-composition-card${selected?.componentId === candidate.componentId ? " is-selected" : ""}`}>
       <button type="button" className="section-composition-card-select" onClick={() => setSelected(candidate)} aria-label={`Preview ${candidate.displayName}`}>
         <span>{String(index + 1).padStart(2, "0")}</span>
         <b>{candidate.displayName}</b>
@@ -89,7 +145,8 @@ export function SectionCompositionPicker({ site, pageId, family, afterSectionId,
       <div className="section-composition-copy"><div><strong>{candidate.displayName}</strong><span>{candidate.previewOnly ? "Preview library" : "Certified"} · {candidate.score.toFixed(1)}</span></div><ul>{candidate.reasons.slice(0, 3).map((reason) => <li key={reason}>{reason}</li>)}</ul></div>
       <button type="button" onClick={() => setSelected(candidate)}>{selected?.componentId === candidate.componentId ? "Viewing" : "Preview"}</button>
     </article>)}</div> : null}
-    {!busy && !error && !candidates.length ? <div className="section-composition-state">No compatible directions are available yet.</div> : null}
+    {!busy && !candidates.length && !error ? <div className="section-composition-state">No compatible directions are available yet.</div> : null}
+    <div className="section-composition-footer-actions"><button type="button" onClick={() => void explore("fresh")} disabled={busy}>Regenerate 5 more</button><span>{seenIds.length} direction{seenIds.length === 1 ? "" : "s"} explored</span></div>
     <p className="section-composition-note">Preview-library choices are clearly marked and are never treated as certified production components.</p>
   </section>;
 }

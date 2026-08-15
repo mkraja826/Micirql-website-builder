@@ -14,6 +14,7 @@ export type UniversalSectionProps = {
   secondaryAction?: Action;
   items?: Item[];
   image?: { src: string; alt: string };
+  formAction?: string;
 };
 
 function Actions({ primaryAction, secondaryAction }: Pick<UniversalSectionProps, "primaryAction" | "secondaryAction">) {
@@ -52,7 +53,7 @@ function GallerySection(props: UniversalSectionProps) {
 }
 
 function ContactSection(props: UniversalSectionProps) {
-  return <section className="mi-section"><Container><div className="mi-section__layout"><Heading {...props} /><form className="mi-section__form"><label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Message<textarea name="message" required /></label><button type="submit">Send enquiry</button></form></div></Container></section>;
+  return <section className="mi-section"><Container><div className="mi-section__layout"><Heading {...props} />{props.formAction ? <form className="mi-section__form" action={props.formAction} method="post"><label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Message<textarea name="message" required /></label><button type="submit">Send enquiry</button></form> : <div><Actions {...props} /></div>}</div></Container></section>;
 }
 
 function FooterSection(props: UniversalSectionProps) {

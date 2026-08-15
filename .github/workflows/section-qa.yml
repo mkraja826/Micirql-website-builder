@@ -8,6 +8,7 @@ on:
       - "packages/components/**"
       - "packages/sections/**"
       - "packages/themes/**"
+      - "packages/registry/**"
       - "apps/preview/**"
       - "qa/**"
       - "playwright.config.ts"
@@ -20,6 +21,7 @@ on:
       - "packages/components/**"
       - "packages/sections/**"
       - "packages/themes/**"
+      - "packages/registry/**"
       - "apps/preview/**"
       - "qa/**"
       - "playwright.config.ts"
@@ -50,7 +52,11 @@ jobs:
       - name: Run representative section QA
         run: pnpm qa:sections
 
-      - name: Upload QA report
+      - name: Build registry QA evidence
+        if: always()
+        run: pnpm qa:sections:evidence
+
+      - name: Upload QA report and evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:

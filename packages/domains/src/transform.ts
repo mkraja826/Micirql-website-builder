@@ -46,17 +46,16 @@ export function transformDiscoveryToPlanning(input: PlanningInput): PlanningTran
       path: page.slug,
       name: page.label,
       purpose: page.purpose,
-      requiredSectionFamilies: [...page.sectionFamilies],
+      requiredSectionFamilies: [...(subtypeRule?.preferredSections ?? [])],
     })),
   ];
 
   const requiredActions = unique([
     ...pack.requiredActions,
-    ...(subtypeRule?.extraRequiredActions ?? []),
+    ...(subtypeRule?.extraActions ?? []),
   ]);
   const optionalActions = unique([
     ...pack.optionalActions,
-    ...(subtypeRule?.extraOptionalActions ?? []),
   ]);
 
   const baseResult = {
@@ -67,11 +66,11 @@ export function transformDiscoveryToPlanning(input: PlanningInput): PlanningTran
     optionalActions,
     trustSignals: unique([
       ...pack.recommendedTrustSignals,
-      ...(subtypeRule?.extraTrustSignals ?? []),
+      ...(subtypeRule?.extraRecommendedFacts ?? []),
     ]),
     avoid: unique([
       ...pack.avoidByDefault,
-      ...(subtypeRule?.avoid ?? []),
+      ...(subtypeRule?.avoidByDefault ?? []),
     ]),
   };
 

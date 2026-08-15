@@ -1,27 +1,53 @@
 "use client";
 
+import { useState } from "react";
 import { LAYOUT_VARIANTS, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import type { ThemeFamily } from "@micirql/schema";
+import type { Site, SiteSection, ThemeFamily } from "@micirql/schema";
+import { SectionCompositionPicker } from "./section-composition-picker";
 
 const VARIANTS: SectionVariant[] = [1, 2, 3, 4, 5];
 
 export function SectionDesignSwitcher({
+  site,
+  pageId,
+  section,
   family,
   theme,
   currentComponentId,
   onSelect,
 }: {
+  site: Site;
+  pageId: string;
+  section: SiteSection;
   family: SectionFamily;
   theme: ThemeFamily;
   currentComponentId: string;
   onSelect(componentId: string, version: string): void;
 }) {
+  const [replaceOpen, setReplaceOpen] = useState(false);
+
+  if (replaceOpen && isAiFamily(family)) {
+    return <SectionCompositionPicker
+      site={site}
+      pageId={pageId}
+      family={family}
+      currentSection={section}
+      mode="replace"
+      onCancel={() => setReplaceOpen(false)}
+      onChoose={(candidate) => {
+        onSelect(candidate.componentId, candidate.version);
+        setReplaceOpen(false);
+      }}
+    />;
+  }
+
   return (
     <div className="design-switcher">
       <div className="design-switcher-copy">
         <strong>Section design</strong>
         <span>Your content, images and actions stay unchanged.</span>
       </div>
+      {isAiFamily(family) ? <button type="button" className="design-replace-button" onClick={() => setReplaceOpen(true)}>Replace design · preview alternatives</button> : null}
       <div className="design-grid">
         {VARIANTS.map((variant) => {
           const componentId = sectionDesignId(theme, family, variant);
@@ -43,22 +69,19 @@ export function SectionDesignSwitcher({
           );
         })}
       </div>
-      <p className="design-switcher-note">Preview variants can be tested here. Only production-approved Registry designs may be published.</p>
+      <p className="design-switcher-note">Use Replace design for contextual, preference-aware alternatives. Quick variants remain available for direct manual switching.</p>
     </div>
   );
 }
 
 function DesignSchematic({ variant }: { variant: SectionVariant }) {
-  return (
-    <span className={`design-schematic design-schematic-${variant}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
-    </span>
-  );
+  return <span className={`design-schematic design-schematic-${variant}`} aria-hidden="true"><i /><i /><i /><i /></span>;
 }
 
 function legacyVariantMatches(componentId: string, family: SectionFamily, variant: SectionVariant): boolean {
   return variant === 1 && (componentId === `${family}.placeholder` || componentId.startsWith(`${family}.`));
+}
+
+function isAiFamily(family: SectionFamily): family is Exclude<SectionFamily, "navbar" | "hero" | "footer"> | "hero" {
+  return family !== "navbar" && family !== "footer";
 }

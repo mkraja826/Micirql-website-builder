@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import type { SupabaseSession } from "./auth-client";
+import type { OnboardingProfile } from "./recommended-presets";
+import { OnboardingProfileProvider } from "./onboarding-profile-context";
 import WorkspaceClient from "./workspace-client";
 
 type DraftContext = { workspaceId: string; siteId: string; snapshot?: { name?: string } };
@@ -11,6 +13,7 @@ const initialForm: FormState = { businessName: "", industry: "dental", subindust
 
 export function OnboardingGate({ session }: { session: SupabaseSession }) {
   const [context, setContext] = useState<DraftContext>();
+  const [profile, setProfile] = useState<OnboardingProfile | null>(null);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
@@ -31,7 +34,10 @@ export function OnboardingGate({ session }: { session: SupabaseSession }) {
         const statusResponse = await fetch(`/api/onboarding?workspaceId=${encodeURIComponent(nextContext.workspaceId)}&siteId=${encodeURIComponent(nextContext.siteId)}`, { headers: authHeaders, cache: "no-store" });
         const statusPayload = await statusResponse.json();
         if (!statusResponse.ok) throw new Error(statusPayload?.error ?? "Could not load onboarding status.");
-        if (!cancelled) setReady(Boolean(statusPayload.completed));
+        if (!cancelled) {
+          setProfile((statusPayload.profile ?? null) as OnboardingProfile | null);
+          setReady(Boolean(statusPayload.completed));
+        }
       } catch (caught) {
         if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not start the builder.");
       } finally { if (!cancelled) setLoading(false); }
@@ -47,13 +53,14 @@ export function OnboardingGate({ session }: { session: SupabaseSession }) {
       const response = await fetch("/api/onboarding", { method: "POST", headers: { ...authHeaders, "content-type": "application/json" }, body: JSON.stringify({ workspaceId: context.workspaceId, siteId: context.siteId, businessName: form.businessName, industry: form.industry, subindustry: form.subindustry, location: form.location, services: commaList(form.services), goals: form.goals, styleTags: form.styleTags, requiredCapabilities: form.requiredCapabilities, languages: commaList(form.languages), notes: form.notes }) });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
+      setProfile((payload.profile ?? null) as OnboardingProfile | null);
       setReady(true);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Website build failed."); }
     finally { setBuilding(false); }
   }
 
   if (loading) return <main style={shellStyle}><div style={cardStyle}>Preparing your MiCirql workspace…</div></main>;
-  if (ready) return <WorkspaceClient />;
+  if (ready) return <OnboardingProfileProvider profile={profile}><WorkspaceClient /></OnboardingProfileProvider>;
 
   return <main style={shellStyle}><form onSubmit={submit} style={{ ...cardStyle, maxWidth: 920 }}>
     <div><div style={{ fontSize: 14, opacity: .65 }}>MiCirql business discovery</div><h1 style={{ marginBottom: 8 }}>Tell us what you need. We’ll assemble the right site.</h1><p style={{ marginTop: 0, opacity: .72 }}>We use this brief to choose the industry pack, theme, sections and functionality before the editor opens.</p></div>

@@ -105,10 +105,10 @@ async function writeAudit(
     siteId: context.siteId,
     workspaceId: context.workspaceId,
     requestId: context.requestId,
-    actorUserId: context.actor.userId,
     success,
-    code,
     occurredAt: context.now.toISOString(),
+    ...(context.actor.userId ? { actorUserId: context.actor.userId } : {}),
+    ...(code ? { code } : {}),
   });
 }
 

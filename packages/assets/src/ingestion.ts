@@ -194,23 +194,22 @@ export function orientationFor(width: number, height: number): AssetOrientation 
 export function createStrictProvenanceValidator(): ProvenanceValidator {
   return {
     async validate(input) {
-      if (input.source === "user-upload" && input.license !== "user-owned") {
-        return { ok: false, reason: "User uploads must be marked user-owned." };
+      if (input.source === "user-upload") {
+        if (input.license !== "user-owned") return { ok: false, reason: "User uploads must be marked user-owned." };
+        if (!input.workspaceId?.trim()) return { ok: false, reason: "User uploads require a workspace ID." };
       }
-      if (input.source === "micirql-placeholder" && !["micirql-owned", "licensed"].includes(input.license)) {
-        return { ok: false, reason: "MiCirql placeholders require MiCirql-owned or licensed provenance." };
+      if (input.source === "micirql-placeholder") {
+        if (!["micirql-owned", "licensed"].includes(input.license)) {
+          return { ok: false, reason: "MiCirql placeholders require MiCirql-owned or licensed provenance." };
+        }
+        if (input.workspaceId) return { ok: false, reason: "Global MiCirql placeholders must not be workspace-scoped." };
       }
-      if (input.source === "ai-generated" && input.license !== "generated") {
-        return { ok: false, reason: "AI-generated assets must use the generated license type." };
-      }
-      if (input.source === "licensed" as AssetSource) {
-        return { ok: false, reason: "Licensed is a license type, not an asset source." };
+      if (input.source === "ai-generated") {
+        if (input.license !== "generated") return { ok: false, reason: "AI-generated assets must use the generated license type." };
+        if (!input.workspaceId?.trim()) return { ok: false, reason: "AI-generated assets require a workspace ID." };
       }
       if (input.license === "licensed" && !input.sourceReference?.trim()) {
         return { ok: false, reason: "Licensed assets require a source reference." };
-      }
-      if (input.source === "micirql-placeholder" && !input.sourceReference?.trim() && input.license !== "micirql-owned") {
-        return { ok: false, reason: "Licensed placeholders require a source reference." };
       }
       return { ok: true };
     },

@@ -13,7 +13,6 @@ import {
   seedSectionRegistryEntries,
   sectionDesignId,
   type SectionFamily,
-  type SectionVariant,
 } from "@micirql/sections";
 
 const previewEntries = seedSectionRegistryEntries.map((entry) => ({
@@ -25,8 +24,7 @@ const components: Record<string, ComponentType<Record<string, unknown>>> = Objec
   seedSectionCatalog.map((seed) => [
     seed.id,
     function PreviewSeedComponent(props: Record<string, unknown>) {
-      const normalized = normalizeProps(props);
-      return createElement(SeedSection, { family: seed.family, variant: seed.variant, props: normalized });
+      return createElement(SeedSection, { family: seed.family, variant: seed.variant, props: normalizeProps(props) });
     },
   ]),
 );

@@ -3,6 +3,7 @@ import { domainPackSchema, type DomainPack } from "./types";
 import { domainPacks as rawDomainPacks } from "./packs";
 
 export * from "./types";
+export * from "./subtypes";
 export { rawDomainPacks as domainPacks };
 
 const validatedDomainPacks = rawDomainPacks.map((pack) => domainPackSchema.parse(pack));

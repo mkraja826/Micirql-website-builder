@@ -20,6 +20,7 @@ export function RendererPreview({
   const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
   const [error, setError] = useState("");
   const requestId = useRef(0);
+  const documentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -48,6 +49,17 @@ export function RendererPreview({
     return () => window.clearTimeout(timer);
   }, [site, path]);
 
+  useEffect(() => {
+    const root = documentRef.current;
+    if (!root) return;
+    root.querySelectorAll("[data-mi-section-id]").forEach((element) => element.classList.remove("mi-editor-selected"));
+    if (!selectedSectionId) return;
+    const selected = Array.from(root.querySelectorAll<HTMLElement>("[data-mi-section-id]")).find(
+      (element) => element.dataset.miSectionId === selectedSectionId,
+    );
+    selected?.classList.add("mi-editor-selected");
+  }, [html, selectedSectionId]);
+
   function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     const element = event.target as HTMLElement;
     const section = element.closest<HTMLElement>("[data-mi-section-id]");
@@ -62,8 +74,8 @@ export function RendererPreview({
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
       {status === "ready" ? (
         <div
+          ref={documentRef}
           className="renderer-preview-document"
-          data-selected-section={selectedSectionId ?? ""}
           onClick={handleClick}
           dangerouslySetInnerHTML={{ __html: html }}
         />

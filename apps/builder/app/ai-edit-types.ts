@@ -1,3 +1,14 @@
+export type AiEditorSectionFamily =
+  | "about"
+  | "services"
+  | "features"
+  | "process"
+  | "testimonials"
+  | "gallery"
+  | "team"
+  | "cta"
+  | "contact";
+
 export type AiEditorOperation =
   | {
       type: "section.variant";
@@ -10,6 +21,40 @@ export type AiEditorOperation =
       type: "section.copy";
       heading?: string;
       body?: string;
+      rationale: string;
+    }
+  | {
+      type: "section.add";
+      family: AiEditorSectionFamily;
+      position: "after-selected" | "end";
+      rationale: string;
+    }
+  | {
+      type: "section.visibility";
+      hidden: boolean;
+      rationale: string;
+    }
+  | {
+      type: "section.remove";
+      rationale: string;
+    }
+  | {
+      type: "section.move";
+      direction: "up" | "down" | "top" | "bottom";
+      rationale: string;
+    }
+  | {
+      type: "media.open";
+      rationale: string;
+    }
+  | {
+      type: "functions.open";
+      rationale: string;
+    }
+  | {
+      type: "seo.patch";
+      title?: string;
+      description?: string;
       rationale: string;
     }
   | {

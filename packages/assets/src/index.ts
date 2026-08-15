@@ -6,3 +6,4 @@ export * from "./coverage";
 export * from "./ingestion";
 export * from "./slot-resolver";
 export * from "./storage";
+export * from "./s3-storage";

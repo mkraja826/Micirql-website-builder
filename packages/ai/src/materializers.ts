@@ -205,7 +205,7 @@ function structuredTypesFor(domain: SitePlan["business"]["domain"], path: string
   const map: Partial<Record<SitePlan["business"]["domain"], string>> = {
     clinic: "MedicalBusiness",
     restaurant: "Restaurant",
-    real-estate: "RealEstateAgent",
+    "real-estate": "RealEstateAgent",
     corporate: "Organization",
     education: "EducationalOrganization",
     hospitality: "LodgingBusiness",

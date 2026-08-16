@@ -11,6 +11,7 @@ on:
         options:
           - full
           - core
+          - regression
   pull_request:
     paths:
       - "packages/primitives/**"
@@ -60,7 +61,11 @@ jobs:
 
       - name: Resolve QA scope
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "full" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "regression" ]; then
+            echo "MI_QA_SCOPE=regression" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[regression]"* ]]; then
+            echo "MI_QA_SCOPE=regression" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "full" ]; then
             echo "MI_QA_SCOPE=full" >> "$GITHUB_ENV"
           elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[full-cert]"* ]]; then
             echo "MI_QA_SCOPE=full" >> "$GITHUB_ENV"
@@ -70,26 +75,28 @@ jobs:
 
       - name: Run section QA
         run: |
-          if [ "$MI_QA_SCOPE" = "full" ]; then
+          if [ "$MI_QA_SCOPE" = "regression" ]; then
+            pnpm qa:sections:regression:desktop-text
+          elif [ "$MI_QA_SCOPE" = "full" ]; then
             pnpm qa:sections:full
           else
             pnpm qa:sections:core
           fi
 
       - name: Build registry QA evidence
-        if: always()
+        if: always() && env.MI_QA_SCOPE != 'regression'
         run: pnpm qa:sections:evidence
 
       - name: Build certification report
-        if: always()
+        if: always() && env.MI_QA_SCOPE != 'regression'
         run: pnpm qa:sections:certification
 
       - name: Build visual review queue
-        if: always()
+        if: always() && env.MI_QA_SCOPE != 'regression'
         run: pnpm qa:sections:visual-review
 
       - name: Add certification summary
-        if: always()
+        if: always() && env.MI_QA_SCOPE != 'regression'
         run: |
           cat test-results/certification/summary.md >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"

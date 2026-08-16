@@ -1,0 +1,56 @@
+name: Live Runtime E2E
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/live-runtime-e2e.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  enquiry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit live enquiry
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create'
+          key='micirql-e2e-20260816-001'
+          headers="$(mktemp)"
+          body="$(mktemp)"
+          code=$(curl -sS --max-time 30 -o "$body" -D "$headers" -w '%{http_code}' \
+            -X POST "$url" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            -H "Idempotency-Key: $key" \
+            --data-urlencode 'name=MiCirql E2E Test' \
+            --data-urlencode 'email=e2e-test@example.com' \
+            --data-urlencode 'message=Automated live enquiry verification' \
+            --data-urlencode 'consent=true' \
+            --data-urlencode 'sourcePage=/')
+          echo "HTTP $code"
+          cat "$headers"
+          test "$code" = '303'
+          grep -Eiq '^location: .*\?form=received.*#enquiry' "$headers"
+
+      - name: Repeat same idempotency key
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create'
+          key='micirql-e2e-20260816-001'
+          headers="$(mktemp)"
+          code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
+            -X POST "$url" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            -H "Idempotency-Key: $key" \
+            --data-urlencode 'name=MiCirql E2E Test' \
+            --data-urlencode 'email=e2e-test@example.com' \
+            --data-urlencode 'message=Automated live enquiry verification' \
+            --data-urlencode 'consent=true' \
+            --data-urlencode 'sourcePage=/')
+          echo "HTTP $code"
+          test "$code" = '303'
+          grep -Eiq '^location: .*\?form=received.*#enquiry' "$headers"

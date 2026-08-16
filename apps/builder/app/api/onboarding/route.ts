@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { industryPlannerContext } from "@micirql/design-engine";
+import { buildContentEnrichmentContract, industryPlannerContext } from "@micirql/design-engine";
 import { rankPresets } from "../../preset-ranking";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
@@ -131,7 +131,30 @@ export async function POST(request: NextRequest) {
     let content: unknown = null;
     let contentWarning: string | null = null;
     try {
-      const contentResponse = await fetch(`${url}/functions/v1/enrich-site-content`, { method: "POST", headers: commonHeaders, body: JSON.stringify({ workspace_id: workspaceId, site_id: siteId, build_id: buildId, brief }) });
+      const builtDraft = await getSupabaseDraft(request, workspaceId, siteId);
+      if (!builtDraft) throw new Error("Generated draft could not be loaded for page-specific content enrichment.");
+      const pageContentContract = buildContentEnrichmentContract(builtDraft.snapshot);
+      const contentResponse = await fetch(`${url}/functions/v1/enrich-site-content`, {
+        method: "POST",
+        headers: commonHeaders,
+        body: JSON.stringify({
+          workspace_id: workspaceId,
+          site_id: siteId,
+          build_id: buildId,
+          brief,
+          page_content_contract: pageContentContract,
+          content_policy: {
+            mode: "content-only",
+            preserve_page_paths: true,
+            preserve_section_order: true,
+            preserve_component_ids: true,
+            preserve_design_props: true,
+            preserve_media_props: true,
+            preserve_bindings: true,
+            forbid_unsupplied_claims: true,
+          },
+        }),
+      });
       if (!contentResponse.ok) throw await remoteError(contentResponse);
       content = await contentResponse.json();
     } catch (error) {

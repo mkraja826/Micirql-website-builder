@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionVariant } from "./catalog";
 import type { UniversalSectionProps } from "./sections";
@@ -19,16 +18,15 @@ function PrimaryAction({ action }: { action?: UniversalSectionProps["primaryActi
 }
 
 function MobileMenu({ title, items, action }: { title: string; items: Item[]; action?: UniversalSectionProps["primaryAction"] }) {
-  const [open, setOpen] = useState(false);
   const links = linkItems(items);
-  return <div className="mi-mobile-nav">
-    <button type="button" className="mi-burger" aria-expanded={open} aria-label={open ? "Close navigation menu" : "Open navigation menu"} onClick={() => setOpen((value) => !value)}><span /><span /><span /></button>
-    {open ? <div className="mi-mobile-drawer" role="dialog" aria-label={`${title} navigation`}>
-      <div className="mi-mobile-drawer__head"><strong>{title}</strong><button type="button" onClick={() => setOpen(false)} aria-label="Close navigation menu">×</button></div>
-      <nav aria-label="Mobile navigation">{links.map((item, index) => <a key={`${item.title}-${index}`} href={item.href} onClick={() => setOpen(false)}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}</nav>
+  return <details className="mi-mobile-nav">
+    <summary className="mi-burger" aria-label="Open navigation menu"><span /><span /><span /></summary>
+    <div className="mi-mobile-drawer">
+      <div className="mi-mobile-drawer__head"><strong>{title}</strong><span aria-hidden="true">Menu</span></div>
+      <nav aria-label="Mobile navigation">{links.map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}</nav>
       <PrimaryAction action={action} />
-    </div> : null}
-  </div>;
+    </div>
+  </details>;
 }
 
 function NavLinks({ items }: { items: Item[] }) {

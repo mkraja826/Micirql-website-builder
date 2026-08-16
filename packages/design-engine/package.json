@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@micirql/schema": "workspace:*"
+    "@micirql/schema": "workspace:*",
+    "@micirql/sections": "workspace:*"
   },
   "devDependencies": {
     "typescript": "latest"

@@ -1,6 +1,6 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt } from "@micirql/design-engine";
+import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 
 export type ReviewDirection = {
@@ -11,6 +11,7 @@ export type ReviewDirection = {
   site: Site;
   themeFamily: string;
   variantSeed: number;
+  readiness: WebsiteValidationResult;
 };
 
 type DirectionRecipe = {
@@ -55,6 +56,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + index);
     const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
+    const readiness = validateWebsite(composed, archetypeId);
     return {
       id: `business-direction-${String(index + 1).padStart(2, "0")}`,
       name: recipe.name,
@@ -67,13 +69,15 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `${rhythm.name} spacing and shape`,
         `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
+        `readiness ${readiness.score}/100`,
         "preserves your business content",
       ],
       site: composed,
       themeFamily: composed.theme.family,
       variantSeed: index,
+      readiness,
     };
-  });
+  }).filter((direction) => direction.readiness.ready);
 }
 
 function composeDirection(

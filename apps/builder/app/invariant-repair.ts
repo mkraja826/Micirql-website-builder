@@ -1,6 +1,6 @@
 import type { Site, SiteSection } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
-import { ensureIndustryPages, WEBSITE_ARCHETYPES, syncSiteNavigation, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
+import { ensureIndustryPages, syncGlobalSiteShell, WEBSITE_ARCHETYPES, syncSiteNavigation, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
 
 export type RepairResult = {
   site: Site;
@@ -45,8 +45,15 @@ export function repairWebsiteInvariants(site: Site, archetypeId: string, industr
   normalizeShellOrder(home.sections, repairs);
 
   const beforeNavigation = JSON.stringify(next.navigation);
-  next = syncSiteNavigation(next);
+  next = syncSiteNavigation(next, industry, subindustry);
   if (beforeNavigation !== JSON.stringify(next.navigation)) repairs.push("synchronized page navigation");
+
+  const shellSync = syncGlobalSiteShell(next);
+  next = shellSync.site;
+  if (shellSync.changedPages.length) repairs.push(`synchronized global shell: ${shellSync.changedPages.join(", ")}`);
+
+  // Re-run navigation after shell propagation so every cloned shell gets current URLs/groups.
+  next = syncSiteNavigation(next, industry, subindustry);
 
   const readiness = validateWebsite(next, archetypeId);
   return { site: next, repaired: repairs.length > 0, repairs, readiness };

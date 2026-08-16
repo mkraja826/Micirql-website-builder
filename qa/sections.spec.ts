@@ -113,9 +113,18 @@ for (const entry of entries) {
           return [...byUrl.values()].reduce((sum, bytes) => sum + bytes, 0);
         }, [...baselineJsUrls]);
 
+        // Only visible text can clip for a user. Responsive shells deliberately
+        // keep desktop actions/links in the DOM with display:none on mobile; those
+        // nodes can retain a non-zero scrollWidth while clientWidth is zero and
+        // must not be reported as visible text overflow.
         const textOverflowCount = rootVisible
           ? await root.locator("h1,h2,h3,p,a,button").evaluateAll((elements) =>
-              elements.filter((element) => element.scrollWidth > element.clientWidth + 2).length,
+              elements.filter((element) => {
+                const style = getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                if (style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height <= 0) return false;
+                return element.scrollWidth > element.clientWidth + 2;
+              }).length,
             )
           : 1;
 

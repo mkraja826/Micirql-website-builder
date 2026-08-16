@@ -1,7 +1,8 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
+import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, type WebsiteValidationResult } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
+import { repairWebsiteInvariants } from "./invariant-repair";
 
 export type ReviewDirection = {
   id: string;
@@ -55,8 +56,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const rhythm = rhythmSystemAt(index + Math.floor(index / 5));
     const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + index);
     const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
+    const repaired = repairWebsiteInvariants(composed, archetypeId);
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
-    const readiness = validateWebsite(composed, archetypeId);
     return {
       id: `business-direction-${String(index + 1).padStart(2, "0")}`,
       name: recipe.name,
@@ -69,13 +70,14 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `${rhythm.name} spacing and shape`,
         `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
-        `readiness ${readiness.score}/100`,
+        ...(repaired.repaired ? [`auto-repaired ${repaired.repairs.length} structural issue${repaired.repairs.length === 1 ? "" : "s"}`] : []),
+        `readiness ${repaired.readiness.score}/100`,
         "preserves your business content",
       ],
-      site: composed,
-      themeFamily: composed.theme.family,
+      site: repaired.site,
+      themeFamily: repaired.site.theme.family,
       variantSeed: index,
-      readiness,
+      readiness: repaired.readiness,
     };
   }).filter((direction) => direction.readiness.ready);
 }
@@ -88,12 +90,7 @@ function composeDirection(
   imageStrategy: ReturnType<typeof imageStrategyAt>,
 ): Site {
   const next = structuredClone(site);
-  next.theme.brand.typography = {
-    ...next.theme.brand.typography,
-    display: typography.display,
-    body: typography.body,
-    ui: typography.ui,
-  };
+  next.theme.brand.typography = { ...next.theme.brand.typography, display: typography.display, body: typography.body, ui: typography.ui };
   next.theme.brand.density = rhythm.density;
   next.theme.brand.shape = rhythm.shape;
   if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) {
@@ -103,15 +100,12 @@ function composeDirection(
   }
 
   const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette) ?? PALETTE_STRATEGIES[0]!;
-
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);
       if (!family) continue;
-      const variant = recipe.variants[family] ?? 1;
-      section.component.componentId = sectionDesignId(next.theme.family, family, variant);
+      section.component.componentId = sectionDesignId(next.theme.family, family, recipe.variants[family] ?? 1);
     }
-
     if (recipe.sequence?.length) {
       const order = new Map(recipe.sequence.map((family, index) => [family, index]));
       page.sections = [...page.sections].sort((a, b) => {
@@ -120,7 +114,6 @@ function composeDirection(
         return (familyA ? order.get(familyA) ?? 999 : 999) - (familyB ? order.get(familyB) ?? 999 : 999);
       });
     }
-
     let bodyIndex = 0;
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);
@@ -132,26 +125,18 @@ function composeDirection(
       else if (family === "contact") paletteRole = palette.roles.contact;
       else if (family === "footer") paletteRole = palette.roles.footer;
       else paletteRole = bodyIndex++ % 2 === 0 ? palette.roles.sectionA : palette.roles.sectionB;
-
-      const imageProps = imagePropsForFamily(family, imageStrategy);
-      section.props = {
-        ...section.props,
-        paletteRole,
-        cardPaletteRole: palette.roles.card,
-        ctaPaletteRole: palette.roles.primaryCta,
-        ...imageProps,
-      };
+      section.props = { ...section.props, paletteRole, cardPaletteRole: palette.roles.card, ctaPaletteRole: palette.roles.primaryCta, ...imagePropsForFamily(family, imageStrategy) };
     }
   }
   return next;
 }
 
 function imagePropsForFamily(family: SectionFamily, strategy: ReturnType<typeof imageStrategyAt>) {
-  const common = { imageFit: strategy.crop, imageFocal: strategy.focalPoint } as const;
+  const common = { imageFit: strategy.crop, imageFocalPoint: strategy.focalPoint } as const;
   if (family === "hero") return { ...common, imageSlotMode: "section" as const, imageRatio: strategy.heroRatio };
   if (family === "about") return { ...common, imageSlotMode: "section" as const, imageRatio: strategy.itemRatio };
   if (family === "services" || family === "features") return { ...common, imageSlotMode: "items" as const, itemImageRatio: strategy.itemRatio };
-  if (family === "team") return { imageFit: "cover" as const, imageFocal: "face-safe" as const, imageSlotMode: "items" as const, itemImageRatio: strategy.teamRatio };
+  if (family === "team") return { imageFit: "cover" as const, imageFocalPoint: "face-safe" as const, imageSlotMode: "items" as const, itemImageRatio: strategy.teamRatio };
   if (family === "gallery") return { ...common, imageSlotMode: "items" as const, itemImageRatio: strategy.galleryRatio };
   return { imageSlotMode: "none" as const };
 }

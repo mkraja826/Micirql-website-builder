@@ -38,7 +38,7 @@ export function CanvasAddSectionFlow({
 }: {
   site: Site;
   pageId: string;
-  afterSectionId?: string;
+  afterSectionId?: string | undefined;
   onChoose(family: AiEditorSectionFamily, candidate: Candidate): void;
   onCancel(): void;
 }) {
@@ -52,7 +52,7 @@ export function CanvasAddSectionFlow({
           site={site}
           pageId={pageId}
           family={family}
-          afterSectionId={afterSectionId}
+          {...(afterSectionId ? { afterSectionId } : {})}
           onCancel={onCancel}
           onChoose={(candidate) => onChoose(family, candidate)}
         />

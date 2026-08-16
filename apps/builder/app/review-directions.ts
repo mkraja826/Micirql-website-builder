@@ -1,6 +1,6 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor } from "@micirql/design-engine";
+import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 
 export type ReviewDirection = {
@@ -50,7 +50,9 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   const rule = blueprintRuleFor(archetypeId);
 
   return RECIPES.slice(0, Math.min(count, RECIPES.length)).map((recipe, index) => {
-    const composed = composeDirection(site, recipe);
+    const typography = typographySystemAt(index);
+    const rhythm = rhythmSystemAt(index + Math.floor(index / 5));
+    const composed = composeDirection(site, recipe, typography, rhythm);
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
     return {
       id: `business-direction-${String(index + 1).padStart(2, "0")}`,
@@ -60,6 +62,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `built for ${industry}`,
         `${archetypeId.replace(/-/g, " ")} composition`,
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",
+        `${typography.name} typography`,
+        `${rhythm.name} spacing and shape`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         "preserves your business content",
       ],
@@ -70,8 +74,22 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   });
 }
 
-function composeDirection(site: Site, recipe: DirectionRecipe): Site {
+function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>): Site {
   const next = structuredClone(site);
+  next.theme.brand.typography = {
+    ...next.theme.brand.typography,
+    display: typography.display,
+    body: typography.body,
+    ui: typography.ui,
+  };
+  next.theme.brand.density = rhythm.density;
+  next.theme.brand.shape = rhythm.shape;
+  if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) {
+    next.theme.modifiers = [...next.theme.modifiers.filter((modifier) => modifier !== "3d-depth"), "3d-depth"].slice(0, 3);
+  } else if (rhythm.surfaceTreatment === "flat") {
+    next.theme.modifiers = next.theme.modifiers.filter((modifier) => modifier !== "3d-depth");
+  }
+
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);

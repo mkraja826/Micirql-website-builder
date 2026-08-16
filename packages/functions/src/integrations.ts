@@ -16,6 +16,44 @@ export type EmailTransport = {
   send(message: EmailMessage, configRef: string): Promise<{ messageId?: string; queued?: boolean }>;
 };
 
+export type EmailProviderConfig = {
+  apiKey: string;
+  from: string;
+};
+
+export type EmailProviderConfigResolver = {
+  resolve(configRef: string): Promise<EmailProviderConfig | undefined>;
+};
+
+export function createResendEmailTransport(args: {
+  config: EmailProviderConfigResolver;
+  apiBaseUrl?: string;
+  fetcher?: typeof fetch;
+}): EmailTransport {
+  const base = (args.apiBaseUrl ?? "https://api.resend.com").replace(/\/$/, "");
+  const fetcher = args.fetcher ?? fetch;
+  return {
+    async send(message, configRef) {
+      const config = await args.config.resolve(configRef);
+      if (!config?.apiKey || !config.from) throw new Error("Email notification provider is not configured.");
+      const response = await fetcher(`${base}/emails`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${config.apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          from: config.from,
+          to: message.to,
+          subject: message.subject,
+          text: message.text,
+          ...(message.replyTo ? { reply_to: message.replyTo } : {}),
+        }),
+      });
+      if (!response.ok) throw new Error(`Email delivery failed (${response.status}).`);
+      const result = await response.json().catch(() => ({})) as { id?: string };
+      return { ...(result.id ? { messageId: result.id } : {}), queued: true };
+    },
+  };
+}
+
 export type WebhookTransport = {
   post(args: { configRef: string; event: NotificationEvent }): Promise<{ messageId?: string; queued?: boolean }>;
 };

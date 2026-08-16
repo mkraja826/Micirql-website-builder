@@ -10,7 +10,9 @@ import {
   evaluateWebsiteContent,
   scoreDesign,
   selectDiverseDesigns,
+  applyPreferenceBias,
   type ContentQualityResult,
+  type DesignPreferenceProfile,
   type DesignScore,
   type WebsiteValidationResult,
 } from "@micirql/design-engine";
@@ -27,7 +29,7 @@ export type ReviewDirection = {
   variantSeed: number;
   readiness: WebsiteValidationResult;
   contentQuality: ContentQualityResult;
-  designScore: DesignScore;
+  designScore: DesignScore & { preferenceBias?: number };
 };
 
 type DirectionRecipe = {
@@ -61,7 +63,7 @@ const RECIPES: DirectionRecipe[] = [
   { name: "High Impact", description: "Strong branded surfaces and assertive conversion moments for maximum presence.", palette: "brand-heavy", variants: { navbar: 4, hero: 5, about: 5, services: 5, features: 5, process: 5, testimonials: 5, gallery: 2, team: 5, cta: 5, contact: 5, footer: 3 } },
 ];
 
-export function buildReviewDirections(site: Site, profile: OnboardingProfile, count = 20): ReviewDirection[] {
+export function buildReviewDirections(site: Site, profile: OnboardingProfile, count = 20, preferenceProfile?: DesignPreferenceProfile): ReviewDirection[] {
   const industry = clean(profile.industry) || clean(profile.subindustry) || "your business";
   const archetypeId = resolveArchetype(profile);
   const rule = blueprintRuleFor(archetypeId);
@@ -83,12 +85,13 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     if (!repaired.readiness.ready || contentQuality.issues.some((issue) => issue.severity === "error")) continue;
 
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
-    const designScore = scoreDesign({
+    const baseScore = scoreDesign({
       site: normalizedSite,
       readinessScore: repaired.readiness.score,
       contentScore: contentQuality.score,
       archetypeFitScore: rule ? 96 : 90,
     });
+    const designScore = applyPreferenceBias(baseScore, preferenceProfile);
     const mutationLabel = pass ? ` · variation ${pass + 1}` : "";
 
     candidates.push({
@@ -104,6 +107,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         ...(repaired.repaired ? [`auto-repaired ${repaired.repairs.length} structural issue${repaired.repairs.length === 1 ? "" : "s"}`] : []),
+        ...(designScore.preferenceBias ? [`preference fit ${designScore.preferenceBias > 0 ? "+" : ""}${designScore.preferenceBias.toFixed(1)}`] : []),
         `design quality ${designScore.total}/100`,
         `readiness ${repaired.readiness.score}/100`,
         `content quality ${contentQuality.score}/100`,
@@ -132,29 +136,19 @@ function mutateRecipe(recipe: DirectionRecipe, pass: number): DirectionRecipe {
   return { ...recipe, palette, variants };
 }
 
-function composeDirection(
-  site: Site,
-  recipe: DirectionRecipe,
-  typography: ReturnType<typeof typographySystemAt>,
-  rhythm: ReturnType<typeof rhythmSystemAt>,
-  imageStrategy: ReturnType<typeof imageStrategyAt>,
-): Site {
+function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>, imageStrategy: ReturnType<typeof imageStrategyAt>): Site {
   const next = structuredClone(site);
   next.theme.brand.typography = { ...next.theme.brand.typography, display: typography.display, body: typography.body, ui: typography.ui };
   next.theme.brand.density = rhythm.density;
   next.theme.brand.shape = rhythm.shape;
-  if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) {
-    next.theme.modifiers = [...next.theme.modifiers.filter((modifier) => modifier !== "3d-depth"), "3d-depth"].slice(0, 3);
-  } else if (rhythm.surfaceTreatment === "flat") {
-    next.theme.modifiers = next.theme.modifiers.filter((modifier) => modifier !== "3d-depth");
-  }
+  if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) next.theme.modifiers = [...next.theme.modifiers.filter((modifier) => modifier !== "3d-depth"), "3d-depth"].slice(0, 3);
+  else if (rhythm.surfaceTreatment === "flat") next.theme.modifiers = next.theme.modifiers.filter((modifier) => modifier !== "3d-depth");
 
   const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette) ?? PALETTE_STRATEGIES[0]!;
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);
-      if (!family) continue;
-      section.component.componentId = sectionDesignId(next.theme.family, family, recipe.variants[family] ?? 1);
+      if (family) section.component.componentId = sectionDesignId(next.theme.family, family, recipe.variants[family] ?? 1);
     }
     if (recipe.sequence?.length) {
       const order = new Map(recipe.sequence.map((family, index) => [family, index]));

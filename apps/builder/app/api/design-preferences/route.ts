@@ -96,15 +96,15 @@ export async function POST(request: NextRequest) {
 }
 
 type SignalRow = {
-  signal_type?: string | null;
-  direction_signature?: string | null;
-  theme_family?: string | null;
-  density?: string | null;
-  shape?: string | null;
-  motion?: string | null;
-  typography_display?: string | null;
-  typography_body?: string | null;
-  metadata?: Record<string, unknown> | null;
+  signal_type: string | null;
+  direction_signature: string | null;
+  theme_family: string | null;
+  density: string | null;
+  shape: string | null;
+  motion: string | null;
+  typography_display: string | null;
+  typography_body: string | null;
+  metadata: Record<string, unknown> | null;
 };
 
 function toPreferenceSignal(row: SignalRow): PreferenceSignal | undefined {

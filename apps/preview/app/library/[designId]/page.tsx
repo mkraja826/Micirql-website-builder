@@ -10,6 +10,7 @@ const previewBrand = {
   secondary: "#f3f4f6",
   secondaryContrast: "#111827",
   accent: "#7c3aed",
+  accentContrast: "#ffffff",
   surface: "#ffffff",
   surfaceElevated: "#ffffff",
   text: "#111827",

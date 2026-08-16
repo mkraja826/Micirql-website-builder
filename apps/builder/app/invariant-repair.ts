@@ -1,6 +1,6 @@
 import type { Site, SiteSection } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
-import { WEBSITE_ARCHETYPES, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
+import { WEBSITE_ARCHETYPES, syncSiteNavigation, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
 
 export type RepairResult = {
   site: Site;
@@ -23,7 +23,7 @@ const REQUIREMENT_TO_FAMILY: Record<string, SectionFamily> = {
 };
 
 export function repairWebsiteInvariants(site: Site, archetypeId: string): RepairResult {
-  const next = structuredClone(site);
+  let next = structuredClone(site);
   const repairs: string[] = [];
   const archetype = WEBSITE_ARCHETYPES.find((candidate) => candidate.id === archetypeId);
   const home = next.pages.find((page) => page.path === "/") ?? next.pages[0]!;
@@ -37,6 +37,10 @@ export function repairWebsiteInvariants(site: Site, archetypeId: string): Repair
   ensurePrimaryCta(home.sections, next, repairs);
   ensureFamily(home.sections, next, "footer", "footer", repairs);
   normalizeShellOrder(home.sections, repairs);
+
+  const beforeNavigation = JSON.stringify(next.navigation);
+  next = syncSiteNavigation(next);
+  if (beforeNavigation !== JSON.stringify(next.navigation)) repairs.push("synchronized page navigation");
 
   const readiness = validateWebsite(next, archetypeId);
   return { site: next, repaired: repairs.length > 0, repairs, readiness };

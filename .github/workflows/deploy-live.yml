@@ -42,6 +42,9 @@ jobs:
       - run: pnpm --filter @micirql/live typecheck
       - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build
 
+      - name: Deploy micirql-live
+        run: pnpm --filter @micirql/live deploy
+
       - name: Upload Supabase server secret to Worker
         working-directory: apps/live
         shell: bash
@@ -53,5 +56,8 @@ jobs:
         shell: bash
         run: printf '%s' "$RESEND_API_KEY" | pnpm exec wrangler secret put RESEND_API_KEY
 
-      - name: Deploy micirql-live
-        run: pnpm --filter @micirql/live deploy
+      - name: Upload optional Resend sender to Worker
+        if: ${{ env.RESEND_FROM != '' }}
+        working-directory: apps/live
+        shell: bash
+        run: printf '%s' "$RESEND_FROM" | pnpm exec wrangler secret put RESEND_FROM

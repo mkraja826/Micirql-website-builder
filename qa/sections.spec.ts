@@ -6,6 +6,7 @@ import { seedSectionCatalog } from "@micirql/sections";
 const requiredWidths = [320, 360, 390, 430, 1280] as const;
 const full = process.env.MI_QA_FULL === "1";
 const core = process.env.MI_QA_CORE === "1";
+// Full certification uses this same protocol across every catalog entry.
 // This is the incremental JavaScript budget for a section route, excluding the
 // Next.js preview shell/framework that every QA page has to load.
 const sectionClientJsBudgetBytes = 180 * 1024;

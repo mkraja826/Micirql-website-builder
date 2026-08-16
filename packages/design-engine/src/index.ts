@@ -10,3 +10,4 @@ export * from "./site-validator";
 export * from "./content-quality";
 export * from "./design-diversity";
 export * from "./preference-learning";
+export * from "./industry-intelligence";

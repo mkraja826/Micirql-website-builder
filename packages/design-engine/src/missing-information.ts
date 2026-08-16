@@ -64,7 +64,14 @@ export function analyzeMissingInformation(site: Site): MissingInformationReport 
 
   const contactBindings = sections.filter((entry) => entry.family === "contact" || entry.family === "cta");
   if (contactBindings.length && !contactBindings.some((entry) => Object.keys(entry.section.bindings ?? {}).length > 0)) {
-    items.push({ id: "conversion-action", priority: "high", title: "Connect the main enquiry action", detail: "Choose what the primary CTA should do: form, booking, phone, email or another connected action.", pageId: contact?.page.id, sectionId: contact?.section.id, action: "functions" });
+    items.push({
+      id: "conversion-action",
+      priority: "high",
+      title: "Connect the main enquiry action",
+      detail: "Choose what the primary CTA should do: form, booking, phone, email or another connected action.",
+      ...(contact ? { pageId: contact.page.id, sectionId: contact.section.id } : {}),
+      action: "functions",
+    });
   }
 
   const deduped = [...new Map(items.map((item) => [item.id, item])).values()];

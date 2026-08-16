@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Card, Gallery, NavigationMenu, Stats } from "@micirql/components";
+import { Card, Gallery, Stats } from "@micirql/components";
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
+import { StructuralFooter, StructuralNavbar } from "./shell-sections";
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
@@ -36,8 +37,8 @@ function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
   return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}<Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
 }
 
-function NavbarSection({ title, items = [], primaryAction }: VariantProps) {
-  return <header className="mi-section mi-section--navbar"><Container><div className="mi-navbar"><a href="/" className="mi-navbar__brand"><InlineField path="title">{title}</InlineField></a><NavigationMenu items={items.map((item, i) => ({ label: item.title, href: `#section-${i + 1}` }))} />{primaryAction ? <a className="mi-section__action mi-section__action--primary" href={primaryAction.href}><InlineField path="primaryAction.label">{primaryAction.label}</InlineField></a> : null}</div></Container></header>;
+function NavbarSection(props: VariantProps) {
+  return <StructuralNavbar {...props} />;
 }
 
 function HeroCopy(props: UniversalSectionProps) {
@@ -93,7 +94,7 @@ function CtaSection(props: VariantProps) {
 }
 
 function FooterSection(props: VariantProps) {
-  return <footer className="mi-section mi-section--footer"><Container><div className="mi-footer"><div><strong><InlineField path="title">{props.title}</InlineField></strong>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div><nav aria-label="Footer navigation">{(props.items ?? []).map((item, index) => <a key={`${item.title}-${index}`} href={`#section-${index + 1}`}>{item.title}</a>)}</nav></div></Container></footer>;
+  return <StructuralFooter {...props} />;
 }
 
 const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {

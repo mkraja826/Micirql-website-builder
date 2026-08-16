@@ -45,12 +45,16 @@ for (const entry of entries) {
         const undersizedTargets = await page.locator("a, button, summary, input, select, textarea").evaluateAll((elements) =>
           elements
             .filter((element) => {
+              if (element.getAttribute("aria-hidden") === "true") return false;
+              if (element instanceof HTMLInputElement && element.type === "hidden") return false;
               const rect = element.getBoundingClientRect();
               const style = getComputedStyle(element);
               return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
             })
             .filter((element) => {
-              const rect = element.getBoundingClientRect();
+              const isChoice = element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio");
+              const target = isChoice ? element.closest("label") ?? element : element;
+              const rect = target.getBoundingClientRect();
               return rect.width < 44 || rect.height < 44;
             })
             .map((element) => ({ tag: element.tagName, text: element.textContent?.trim().slice(0, 40) ?? "" })),
@@ -59,6 +63,7 @@ for (const entry of entries) {
         const imagesWithoutAlt = await page.locator("img:not([alt])").count();
         const unlabeledControls = await page.locator("input:not([type=hidden]), select, textarea").evaluateAll((elements) =>
           elements.filter((element) => {
+            if (element.getAttribute("aria-hidden") === "true") return false;
             const id = element.getAttribute("id");
             const ariaLabel = element.getAttribute("aria-label");
             const ariaLabelledBy = element.getAttribute("aria-labelledby");

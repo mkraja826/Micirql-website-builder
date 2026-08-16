@@ -19,7 +19,7 @@ export function createSqlBackendConfigStore(db: QueryDriver): BackendConfigStore
       return db.one<SiteRecord>("select id, workspace_id as \"workspaceId\", name, status, published_version_id as \"publishedVersionId\" from sites where id = $1", [id]);
     },
     findHostname(hostname) {
-      return db.one<SiteHostnameRecord>("select id, site_id as \"siteId\", hostname, mode, status, ssl_status as \"sslStatus\", primary from site_hostnames where hostname = $1", [hostname]);
+      return db.one<SiteHostnameRecord>("select id, site_id as \"siteId\", hostname, mode, status, ssl_status as \"sslStatus\", is_primary as \"primary\" from site_hostnames where hostname = $1", [hostname]);
     },
     listSiteIntegrations(siteId) {
       return db.many<SiteIntegrationRecord>("select id, workspace_id as \"workspaceId\", site_id as \"siteId\", provider, capability, status, config_ref as \"configRef\" from site_integrations where site_id = $1", [siteId]);

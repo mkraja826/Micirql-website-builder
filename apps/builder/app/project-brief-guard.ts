@@ -41,7 +41,7 @@ export function projectIdentityMatches(
   actual: { businessName?: unknown; industry?: unknown },
 ): boolean {
   const expectedName = normalize(expected.businessName);
-  const actualName = normalize(actual.businessName);
+  const actualName = normalize(typeof actual.businessName === "string" ? actual.businessName : "");
   const expectedIndustry = canonicalIndustry(expected.industry);
   const actualIndustry = canonicalIndustry(typeof actual.industry === "string" ? actual.industry : "");
   const nameMatches = !actualName || actualName === expectedName;

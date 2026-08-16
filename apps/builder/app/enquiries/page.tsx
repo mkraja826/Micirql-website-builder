@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthGate } from "../auth-gate";
 import { EnquiriesManager } from "../enquiries-manager";
@@ -7,6 +8,10 @@ import { NotificationSettingsCard } from "../notification-settings-card";
 import "./enquiries.css";
 
 export default function EnquiriesPage() {
+  return <Suspense fallback={<main className="enquiries-page"><div className="enquiries-empty">Loading enquiries…</div></main>}><EnquiriesContent /></Suspense>;
+}
+
+function EnquiriesContent() {
   const params = useSearchParams();
   const siteId = params.get("siteId")?.trim() ?? "";
   const name = params.get("name")?.trim() ?? "Website";

@@ -83,6 +83,7 @@ export async function preparePage(args: {
       secondary: site.theme.brand.colors.secondary,
       secondaryContrast: contrastFor(site.theme.brand.colors.secondary),
       accent: site.theme.brand.colors.accent,
+      accentContrast: contrastFor(site.theme.brand.colors.accent),
       surface: site.theme.brand.colors.surface,
       surfaceElevated: site.theme.brand.colors.background,
       text: site.theme.brand.colors.textPrimary,

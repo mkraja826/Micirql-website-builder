@@ -8,3 +8,4 @@ export * from "./typography-spacing-systems";
 export * from "./image-slot-strategies";
 export * from "./site-validator";
 export * from "./content-quality";
+export * from "./design-diversity";

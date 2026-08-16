@@ -8,7 +8,8 @@
     "./styles.css": "./src/styles.css",
     "./shell-styles.css": "./src/shell-styles.css",
     "./content-sections.css": "./src/content-sections.css",
-    "./conversion-styles.css": "./src/conversion-styles.css"
+    "./conversion-styles.css": "./src/conversion-styles.css",
+    "./media-sections.css": "./src/media-sections.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

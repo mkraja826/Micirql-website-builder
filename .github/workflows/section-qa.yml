@@ -62,6 +62,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "full" ]; then
             pnpm qa:sections:full
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[full-cert]"* ]]; then
+            pnpm qa:sections:full
           else
             pnpm qa:sections:core
           fi

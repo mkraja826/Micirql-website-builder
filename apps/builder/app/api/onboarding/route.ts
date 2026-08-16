@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { siteSchema } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { buildContentEnrichmentContract, industryPlannerContext } from "@micirql/design-engine";
+import { buildContentEnrichmentContract, enforceContentEnrichmentIntegrity, industryPlannerContext } from "@micirql/design-engine";
 import { rankPresets } from "../../preset-ranking";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
 
     let content: unknown = null;
     let contentWarning: string | null = null;
+    let contentIntegrity = { checked: false, structureIntact: true, appliedFields: 0, restoredChanges: [] as string[], corrected: false };
     try {
       const builtDraft = await getSupabaseDraft(request, workspaceId, siteId);
       if (!builtDraft) throw new Error("Generated draft could not be loaded for page-specific content enrichment.");
@@ -157,12 +159,30 @@ export async function POST(request: NextRequest) {
       });
       if (!contentResponse.ok) throw await remoteError(contentResponse);
       content = await contentResponse.json();
+
+      const enrichedDraft = await getSupabaseDraft(request, workspaceId, siteId);
+      if (!enrichedDraft) throw new Error("Enriched draft could not be reloaded for integrity verification.");
+      const guarded = enforceContentEnrichmentIntegrity(builtDraft.snapshot, enrichedDraft.snapshot);
+      const validatedSnapshot = siteSchema.parse(guarded.site);
+      const corrected = JSON.stringify(validatedSnapshot) !== JSON.stringify(enrichedDraft.snapshot);
+      if (corrected) {
+        await saveSupabaseDraft(request, { snapshot: validatedSnapshot, expectedRevision: enrichedDraft.revision });
+      }
+      contentIntegrity = {
+        checked: true,
+        structureIntact: guarded.structureIntact,
+        appliedFields: guarded.appliedFields,
+        restoredChanges: guarded.restoredChanges,
+        corrected,
+      };
+      if (guarded.restoredChanges.length) {
+        console.warn("MiCirql restored unauthorized AI enrichment changes.", guarded.restoredChanges);
+      }
     } catch (error) {
       contentWarning = error instanceof Error ? error.message : "Content enrichment failed.";
       console.error("MiCirql content enrichment failed; continuing with structural draft.", error);
     }
 
-    // MiCirql keeps media deterministic and placeholder-first. Real photos are uploaded by the user later.
     const images = { mode: "placeholders", generated: false } as const;
     const imageWarning: string | null = null;
 
@@ -223,6 +243,7 @@ export async function POST(request: NextRequest) {
       brandPalette: advice.brandColors,
       content,
       contentWarning,
+      contentIntegrity,
       images,
       imageWarning,
       initialPreset,

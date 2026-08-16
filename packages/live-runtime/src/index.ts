@@ -93,7 +93,11 @@ function functionActionFromPath(pathname: string): string | undefined {
 
 function pageDocument(seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] }, body: string) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}</head><body>${body}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}</head><body>${body}${formFeedbackScript()}</body></html>`;
+}
+
+function formFeedbackScript() {
+  return `<script>(function(){try{var p=new URLSearchParams(location.search),ok=p.get('form'),err=p.get('formError'),el=document.querySelector('[data-mi-form-status]');if(!el||(!ok&&!err))return;var messages={received:'Request received. We will get back to you shortly.','check-details':'Please check the details and try again.','rate-limited':'Too many attempts. Please wait a little and try again.',unavailable:'This request form is temporarily unavailable. Please use another contact method.','try-again':'Something went wrong. Please try again.',verification:'We could not verify this request. Please try again.'};el.textContent=ok?messages.received:(messages[err]||messages['try-again']);el.setAttribute('data-state',ok?'success':'error');}catch(e){}})();</script>`;
 }
 
 function robotsResponse(site: Site, origin: string) {

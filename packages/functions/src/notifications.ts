@@ -8,6 +8,7 @@ export type NotificationEvent = {
   siteId: string;
   workspaceId: string;
   hostname: string;
+  siteName?: string;
   actionId: string;
   requestId: string;
   occurredAt: string;
@@ -115,17 +116,19 @@ function toNotificationEvent(
   const data = asRecord(result.data);
   const recordId = stringField(data, "recordId");
   const label = actionLabel(actionId);
+  const siteLabel = site.siteName?.trim() || site.hostname;
 
   return {
     eventId: `${site.siteId}:${requestId}:${actionId}`,
     siteId: site.siteId,
     workspaceId: site.workspaceId,
     hostname: site.hostname,
+    ...(site.siteName?.trim() ? { siteName: site.siteName.trim() } : {}),
     actionId,
     requestId,
     occurredAt: now.toISOString(),
-    subject: `New ${label} from ${site.hostname}`,
-    summary: `A new ${label} was received on ${site.hostname}.`,
+    subject: `New ${label} for ${siteLabel}`,
+    summary: `A new ${label} was received for ${siteLabel}.`,
     ...(recordId ? { recordId } : {}),
   };
 }

@@ -3,66 +3,95 @@ import type { SectionVariant } from "./catalog";
 import type { UniversalSectionProps } from "./sections";
 
 type VariantProps = UniversalSectionProps & { variant: SectionVariant };
-type Item = NonNullable<UniversalSectionProps["items"]>[number];
+type BaseItem = NonNullable<UniversalSectionProps["items"]>[number];
+type Item = BaseItem & { href?: string };
+type NavigationGroup = { label: string; items: Item[] };
+type ShellProps = VariantProps & { navigationGroups?: NavigationGroup[] };
 
 function InlineField({ path, children }: { path: string; children: React.ReactNode }) {
   return <span data-mi-prop-path={path}>{children}</span>;
 }
 
 function linkItems(items: Item[]) {
-  return items.map((item, index) => ({ ...item, href: `#section-${index + 1}` }));
+  return items.map((item, index) => ({ ...item, href: item.href || `#section-${index + 1}` }));
+}
+
+function navigationGroups(props: VariantProps): NavigationGroup[] {
+  const groups = (props as ShellProps).navigationGroups;
+  return Array.isArray(groups) ? groups.filter((group) => group && Array.isArray(group.items) && group.items.length) : [];
 }
 
 function PrimaryAction({ action }: { action?: UniversalSectionProps["primaryAction"] }) {
   return action ? <a className="mi-shell-cta" href={action.href}><InlineField path="primaryAction.label">{action.label}</InlineField></a> : null;
 }
 
-function MobileMenu({ title, items, action }: { title: string; items: Item[]; action?: UniversalSectionProps["primaryAction"] }) {
+function MobileMenu({ title, items, groups, action }: { title: string; items: Item[]; groups: NavigationGroup[]; action?: UniversalSectionProps["primaryAction"] }) {
   const links = linkItems(items);
   return <details className="mi-mobile-nav">
     <summary className="mi-burger" aria-label="Open navigation menu"><span /><span /><span /></summary>
     <div className="mi-mobile-drawer">
       <div className="mi-mobile-drawer__head"><strong>{title}</strong><span aria-hidden="true">Menu</span></div>
-      <nav aria-label="Mobile navigation">{links.map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}</nav>
+      <nav aria-label="Mobile navigation">
+        {links.map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}
+        {groups.map((group, groupIndex) => <div className="mi-mobile-nav-group" key={`${group.label}-${groupIndex}`}><strong>{group.label}</strong>{linkItems(group.items).map((item, itemIndex) => <a key={`${item.title}-${itemIndex}`} href={item.href}>{item.title}</a>)}</div>)}
+      </nav>
       <PrimaryAction action={action} />
     </div>
   </details>;
 }
 
-function NavLinks({ items }: { items: Item[] }) {
-  return <nav className="mi-shell-links" aria-label="Primary navigation">{linkItems(items).map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}</nav>;
+function NavGroups({ groups }: { groups: NavigationGroup[] }) {
+  if (!groups.length) return null;
+  return <div className="mi-shell-nav-groups">{groups.map((group, index) => <details className="mi-shell-dropdown" key={`${group.label}-${index}`}><summary>{group.label}<span aria-hidden="true">⌄</span></summary><div className="mi-shell-dropdown__panel">{linkItems(group.items).map((item, itemIndex) => <a key={`${item.title}-${itemIndex}`} href={item.href}>{item.title}</a>)}</div></details>)}</div>;
+}
+
+function NavLinks({ items, groups = [] }: { items: Item[]; groups?: NavigationGroup[] }) {
+  return <nav className="mi-shell-links" aria-label="Primary navigation">{linkItems(items).map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}<NavGroups groups={groups} /></nav>;
 }
 
 export function StructuralNavbar(props: VariantProps) {
+  const groups = navigationGroups(props);
+  const items = (props.items ?? []) as Item[];
   const brand = <a href="/" className="mi-shell-brand"><InlineField path="title">{props.title}</InlineField></a>;
-  const menu = <MobileMenu title={props.title} items={props.items ?? []} action={props.primaryAction} />;
+  const menu = <MobileMenu title={props.title} items={items} groups={groups} action={props.primaryAction} />;
 
-  if (props.variant === 2) return <header className="mi-shell-navbar mi-shell-navbar--utility"><div className="mi-nav-utility"><Container><span>{props.description || "Welcome"}</span>{props.primaryAction ? <a href={props.primaryAction.href}>{props.primaryAction.label}</a> : null}</Container></div><Container><div className="mi-nav-row">{brand}<NavLinks items={props.items ?? []} /><PrimaryAction action={props.primaryAction} />{menu}</div></Container></header>;
+  if (props.variant === 2) return <header className="mi-shell-navbar mi-shell-navbar--utility"><div className="mi-nav-utility"><Container><span>{props.description || "Welcome"}</span>{props.primaryAction ? <a href={props.primaryAction.href}>{props.primaryAction.label}</a> : null}</Container></div><Container><div className="mi-nav-row">{brand}<NavLinks items={items} groups={groups} /><PrimaryAction action={props.primaryAction} />{menu}</div></Container></header>;
 
-  if (props.variant === 3) return <header className="mi-shell-navbar mi-shell-navbar--centered"><Container><div className="mi-nav-centered"><NavLinks items={(props.items ?? []).slice(0, Math.ceil((props.items ?? []).length / 2))} />{brand}<NavLinks items={(props.items ?? []).slice(Math.ceil((props.items ?? []).length / 2))} /><div className="mi-nav-centered__action"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
+  if (props.variant === 3) {
+    const midpoint = Math.ceil(items.length / 2);
+    return <header className="mi-shell-navbar mi-shell-navbar--centered"><Container><div className="mi-nav-centered"><NavLinks items={items.slice(0, midpoint)} />{brand}<NavLinks items={items.slice(midpoint)} groups={groups} /><div className="mi-nav-centered__action"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
+  }
 
-  if (props.variant === 4) return <header className="mi-shell-navbar mi-shell-navbar--floating"><Container><div className="mi-nav-float">{brand}<NavLinks items={props.items ?? []} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
+  if (props.variant === 4) return <header className="mi-shell-navbar mi-shell-navbar--floating"><Container><div className="mi-nav-float">{brand}<NavLinks items={items} groups={groups} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
 
   if (props.variant === 5) return <header className="mi-shell-navbar mi-shell-navbar--minimal"><Container><div className="mi-nav-row">{brand}<div className="mi-nav-minimal-copy">{props.description ? <span>{props.description}</span> : null}</div><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
 
-  return <header className="mi-shell-navbar mi-shell-navbar--classic"><Container><div className="mi-nav-row">{brand}<NavLinks items={props.items ?? []} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
+  return <header className="mi-shell-navbar mi-shell-navbar--classic"><Container><div className="mi-nav-row">{brand}<NavLinks items={items} groups={groups} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
 }
 
 function FooterLinks({ items }: { items: Item[] }) {
   return <nav className="mi-footer-links" aria-label="Footer navigation">{linkItems(items).map((item, index) => <a key={`${item.title}-${index}`} href={item.href}><InlineField path={`items.${index}.title`}>{item.title}</InlineField></a>)}</nav>;
 }
 
+function FooterGroups({ groups }: { groups: NavigationGroup[] }) {
+  if (!groups.length) return null;
+  return <div className="mi-footer-groups">{groups.map((group, index) => <nav aria-label={`${group.label} footer links`} key={`${group.label}-${index}`}><strong>{group.label}</strong>{linkItems(group.items).map((item, itemIndex) => <a href={item.href} key={`${item.title}-${itemIndex}`}>{item.title}</a>)}</nav>)}</div>;
+}
+
 export function StructuralFooter(props: VariantProps) {
+  const groups = navigationGroups(props);
+  const items = (props.items ?? []) as Item[];
   const brand = <div className="mi-footer-brand"><strong><InlineField path="title">{props.title}</InlineField></strong>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div>;
   const copyright = <small>© {new Date().getFullYear()} {props.title}. All rights reserved.</small>;
+  const links = groups.length ? <FooterGroups groups={groups} /> : <FooterLinks items={items} />;
 
-  if (props.variant === 2) return <footer className="mi-shell-footer mi-shell-footer--compact"><Container><div className="mi-footer-compact">{brand}<FooterLinks items={props.items ?? []} />{copyright}</div></Container></footer>;
+  if (props.variant === 2) return <footer className="mi-shell-footer mi-shell-footer--compact"><Container><div className="mi-footer-compact">{brand}{links}{copyright}</div></Container></footer>;
 
-  if (props.variant === 3) return <footer className="mi-shell-footer mi-shell-footer--cta"><Container><div className="mi-footer-cta"><Stack gap="md"><Typography as="h2" variant="h2">{props.description || "Ready to take the next step?"}</Typography><PrimaryAction action={props.primaryAction} /></Stack></div><div className="mi-footer-bottom">{brand}<FooterLinks items={props.items ?? []} />{copyright}</div></Container></footer>;
+  if (props.variant === 3) return <footer className="mi-shell-footer mi-shell-footer--cta"><Container><div className="mi-footer-cta"><Stack gap="md"><Typography as="h2" variant="h2">{props.description || "Ready to take the next step?"}</Typography><PrimaryAction action={props.primaryAction} /></Stack></div><div className="mi-footer-bottom">{brand}{links}{copyright}</div></Container></footer>;
 
-  if (props.variant === 4) return <footer className="mi-shell-footer mi-shell-footer--contact"><Container><div className="mi-footer-contact"><div>{brand}<PrimaryAction action={props.primaryAction} /></div><FooterLinks items={props.items ?? []} /></div><div className="mi-footer-legal">{copyright}</div></Container></footer>;
+  if (props.variant === 4) return <footer className="mi-shell-footer mi-shell-footer--contact"><Container><div className="mi-footer-contact"><div>{brand}<PrimaryAction action={props.primaryAction} /></div>{links}</div><div className="mi-footer-legal">{copyright}</div></Container></footer>;
 
-  if (props.variant === 5) return <footer className="mi-shell-footer mi-shell-footer--editorial"><Container><div className="mi-footer-wordmark"><InlineField path="title">{props.title}</InlineField></div><div className="mi-footer-editorial-row"><FooterLinks items={props.items ?? []} /><div>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}{copyright}</div></div></Container></footer>;
+  if (props.variant === 5) return <footer className="mi-shell-footer mi-shell-footer--editorial"><Container><div className="mi-footer-wordmark"><InlineField path="title">{props.title}</InlineField></div><div className="mi-footer-editorial-row">{links}<div>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}{copyright}</div></div></Container></footer>;
 
-  return <footer className="mi-shell-footer mi-shell-footer--columns"><Container><div className="mi-footer-columns">{brand}<FooterLinks items={props.items ?? []} /><div className="mi-footer-action"><PrimaryAction action={props.primaryAction} /></div></div><div className="mi-footer-legal">{copyright}</div></Container></footer>;
+  return <footer className="mi-shell-footer mi-shell-footer--columns"><Container><div className="mi-footer-columns">{brand}{links}<div className="mi-footer-action"><PrimaryAction action={props.primaryAction} /></div></div><div className="mi-footer-legal">{copyright}</div></Container></footer>;
 }

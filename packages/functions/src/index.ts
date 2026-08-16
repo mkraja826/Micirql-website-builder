@@ -10,5 +10,6 @@ export * from "./gateway";
 export * from "./html-form-adapter";
 export * from "./notifications";
 export * from "./integrations";
+export * from "./owner-email-directory";
 export * from "./backend-config";
 export * from "./server-adapters";

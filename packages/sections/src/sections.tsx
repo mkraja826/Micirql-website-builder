@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Card, Gallery } from "@micirql/components";
+import { Card } from "@micirql/components";
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
 import { StructuralFooter, StructuralNavbar } from "./shell-sections";
@@ -9,6 +9,7 @@ import { StructuralFeatures, StructuralGallery, StructuralTeam } from "./media-s
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
+export type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent";
 
 export type UniversalSectionProps = {
   eyebrow?: string;
@@ -19,6 +20,9 @@ export type UniversalSectionProps = {
   items?: Item[];
   image?: { src: string; alt: string };
   formAction?: string;
+  paletteRole?: PaletteRole;
+  cardPaletteRole?: PaletteRole;
+  ctaPaletteRole?: PaletteRole;
 };
 
 type VariantProps = UniversalSectionProps & { variant: SectionVariant };
@@ -68,11 +72,6 @@ function StandardSection(props: VariantProps) {
   return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items ?? []} /><Actions {...props} /></Stack></Container></section>;
 }
 
-function GallerySection(props: VariantProps) {
-  const galleryItems = (props.items ?? []).filter((item): item is Item & { image: string } => Boolean(item.image)).map((item) => ({ src: item.image, alt: item.title }));
-  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{galleryItems.length ? <Gallery items={galleryItems} /> : <ItemGrid items={props.items ?? []} />}</Stack></Container></section>;
-}
-
 function FooterSection(props: VariantProps) {
   return <StructuralFooter {...props} />;
 }
@@ -94,5 +93,12 @@ const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {
 
 export function SeedSection({ family, variant, props }: { family: SectionFamily; variant: SectionVariant; props: UniversalSectionProps }) {
   const Renderer = renderers[family];
-  return <div className={`mi-section-variant mi-section-variant--${variant}`} data-section-family={family} data-section-variant={variant}><Renderer {...props} variant={variant} /></div>;
+  return <div
+    className={`mi-section-variant mi-section-variant--${variant}`}
+    data-section-family={family}
+    data-section-variant={variant}
+    data-mi-palette-role={props.paletteRole ?? "surface"}
+    data-mi-card-palette-role={props.cardPaletteRole ?? "background"}
+    data-mi-cta-palette-role={props.ctaPaletteRole ?? "primary"}
+  ><Renderer {...props} variant={variant} /></div>;
 }

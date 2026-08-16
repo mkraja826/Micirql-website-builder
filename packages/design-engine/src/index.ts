@@ -19,3 +19,4 @@ export * from "./site-shell";
 export * from "./editor-global-shell";
 export * from "./content-enrichment-contract";
 export * from "./content-enrichment-integrity";
+export * from "./content-grounding";

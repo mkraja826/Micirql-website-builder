@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { siteSchema, type Site } from "@micirql/schema";
+import type { DesignPreferenceProfile } from "@micirql/design-engine";
 import type { SupabaseSession } from "./auth-client";
 import { RendererPreview } from "./renderer-preview";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
@@ -26,13 +27,18 @@ export function FirstBuildReview({
   onComplete(): void;
 }) {
   const [draft, setDraft] = useState<DraftRecord>();
+  const [preferenceProfile, setPreferenceProfile] = useState<DesignPreferenceProfile>();
+  const [preferenceLoaded, setPreferenceLoaded] = useState(false);
   const [savingId, setSavingId] = useState<string>();
   const [error, setError] = useState("");
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
   const [activeId, setActiveId] = useState<string>();
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
-  const pool = useMemo(() => draft ? buildReviewDirections(draft.snapshot, profile, 48) : [], [draft, profile]);
+  const pool = useMemo(
+    () => draft && preferenceLoaded ? buildReviewDirections(draft.snapshot, profile, 48, preferenceProfile) : [],
+    [draft, profile, preferenceLoaded, preferenceProfile],
+  );
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
   const visible = useMemo(() => visibleIds.map((id) => byId.get(id)).filter((item): item is ReviewDirection => Boolean(item)), [visibleIds, byId]);
   const active = activeId ? byId.get(activeId) : undefined;
@@ -42,14 +48,34 @@ export function FirstBuildReview({
     let cancelled = false;
     (async () => {
       try {
-        const query = new URLSearchParams({ workspaceId, siteId });
-        const response = await fetch(`/api/drafts?${query}`, { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" });
-        const payload = await response.json() as { draft?: DraftRecord; error?: string };
-        if (!response.ok || !payload.draft) throw new Error(payload.error ?? "Could not load the generated website.");
-        const next = { ...payload.draft, snapshot: siteSchema.parse(payload.draft.snapshot) };
-        if (!cancelled) setDraft(next);
+        const draftQuery = new URLSearchParams({ workspaceId, siteId });
+        const preferenceQuery = new URLSearchParams({ workspaceId, siteId });
+        const headers = { Authorization: `Bearer ${session.access_token}` };
+        const [draftResponse, preferenceResponse] = await Promise.all([
+          fetch(`/api/drafts?${draftQuery}`, { headers, cache: "no-store" }),
+          fetch(`/api/design-preferences?${preferenceQuery}`, { headers, cache: "no-store" }),
+        ]);
+
+        const draftPayload = await draftResponse.json() as { draft?: DraftRecord; error?: string };
+        if (!draftResponse.ok || !draftPayload.draft) throw new Error(draftPayload.error ?? "Could not load the generated website.");
+        const next = { ...draftPayload.draft, snapshot: siteSchema.parse(draftPayload.draft.snapshot) };
+
+        let learnedProfile: DesignPreferenceProfile | undefined;
+        if (preferenceResponse.ok) {
+          const preferencePayload = await preferenceResponse.json() as { profile?: DesignPreferenceProfile };
+          learnedProfile = preferencePayload.profile?.signalCount ? preferencePayload.profile : undefined;
+        }
+
+        if (!cancelled) {
+          setDraft(next);
+          setPreferenceProfile(learnedProfile);
+          setPreferenceLoaded(true);
+        }
       } catch (caught) {
-        if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not load design review.");
+        if (!cancelled) {
+          setPreferenceLoaded(true);
+          setError(caught instanceof Error ? caught.message : "Could not load design review.");
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -95,9 +121,9 @@ export function FirstBuildReview({
 
   function moreLike(direction: ReviewDirection) {
     void recordPreference("more_like_this", direction);
-    const sameFamily = pool.filter((candidate) => candidate.themeFamily === direction.themeFamily);
-    const others = pool.filter((candidate) => candidate.themeFamily !== direction.themeFamily);
-    setVisibleIds([...sameFamily, ...others].slice(0, 20).map((item) => item.id));
+    const fingerprint = direction.designScore.fingerprint;
+    const ranked = [...pool].sort((a, b) => similarityToFingerprint(b.designScore.fingerprint, fingerprint) - similarityToFingerprint(a.designScore.fingerprint, fingerprint));
+    setVisibleIds(ranked.slice(0, 20).map((item) => item.id));
   }
 
   function toggleCompare(direction: ReviewDirection) {
@@ -123,7 +149,13 @@ export function FirstBuildReview({
           motion: direction.site.theme.brand.motion,
           typographyDisplay: direction.site.theme.brand.typography.display,
           typographyBody: direction.site.theme.brand.typography.body,
-          metadata: { variantSeed: direction.variantSeed, name: direction.name, ...metadata },
+          metadata: {
+            variantSeed: direction.variantSeed,
+            name: direction.name,
+            designQuality: direction.designScore.total,
+            fingerprint: direction.designScore.fingerprint,
+            ...metadata,
+          },
         }),
       });
     } catch (caught) {
@@ -131,7 +163,7 @@ export function FirstBuildReview({
     }
   }
 
-  if (!draft) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Generating a broad set of design directions from your business brief and brand…"}</p></div></main>;
+  if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing diverse design directions and learning from your previous choices…"}</p></div></main>;
 
   return <main className={styles.shell}>
     <header className={styles.header}>
@@ -140,7 +172,7 @@ export function FirstBuildReview({
       <p>MiCirql keeps your business structure, functionality and logo-derived brand colors intact, then varies theme language, typography, layout and section composition. Taste stays with you.</p>
       <div className={styles.headerActions}>
         <strong>{visible.length} directions</strong>
-        <span>Select up to two designs to compare.</span>
+        <span>{preferenceProfile?.signalCount ? `Personalized from ${preferenceProfile.signalCount} prior choice${preferenceProfile.signalCount === 1 ? "" : "s"}.` : "No prior design preference is required."}</span>
         {compared.length === 2 ? <button type="button" onClick={() => setActiveId("__compare__")}>Compare selected</button> : null}
       </div>
     </header>
@@ -153,9 +185,7 @@ export function FirstBuildReview({
           <small>{direction.reasons.slice(0, 2).join(" · ") || direction.description}</small>
         </div>
         <button className={styles.previewButton} type="button" onClick={() => setActiveId(direction.id)} aria-label={`Preview ${direction.name}`}>
-          <div className={styles.preview}>
-            <RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} />
-          </div>
+          <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
         </button>
         <div className={styles.utilityActions}>
           <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
@@ -179,9 +209,7 @@ export function FirstBuildReview({
             <button type="button" onClick={() => setActiveId(undefined)}>Close</button>
           </div>
         </div>
-        <div className={viewport === "mobile" ? styles.fullPreviewMobile : styles.fullPreview}>
-          <RendererPreview site={active.site} path={active.site.pages[0]?.path ?? "/"} viewport={viewport} onSelectSection={() => {}} />
-        </div>
+        <div className={viewport === "mobile" ? styles.fullPreviewMobile : styles.fullPreview}><RendererPreview site={active.site} path={active.site.pages[0]?.path ?? "/"} viewport={viewport} onSelectSection={() => {}} /></div>
         <div className={styles.modalFooter}>
           <button type="button" onClick={() => moreLike(active)}>More like this</button>
           <button type="button" onClick={() => regenerate(active)}>Regenerate</button>
@@ -201,6 +229,20 @@ export function FirstBuildReview({
 
 function designSignature(site: Site) {
   return [site.theme.family, site.theme.brand.density, site.theme.brand.shape, site.theme.brand.motion, ...site.pages.flatMap((page) => page.sections.map((section) => section.component.componentId))].join("|");
+}
+
+function similarityToFingerprint(a: ReviewDirection["designScore"]["fingerprint"], b: ReviewDirection["designScore"]["fingerprint"]): number {
+  let score = 0;
+  if (a.palette === b.palette) score += 0.25;
+  if (a.typography === b.typography) score += 0.2;
+  if (a.density === b.density) score += 0.1;
+  if (a.shape === b.shape) score += 0.1;
+  const left = new Set(a.structure.split("|").filter(Boolean));
+  const right = new Set(b.structure.split("|").filter(Boolean));
+  const union = new Set([...left, ...right]);
+  const intersection = [...left].filter((token) => right.has(token)).length;
+  score += union.size ? (intersection / union.size) * 0.35 : 0;
+  return score;
 }
 
 function sameDesign(a: Site, b: Site) {

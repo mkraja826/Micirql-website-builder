@@ -5,6 +5,7 @@ import type { SectionFamily, SectionVariant } from "./catalog";
 import { StructuralFooter, StructuralNavbar } from "./shell-sections";
 import { StructuralAbout, StructuralProof, StructuralServices } from "./content-sections";
 import { StructuralContact, StructuralCta, StructuralProcess } from "./conversion-sections";
+import { StructuralFeatures, StructuralGallery, StructuralTeam } from "./media-sections";
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
@@ -81,11 +82,11 @@ const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {
   hero: HeroSection,
   about: StructuralAbout,
   services: StructuralServices,
-  features: StandardSection,
+  features: StructuralFeatures,
   process: StructuralProcess,
   testimonials: StructuralProof,
-  gallery: GallerySection,
-  team: StandardSection,
+  gallery: StructuralGallery,
+  team: StructuralTeam,
   cta: StructuralCta,
   contact: StructuralContact,
   footer: FooterSection,

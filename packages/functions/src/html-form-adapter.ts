@@ -8,12 +8,20 @@ export type HtmlFormAdapterOptions = {
   ipHasher?: (ip: string) => Promise<string> | string;
 };
 
+export function createHtmlFunctionFormHandler(options: HtmlFormAdapterOptions) {
+  return {
+    handle(request: Request, actionId: string) {
+      return handleHtmlFunctionForm(request, actionId, options);
+    },
+  };
+}
+
 export async function handleHtmlFunctionForm(request: Request, actionId: string, options: HtmlFormAdapterOptions): Promise<Response> {
-  if (request.method.toUpperCase() !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
+  if (request.method.toUpperCase() !== "POST") return new Response("Method not allowed", { status: 405, headers: { allow: "POST", "cache-control": "no-store" } });
 
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("application/x-www-form-urlencoded") && !contentType.includes("multipart/form-data")) {
-    return new Response("Unsupported media type", { status: 415 });
+    return new Response("Unsupported media type", { status: 415, headers: { "cache-control": "no-store" } });
   }
 
   const form = await request.formData();
@@ -67,9 +75,11 @@ function normalizePayload(form: FormData): Record<string, unknown> {
 function redirectWithState(requestUrl: string, path: string, parameter: string, value: string): Response {
   const base = new URL(requestUrl);
   const target = new URL(path, base.origin);
+  target.searchParams.delete("form");
+  target.searchParams.delete("formError");
   target.searchParams.set(parameter, value);
   target.hash = "enquiry";
-  return Response.redirect(target.toString(), 303);
+  return new Response(null, { status: 303, headers: { location: target.toString(), "cache-control": "no-store" } });
 }
 
 function safeReturnPath(value: string): string {

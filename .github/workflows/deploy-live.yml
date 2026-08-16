@@ -2,6 +2,15 @@ name: Deploy Live to Cloudflare
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/live/**'
+      - 'packages/functions/**'
+      - 'packages/live-runtime/**'
+      - 'packages/renderer/**'
+      - 'packages/schema/**'
+      - '.github/workflows/deploy-live.yml'
 
 permissions:
   contents: read
@@ -43,7 +52,7 @@ jobs:
       - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build
 
       - name: Deploy micirql-live
-        run: pnpm --filter @micirql/live deploy
+        run: pnpm --filter @micirql/live run deploy
 
       - name: Upload Supabase server secret to Worker
         working-directory: apps/live

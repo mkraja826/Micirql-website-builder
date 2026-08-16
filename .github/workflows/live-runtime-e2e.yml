@@ -18,10 +18,9 @@ jobs:
         run: |
           set -euo pipefail
           url='https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create'
-          key='micirql-e2e-20260816-001'
+          key="micirql-e2e-${GITHUB_RUN_ID}-lead"
           headers="$(mktemp)"
-          body="$(mktemp)"
-          code=$(curl -sS --max-time 30 -o "$body" -D "$headers" -w '%{http_code}' \
+          code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
             -X POST "$url" \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             -H "Idempotency-Key: $key" \
@@ -34,18 +33,18 @@ jobs:
           cat "$headers"
           test "$code" = '303'
           grep -Eiq '^location: .*\?form=received.*#enquiry' "$headers"
+          echo "E2E_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Repeat same idempotency key
         shell: bash
         run: |
           set -euo pipefail
           url='https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create'
-          key='micirql-e2e-20260816-001'
           headers="$(mktemp)"
           code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
             -X POST "$url" \
             -H 'Content-Type: application/x-www-form-urlencoded' \
-            -H "Idempotency-Key: $key" \
+            -H "Idempotency-Key: $E2E_KEY" \
             --data-urlencode 'name=MiCirql E2E Test' \
             --data-urlencode 'email=e2e-test@example.com' \
             --data-urlencode 'message=Automated live enquiry verification' \
@@ -54,3 +53,57 @@ jobs:
           echo "HTTP $code"
           test "$code" = '303'
           grep -Eiq '^location: .*\?form=received.*#enquiry' "$headers"
+
+      - name: Reject invalid contact input
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(mktemp)"
+          code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
+            -X POST 'https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create' \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'name=Invalid E2E Test' \
+            --data-urlencode 'sourcePage=/')
+          echo "HTTP $code"
+          test "$code" = '303'
+          grep -Eiq '^location: .*formError=check-details.*#enquiry' "$headers"
+
+      - name: Reject honeypot spam
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(mktemp)"
+          code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
+            -X POST 'https://micirql-live.karthikraja826.workers.dev/api/functions/lead.create' \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'name=Spam E2E Test' \
+            --data-urlencode 'email=spam-test@example.com' \
+            --data-urlencode 'website=https://spam.invalid' \
+            --data-urlencode 'sourcePage=/')
+          echo "HTTP $code"
+          test "$code" = '303'
+          grep -Eiq '^location: .*formError=verification.*#enquiry' "$headers"
+
+      - name: Enforce public rate limit
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://micirql-live.karthikraja826.workers.dev/api/functions/demo.request'
+          for i in $(seq 1 9); do
+            headers="$(mktemp)"
+            code=$(curl -sS --max-time 30 -o /dev/null -D "$headers" -w '%{http_code}' \
+              -X POST "$url" \
+              -H 'Content-Type: application/x-www-form-urlencoded' \
+              -H "Idempotency-Key: micirql-rate-${GITHUB_RUN_ID}-$i" \
+              --data-urlencode "name=Rate Limit Test $i" \
+              --data-urlencode 'email=rate-test@example.com' \
+              --data-urlencode 'company=MiCirql E2E' \
+              --data-urlencode 'sourcePage=/')
+            echo "attempt=$i HTTP=$code"
+            test "$code" = '303'
+            if [ "$i" -le 8 ]; then
+              grep -Eiq '^location: .*\?form=received.*#enquiry' "$headers"
+            else
+              grep -Eiq '^location: .*formError=rate-limited.*#enquiry' "$headers"
+            fi
+          done

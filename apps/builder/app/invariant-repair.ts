@@ -10,57 +10,16 @@ export type RepairResult = {
 };
 
 const REQUIREMENT_TO_FAMILY: Record<string, SectionFamily> = {
-  navbar: "navbar",
-  footer: "footer",
-  hero: "hero",
-  services: "services",
-  treatments: "services",
-  offerings: "services",
-  courses: "services",
-  capabilities: "services",
-  listings: "services",
-  "product-grid": "services",
-  about: "about",
-  company: "about",
-  story: "about",
-  features: "features",
-  technology: "features",
-  expertise: "features",
-  benefits: "features",
-  amenities: "features",
-  outcomes: "features",
-  industries: "features",
-  process: "process",
-  curriculum: "process",
-  schedule: "process",
-  testimonials: "testimonials",
-  proof: "testimonials",
-  reviews: "testimonials",
-  clients: "testimonials",
-  certifications: "testimonials",
-  "case-studies": "testimonials",
-  stats: "testimonials",
-  gallery: "gallery",
-  portfolio: "gallery",
-  projects: "gallery",
-  "featured-project": "gallery",
-  "featured-properties": "gallery",
-  "product-demo": "gallery",
-  team: "team",
-  doctor: "team",
-  faculty: "team",
-  leadership: "team",
-  agent: "team",
-  chef: "team",
-  cta: "cta",
-  reservation: "cta",
-  enrolment: "cta",
-  newsletter: "cta",
-  contact: "contact",
-  location: "contact",
-  map: "contact",
-  "store-locator": "contact",
-  "service-area": "contact",
+  navbar: "navbar", footer: "footer", hero: "hero",
+  services: "services", treatments: "services", offerings: "services", courses: "services", capabilities: "services", listings: "services", "product-grid": "services",
+  about: "about", company: "about", story: "about",
+  features: "features", technology: "features", expertise: "features", benefits: "features", amenities: "features", outcomes: "features", industries: "features",
+  process: "process", curriculum: "process", schedule: "process",
+  testimonials: "testimonials", proof: "testimonials", reviews: "testimonials", clients: "testimonials", certifications: "testimonials", "case-studies": "testimonials", stats: "testimonials",
+  gallery: "gallery", portfolio: "gallery", projects: "gallery", "featured-project": "gallery", "featured-properties": "gallery", "product-demo": "gallery",
+  team: "team", doctor: "team", faculty: "team", leadership: "team", agent: "team", chef: "team",
+  cta: "cta", reservation: "cta", enrolment: "cta", newsletter: "cta",
+  contact: "contact", location: "contact", map: "contact", "store-locator": "contact", "service-area": "contact",
 };
 
 export function repairWebsiteInvariants(site: Site, archetypeId: string): RepairResult {
@@ -71,12 +30,10 @@ export function repairWebsiteInvariants(site: Site, archetypeId: string): Repair
 
   ensureFamily(home.sections, next, "navbar", "navbar", repairs);
   ensureFamily(home.sections, next, "hero", "hero", repairs);
-
   for (const requirement of archetype?.sections.required ?? []) {
     const family = REQUIREMENT_TO_FAMILY[requirement];
     if (family) ensureFamily(home.sections, next, family, requirement, repairs);
   }
-
   ensurePrimaryCta(home.sections, next, repairs);
   ensureFamily(home.sections, next, "footer", "footer", repairs);
   normalizeShellOrder(home.sections, repairs);
@@ -93,7 +50,7 @@ function ensureFamily(sections: SiteSection[], site: Site, family: SectionFamily
 
 function makeSection(site: Site, family: SectionFamily, semanticLabel: string): SiteSection {
   const base = {
-    id: `auto-${family}-${Math.random().toString(36).slice(2, 9)}`,
+    id: family === "contact" ? "contact" : `auto-${family}-${slug(semanticLabel)}`,
     component: { componentId: sectionDesignId(site.theme.family, family, preferredVariant(family)), version: "1.0.0" },
     bindings: {},
     hidden: false,
@@ -110,7 +67,7 @@ function makeSection(site: Site, family: SectionFamily, semanticLabel: string): 
   if (family === "gallery") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `A closer look at ${name}`, items: [{ title: "Gallery item" }, { title: "Gallery item" }, { title: "Gallery item" }], imageSlotMode: "items", itemImageRatio: "3:2", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "team") return { ...base, props: { eyebrow: labelize(semanticLabel), title: "Meet the people behind the work", items: [{ title: "Team member", description: "Role or expertise" }, { title: "Team member", description: "Role or expertise" }], imageSlotMode: "items", itemImageRatio: "4:5", imageFit: "cover", imageFocalPoint: "face-safe" } };
   if (family === "cta") return { ...base, props: { eyebrow: "Next step", title: "Ready to move forward?", description: `Connect with ${name} and take the next step.`, primaryAction: { label: "Contact us", href: "#contact" }, imageSlotMode: "none" } };
-  if (family === "contact") return { ...base, id: "contact", props: { eyebrow: labelize(semanticLabel), title: `Contact ${name}`, description: "Send an enquiry and we’ll help with the next step.", primaryAction: { label: "Get in touch", href: "mailto:hello@example.com" }, formAction: "contact", imageSlotMode: "none" } };
+  if (family === "contact") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `Contact ${name}`, description: "Send an enquiry and we’ll help with the next step.", primaryAction: { label: "Get in touch", href: "mailto:hello@example.com" }, formAction: "contact", imageSlotMode: "none" } };
   return { ...base, props: { title: name, description: `© ${name}. All rights reserved.`, imageSlotMode: "none" } };
 }
 
@@ -119,7 +76,7 @@ function ensurePrimaryCta(sections: SiteSection[], site: Site, repairs: string[]
     const value = section.props?.primaryAction;
     if (!value || typeof value !== "object") return false;
     const action = value as Record<string, unknown>;
-    return typeof action.label === "string" && action.label.trim() && typeof action.href === "string" && action.href.trim();
+    return Boolean(typeof action.label === "string" && action.label.trim() && typeof action.href === "string" && action.href.trim());
   });
   if (hasCta) return;
   const hero = sections.find((section) => familyFromComponentId(section.component.componentId) === "hero");
@@ -160,4 +117,8 @@ function familyFromComponentId(componentId: string): SectionFamily | undefined {
 
 function labelize(value: string) {
   return value.split("-").map((part) => part ? `${part[0]!.toUpperCase()}${part.slice(1)}` : part).join(" ");
+}
+
+function slug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
 }

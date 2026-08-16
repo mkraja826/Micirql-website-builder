@@ -52,6 +52,7 @@ function toCssVariables(request: ThemeRequest, tokens: ThemeTokens): Record<stri
     "--mi-color-secondary": colors.secondary,
     "--mi-color-secondary-contrast": colors.secondaryContrast,
     "--mi-color-accent": colors.accent,
+    "--mi-color-accent-contrast": colors.accentContrast,
     "--mi-color-surface": colors.surface,
     "--mi-color-surface-elevated": colors.surfaceElevated,
     "--mi-color-text": colors.text,

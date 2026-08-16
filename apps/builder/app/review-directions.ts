@@ -19,6 +19,7 @@ import {
 } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 import { repairWebsiteInvariants } from "./invariant-repair";
+import { RESTAURANT_MASTER_SYSTEMS } from "./restaurant-master-systems";
 
 export type ReviewDirection = {
   id: string;
@@ -68,13 +69,14 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   const industry = clean(profile.industry) || clean(profile.subindustry) || "your business";
   const archetypeId = resolveArchetype(profile);
   const rule = blueprintRuleFor(archetypeId);
-  const poolSize = Math.max(count * 3, RECIPES.length);
+  const recipePool: DirectionRecipe[] = archetypeId === "hospitality" ? RESTAURANT_MASTER_SYSTEMS : RECIPES;
+  const poolSize = Math.max(count * 3, recipePool.length);
   const candidates: ReviewDirection[] = [];
 
   for (let candidateIndex = 0; candidateIndex < poolSize; candidateIndex += 1) {
-    const recipeIndex = candidateIndex % RECIPES.length;
-    const pass = Math.floor(candidateIndex / RECIPES.length);
-    const baseRecipe = RECIPES[recipeIndex]!;
+    const recipeIndex = candidateIndex % recipePool.length;
+    const pass = Math.floor(candidateIndex / recipePool.length);
+    const baseRecipe = recipePool[recipeIndex]!;
     const recipe = pass === 0 ? baseRecipe : mutateRecipe(baseRecipe, pass);
     const typography = typographySystemAt(candidateIndex + pass);
     const rhythm = rhythmSystemAt(candidateIndex + Math.floor(candidateIndex / 5) + pass);
@@ -102,6 +104,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
       description: recipe.description,
       reasons: [
         `built for ${industry}`,
+        ...(archetypeId === "hospitality" ? ["restaurant master composition"] : []),
         industryFit.packLabel ? `${industryFit.packLabel} fit ${industryFit.score}/100` : `${archetypeId.replace(/-/g, " ")} composition`,
         ...(industryFit.missingSections.length ? [`could add: ${industryFit.missingSections.slice(0, 3).join(", ")}`] : []),
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",

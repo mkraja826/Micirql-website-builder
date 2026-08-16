@@ -14,7 +14,7 @@ export function FunctionalContactForm(props: Props) {
   const actionId = String(props.formActionId ?? detectActionId(props));
   const fields = [...BASE, ...fieldsFor(actionId)];
   const submit = submitLabel(actionId);
-  return <form className="mi-contact-form mi-functional-form" action={props.formAction} method="post" data-mi-action-id={actionId}>
+  return <form id="enquiry" className="mi-contact-form mi-functional-form" action={props.formAction} method="post" data-mi-action-id={actionId}>
     {props.formSourcePage ? <input type="hidden" name="sourcePage" value={String(props.formSourcePage)} /> : null}
     <input type="text" name="website" tabIndex={-1} autoComplete="off" className="mi-form-honeypot" aria-hidden="true" />
     <div className="mi-functional-form__grid">
@@ -28,7 +28,7 @@ export function FunctionalContactForm(props: Props) {
     </div>
     <label className="mi-form-consent"><input type="checkbox" name="consent" value="true" /> <span>I agree to be contacted about this request.</span></label>
     <button type="submit" className="mi-functional-form__submit">{submit}</button>
-    <p className="mi-form-status" aria-live="polite">Submitting this form sends a request. Appointments, reservations and bookings are confirmed separately.</p>
+    <p className="mi-form-status" data-mi-form-status aria-live="polite">Submitting this form sends a request. Appointments, reservations and bookings are confirmed separately.</p>
   </form>;
 }
 

@@ -40,7 +40,23 @@ for (const entry of entries) {
         const root = page.locator(`[data-mi-preview-id="${entry.id}"]`);
         const rootVisible = await root.isVisible().catch(() => false);
 
-        const overflowPx = Math.max(0, await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth));
+        // Measure horizontal overflow inside the exported section only. Next.js
+        // development controls can extend the document by a few pixels on mobile
+        // and must not fail otherwise valid library components.
+        const overflowPx = rootVisible
+          ? await root.evaluate((element) => {
+              const viewportWidth = window.innerWidth;
+              const rootRect = element.getBoundingClientRect();
+              let overflow = Math.max(0, element.scrollWidth - element.clientWidth, -rootRect.left, rootRect.right - viewportWidth);
+              for (const child of element.querySelectorAll<HTMLElement>("*")) {
+                const style = getComputedStyle(child);
+                if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") continue;
+                const rect = child.getBoundingClientRect();
+                overflow = Math.max(overflow, -rect.left, rect.right - viewportWidth);
+              }
+              return Math.max(0, Math.ceil(overflow));
+            })
+          : 1;
 
         // Section certification must measure only the section under test. Next.js
         // dev tooling may inject controls elsewhere in the document that are not

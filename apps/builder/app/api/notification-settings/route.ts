@@ -21,13 +21,18 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json() as Record<string, unknown>;
     const siteId = typeof body.siteId === "string" ? body.siteId.trim() : "";
-    const workspaceId = typeof body.workspaceId === "string" ? body.workspaceId.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const enabled = body.enabled === true;
-    if (!siteId || !workspaceId) return NextResponse.json({ error: "siteId and workspaceId are required" }, { status: 400 });
+    if (!siteId) return NextResponse.json({ error: "siteId is required" }, { status: 400 });
     if (enabled && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid notification email." }, { status: 400 });
     const { url } = supabaseConfig();
     const headers = supabaseHeaders(request);
+    const siteQuery = new URLSearchParams({ id: `eq.${siteId}`, select: "id,workspace_id", limit: "1" });
+    const siteResponse = await fetch(`${url}/rest/v1/sites?${siteQuery}`, { headers, cache: "no-store" });
+    if (!siteResponse.ok) return NextResponse.json({ error: `Website lookup failed (${siteResponse.status}).` }, { status: siteResponse.status });
+    const sites = await siteResponse.json() as Array<{ id:string; workspace_id:string }>;
+    const workspaceId = sites[0]?.workspace_id;
+    if (!workspaceId) return NextResponse.json({ error: "Website not found or access denied." }, { status: 404 });
     const response = await fetch(`${url}/rest/v1/site_notification_preferences?on_conflict=site_id&select=site_id,workspace_id,email_address,email_enabled`, {
       method: "POST",
       headers: { ...headers, Prefer: "resolution=merge-duplicates,return=representation" },

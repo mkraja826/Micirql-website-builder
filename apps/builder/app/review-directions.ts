@@ -80,7 +80,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const rhythm = rhythmSystemAt(candidateIndex + Math.floor(candidateIndex / 5) + pass);
     const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + candidateIndex + pass);
     const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
-    const repaired = repairWebsiteInvariants(composed, archetypeId);
+    const repaired = repairWebsiteInvariants(composed, archetypeId, clean(profile.industry), clean(profile.subindustry));
     const normalizedSite = normalizeWebsiteContent(repaired.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     if (!repaired.readiness.ready || contentQuality.issues.some((issue) => issue.severity === "error")) continue;

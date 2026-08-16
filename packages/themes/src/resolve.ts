@@ -32,6 +32,18 @@ function applyModifier(tokens: ThemeTokens, modifier: ThemeModifier): ThemeToken
   }
 }
 
+function applyDensity(tokens: ThemeTokens, density: ThemeRequest["density"]): ThemeTokens {
+  if (density === "compact") return { ...tokens, sectionSpace: "clamp(3rem, 6vw, 5rem)", bodyLeading: "1.55" };
+  if (density === "spacious") return { ...tokens, sectionSpace: "clamp(6rem, 11vw, 10rem)", bodyLeading: "1.75" };
+  return { ...tokens, sectionSpace: "clamp(4.5rem, 8vw, 7rem)", bodyLeading: "1.65" };
+}
+
+function applyShape(tokens: ThemeTokens, shape: ThemeRequest["shape"]): ThemeTokens {
+  if (shape === "sharp") return { ...tokens, radiusControl: "0.2rem", radiusCard: "0.25rem", imageRadius: "0.25rem" };
+  if (shape === "soft") return { ...tokens, radiusControl: "1rem", radiusCard: "1.75rem", imageRadius: "1.75rem" };
+  return { ...tokens, radiusControl: "0.65rem", radiusCard: "1rem", imageRadius: "1rem" };
+}
+
 function toCssVariables(request: ThemeRequest, tokens: ThemeTokens): Record<string, string> {
   const { colors, typography } = request;
   return {
@@ -71,7 +83,9 @@ function toCssVariables(request: ThemeRequest, tokens: ThemeTokens): Record<stri
 export function resolveTheme(request: ThemeRequest): ResolvedTheme {
   const modifiers = [...new Set(request.modifiers ?? [])].slice(0, 3);
   const base = THEME_FAMILIES[request.family];
-  const tokens = modifiers.reduce(applyModifier, base);
+  const modified = modifiers.reduce(applyModifier, base);
+  const densityApplied = applyDensity(modified, request.density ?? "comfortable");
+  const tokens = applyShape(densityApplied, request.shape ?? "balanced");
 
   return {
     family: request.family,

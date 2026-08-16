@@ -1,6 +1,6 @@
 import type { Site, SiteSection } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
-import { WEBSITE_ARCHETYPES, syncSiteNavigation, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
+import { ensureIndustryPages, WEBSITE_ARCHETYPES, syncSiteNavigation, validateWebsite, type WebsiteValidationResult } from "@micirql/design-engine";
 
 export type RepairResult = {
   site: Site;
@@ -22,9 +22,15 @@ const REQUIREMENT_TO_FAMILY: Record<string, SectionFamily> = {
   contact: "contact", location: "contact", map: "contact", "store-locator": "contact", "service-area": "contact",
 };
 
-export function repairWebsiteInvariants(site: Site, archetypeId: string): RepairResult {
+export function repairWebsiteInvariants(site: Site, archetypeId: string, industry?: string, subindustry?: string): RepairResult {
   let next = structuredClone(site);
   const repairs: string[] = [];
+
+  const pageConstruction = ensureIndustryPages(next, industry, subindustry);
+  next = pageConstruction.site;
+  if (pageConstruction.createdPages.length) repairs.push(`created pages: ${pageConstruction.createdPages.join(", ")}`);
+  if (pageConstruction.updatedPages.length) repairs.push(`completed page structure: ${pageConstruction.updatedPages.join(", ")}`);
+
   const archetype = WEBSITE_ARCHETYPES.find((candidate) => candidate.id === archetypeId);
   const home = next.pages.find((page) => page.path === "/") ?? next.pages[0]!;
 
@@ -61,8 +67,8 @@ function makeSection(site: Site, family: SectionFamily, semanticLabel: string): 
   };
   const name = site.name;
 
-  if (family === "navbar") return { ...base, props: { title: name, primaryAction: { label: "Contact", href: "#contact" }, imageSlotMode: "none" } };
-  if (family === "hero") return { ...base, props: { eyebrow: semanticLabel === "hero" ? "Welcome" : semanticLabel, title: `${name}, built around what matters to you`, description: "Clear information, trusted expertise and an easy next step.", primaryAction: { label: "Get started", href: "#contact" }, imageSlotMode: "section", imageRatio: "16:10", imageFit: "cover", imageFocalPoint: "center" } };
+  if (family === "navbar") return { ...base, props: { title: name, primaryAction: { label: "Contact", href: "/contact" }, imageSlotMode: "none" } };
+  if (family === "hero") return { ...base, props: { eyebrow: semanticLabel === "hero" ? "Welcome" : semanticLabel, title: `${name}, built around what matters to you`, description: "Clear information, trusted expertise and an easy next step.", primaryAction: { label: "Get started", href: "/contact" }, imageSlotMode: "section", imageRatio: "16:10", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "services") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `Explore our ${labelize(semanticLabel).toLowerCase()}`, description: `A clear overview of the ${labelize(semanticLabel).toLowerCase()} available from ${name}.`, items: [{ title: "Option one", description: "Add the most important offering here." }, { title: "Option two", description: "Add another high-priority offering here." }, { title: "Option three", description: "Add a supporting offering here." }], imageSlotMode: "items", itemImageRatio: "4:3", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "about") return { ...base, props: { eyebrow: "About", title: `Why ${name}`, description: "Introduce the business, its experience and what makes it different.", imageSlotMode: "section", imageRatio: "4:3", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "features") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `What sets ${name} apart`, items: [{ title: "Quality", description: "Explain a meaningful strength." }, { title: "Experience", description: "Show relevant expertise." }, { title: "Support", description: "Explain the customer experience." }], imageSlotMode: "items", itemImageRatio: "4:3", imageFit: "cover", imageFocalPoint: "center" } };
@@ -70,7 +76,7 @@ function makeSection(site: Site, family: SectionFamily, semanticLabel: string): 
   if (family === "testimonials") return { ...base, props: { eyebrow: labelize(semanticLabel), title: "Trust built through results", items: [{ title: "Client experience", description: "Add a verified testimonial or proof point." }, { title: "Trusted outcome", description: "Add another proof point here." }], imageSlotMode: "none" } };
   if (family === "gallery") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `A closer look at ${name}`, items: [{ title: "Gallery item" }, { title: "Gallery item" }, { title: "Gallery item" }], imageSlotMode: "items", itemImageRatio: "3:2", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "team") return { ...base, props: { eyebrow: labelize(semanticLabel), title: "Meet the people behind the work", items: [{ title: "Team member", description: "Role or expertise" }, { title: "Team member", description: "Role or expertise" }], imageSlotMode: "items", itemImageRatio: "4:5", imageFit: "cover", imageFocalPoint: "face-safe" } };
-  if (family === "cta") return { ...base, props: { eyebrow: "Next step", title: "Ready to move forward?", description: `Connect with ${name} and take the next step.`, primaryAction: { label: "Contact us", href: "#contact" }, imageSlotMode: "none" } };
+  if (family === "cta") return { ...base, props: { eyebrow: "Next step", title: "Ready to move forward?", description: `Connect with ${name} and take the next step.`, primaryAction: { label: "Contact us", href: "/contact" }, imageSlotMode: "none" } };
   if (family === "contact") return { ...base, props: { eyebrow: labelize(semanticLabel), title: `Contact ${name}`, description: "Send an enquiry and we’ll help with the next step.", primaryAction: { label: "Get in touch", href: "mailto:hello@example.com" }, formAction: "contact", imageSlotMode: "none" } };
   return { ...base, props: { title: name, description: `© ${name}. All rights reserved.`, imageSlotMode: "none" } };
 }
@@ -85,7 +91,7 @@ function ensurePrimaryCta(sections: SiteSection[], site: Site, repairs: string[]
   if (hasCta) return;
   const hero = sections.find((section) => familyFromComponentId(section.component.componentId) === "hero");
   if (hero) {
-    hero.props = { ...hero.props, primaryAction: { label: "Get started", href: "#contact" } };
+    hero.props = { ...hero.props, primaryAction: { label: "Get started", href: "/contact" } };
     repairs.push("added primary CTA to hero");
     return;
   }

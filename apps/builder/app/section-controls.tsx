@@ -19,6 +19,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
   const [libraryOpen, setLibraryOpen] = useState(false);
   const selectedIndex = selectedSectionId ? page.sections.findIndex((section) => section.id === selectedSectionId) : -1;
   const selected = selectedIndex >= 0 ? page.sections[selectedIndex] : undefined;
+  const selectedIsGlobal = selected ? isGlobalShell(selected) : false;
   const activeTheme = theme ?? inferTheme(page);
 
   return <div className={styles.root}>
@@ -28,13 +29,16 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
     </div>
 
     <div className={styles.layers}>
-      {page.sections.map((section, index) => <button type="button" key={section.id} className={`${styles.layer} ${section.id === selectedSectionId ? styles.active : ""} ${section.hidden ? styles.hidden : ""}`} onClick={() => onSelect(section.id)}>
-        <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
-        <span><strong>{labelFor(section)}</strong><small>{section.hidden ? "Hidden" : section.component.componentId}</small></span>
-      </button>)}
+      {page.sections.map((section, index) => {
+        const global = isGlobalShell(section);
+        return <button type="button" key={section.id} className={`${styles.layer} ${section.id === selectedSectionId ? styles.active : ""} ${section.hidden ? styles.hidden : ""}`} onClick={() => onSelect(section.id)}>
+          <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
+          <span><strong>{labelFor(section)}{global ? " · Global" : ""}</strong><small>{global ? "Shared across every page" : section.hidden ? "Hidden" : section.component.componentId}</small></span>
+        </button>;
+      })}
     </div>
 
-    {selected ? <div className={styles.actions}>
+    {selected ? selectedIsGlobal ? <div className={styles.actions}><span>Global section — edit its copy or design once and MiCirql applies it across the website.</span></div> : <div className={styles.actions}>
       <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>↑ Up</button>
       <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
@@ -77,12 +81,13 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
 
 function labelFor(section: SiteSection): string {
   const componentId = section.component.componentId;
-  const codeMatch = componentId.match(/^[A-Z]{3}-(?:HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT)-/);
+  const codeMatch = componentId.match(/^[A-Z]{3}-(?:NAV|HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT|FOOT)-/);
   if (codeMatch) {
     const familyCode = componentId.split("-")[1] ?? "";
-    const names: Record<string, string> = { HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", CTA: "Call to action", CONT: "Contact" };
+    const names: Record<string, string> = { NAV: "Navbar", HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", CTA: "Call to action", CONT: "Contact", FOOT: "Footer" };
     return names[familyCode] ?? componentId;
   }
   return title(componentId.split(".")[0] || section.id);
 }
+function isGlobalShell(section: SiteSection): boolean { const id=section.component.componentId.toLowerCase();return id.startsWith("navbar.")||id.startsWith("footer.")||id.includes("-nav-")||id.includes("-foot-")||id.includes("-footer-"); }
 function title(value: string): string { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()); }

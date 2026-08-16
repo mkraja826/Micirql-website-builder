@@ -1,5 +1,25 @@
 import type { LiveSiteStore, PublishedSiteRecord } from "@micirql/live-runtime";
 import {
+  createEmailNotificationAdapter,
+  createFunctionGateway,
+  createHtmlFunctionFormHandler,
+  createNotificationAdapterRegistry,
+  createNotificationHook,
+  createResendEmailTransport,
+  nativeFunctionCatalog,
+  ownerEmailRecipient,
+  recordStoreAdapterMap,
+  type FunctionResult,
+  type IdempotencyStore,
+  type NotificationDelivery,
+  type NotificationDestination,
+  type NotificationDirectory,
+  type NotificationEvent,
+  type RateLimiter,
+  type RecordStore,
+  type ResolvedSiteContext,
+} from "@micirql/functions";
+import {
   createFunctionBindingResolver,
   renderPreparedPage,
   type PreparedPage,
@@ -66,10 +86,20 @@ export function ensureLiveRuntimeConfigured() {
     },
   };
 
+  const serverKey =
+    process.env.MICIRQL_SUPABASE_SECRET_KEY
+    ?? process.env.MICIRQL_SUPABASE_SERVICE_ROLE_KEY
+    ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const functionForms = serverKey
+    ? buildFunctionForms({ supabaseUrl, serverKey, resolvePublishedSite: store.resolveHostname })
+    : undefined;
+
   configureLiveHostRuntime({
     store,
     registry: emptyProductionRegistry,
-    functions: createFunctionBindingResolver({ actionIds: [] }),
+    functions: createFunctionBindingResolver({ actionIds: nativeFunctionCatalog.map((item) => item.id) }),
+    ...(functionForms ? { functionForms } : {}),
     async renderPage(page: PreparedPage) {
       const { prelude } = await prerender(renderPreparedPage(page));
       return streamToString(prelude);
@@ -78,6 +108,260 @@ export function ensureLiveRuntimeConfigured() {
   });
 
   configured = true;
+}
+
+function buildFunctionForms(args: {
+  supabaseUrl: string;
+  serverKey: string;
+  resolvePublishedSite(hostname: string): Promise<{ siteId: string } | undefined>;
+}) {
+  const rest = createServerRestClient(args.supabaseUrl, args.serverKey);
+  const recordStore: RecordStore = {
+    async create(input) {
+      const rows = await rest<Array<{
+        id: string;
+        workspace_id: string;
+        site_id: string;
+        action_id: string;
+        action_version: string;
+        idempotency_key: string | null;
+        payload: Record<string, unknown>;
+        contact_name: string | null;
+        contact_email: string | null;
+        contact_phone: string | null;
+        status: "received" | "queued";
+        created_at: string;
+      }>>("site_function_records?select=id,workspace_id,site_id,action_id,action_version,idempotency_key,payload,contact_name,contact_email,contact_phone,status,created_at", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          workspace_id: input.workspaceId,
+          site_id: input.siteId,
+          action_id: input.actionId,
+          action_version: input.actionVersion,
+          idempotency_key: input.idempotencyKey ?? null,
+          payload: input.payload,
+          contact_name: input.contactName ?? null,
+          contact_email: input.contactEmail ?? null,
+          contact_phone: input.contactPhone ?? null,
+          status: input.status,
+        }),
+      });
+      const row = rows[0];
+      if (!row) throw new Error("Submission insert returned no row.");
+      return {
+        id: row.id,
+        workspaceId: row.workspace_id,
+        siteId: row.site_id,
+        actionId: row.action_id,
+        actionVersion: row.action_version,
+        payload: row.payload,
+        status: row.status,
+        createdAt: row.created_at,
+        ...(row.idempotency_key ? { idempotencyKey: row.idempotency_key } : {}),
+        ...(row.contact_name ? { contactName: row.contact_name } : {}),
+        ...(row.contact_email ? { contactEmail: row.contact_email } : {}),
+        ...(row.contact_phone ? { contactPhone: row.contact_phone } : {}),
+      };
+    },
+  };
+
+  const rateLimiter = createMemoryRateLimiter();
+  const idempotencyStore = createMemoryIdempotencyStore();
+  const notificationDirectory = createRestNotificationDirectory(rest);
+  const deliverySink = createRestDeliverySink(rest);
+  const resendApiKey = process.env.RESEND_API_KEY ?? process.env.MICIRQL_RESEND_API_KEY;
+  const resendFrom = process.env.RESEND_FROM ?? process.env.MICIRQL_RESEND_FROM;
+  const emailAdapter = resendApiKey && resendFrom
+    ? createEmailNotificationAdapter({
+        provider: "resend",
+        transport: createResendEmailTransport({
+          config: {
+            async resolve() {
+              return { apiKey: resendApiKey, from: resendFrom };
+            },
+          },
+        }),
+        async resolveRecipients(destination) {
+          return ownerEmailRecipient(destination);
+        },
+      })
+    : undefined;
+
+  const notificationHook = createNotificationHook({
+    directory: notificationDirectory,
+    adapters: createNotificationAdapterRegistry(emailAdapter ? [emailAdapter] : []),
+    deliverySink,
+  });
+
+  const gateway = createFunctionGateway({
+    runtime: {
+      definitions: nativeFunctionCatalog,
+      adapters: recordStoreAdapterMap(recordStore),
+      rateLimiter,
+    },
+    siteResolver: {
+      async resolve(hostname) {
+        const published = await args.resolvePublishedSite(hostname);
+        if (!published) return undefined;
+        const siteRows = await rest<Array<{ id: string; workspace_id: string; status: string }>>(
+          `sites?id=eq.${encodeURIComponent(published.siteId)}&select=id,workspace_id,status&limit=1`,
+        );
+        const row = siteRows[0];
+        if (!row || row.status !== "active") return undefined;
+        return {
+          siteId: row.id,
+          workspaceId: row.workspace_id,
+          hostname: normalizeHostname(hostname),
+          status: "active",
+        } satisfies ResolvedSiteContext;
+      },
+    },
+    botCheck: {
+      async verify() {
+        return { allowed: true };
+      },
+    },
+    idempotencyStore,
+    notificationHooks: [notificationHook],
+  });
+
+  return createHtmlFunctionFormHandler({ gateway, ipHasher: hashIp });
+}
+
+function createRestNotificationDirectory(
+  rest: <T>(path: string, init?: RequestInit) => Promise<T>,
+): NotificationDirectory {
+  return {
+    async destinationsFor(siteId, actionId) {
+      const rows = await rest<Array<{
+        id: string;
+        channel: NotificationDestination["channel"];
+        provider: string;
+        config_ref: string;
+        action_ids: string[] | null;
+        enabled: boolean;
+      }>>(`site_notification_destinations?site_id=eq.${encodeURIComponent(siteId)}&enabled=eq.true&select=id,channel,provider,config_ref,action_ids,enabled`);
+
+      const destinations: NotificationDestination[] = rows
+        .filter((row) => !row.action_ids?.length || row.action_ids.includes(actionId))
+        .map((row) => ({
+          id: row.id,
+          channel: row.channel,
+          provider: row.provider,
+          configRef: row.config_ref,
+          enabled: row.enabled,
+          ...(row.action_ids?.length ? { actionIds: row.action_ids } : {}),
+        }));
+
+      const preferences = await rest<Array<{ site_id: string; email_address: string | null; email_enabled: boolean }>>(
+        `site_notification_preferences?site_id=eq.${encodeURIComponent(siteId)}&email_enabled=eq.true&select=site_id,email_address,email_enabled&limit=1`,
+      );
+      const preference = preferences[0];
+      const recipient = preference?.email_address?.trim().toLowerCase();
+      if (preference?.email_enabled && recipient && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+        destinations.push({
+          id: `owner-email:${siteId}`,
+          channel: "email",
+          provider: "resend",
+          configRef: "micirql-default-email",
+          enabled: true,
+          recipient,
+        } as NotificationDestination & { recipient: string });
+      }
+      return destinations;
+    },
+  };
+}
+
+function createRestDeliverySink(
+  rest: <T>(path: string, init?: RequestInit) => Promise<T>,
+) {
+  return {
+    async write(event: NotificationEvent, delivery: NotificationDelivery) {
+      await rest("notification_delivery_log", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          workspace_id: event.workspaceId,
+          site_id: event.siteId,
+          destination_id: uuidOrNull(delivery.destinationId),
+          event_id: event.eventId,
+          action_id: event.actionId,
+          request_id: event.requestId,
+          channel: delivery.channel,
+          provider: delivery.provider,
+          provider_message_id: delivery.providerMessageId ?? null,
+          status: delivery.status,
+          occurred_at: event.occurredAt,
+        }),
+      });
+    },
+  };
+}
+
+function createServerRestClient(baseUrl: string, serverKey: string) {
+  const base = `${baseUrl.replace(/\/+$/, "")}/rest/v1`;
+  return async function rest<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const headers = new Headers(init.headers);
+    headers.set("apikey", serverKey);
+    headers.set("authorization", `Bearer ${serverKey}`);
+    headers.set("accept", "application/json");
+    if (init.body) headers.set("content-type", "application/json");
+    const response = await fetch(`${base}/${path.replace(/^\/+/, "")}`, { ...init, headers, cache: "no-store" });
+    if (!response.ok) throw new Error(`Live Supabase REST request failed (${response.status}).`);
+    if (response.status === 204 || response.headers.get("content-length") === "0") return undefined as T;
+    const text = await response.text();
+    return (text ? JSON.parse(text) : undefined) as T;
+  };
+}
+
+function createMemoryRateLimiter(): RateLimiter {
+  const buckets = new Map<string, { count: number; expiresAt: number }>();
+  return {
+    async consume({ key, limit, windowSeconds }) {
+      const now = Date.now();
+      const current = buckets.get(key);
+      if (!current || current.expiresAt <= now) {
+        buckets.set(key, { count: 1, expiresAt: now + windowSeconds * 1000 });
+        return { allowed: true, remaining: Math.max(0, limit - 1) };
+      }
+      current.count += 1;
+      return { allowed: current.count <= limit, remaining: Math.max(0, limit - current.count) };
+    },
+  };
+}
+
+function createMemoryIdempotencyStore(): IdempotencyStore {
+  const entries = new Map<string, { result: FunctionResult; expiresAt: number }>();
+  return {
+    async get(key) {
+      const entry = entries.get(key);
+      if (!entry) return undefined;
+      if (entry.expiresAt <= Date.now()) {
+        entries.delete(key);
+        return undefined;
+      }
+      return entry.result;
+    },
+    async put(key, result, ttlSeconds) {
+      entries.set(key, { result, expiresAt: Date.now() + ttlSeconds * 1000 });
+    },
+  };
+}
+
+async function hashIp(ip: string): Promise<string> {
+  const bytes = new TextEncoder().encode(ip.trim());
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function normalizeHostname(value: string) {
+  return value.trim().toLowerCase().replace(/:\d+$/, "").replace(/^www\./, "");
+}
+
+function uuidOrNull(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
 }
 
 async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {

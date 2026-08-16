@@ -102,7 +102,7 @@ function safeReplacement(field: string, family: string, original: string): strin
     if (family === "services") return "Our services";
     return original.replace(/\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|no\.?\s*1|#1|best in|leading|top[- ]rated|guaranteed|100%)\b/gi, "").replace(/\s{2,}/g, " ").trim() || "Learn more";
   }
-  return SAFE_REPLACEMENTS[family] ?? SAFE_REPLACEMENTS.content;
+  return SAFE_REPLACEMENTS[family] ?? SAFE_REPLACEMENTS.content ?? "Add verified business information here.";
 }
 
 function normalizedFactText(facts: GroundingFacts): string {

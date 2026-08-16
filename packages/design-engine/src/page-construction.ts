@@ -55,14 +55,18 @@ export function ensureIndustryPages(site: Site, industry?: string, subindustry?:
 
 function makePage(site: Site, requirement: PageRequirement, industry?: string): SitePage {
   const pageId = requirement.id === "home" ? "home" : `page-${slug(requirement.id)}`;
+  const path = normalizePath(requirement.path);
   return {
     id: pageId,
-    path: normalizePath(requirement.path),
+    path,
     name: requirement.name,
     sections: buildSections(site, requirement, industry),
     seo: {
       title: `${requirement.name} | ${site.name}`,
       description: requirement.purpose,
+      canonicalPath: path,
+      indexable: true,
+      structuredDataTypes: [],
     },
   };
 }
@@ -105,7 +109,7 @@ function makeSection(site: Site, page: Pick<SitePage, "id" | "name" | "path">, f
   const base = {
     id,
     component: { componentId: sectionDesignId(site.theme.family, family, preferredVariant(family)), version: "1.0.0" },
-    bindings: family === "cta" || family === "contact" ? { [defaultBindingKey(actionId)]: { actionId } } : {},
+    bindings: family === "cta" || family === "contact" ? { [defaultBindingKey(actionId)]: { actionId, inputMap: {} } } : {},
     hidden: false,
   };
   const subject = page.name;

@@ -1,4 +1,4 @@
-import type { DesignFingerprint, DesignScore } from "./design-diversity";
+import { selectDiverseDesigns, type DesignFingerprint, type DesignScore } from "./design-diversity";
 
 export type PreferenceSignalType = "more_like_this" | "compare" | "regenerate" | "selected";
 
@@ -53,6 +53,23 @@ export function preferenceScoreForDesign(fingerprint: DesignFingerprint, profile
 export function applyPreferenceBias(score: DesignScore, profile?: DesignPreferenceProfile): DesignScore & { preferenceBias: number } {
   const preferenceBias = preferenceScoreForDesign(score.fingerprint, profile);
   return { ...score, total: Math.max(0, Math.min(100, Math.round(score.total + preferenceBias))), preferenceBias };
+}
+
+/**
+ * Re-ranks an already quality-filtered candidate pool, then re-applies diversity.
+ * Preference can influence order but cannot bypass structural/content validation.
+ */
+export function personalizeDiverseDesigns<T extends { designScore: DesignScore }>(
+  candidates: T[],
+  profile: DesignPreferenceProfile | undefined,
+  limit: number,
+): T[] {
+  if (!profile || profile.signalCount === 0) return selectDiverseDesigns(candidates, limit);
+  const biased = candidates.map((candidate) => ({
+    ...candidate,
+    designScore: applyPreferenceBias(candidate.designScore, profile),
+  })) as T[];
+  return selectDiverseDesigns(biased, limit);
 }
 
 function signalTraits(signal: PreferenceSignal): string[] {

@@ -1,6 +1,6 @@
 "use client";
 
-import { analyzeMissingInformation } from "@micirql/design-engine";
+import { analyzeMissingInformation, type MissingInformationItem } from "@micirql/design-engine";
 import { getDomainPack } from "@micirql/domains";
 import type { Site } from "@micirql/schema";
 
@@ -40,10 +40,46 @@ export function PublishReadinessManager({ site }: { site: Site }) {
     <div className="readiness-list">{report.checks.map((check) => <div key={check.id} className={`readiness-row ${check.ok ? "is-ok" : "is-fail"}`}><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div>{check.blocking ? <b>{check.ok ? "Pass" : "Block"}</b> : <b>Info</b>}</div>)}</div>
     <section className="content-completion" aria-label="Website completion checklist">
       <div className="content-completion-heading"><div><span>Business details</span><strong>{completion.completion}% complete</strong></div><small>{completion.highPriority ? `${completion.highPriority} important item${completion.highPriority === 1 ? "" : "s"} still need attention.` : "No critical business details are missing."}</small></div>
-      {completion.items.length ? <div className="content-completion-list">{completion.items.map((item) => <div key={item.id} className={`content-completion-row priority-${item.priority}`}><span aria-hidden="true">{item.priority === "high" ? "!" : item.priority === "recommended" ? "•" : "○"}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div><b>{item.priority === "high" ? "Important" : item.priority === "recommended" ? "Recommended" : "Optional"}</b></div>)}</div> : <div className="content-completion-done"><strong>Business details look complete.</strong><small>You can still refine copy, media and proof later.</small></div>}
-      <p className="content-completion-note">These items improve credibility and conversion but do not replace structural publish checks above.</p>
+      {completion.items.length ? <div className="content-completion-list">{completion.items.map((item) => <button type="button" key={item.id} className={`content-completion-row priority-${item.priority}`} onClick={() => openCompletionItem(site, item)}><span aria-hidden="true">{item.priority === "high" ? "!" : item.priority === "recommended" ? "•" : "○"}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div><span className="content-completion-action"><b>{item.priority === "high" ? "Important" : item.priority === "recommended" ? "Recommended" : "Optional"}</b><em>{actionLabel(item.action)} →</em></span></button>)}</div> : <div className="content-completion-done"><strong>Business details look complete.</strong><small>You can still refine copy, media and proof later.</small></div>}
+      <p className="content-completion-note">Tap an item to jump directly to the relevant page, section and editor tool. These recommendations remain separate from blocking publish checks.</p>
     </section>
   </div>;
+}
+
+function openCompletionItem(site: Site, item: MissingInformationItem) {
+  const page = item.pageId ? site.pages.find((candidate) => candidate.id === item.pageId) : undefined;
+  if (page) {
+    const pageButton = [...document.querySelectorAll<HTMLButtonElement>(".page-switcher button")].find((button) => button.textContent?.trim() === page.name);
+    pageButton?.click();
+  }
+
+  const openPanel = () => {
+    const label = item.action === "images" ? "Media" : item.action === "functions" ? "Functions" : item.action === "pages" ? "Pages" : "Content";
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>(".workspace-rail button, .mobile-editor-bar button")];
+    const button = buttons.find((candidate) => candidate.textContent?.toLowerCase().includes(label.toLowerCase()));
+    button?.click();
+  };
+
+  if (!item.sectionId) { window.setTimeout(openPanel, 0); return; }
+  const selector = `[data-mi-section-id="${CSS.escape(item.sectionId)}"]`;
+  const selectTarget = () => {
+    const target = document.querySelector<HTMLElement>(selector);
+    if (!target) return false;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.click();
+    window.setTimeout(openPanel, 0);
+    return true;
+  };
+  if (selectTarget()) return;
+
+  const canvas = document.querySelector(".canvas-stage") ?? document.body;
+  const observer = new MutationObserver(() => { if (selectTarget()) observer.disconnect(); });
+  observer.observe(canvas, { childList: true, subtree: true });
+  window.setTimeout(() => { observer.disconnect(); if (!selectTarget()) openPanel(); }, 1800);
+}
+
+function actionLabel(action: MissingInformationItem["action"]) {
+  return action === "images" ? "Add media" : action === "functions" ? "Connect action" : action === "pages" ? "Manage pages" : "Edit details";
 }
 
 function containsUnresolvedAsset(value: unknown): boolean {

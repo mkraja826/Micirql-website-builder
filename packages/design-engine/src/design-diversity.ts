@@ -51,24 +51,45 @@ export function scoreDesign(input: DesignScoreInput): DesignScore {
 export function selectDiverseDesigns<T extends { designScore: DesignScore }>(candidates: T[], limit: number): T[] {
   const ranked = [...candidates].sort((a, b) => b.designScore.total - a.designScore.total);
   const selected: T[] = [];
+  const usedSystems = new Set<string>();
 
-  while (ranked.length && selected.length < limit) {
+  // Pass 1: prefer one candidate per master design system and reject near-duplicates.
+  for (const candidate of ranked) {
+    if (selected.length >= limit) break;
+    const system = candidateSystem(candidate);
+    if (system && usedSystems.has(system)) continue;
+    const nearestSimilarity = selected.length
+      ? Math.max(...selected.map((picked) => designSimilarity(candidate.designScore.fingerprint, picked.designScore.fingerprint)))
+      : 0;
+    if (nearestSimilarity > 0.72) continue;
+    selected.push(candidate);
+    if (system) usedSystems.add(system);
+  }
+
+  // Pass 2: if we still need more options, allow mutations but keep the diversity penalty strong.
+  const remaining = ranked.filter((candidate) => !selected.includes(candidate));
+  while (remaining.length && selected.length < limit) {
     let bestIndex = 0;
     let bestAdjusted = -Infinity;
-    for (let index = 0; index < ranked.length; index += 1) {
-      const candidate = ranked[index]!;
+    for (let index = 0; index < remaining.length; index += 1) {
+      const candidate = remaining[index]!;
       const nearestSimilarity = selected.length
         ? Math.max(...selected.map((picked) => designSimilarity(candidate.designScore.fingerprint, picked.designScore.fingerprint)))
         : 0;
-      const diversityBonus = (1 - nearestSimilarity) * 30;
-      const duplicatePenalty = nearestSimilarity >= 0.88 ? 35 : nearestSimilarity >= 0.75 ? 15 : 0;
-      const adjusted = candidate.designScore.total + diversityBonus - duplicatePenalty;
+      const system = candidateSystem(candidate);
+      const systemPenalty = system && usedSystems.has(system) ? 18 : 0;
+      const diversityBonus = (1 - nearestSimilarity) * 38;
+      const duplicatePenalty = nearestSimilarity >= 0.9 ? 55 : nearestSimilarity >= 0.8 ? 30 : nearestSimilarity >= 0.72 ? 14 : 0;
+      const adjusted = candidate.designScore.total + diversityBonus - duplicatePenalty - systemPenalty;
       if (adjusted > bestAdjusted) {
         bestAdjusted = adjusted;
         bestIndex = index;
       }
     }
-    selected.push(ranked.splice(bestIndex, 1)[0]!);
+    const picked = remaining.splice(bestIndex, 1)[0]!;
+    selected.push(picked);
+    const system = candidateSystem(picked);
+    if (system) usedSystems.add(system);
   }
 
   return selected;
@@ -105,6 +126,13 @@ function scoreVisualIdentity(site: Site): number {
   const typographyDistinct = new Set([site.theme.brand.typography.display, site.theme.brand.typography.body, site.theme.brand.typography.ui]).size;
   const modifierPoints = Math.min(20, site.theme.modifiers.length * 8);
   return clamp(45 + Math.min(25, paletteRoles.size * 6) + Math.min(10, typographyDistinct * 4) + modifierPoints);
+}
+
+function candidateSystem(candidate: unknown): string | undefined {
+  if (!candidate || typeof candidate !== "object") return undefined;
+  const name = (candidate as { name?: unknown }).name;
+  if (typeof name !== "string" || !name.trim()) return undefined;
+  return name.split(" · variation ")[0]?.trim().toLowerCase();
 }
 
 function familyAndVariant(componentId: string): string | undefined {

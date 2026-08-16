@@ -28,7 +28,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       MICIRQL_SUPABASE_SECRET_KEY: ${{ secrets.MICIRQL_SUPABASE_SECRET_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      RESEND_FROM: ${{ vars.RESEND_FROM }}
+      RESEND_FROM: ${{ secrets.RESEND_FROM }}
     steps:
       - uses: actions/checkout@v4
 

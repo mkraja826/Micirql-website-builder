@@ -3,6 +3,7 @@ import { siteSchema } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import { buildContentEnrichmentContract, enforceContentEnrichmentIntegrity, groundSiteContent, industryPlannerContext } from "@micirql/design-engine";
 import { rankPresets } from "../../preset-ranking";
+import { lockProjectBrief, mergeAiPlanningAdvice } from "../../project-brief-guard";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
 function config() {
@@ -69,19 +70,20 @@ export async function POST(request: NextRequest) {
     const notes = optionalString(body.notes);
     const logoUrl = optionalString(body.logoUrl);
     const brandColors = hexArray(body.brandColors);
-    const industryContext = industryPlannerContext(industry, subindustry ?? undefined);
+    const lockedBrief = lockProjectBrief({ workspaceId, siteId, businessName, industry, subindustry, location, services });
+    const industryContext = industryPlannerContext(lockedBrief.industry, lockedBrief.subindustry ?? undefined);
 
     const aiResponse = await fetch(`${url}/functions/v1/ai-plan-site`, {
       method: "POST",
       headers: commonHeaders,
       body: JSON.stringify({
-        workspace_id: workspaceId,
-        site_id: siteId,
-        business_name: businessName,
-        industry,
-        subindustry,
-        location,
-        services,
+        workspace_id: lockedBrief.workspaceId,
+        site_id: lockedBrief.siteId,
+        business_name: lockedBrief.businessName,
+        industry: lockedBrief.industry,
+        subindustry: lockedBrief.subindustry,
+        location: lockedBrief.location,
+        services: lockedBrief.services,
         goals,
         style_tags: styleTags,
         required_capabilities: requiredCapabilities,
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
       }),
     });
     if (!aiResponse.ok) throw await remoteError(aiResponse);
-    const advice = await aiResponse.json() as {
+    const rawAdvice = await aiResponse.json() as {
       industry: string;
       subindustry: string | null;
       styleTags: string[];
@@ -105,12 +107,13 @@ export async function POST(request: NextRequest) {
       model?: string | null;
       usage?: { inputTokens?: number; outputTokens?: number };
     };
+    const advice = mergeAiPlanningAdvice(lockedBrief, rawAdvice);
 
     const requestPayload = {
-      workspace_id: workspaceId,
-      site_id: siteId,
-      industry: advice.industry,
-      subindustry: advice.subindustry,
+      workspace_id: lockedBrief.workspaceId,
+      site_id: lockedBrief.siteId,
+      industry: lockedBrief.industry,
+      subindustry: lockedBrief.subindustry,
       style_tags: advice.styleTags,
       required_capabilities: advice.requiredCapabilities,
       goals: advice.goals,
@@ -122,27 +125,27 @@ export async function POST(request: NextRequest) {
     const plan = await planResponse.json() as { plan_id?: string; blueprint?: unknown };
     if (!plan.plan_id) throw new Error("Planner did not return a plan ID.");
 
-    const buildResponse = await fetch(`${url}/functions/v1/build-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify({ plan_id: plan.plan_id, site_id: siteId }) });
+    const buildResponse = await fetch(`${url}/functions/v1/build-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify({ plan_id: plan.plan_id, site_id: lockedBrief.siteId }) });
     if (!buildResponse.ok) throw await remoteError(buildResponse);
     const buildPayload = await buildResponse.json() as { build?: any };
     const build = buildPayload.build;
     const buildId = typeof build === "object" && build ? (build.id ?? build.build_id ?? null) : null;
-    const brief = { businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, logoUrl, brandColors: advice.brandColors, industryContext };
+    const brief = { businessName: lockedBrief.businessName, industry: lockedBrief.industry, subindustry: lockedBrief.subindustry, location: lockedBrief.location, services: lockedBrief.services, goals, styleTags, requiredCapabilities, languages, notes, logoUrl, brandColors: advice.brandColors, industryContext };
 
     let content: unknown = null;
     let contentWarning: string | null = null;
     let contentIntegrity = { checked: false, structureIntact: true, appliedFields: 0, restoredChanges: [] as string[], corrected: false };
     let contentGrounding = { checked: false, grounded: true, issueCount: 0, issues: [] as Array<{pageId:string;sectionId:string;field:string;reason:string}> };
     try {
-      const builtDraft = await getSupabaseDraft(request, workspaceId, siteId);
+      const builtDraft = await getSupabaseDraft(request, lockedBrief.workspaceId, lockedBrief.siteId);
       if (!builtDraft) throw new Error("Generated draft could not be loaded for page-specific content enrichment.");
       const pageContentContract = buildContentEnrichmentContract(builtDraft.snapshot);
       const contentResponse = await fetch(`${url}/functions/v1/enrich-site-content`, {
         method: "POST",
         headers: commonHeaders,
         body: JSON.stringify({
-          workspace_id: workspaceId,
-          site_id: siteId,
+          workspace_id: lockedBrief.workspaceId,
+          site_id: lockedBrief.siteId,
           build_id: buildId,
           brief,
           page_content_contract: pageContentContract,
@@ -161,11 +164,11 @@ export async function POST(request: NextRequest) {
       if (!contentResponse.ok) throw await remoteError(contentResponse);
       content = await contentResponse.json();
 
-      const enrichedDraft = await getSupabaseDraft(request, workspaceId, siteId);
+      const enrichedDraft = await getSupabaseDraft(request, lockedBrief.workspaceId, lockedBrief.siteId);
       if (!enrichedDraft) throw new Error("Enriched draft could not be reloaded for integrity verification.");
       const guarded = enforceContentEnrichmentIntegrity(builtDraft.snapshot, enrichedDraft.snapshot);
-      const grounded = groundSiteContent(guarded.site, { businessName, industry, subindustry, location, services, goals, notes });
-      const validatedSnapshot = siteSchema.parse(grounded.site);
+      const grounded = groundSiteContent(guarded.site, { businessName: lockedBrief.businessName, industry: lockedBrief.industry, subindustry: lockedBrief.subindustry, location: lockedBrief.location, services: lockedBrief.services, goals, notes });
+      const validatedSnapshot = siteSchema.parse({ ...grounded.site, name: lockedBrief.businessName });
       const corrected = JSON.stringify(validatedSnapshot) !== JSON.stringify(enrichedDraft.snapshot);
       if (corrected) await saveSupabaseDraft(request, { snapshot: validatedSnapshot, expectedRevision: enrichedDraft.revision });
       contentIntegrity = { checked: true, structureIntact: guarded.structureIntact, appliedFields: guarded.appliedFields, restoredChanges: guarded.restoredChanges, corrected };
@@ -185,16 +188,17 @@ export async function POST(request: NextRequest) {
     const images = { mode: "placeholders", generated: false } as const;
     const imageWarning: string | null = null;
 
-    const recommendationProfile = { industry, subindustry, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities };
+    const recommendationProfile = { industry: lockedBrief.industry, subindustry: lockedBrief.subindustry, services: lockedBrief.services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities };
     const topRecommendation = rankPresets(recommendationProfile)[0];
     let initialPreset: { id: string; name: string; reasons: string[] } | null = null;
     let presetWarning: string | null = null;
     if (topRecommendation) {
       try {
-        const current = await getSupabaseDraft(request, workspaceId, siteId);
+        const current = await getSupabaseDraft(request, lockedBrief.workspaceId, lockedBrief.siteId);
         if (!current) throw new Error("Generated draft could not be loaded for design preset application.");
         const preset = topRecommendation.preset;
         const nextSnapshot = structuredClone(current.snapshot);
+        nextSnapshot.name = lockedBrief.businessName;
         nextSnapshot.theme = structuredClone(preset.theme);
         const [primary, accent, secondary, surface, border] = advice.brandColors;
         if (primary || accent || secondary || surface || border) {
@@ -215,7 +219,7 @@ export async function POST(request: NextRequest) {
             section.component = { componentId: sectionDesignId(preset.theme.family, family, variant), version: section.component.version };
           }
         }
-        await saveSupabaseDraft(request, { snapshot: nextSnapshot, expectedRevision: current.revision });
+        await saveSupabaseDraft(request, { snapshot: siteSchema.parse(nextSnapshot), expectedRevision: current.revision });
         initialPreset = { id: preset.id, name: preset.name, reasons: topRecommendation.reasons };
       } catch (error) {
         presetWarning = error instanceof Error ? error.message : "Initial design preset could not be applied.";
@@ -223,7 +227,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const profile = { workspace_id: workspaceId, site_id: siteId, created_by: user.id, business_name: businessName, industry, subindustry, location, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities, languages, notes, logo_url: logoUrl, brand_colors: advice.brandColors, plan_id: plan.plan_id, build_id: buildId, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const profile = { workspace_id: lockedBrief.workspaceId, site_id: lockedBrief.siteId, created_by: user.id, business_name: lockedBrief.businessName, industry: lockedBrief.industry, subindustry: lockedBrief.subindustry, location: lockedBrief.location, services: lockedBrief.services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities, languages, notes, logo_url: logoUrl, brand_colors: advice.brandColors, plan_id: plan.plan_id, build_id: buildId, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     const profileResponse = await fetch(`${url}/rest/v1/business_onboarding_profiles?on_conflict=workspace_id,site_id`, { method: "POST", headers: { ...commonHeaders, Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify(profile) });
     if (!profileResponse.ok) throw await remoteError(profileResponse);
     const savedProfiles = await profileResponse.json() as unknown[];

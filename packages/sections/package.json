@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
-    "./shell-styles.css": "./src/shell-styles.css"
+    "./shell-styles.css": "./src/shell-styles.css",
+    "./content-sections.css": "./src/content-sections.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

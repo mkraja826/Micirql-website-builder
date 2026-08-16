@@ -1,0 +1,46 @@
+name: Cloudflare Live Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/live/**'
+      - 'packages/functions/**'
+      - 'packages/live-runtime/**'
+      - 'packages/renderer/**'
+      - 'packages/schema/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/cloudflare-live-check.yml'
+  pull_request:
+    paths:
+      - 'apps/live/**'
+      - 'packages/functions/**'
+      - 'packages/live-runtime/**'
+      - 'packages/renderer/**'
+      - 'packages/schema/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/cloudflare-live-check.yml'
+
+jobs:
+  build-worker:
+    runs-on: ubuntu-latest
+    env:
+      MICIRQL_SUPABASE_URL: https://example.supabase.co
+      MICIRQL_SUPABASE_PUBLISHABLE_KEY: sb_publishable_build_check
+      MICIRQL_SUPABASE_SECRET_KEY: sb_secret_build_check
+      RESEND_API_KEY: re_build_check
+      RESEND_FROM: 'MiCirql <noreply@example.com>'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @micirql/live typecheck
+      - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build

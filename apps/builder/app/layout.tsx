@@ -3,6 +3,7 @@ import "@micirql/primitives/styles.css";
 import "@micirql/components/styles.css";
 import "@micirql/sections/styles.css";
 import "@micirql/sections/shell-styles.css";
+import "@micirql/sections/content-sections.css";
 import "./globals.css";
 import "./auth.css";
 import "./workspace-interactive.css";

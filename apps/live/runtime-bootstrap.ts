@@ -166,8 +166,8 @@ function buildFunctionForms(args: {
     },
   };
 
-  const rateLimiter = createMemoryRateLimiter();
-  const idempotencyStore = createMemoryIdempotencyStore();
+  const rateLimiter = createRestRateLimiter(rest);
+  const idempotencyStore = createRestIdempotencyStore(rest);
   const notificationDirectory = createRestNotificationDirectory(rest);
   const deliverySink = createRestDeliverySink(rest);
   const resendApiKey = process.env.RESEND_API_KEY ?? process.env.MICIRQL_RESEND_API_KEY;
@@ -227,6 +227,48 @@ function buildFunctionForms(args: {
   });
 
   return createHtmlFunctionFormHandler({ gateway, ipHasher: hashIp });
+}
+
+function createRestRateLimiter(
+  rest: <T>(path: string, init?: RequestInit) => Promise<T>,
+): RateLimiter {
+  return {
+    async consume({ key, limit, windowSeconds }) {
+      const rows = await rest<Array<{ allowed: boolean; remaining: number }>>("rpc/consume_site_function_rate_limit", {
+        method: "POST",
+        body: JSON.stringify({ p_key: key, p_limit: limit, p_window_seconds: windowSeconds }),
+      });
+      return rows[0] ?? { allowed: false, remaining: 0 };
+    },
+  };
+}
+
+function createRestIdempotencyStore(
+  rest: <T>(path: string, init?: RequestInit) => Promise<T>,
+): IdempotencyStore {
+  return {
+    async get(key) {
+      const now = new Date().toISOString();
+      const rows = await rest<Array<{ result: FunctionResult }>>(
+        `site_function_idempotency?idempotency_key=eq.${encodeURIComponent(key)}&expires_at=gt.${encodeURIComponent(now)}&select=result&limit=1`,
+      );
+      return rows[0]?.result;
+    },
+    async put(key, result, ttlSeconds) {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
+      await rest(`site_function_idempotency?on_conflict=idempotency_key`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({
+          idempotency_key: key,
+          result,
+          expires_at: expiresAt,
+          updated_at: now.toISOString(),
+        }),
+      });
+    },
+  };
 }
 
 function createRestNotificationDirectory(
@@ -313,40 +355,6 @@ function createServerRestClient(baseUrl: string, serverKey: string) {
     if (response.status === 204 || response.headers.get("content-length") === "0") return undefined as T;
     const text = await response.text();
     return (text ? JSON.parse(text) : undefined) as T;
-  };
-}
-
-function createMemoryRateLimiter(): RateLimiter {
-  const buckets = new Map<string, { count: number; expiresAt: number }>();
-  return {
-    async consume({ key, limit, windowSeconds }) {
-      const now = Date.now();
-      const current = buckets.get(key);
-      if (!current || current.expiresAt <= now) {
-        buckets.set(key, { count: 1, expiresAt: now + windowSeconds * 1000 });
-        return { allowed: true, remaining: Math.max(0, limit - 1) };
-      }
-      current.count += 1;
-      return { allowed: current.count <= limit, remaining: Math.max(0, limit - current.count) };
-    },
-  };
-}
-
-function createMemoryIdempotencyStore(): IdempotencyStore {
-  const entries = new Map<string, { result: FunctionResult; expiresAt: number }>();
-  return {
-    async get(key) {
-      const entry = entries.get(key);
-      if (!entry) return undefined;
-      if (entry.expiresAt <= Date.now()) {
-        entries.delete(key);
-        return undefined;
-      }
-      return entry.result;
-    },
-    async put(key, result, ttlSeconds) {
-      entries.set(key, { result, expiresAt: Date.now() + ttlSeconds * 1000 });
-    },
   };
 }
 

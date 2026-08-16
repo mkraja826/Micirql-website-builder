@@ -1,6 +1,19 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, normalizeWebsiteContent, evaluateWebsiteContent, type ContentQualityResult, type WebsiteValidationResult } from "@micirql/design-engine";
+import {
+  PALETTE_STRATEGIES,
+  blueprintRuleFor,
+  typographySystemAt,
+  rhythmSystemAt,
+  imageStrategyAt,
+  normalizeWebsiteContent,
+  evaluateWebsiteContent,
+  scoreDesign,
+  selectDiverseDesigns,
+  type ContentQualityResult,
+  type DesignScore,
+  type WebsiteValidationResult,
+} from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 import { repairWebsiteInvariants } from "./invariant-repair";
 
@@ -14,6 +27,7 @@ export type ReviewDirection = {
   variantSeed: number;
   readiness: WebsiteValidationResult;
   contentQuality: ContentQualityResult;
+  designScore: DesignScore;
 };
 
 type DirectionRecipe = {
@@ -51,19 +65,35 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   const industry = clean(profile.industry) || clean(profile.subindustry) || "your business";
   const archetypeId = resolveArchetype(profile);
   const rule = blueprintRuleFor(archetypeId);
+  const poolSize = Math.max(count * 3, RECIPES.length);
+  const candidates: ReviewDirection[] = [];
 
-  return RECIPES.slice(0, Math.min(count, RECIPES.length)).map((recipe, index) => {
-    const typography = typographySystemAt(index);
-    const rhythm = rhythmSystemAt(index + Math.floor(index / 5));
-    const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + index);
+  for (let candidateIndex = 0; candidateIndex < poolSize; candidateIndex += 1) {
+    const recipeIndex = candidateIndex % RECIPES.length;
+    const pass = Math.floor(candidateIndex / RECIPES.length);
+    const baseRecipe = RECIPES[recipeIndex]!;
+    const recipe = pass === 0 ? baseRecipe : mutateRecipe(baseRecipe, pass);
+    const typography = typographySystemAt(candidateIndex + pass);
+    const rhythm = rhythmSystemAt(candidateIndex + Math.floor(candidateIndex / 5) + pass);
+    const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + candidateIndex + pass);
     const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
     const repaired = repairWebsiteInvariants(composed, archetypeId);
     const normalizedSite = normalizeWebsiteContent(repaired.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
+    if (!repaired.readiness.ready || contentQuality.issues.some((issue) => issue.severity === "error")) continue;
+
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
-    return {
-      id: `business-direction-${String(index + 1).padStart(2, "0")}`,
-      name: recipe.name,
+    const designScore = scoreDesign({
+      site: normalizedSite,
+      readinessScore: repaired.readiness.score,
+      contentScore: contentQuality.score,
+      archetypeFitScore: rule ? 96 : 90,
+    });
+    const mutationLabel = pass ? ` · variation ${pass + 1}` : "";
+
+    candidates.push({
+      id: `business-direction-${String(candidateIndex + 1).padStart(2, "0")}`,
+      name: `${baseRecipe.name}${mutationLabel}`,
       description: recipe.description,
       reasons: [
         `built for ${industry}`,
@@ -74,17 +104,32 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         ...(repaired.repaired ? [`auto-repaired ${repaired.repairs.length} structural issue${repaired.repairs.length === 1 ? "" : "s"}`] : []),
+        `design quality ${designScore.total}/100`,
         `readiness ${repaired.readiness.score}/100`,
         `content quality ${contentQuality.score}/100`,
-        "preserves your business content",
       ],
       site: normalizedSite,
       themeFamily: normalizedSite.theme.family,
-      variantSeed: index,
+      variantSeed: candidateIndex,
       readiness: repaired.readiness,
       contentQuality,
-    };
-  }).filter((direction) => direction.readiness.ready && !direction.contentQuality.issues.some((issue) => issue.severity === "error"));
+      designScore,
+    });
+  }
+
+  return selectDiverseDesigns(candidates, Math.min(count, candidates.length));
+}
+
+function mutateRecipe(recipe: DirectionRecipe, pass: number): DirectionRecipe {
+  const variants: Partial<Record<SectionFamily, SectionVariant>> = {};
+  for (const family of SECTION_FAMILIES) {
+    const current = recipe.variants[family] ?? 1;
+    const familyOffset = family === "navbar" || family === "hero" || family === "footer" ? pass : pass + FAMILY_CODES[family].length;
+    variants[family] = (((current - 1 + familyOffset) % 5) + 1) as SectionVariant;
+  }
+  const paletteIndex = PALETTE_STRATEGIES.findIndex((candidate) => candidate.id === recipe.palette);
+  const palette = PALETTE_STRATEGIES[(Math.max(0, paletteIndex) + pass) % PALETTE_STRATEGIES.length]?.id ?? recipe.palette;
+  return { ...recipe, palette, variants };
 }
 
 function composeDirection(

@@ -45,6 +45,8 @@ export type ThemeRequest = {
   modifiers?: ThemeModifier[];
   colors: BrandColors;
   typography: BrandTypography;
+  density?: "compact" | "comfortable" | "spacious";
+  shape?: "sharp" | "balanced" | "soft";
 };
 
 export type ResolvedTheme = {

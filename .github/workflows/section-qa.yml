@@ -12,6 +12,7 @@ on:
           - full
           - core
           - regression
+          - shell-regression
   pull_request:
     paths:
       - "packages/primitives/**"
@@ -62,7 +63,11 @@ jobs:
       - name: Resolve QA scope
         # Push markers provide a lightweight way to force a one-off certification scope.
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "regression" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "shell-regression" ]; then
+            echo "MI_QA_SCOPE=shell-regression" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[shell-regression]"* ]]; then
+            echo "MI_QA_SCOPE=shell-regression" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "regression" ]; then
             echo "MI_QA_SCOPE=regression" >> "$GITHUB_ENV"
           elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[regression]"* ]]; then
             echo "MI_QA_SCOPE=regression" >> "$GITHUB_ENV"
@@ -76,7 +81,9 @@ jobs:
 
       - name: Run section QA
         run: |
-          if [ "$MI_QA_SCOPE" = "regression" ]; then
+          if [ "$MI_QA_SCOPE" = "shell-regression" ]; then
+            pnpm qa:sections:regression:shell
+          elif [ "$MI_QA_SCOPE" = "regression" ]; then
             pnpm qa:sections:regression:desktop-text
           elif [ "$MI_QA_SCOPE" = "full" ]; then
             pnpm qa:sections:full
@@ -85,19 +92,19 @@ jobs:
           fi
 
       - name: Build registry QA evidence
-        if: always() && env.MI_QA_SCOPE != 'regression'
+        if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: pnpm qa:sections:evidence
 
       - name: Build certification report
-        if: always() && env.MI_QA_SCOPE != 'regression'
+        if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: pnpm qa:sections:certification
 
       - name: Build visual review queue
-        if: always() && env.MI_QA_SCOPE != 'regression'
+        if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: pnpm qa:sections:visual-review
 
       - name: Add certification summary
-        if: always() && env.MI_QA_SCOPE != 'regression'
+        if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: |
           cat test-results/certification/summary.md >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"

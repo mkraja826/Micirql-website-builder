@@ -5,6 +5,7 @@ import {
   createStaticRendererRegistry,
   preparePage,
 } from "@micirql/renderer";
+import { nativeFunctionCatalog } from "@micirql/functions";
 import {
   seedSectionCatalog,
   seedSectionRegistryEntries,
@@ -23,7 +24,10 @@ const components: Record<string, ComponentType<Record<string, unknown>>> = Objec
 );
 
 const registry = createStaticRendererRegistry({ entries: previewEntries, components });
-const functions = createFunctionBindingResolver({ actionIds: [], gatewayBasePath: "/api/functions" });
+const functions = createFunctionBindingResolver({
+  actionIds: nativeFunctionCatalog.map((item) => item.id),
+  gatewayBasePath: "/api/functions",
+});
 
 export async function POST(request: Request) {
   try {

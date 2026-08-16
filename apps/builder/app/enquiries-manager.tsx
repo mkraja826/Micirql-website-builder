@@ -18,7 +18,7 @@ type Submission = {
   updated_at: string;
 };
 
-type Props = { siteId: string };
+type Props = { siteId: string; initialSelectedId?: string };
 
 const STATUS_TABS: Array<{ key: "all" | SubmissionStatus; label: string }> = [
   { key: "all", label: "All" },
@@ -27,7 +27,7 @@ const STATUS_TABS: Array<{ key: "all" | SubmissionStatus; label: string }> = [
   { key: "completed", label: "Completed" },
 ];
 
-export function EnquiriesManager({ siteId }: Props) {
+export function EnquiriesManager({ siteId, initialSelectedId }: Props) {
   const [items, setItems] = useState<Submission[]>([]);
   const [activeStatus, setActiveStatus] = useState<(typeof STATUS_TABS)[number]["key"]>("all");
   const [selectedId, setSelectedId] = useState<string>();
@@ -36,7 +36,7 @@ export function EnquiriesManager({ siteId }: Props) {
   const [error, setError] = useState<string>();
   const [updating, setUpdating] = useState<string>();
 
-  useEffect(() => { void load(); }, [siteId]);
+  useEffect(() => { void load(); }, [siteId, initialSelectedId]);
 
   async function load() {
     setLoading(true); setError(undefined);
@@ -46,7 +46,11 @@ export function EnquiriesManager({ siteId }: Props) {
       if (!response.ok) throw new Error(body.error ?? `Unable to load enquiries (${response.status}).`);
       const next = body.submissions ?? [];
       setItems(next);
-      setSelectedId(current => current && next.some(item => item.id === current) ? current : next[0]?.id);
+      setSelectedId(current => {
+        if (initialSelectedId && next.some(item => item.id === initialSelectedId)) return initialSelectedId;
+        if (current && next.some(item => item.id === current)) return current;
+        return next[0]?.id;
+      });
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to load enquiries."); }
     finally { setLoading(false); }
   }

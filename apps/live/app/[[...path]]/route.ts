@@ -8,6 +8,11 @@ export async function GET(request: Request) {
   return serveLiveRequest(request);
 }
 
+export async function POST(request: Request) {
+  ensureLiveRuntimeConfigured();
+  return serveLiveRequest(request);
+}
+
 export async function HEAD(request: Request) {
   ensureLiveRuntimeConfigured();
   const response = await serveLiveRequest(request);

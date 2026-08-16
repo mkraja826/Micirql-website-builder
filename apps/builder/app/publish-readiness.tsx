@@ -1,5 +1,6 @@
 "use client";
 
+import { analyzeMissingInformation } from "@micirql/design-engine";
 import { getDomainPack } from "@micirql/domains";
 import type { Site } from "@micirql/schema";
 
@@ -33,9 +34,15 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
 
 export function PublishReadinessManager({ site }: { site: Site }) {
   const report = publishReadiness(site);
+  const completion = analyzeMissingInformation(site);
   return <div className="publish-readiness">
     <div className={`readiness-summary ${report.ready ? "is-ready" : "is-blocked"}`}><strong>{report.ready ? "Ready to publish" : "Not ready to publish"}</strong><span>{report.ready ? "All blocking checks passed." : "Fix the blocking items below first."}</span></div>
     <div className="readiness-list">{report.checks.map((check) => <div key={check.id} className={`readiness-row ${check.ok ? "is-ok" : "is-fail"}`}><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div>{check.blocking ? <b>{check.ok ? "Pass" : "Block"}</b> : <b>Info</b>}</div>)}</div>
+    <section className="content-completion" aria-label="Website completion checklist">
+      <div className="content-completion-heading"><div><span>Business details</span><strong>{completion.completion}% complete</strong></div><small>{completion.highPriority ? `${completion.highPriority} important item${completion.highPriority === 1 ? "" : "s"} still need attention.` : "No critical business details are missing."}</small></div>
+      {completion.items.length ? <div className="content-completion-list">{completion.items.map((item) => <div key={item.id} className={`content-completion-row priority-${item.priority}`}><span aria-hidden="true">{item.priority === "high" ? "!" : item.priority === "recommended" ? "•" : "○"}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div><b>{item.priority === "high" ? "Important" : item.priority === "recommended" ? "Recommended" : "Optional"}</b></div>)}</div> : <div className="content-completion-done"><strong>Business details look complete.</strong><small>You can still refine copy, media and proof later.</small></div>}
+      <p className="content-completion-note">These items improve credibility and conversion but do not replace structural publish checks above.</p>
+    </section>
   </div>;
 }
 

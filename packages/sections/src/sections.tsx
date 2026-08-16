@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { Card, Gallery, Stats } from "@micirql/components";
+import { Card, Gallery } from "@micirql/components";
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
 import { StructuralFooter, StructuralNavbar } from "./shell-sections";
 import { StructuralAbout, StructuralProof, StructuralServices } from "./content-sections";
+import { StructuralContact, StructuralCta, StructuralProcess } from "./conversion-sections";
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
@@ -66,32 +67,9 @@ function StandardSection(props: VariantProps) {
   return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items ?? []} /><Actions {...props} /></Stack></Container></section>;
 }
 
-function StatsSection(props: VariantProps) {
-  const statItems = (props.items ?? []).map((item, index) => ({ value: String(index + 1).padStart(2, "0"), label: item.title, ...(item.description === undefined ? {} : { detail: item.description }) }));
-  return <section className="mi-section"><Container><div className={props.variant === 2 ? "mi-standard--split" : ""}><Heading {...props} /><Stats items={statItems} /></div></Container></section>;
-}
-
 function GallerySection(props: VariantProps) {
   const galleryItems = (props.items ?? []).filter((item): item is Item & { image: string } => Boolean(item.image)).map((item) => ({ src: item.image, alt: item.title }));
   return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{galleryItems.length ? <Gallery items={galleryItems} /> : <ItemGrid items={props.items ?? []} />}</Stack></Container></section>;
-}
-
-function ContactForm(props: UniversalSectionProps) {
-  return props.formAction ? <form className="mi-section__form" action={props.formAction} method="post"><label>Name<input name="name" required /></label><label>Email<input name="email" type="email" required /></label><label>Message<textarea name="message" required /></label><button type="submit">Send enquiry</button></form> : <div><Actions {...props} /></div>;
-}
-
-function ContactSection(props: VariantProps) {
-  if (props.variant === 3) return <section className="mi-section mi-contact--center"><Container><Heading {...props} /><div className="mi-contact__form-wrap"><ContactForm {...props} /></div></Container></section>;
-  if (props.variant === 4) return <section className="mi-section mi-contact--panel"><Container><div className="mi-contact__panel"><Heading {...props} /><ContactForm {...props} /></div></Container></section>;
-  return <section className="mi-section"><Container><div className="mi-section__layout"><Heading {...props} /><ContactForm {...props} /></div></Container></section>;
-}
-
-function CtaSection(props: VariantProps) {
-  if (props.variant === 2) return <section className="mi-section mi-cta--split"><Container><div className="mi-cta__row"><Heading {...props} /><Actions {...props} /></div></Container></section>;
-  if (props.variant === 3) return <section className="mi-section mi-cta--center"><Container><Heading {...props} /><Actions {...props} /></Container></section>;
-  if (props.variant === 4) return <section className="mi-section mi-cta--outline"><Container><div className="mi-cta__outline"><Heading {...props} /><Actions {...props} /></div></Container></section>;
-  if (props.variant === 5) return <section className="mi-section mi-cta--accent"><Container><div className="mi-cta__row"><Heading {...props} /><Actions {...props} /></div></Container></section>;
-  return <StandardSection {...props} />;
 }
 
 function FooterSection(props: VariantProps) {
@@ -104,12 +82,12 @@ const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {
   about: StructuralAbout,
   services: StructuralServices,
   features: StandardSection,
-  process: StatsSection,
+  process: StructuralProcess,
   testimonials: StructuralProof,
   gallery: GallerySection,
   team: StandardSection,
-  cta: CtaSection,
-  contact: ContactSection,
+  cta: StructuralCta,
+  contact: StructuralContact,
   footer: FooterSection,
 };
 

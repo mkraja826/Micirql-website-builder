@@ -16,6 +16,7 @@
     "qa:sections:core": "MI_QA_CORE=1 playwright test qa/sections.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
     "qa:sections:regression:desktop-text": "MI_QA_CORE=1 playwright test qa/sections.spec.ts --grep \"(HERO-00[124]|TEAM-004).*1280px protocol smoke\"",
+    "qa:sections:regression:shell": "MI_QA_FULL=1 playwright test qa/sections.spec.ts --grep \"CIN-(NAV|FOOT)-00[1-5].*protocol smoke\"",
     "qa:sections:evidence": "node qa/build-evidence.mjs",
     "qa:sections:certification": "node qa/build-certification-report.mjs",
     "qa:sections:visual-review": "node qa/build-visual-review-queue.mjs",

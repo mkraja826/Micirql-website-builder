@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { siteSchema } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { buildContentEnrichmentContract, enforceContentEnrichmentIntegrity, industryPlannerContext } from "@micirql/design-engine";
+import { buildContentEnrichmentContract, enforceContentEnrichmentIntegrity, groundSiteContent, industryPlannerContext } from "@micirql/design-engine";
 import { rankPresets } from "../../preset-ranking";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
     let content: unknown = null;
     let contentWarning: string | null = null;
     let contentIntegrity = { checked: false, structureIntact: true, appliedFields: 0, restoredChanges: [] as string[], corrected: false };
+    let contentGrounding = { checked: false, grounded: true, issueCount: 0, issues: [] as Array<{pageId:string;sectionId:string;field:string;reason:string}> };
     try {
       const builtDraft = await getSupabaseDraft(request, workspaceId, siteId);
       if (!builtDraft) throw new Error("Generated draft could not be loaded for page-specific content enrichment.");
@@ -163,21 +164,19 @@ export async function POST(request: NextRequest) {
       const enrichedDraft = await getSupabaseDraft(request, workspaceId, siteId);
       if (!enrichedDraft) throw new Error("Enriched draft could not be reloaded for integrity verification.");
       const guarded = enforceContentEnrichmentIntegrity(builtDraft.snapshot, enrichedDraft.snapshot);
-      const validatedSnapshot = siteSchema.parse(guarded.site);
+      const grounded = groundSiteContent(guarded.site, { businessName, industry, subindustry, location, services, goals, notes });
+      const validatedSnapshot = siteSchema.parse(grounded.site);
       const corrected = JSON.stringify(validatedSnapshot) !== JSON.stringify(enrichedDraft.snapshot);
-      if (corrected) {
-        await saveSupabaseDraft(request, { snapshot: validatedSnapshot, expectedRevision: enrichedDraft.revision });
-      }
-      contentIntegrity = {
+      if (corrected) await saveSupabaseDraft(request, { snapshot: validatedSnapshot, expectedRevision: enrichedDraft.revision });
+      contentIntegrity = { checked: true, structureIntact: guarded.structureIntact, appliedFields: guarded.appliedFields, restoredChanges: guarded.restoredChanges, corrected };
+      contentGrounding = {
         checked: true,
-        structureIntact: guarded.structureIntact,
-        appliedFields: guarded.appliedFields,
-        restoredChanges: guarded.restoredChanges,
-        corrected,
+        grounded: grounded.grounded,
+        issueCount: grounded.issues.length,
+        issues: grounded.issues.map(issue => ({ pageId: issue.pageId, sectionId: issue.sectionId, field: issue.field, reason: issue.reason })),
       };
-      if (guarded.restoredChanges.length) {
-        console.warn("MiCirql restored unauthorized AI enrichment changes.", guarded.restoredChanges);
-      }
+      if (guarded.restoredChanges.length) console.warn("MiCirql restored unauthorized AI enrichment changes.", guarded.restoredChanges);
+      if (grounded.issues.length) console.warn("MiCirql neutralized unsupported AI claims.", grounded.issues);
     } catch (error) {
       contentWarning = error instanceof Error ? error.message : "Content enrichment failed.";
       console.error("MiCirql content enrichment failed; continuing with structural draft.", error);
@@ -244,6 +243,7 @@ export async function POST(request: NextRequest) {
       content,
       contentWarning,
       contentIntegrity,
+      contentGrounding,
       images,
       imageWarning,
       initialPreset,

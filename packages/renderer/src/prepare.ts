@@ -44,54 +44,28 @@ export async function preparePage(args: {
 
     const resolved = await args.registry.resolve(section.component.componentId, section.component.version);
     if (!resolved) {
-      issues.push({
-        code: "COMPONENT_NOT_FOUND",
-        message: `Component ${section.component.componentId}@${section.component.version} is unavailable.`,
-        sectionId: section.id,
-      });
+      issues.push({ code: "COMPONENT_NOT_FOUND", message: `Component ${section.component.componentId}@${section.component.version} is unavailable.`, sectionId: section.id });
       continue;
     }
-
     if (mode === "production" && resolved.registry.status !== "production") {
-      issues.push({
-        code: "COMPONENT_NOT_PRODUCTION",
-        message: `Component ${resolved.registry.id} is not production approved.`,
-        sectionId: section.id,
-      });
+      issues.push({ code: "COMPONENT_NOT_PRODUCTION", message: `Component ${resolved.registry.id} is not production approved.`, sectionId: section.id });
     }
-
     if (!resolved.registry.protocol.passed) {
-      issues.push({
-        code: "COMPONENT_PROTOCOL_FAILED",
-        message: `Component ${resolved.registry.id} has not passed the MiCirql Protocol.`,
-        sectionId: section.id,
-      });
+      issues.push({ code: "COMPONENT_PROTOCOL_FAILED", message: `Component ${resolved.registry.id} has not passed the MiCirql Protocol.`, sectionId: section.id });
     }
-
     if (resolved.registry.theme !== site.theme.family) {
-      issues.push({
-        code: "THEME_MISMATCH",
-        message: `Component ${resolved.registry.id} belongs to ${resolved.registry.theme}, not ${site.theme.family}.`,
-        sectionId: section.id,
-      });
+      issues.push({ code: "THEME_MISMATCH", message: `Component ${resolved.registry.id} belongs to ${resolved.registry.theme}, not ${site.theme.family}.`, sectionId: section.id });
     }
 
     const props: Record<string, unknown> = { ...section.props };
     for (const [bindingName, binding] of Object.entries(section.bindings)) {
       const registered = await args.functions.isRegistered(binding.actionId);
       if (!registered) {
-        issues.push({
-          code: "ACTION_NOT_REGISTERED",
-          message: `Action ${binding.actionId} is not registered.`,
-          sectionId: section.id,
-        });
+        issues.push({ code: "ACTION_NOT_REGISTERED", message: `Action ${binding.actionId} is not registered.`, sectionId: section.id });
         continue;
       }
       props[`${bindingName}ActionId`] = binding.actionId;
-      props[`${bindingName}ActionEndpoint`] = args.functions.endpointFor({
-        siteId: site.siteId,
-        actionId: binding.actionId,
-      });
+      props[`${bindingName}ActionEndpoint`] = args.functions.endpointFor({ siteId: site.siteId, actionId: binding.actionId });
       if (bindingName === "submit") props.formAction = args.functions.endpointFor({ siteId: site.siteId, actionId: binding.actionId });
     }
 
@@ -109,9 +83,6 @@ export async function preparePage(args: {
       secondary: site.theme.brand.colors.secondary,
       secondaryContrast: contrastFor(site.theme.brand.colors.secondary),
       accent: site.theme.brand.colors.accent,
-      // `surface` is the visible page/section canvas. It must use the
-      // logo-derived surface role. The neutral background remains available
-      // as the elevated/card layer so brand extraction is visible in render.
       surface: site.theme.brand.colors.surface,
       surfaceElevated: site.theme.brand.colors.background,
       text: site.theme.brand.colors.textPrimary,
@@ -125,6 +96,8 @@ export async function preparePage(args: {
       display: site.theme.brand.typography.display,
       body: site.theme.brand.typography.body,
     },
+    density: site.theme.brand.density,
+    shape: site.theme.brand.shape,
   });
 
   return {

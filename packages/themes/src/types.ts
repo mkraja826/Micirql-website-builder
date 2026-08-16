@@ -25,6 +25,7 @@ export type BrandColors = {
   secondary: string;
   secondaryContrast: string;
   accent: string;
+  accentContrast: string;
   surface: string;
   surfaceElevated: string;
   text: string;

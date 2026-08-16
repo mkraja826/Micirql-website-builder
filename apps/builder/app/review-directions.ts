@@ -1,6 +1,6 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, type WebsiteValidationResult } from "@micirql/design-engine";
+import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt, normalizeWebsiteContent, evaluateWebsiteContent, type ContentQualityResult, type WebsiteValidationResult } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 import { repairWebsiteInvariants } from "./invariant-repair";
 
@@ -13,6 +13,7 @@ export type ReviewDirection = {
   themeFamily: string;
   variantSeed: number;
   readiness: WebsiteValidationResult;
+  contentQuality: ContentQualityResult;
 };
 
 type DirectionRecipe = {
@@ -57,6 +58,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + index);
     const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
     const repaired = repairWebsiteInvariants(composed, archetypeId);
+    const normalizedSite = normalizeWebsiteContent(repaired.site);
+    const contentQuality = evaluateWebsiteContent(normalizedSite);
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
     return {
       id: `business-direction-${String(index + 1).padStart(2, "0")}`,
@@ -72,14 +75,16 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         ...(repaired.repaired ? [`auto-repaired ${repaired.repairs.length} structural issue${repaired.repairs.length === 1 ? "" : "s"}`] : []),
         `readiness ${repaired.readiness.score}/100`,
+        `content quality ${contentQuality.score}/100`,
         "preserves your business content",
       ],
-      site: repaired.site,
-      themeFamily: repaired.site.theme.family,
+      site: normalizedSite,
+      themeFamily: normalizedSite.theme.family,
       variantSeed: index,
       readiness: repaired.readiness,
+      contentQuality,
     };
-  }).filter((direction) => direction.readiness.ready);
+  }).filter((direction) => direction.readiness.ready && !direction.contentQuality.issues.some((issue) => issue.severity === "error"));
 }
 
 function composeDirection(

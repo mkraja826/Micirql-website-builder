@@ -1,6 +1,7 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
 import { resolveIndustryIntelligence, type IndustryIntelligencePack } from "./industry-intelligence";
+import { evaluatePageArchitecture, plannerPageArchitecture } from "./page-architecture";
 
 const SEMANTIC_TO_FAMILY: Record<string, SectionFamily> = {
   treatments: "services", services: "services", menu: "services", courses: "services", capabilities: "services", listings: "services", categories: "services", "product-grid": "services", "featured-products": "services",
@@ -22,14 +23,17 @@ export type IndustryFitResult = {
   matchedSections: string[];
   missingSections: string[];
   conversionFit: number;
+  pageArchitectureScore: number;
+  missingRequiredPages: string[];
+  missingRecommendedPages: string[];
 };
 
 export function evaluateIndustryFit(site: Site, industry?: string, subindustry?: string): IndustryFitResult {
   const pack = resolveIndustryIntelligence(industry, subindustry);
-  if (!pack) return { score: 90, matchedSections: [], missingSections: [], conversionFit: 90 };
+  if (!pack) return { score: 90, matchedSections: [], missingSections: [], conversionFit: 90, pageArchitectureScore: 90, missingRequiredPages: [], missingRecommendedPages: [] };
 
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
-  if (!home) return { score: 0, packId: pack.id, packLabel: pack.label, matchedSections: [], missingSections: pack.recommendedSections, conversionFit: 0 };
+  if (!home) return { score: 0, packId: pack.id, packLabel: pack.label, matchedSections: [], missingSections: pack.recommendedSections, conversionFit: 0, pageArchitectureScore: 0, missingRequiredPages: [], missingRecommendedPages: [] };
 
   const families = new Set(home.sections.filter((section) => !section.hidden).map((section) => familyFromComponentId(section.component.componentId)).filter(Boolean) as SectionFamily[]);
   const matchedSections: string[] = [];
@@ -42,9 +46,21 @@ export function evaluateIndustryFit(site: Site, industry?: string, subindustry?:
   const coverage = pack.recommendedSections.length ? matchedSections.length / pack.recommendedSections.length : 1;
   const conversionFit = scoreConversionFit(site, pack);
   const trustFit = scoreTrustFit(families, pack);
-  const score = clamp(Math.round(coverage * 55 + conversionFit * 0.25 + trustFit * 0.2));
+  const pageArchitecture = evaluatePageArchitecture(site, pack);
+  const homepageScore = coverage * 55 + conversionFit * 0.25 + trustFit * 0.2;
+  const score = clamp(Math.round(homepageScore * 0.72 + pageArchitecture.score * 0.28));
 
-  return { score, packId: pack.id, packLabel: pack.label, matchedSections, missingSections, conversionFit };
+  return {
+    score,
+    packId: pack.id,
+    packLabel: pack.label,
+    matchedSections,
+    missingSections,
+    conversionFit,
+    pageArchitectureScore: pageArchitecture.score,
+    missingRequiredPages: pageArchitecture.missingRequired.map((page) => page.name),
+    missingRecommendedPages: pageArchitecture.missingRecommended.map((page) => page.name),
+  };
 }
 
 export function industryPlannerContext(industry?: string, subindustry?: string) {
@@ -55,10 +71,12 @@ export function industryPlannerContext(industry?: string, subindustry?: string) 
     archetypeId: pack.archetypeId,
     communicationPriorities: pack.priorities,
     recommendedSections: pack.recommendedSections,
+    recommendedPageArchitecture: plannerPageArchitecture(pack),
     trustSignals: pack.trustSignals,
     preferredCtaPatterns: pack.ctaPatterns,
     seoTopics: pack.seoTopics,
     sectionWritingGuidance: pack.contentPrompts,
+    pageArchitectureRule: "Required pages should be created when facts support them. Recommended pages should be created when useful. Optional pages are not mandatory.",
     rule: "Use only supplied business facts. These are communication priorities, not permission to invent claims.",
   };
 }

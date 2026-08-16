@@ -16,6 +16,9 @@ export type LiveRuntimeDependencies = {
   store: LiveSiteStore;
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
+  functionForms?: {
+    handle(request: Request, actionId: string): Promise<Response>;
+  };
   renderPage: (page: PreparedPage) => Promise<string> | string;
   cache?: {
     get(key: string): Promise<Response | undefined>;
@@ -29,6 +32,13 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
   const hostname = normalizeHostname(forwardedHost ?? request.headers.get("host") ?? url.hostname);
   if (!hostname) return textResponse("Invalid hostname", 400);
+
+  const formActionId = functionActionFromPath(url.pathname);
+  if (formActionId) {
+    if (request.method.toUpperCase() !== "POST") return textResponse("Method not allowed", 405, { allow: "POST", "cache-control": "no-store" });
+    if (!dependencies.functionForms) return textResponse("Website action endpoint is unavailable", 503, { "cache-control": "no-store" });
+    return dependencies.functionForms.handle(request, formActionId);
+  }
 
   const resolved = await dependencies.store.resolveHostname(hostname);
   if (!resolved) return htmlResponse(notFoundDocument("Website not found"), 404, { "x-robots-tag": "noindex" });
@@ -70,6 +80,17 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   return response;
 }
 
+function functionActionFromPath(pathname: string): string | undefined {
+  const match = pathname.match(/^\/api\/functions\/([^/]+)\/?$/);
+  if (!match?.[1]) return undefined;
+  try {
+    const decoded = decodeURIComponent(match[1]);
+    return /^[a-z0-9][a-z0-9._-]{1,119}$/i.test(decoded) ? decoded : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function pageDocument(seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] }, body: string) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}</head><body>${body}</body></html>`;
@@ -95,7 +116,7 @@ function canonicalOrigin(site: Site, requestHost: string) {
 function normalizeHostname(value: string) { return value.trim().toLowerCase().replace(/:\d+$/, "").replace(/^\.+|\.+$/g, ""); }
 function normalizePath(value: string) { if (!value || value === "/") return "/"; const clean = `/${value.replace(/^\/+|\/+$/g, "")}`; return clean || "/"; }
 function htmlResponse(body: string, status: number, headers: Record<string,string> = {}) { return new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", ...headers } }); }
-function textResponse(body: string, status: number) { return new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8" } }); }
+function textResponse(body: string, status: number, headers: Record<string,string> = {}) { return new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8", ...headers } }); }
 function notFoundDocument(message: string) { return `<!doctype html><html><head><meta name="robots" content="noindex"><title>404</title></head><body><main><h1>404</h1><p>${escapeHtml(message)}</p></main></body></html>`; }
 function errorDocument(message: string) { return `<!doctype html><html><head><meta name="robots" content="noindex"><title>Site unavailable</title></head><body><main><h1>Site unavailable</h1><p>${escapeHtml(message)}</p></main></body></html>`; }
 function escapeHtml(value: string) { return value.replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char]!)); }

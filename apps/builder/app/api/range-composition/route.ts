@@ -3,7 +3,7 @@ import { rankDesigns, type DesignPreferenceQuery, type DesignRegistryEntry } fro
 import { siteSchema, type ThemeFamily } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, seedSectionRegistryEntries, type SectionFamily } from "@micirql/sections";
 
-const EDITABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
+const EDITABLE_FAMILIES: SectionFamily[] = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
 const THEME_FAMILIES: ThemeFamily[] = ["minimalist", "corporate", "luxury", "editorial", "glass", "maximalist", "organic", "futuristic", "playful", "cinematic"];
 
 type Replacement = {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const preferences = normalizePreferences(body.preferenceProfile);
     const themes = chooseThemes(prompt, site.theme.family, preferences);
-    const proposals = themes.map((theme, index) => composeProposal({ site, page, range, theme, preferences, index })).filter((item): item is Proposal => Boolean(item));
+    const proposals = themes.map((theme, index) => composeProposal({ site, page, range, theme, ...(preferences ? { preferences } : {}), index })).filter((item): item is Proposal => Boolean(item));
     if (!proposals.length) return NextResponse.json({ error: "No compatible coordinated directions are available for this range yet." }, { status: 409 });
 
     return NextResponse.json({ proposals });
@@ -153,8 +153,9 @@ function proposalLabel(theme: ThemeFamily, index: number) {
 function previewScore(entry: DesignRegistryEntry, domain: keyof DesignRegistryEntry["domainCompatibility"], preferences?: DesignPreferenceQuery) {
   let score = entry.domainCompatibility[domain] ?? 0;
   score += (entry.intelligence?.mobileSuitability ?? entry.quality.mobile) * 0.12;
-  if (preferences?.preferredThemes?.includes(entry.theme)) score += 14 * preferences.strength;
-  if (preferences?.preferredModifiers?.some((modifier) => entry.modifiers.includes(modifier))) score += 8 * preferences.strength;
+  const strength = preferences?.strength ?? 0;
+  if (preferences?.preferredThemes?.includes(entry.theme)) score += 14 * strength;
+  if (preferences?.preferredModifiers?.some((modifier) => entry.modifiers.includes(modifier))) score += 8 * strength;
   return score;
 }
 

@@ -90,6 +90,8 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
     next.theme.modifiers = next.theme.modifiers.filter((modifier) => modifier !== "3d-depth");
   }
 
+  const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette) ?? PALETTE_STRATEGIES[0]!;
+
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);
@@ -105,6 +107,26 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
         const familyB = sectionFamilyFromComponentId(b.component.componentId);
         return (familyA ? order.get(familyA) ?? 999 : 999) - (familyB ? order.get(familyB) ?? 999 : 999);
       });
+    }
+
+    let bodyIndex = 0;
+    for (const section of page.sections) {
+      const family = sectionFamilyFromComponentId(section.component.componentId);
+      if (!family) continue;
+      let paletteRole = palette.roles.sectionA;
+      if (family === "navbar") paletteRole = palette.roles.navbar;
+      else if (family === "hero") paletteRole = palette.roles.hero;
+      else if (family === "cta") paletteRole = palette.roles.cta;
+      else if (family === "contact") paletteRole = palette.roles.contact;
+      else if (family === "footer") paletteRole = palette.roles.footer;
+      else paletteRole = bodyIndex++ % 2 === 0 ? palette.roles.sectionA : palette.roles.sectionB;
+
+      section.props = {
+        ...section.props,
+        paletteRole,
+        cardPaletteRole: palette.roles.card,
+        ctaPaletteRole: palette.roles.primaryCta,
+      };
     }
   }
   return next;

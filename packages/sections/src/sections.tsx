@@ -3,6 +3,7 @@ import { Card, Gallery, Stats } from "@micirql/components";
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
 import { StructuralFooter, StructuralNavbar } from "./shell-sections";
+import { StructuralAbout, StructuralProof, StructuralServices } from "./content-sections";
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
@@ -100,11 +101,11 @@ function FooterSection(props: VariantProps) {
 const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {
   navbar: NavbarSection,
   hero: HeroSection,
-  about: StandardSection,
-  services: StandardSection,
+  about: StructuralAbout,
+  services: StructuralServices,
   features: StandardSection,
   process: StatsSection,
-  testimonials: StandardSection,
+  testimonials: StructuralProof,
   gallery: GallerySection,
   team: StandardSection,
   cta: CtaSection,

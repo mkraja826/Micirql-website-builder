@@ -136,6 +136,7 @@ export function RendererPreview({
             const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
             if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
             const selected = section.id === selectedSectionId;
+            const globalShell = seed.family === "navbar" || seed.family === "footer";
             const sourceSection = site.pages.find((page) => page.path === path)?.sections.find((candidate) => candidate.id === section.id);
             const hidden = sourceSection?.hidden ?? false;
             return <Fragment key={section.id}>
@@ -143,21 +144,22 @@ export function RendererPreview({
                 data-mi-section-id={section.id}
                 data-mi-component-id={section.componentId}
                 data-mi-component-version={section.componentVersion}
-                className={`mi-editor-section${selected ? " mi-editor-selected" : ""}${hidden ? " mi-editor-hidden" : ""}`}
-                draggable={Boolean(onReorderSection)}
-                onDragStart={(event) => { setDraggedSectionId(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/mi-section-id", section.id); }}
+                data-mi-global-section={globalShell ? "true" : undefined}
+                className={`mi-editor-section${selected ? " mi-editor-selected" : ""}${hidden ? " mi-editor-hidden" : ""}${globalShell ? " mi-editor-global-section" : ""}`}
+                draggable={Boolean(onReorderSection && !globalShell)}
+                onDragStart={(event) => { if (globalShell) { event.preventDefault(); return; } setDraggedSectionId(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/mi-section-id", section.id); }}
                 onDragEnd={() => { setDraggedSectionId(undefined); setDropIndex(undefined); }}
                 onClick={(event) => handleSectionClick(event, section.id)}
               >
                 {selected ? <div className="mi-editor-canvas-toolbar" data-mi-canvas-action="toolbar">
-                  <span className="mi-editor-drag-handle" title="Drag section" aria-hidden="true">⋮⋮</span>
-                  <span className="mi-editor-canvas-label">{seed.family}</span>
+                  {!globalShell ? <span className="mi-editor-drag-handle" title="Drag section" aria-hidden="true">⋮⋮</span> : null}
+                  <span className="mi-editor-canvas-label">{seed.family}{globalShell ? " · Global" : ""}</span>
                   <div className="mi-editor-canvas-actions">
                     {onRequestDesignChange ? <button type="button" data-mi-canvas-action="design" onClick={(event) => runAction(event, () => onRequestDesignChange(section.id))}>Replace design</button> : null}
                     {onRequestCopyEdit ? <button type="button" data-mi-canvas-action="copy" onClick={(event) => runAction(event, () => onRequestCopyEdit(section.id))}>Edit copy</button> : null}
-                    {onRequestImageChange ? <button type="button" data-mi-canvas-action="image" onClick={(event) => runAction(event, () => onRequestImageChange(section.id, "image"))}>Change image</button> : null}
-                    {onRequestMove ? <span className="mi-editor-move-actions"><button type="button" title="Move section up" aria-label="Move section up" data-mi-canvas-action="move-up" disabled={index === 0} onClick={(event) => runAction(event, () => onRequestMove(section.id, "up"))}>↑</button><button type="button" title="Move section down" aria-label="Move section down" data-mi-canvas-action="move-down" disabled={index === preview.sections!.length - 1} onClick={(event) => runAction(event, () => onRequestMove(section.id, "down"))}>↓</button></span> : null}
-                    {onRequestVisibility ? <button type="button" className="is-muted" data-mi-canvas-action="visibility" onClick={(event) => runAction(event, () => onRequestVisibility(section.id, !hidden))}>{hidden ? "Show" : "Hide"}</button> : null}
+                    {onRequestImageChange && !globalShell ? <button type="button" data-mi-canvas-action="image" onClick={(event) => runAction(event, () => onRequestImageChange(section.id, "image"))}>Change image</button> : null}
+                    {onRequestMove && !globalShell ? <span className="mi-editor-move-actions"><button type="button" title="Move section up" aria-label="Move section up" data-mi-canvas-action="move-up" disabled={index === 0} onClick={(event) => runAction(event, () => onRequestMove(section.id, "up"))}>↑</button><button type="button" title="Move section down" aria-label="Move section down" data-mi-canvas-action="move-down" disabled={index === preview.sections!.length - 1} onClick={(event) => runAction(event, () => onRequestMove(section.id, "down"))}>↓</button></span> : null}
+                    {onRequestVisibility && !globalShell ? <button type="button" className="is-muted" data-mi-canvas-action="visibility" onClick={(event) => runAction(event, () => onRequestVisibility(section.id, !hidden))}>{hidden ? "Show" : "Hide"}</button> : null}
                   </div>
                 </div> : null}
                 <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />

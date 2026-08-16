@@ -9,7 +9,8 @@
     "./shell-styles.css": "./src/shell-styles.css",
     "./content-sections.css": "./src/content-sections.css",
     "./conversion-styles.css": "./src/conversion-styles.css",
-    "./media-sections.css": "./src/media-sections.css"
+    "./media-sections.css": "./src/media-sections.css",
+    "./palette-runtime.css": "./src/palette-runtime.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import "@micirql/primitives/styles.css";
 import "@micirql/components/styles.css";
 import "@micirql/sections/styles.css";
+import "@micirql/sections/shell-styles.css";
+import "@micirql/sections/content-sections.css";
+import "@micirql/sections/conversion-styles.css";
+import "@micirql/sections/media-sections.css";
+import "@micirql/sections/palette-runtime.css";
+import "@micirql/sections/image-slots.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Preview",

@@ -175,6 +175,7 @@ function buildFunctionForms(args: {
   const emailAdapter = resendApiKey && resendFrom
     ? createEmailNotificationAdapter({
         provider: "resend",
+        manageBaseUrl: process.env.MICIRQL_BUILDER_URL ?? "https://builder.micirql.com",
         transport: createResendEmailTransport({
           config: {
             async resolve() {
@@ -204,8 +205,8 @@ function buildFunctionForms(args: {
       async resolve(hostname) {
         const published = await args.resolvePublishedSite(hostname);
         if (!published) return undefined;
-        const siteRows = await rest<Array<{ id: string; workspace_id: string; status: string }>>(
-          `sites?id=eq.${encodeURIComponent(published.siteId)}&select=id,workspace_id,status&limit=1`,
+        const siteRows = await rest<Array<{ id: string; workspace_id: string; status: string; name: string }>>(
+          `sites?id=eq.${encodeURIComponent(published.siteId)}&select=id,workspace_id,status,name&limit=1`,
         );
         const row = siteRows[0];
         if (!row || row.status !== "active") return undefined;
@@ -213,6 +214,7 @@ function buildFunctionForms(args: {
           siteId: row.id,
           workspaceId: row.workspace_id,
           hostname: normalizeHostname(hostname),
+          ...(row.name?.trim() ? { siteName: row.name.trim() } : {}),
           status: "active",
         } satisfies ResolvedSiteContext;
       },

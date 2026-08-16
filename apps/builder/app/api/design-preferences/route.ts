@@ -28,8 +28,6 @@ export async function GET(request: NextRequest) {
     const { url, key } = config();
     const auth = authorization(request);
 
-    // Workspace-wide learning lets future sites benefit from prior explicit choices.
-    // siteId is returned for observability but does not restrict the learned profile.
     const query = new URLSearchParams({
       workspace_id: `eq.${workspaceId}`,
       select: "signal_type,direction_signature,theme_family,density,shape,motion,typography_display,typography_body,metadata,created_at",
@@ -118,7 +116,7 @@ function toPreferenceSignal(row: SignalRow): PreferenceSignal | undefined {
     : signatureFingerprint(row.direction_signature);
   return {
     signalType: signalType as PreferenceSignal["signalType"],
-    fingerprint,
+    ...(fingerprint ? { fingerprint } : {}),
     themeFamily: row.theme_family,
     density: row.density,
     shape: row.shape,

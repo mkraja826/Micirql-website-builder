@@ -8,6 +8,7 @@ import {
   imageStrategyAt,
   normalizeWebsiteContent,
   evaluateWebsiteContent,
+  evaluateIndustryFit,
   scoreDesign,
   selectDiverseDesigns,
   applyPreferenceBias,
@@ -84,12 +85,13 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     if (!repaired.readiness.ready || contentQuality.issues.some((issue) => issue.severity === "error")) continue;
 
+    const industryFit = evaluateIndustryFit(normalizedSite, clean(profile.industry), clean(profile.subindustry));
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
     const baseScore = scoreDesign({
       site: normalizedSite,
       readinessScore: repaired.readiness.score,
       contentScore: contentQuality.score,
-      archetypeFitScore: rule ? 96 : 90,
+      archetypeFitScore: industryFit.score,
     });
     const designScore = applyPreferenceBias(baseScore, preferenceProfile);
     const mutationLabel = pass ? ` · variation ${pass + 1}` : "";
@@ -100,7 +102,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
       description: recipe.description,
       reasons: [
         `built for ${industry}`,
-        `${archetypeId.replace(/-/g, " ")} composition`,
+        industryFit.packLabel ? `${industryFit.packLabel} fit ${industryFit.score}/100` : `${archetypeId.replace(/-/g, " ")} composition`,
+        ...(industryFit.missingSections.length ? [`could add: ${industryFit.missingSections.slice(0, 3).join(", ")}`] : []),
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",
         `${typography.name} typography`,
         `${rhythm.name} spacing and shape`,

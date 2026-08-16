@@ -2,6 +2,15 @@ name: Section QA
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "Section QA coverage"
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - core
   pull_request:
     paths:
       - "packages/primitives/**"
@@ -49,8 +58,13 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run premium core section QA
-        run: pnpm qa:sections:core
+      - name: Run section QA
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "full" ]; then
+            pnpm qa:sections:full
+          else
+            pnpm qa:sections:core
+          fi
 
       - name: Build registry QA evidence
         if: always()

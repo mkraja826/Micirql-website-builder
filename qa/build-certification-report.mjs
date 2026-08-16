@@ -4,6 +4,7 @@ import path from "node:path";
 const root = process.cwd();
 const evidencePath = path.join(root, "test-results", "registry-evidence", "manifest.json");
 const outDir = path.join(root, "test-results", "certification");
+const scope = process.env.MI_QA_SCOPE === "full" ? "full" : "core";
 await mkdir(outDir, { recursive: true });
 
 let manifest = { evidence: [], commitSha: "unknown", runId: "unknown", checkedAt: new Date().toISOString() };
@@ -35,6 +36,7 @@ const entries = manifest.evidence.map((evidence) => {
 });
 
 const report = {
+  scope,
   commitSha: manifest.commitSha,
   runId: manifest.runId,
   checkedAt: manifest.checkedAt,
@@ -46,12 +48,15 @@ const report = {
   entries,
 };
 
+const title = scope === "full" ? "# MiCirql Full Catalog Certification" : "# MiCirql Premium Core Certification";
+
 await writeFile(path.join(outDir, "report.json"), JSON.stringify(report, null, 2), "utf8");
 await writeFile(
   path.join(outDir, "summary.md"),
   [
-    "# MiCirql Premium Core Certification",
+    title,
     "",
+    `Scope: ${scope}`,
     `Machine QA passed: ${report.machinePassed}/${report.total}`,
     `Machine QA blocked: ${report.machineBlocked}/${report.total}`,
     "",
@@ -66,4 +71,4 @@ await writeFile(
   "utf8",
 );
 
-console.log(`Certification report: ${report.machinePassed}/${report.total} passed machine QA.`);
+console.log(`Certification report (${scope}): ${report.machinePassed}/${report.total} passed machine QA.`);

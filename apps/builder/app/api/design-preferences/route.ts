@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildDesignPreferenceProfile, type PreferenceSignal } from "@micirql/design-engine";
 
 const SIGNALS = new Set(["more_like_this", "compare", "regenerate", "selected"]);
 
@@ -23,17 +24,27 @@ export async function GET(request: NextRequest) {
   try {
     const workspaceId = request.nextUrl.searchParams.get("workspaceId")?.trim();
     const siteId = request.nextUrl.searchParams.get("siteId")?.trim();
-    if (!workspaceId || !siteId) return NextResponse.json({ error: "workspaceId and siteId are required" }, { status: 400 });
+    if (!workspaceId) return NextResponse.json({ error: "workspaceId is required" }, { status: 400 });
     const { url, key } = config();
     const auth = authorization(request);
-    const query = new URLSearchParams({ workspace_id: `eq.${workspaceId}`, site_id: `eq.${siteId}`, select: "*", limit: "1" });
-    const response = await fetch(`${url}/rest/v1/design_preference_profiles?${query}`, {
+
+    // Workspace-wide learning lets future sites benefit from prior explicit choices.
+    // siteId is returned for observability but does not restrict the learned profile.
+    const query = new URLSearchParams({
+      workspace_id: `eq.${workspaceId}`,
+      select: "signal_type,direction_signature,theme_family,density,shape,motion,typography_display,typography_body,metadata,created_at",
+      order: "created_at.desc",
+      limit: "250",
+    });
+    const response = await fetch(`${url}/rest/v1/design_preference_signals?${query}`, {
       headers: { apikey: key, authorization: auth },
       cache: "no-store",
     });
     if (!response.ok) throw await remoteError(response);
-    const rows = await response.json() as unknown[];
-    return NextResponse.json({ profile: rows[0] ?? null });
+    const rows = await response.json() as SignalRow[];
+    const signals = rows.map(toPreferenceSignal).filter((signal): signal is PreferenceSignal => Boolean(signal));
+    const profile = buildDesignPreferenceProfile(signals);
+    return NextResponse.json({ profile, signalCount: signals.length, workspaceId, siteId: siteId || null });
   } catch (error) {
     return errorResponse(error);
   }
@@ -84,6 +95,41 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+type SignalRow = {
+  signal_type?: string | null;
+  direction_signature?: string | null;
+  theme_family?: string | null;
+  density?: string | null;
+  shape?: string | null;
+  motion?: string | null;
+  typography_display?: string | null;
+  typography_body?: string | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+function toPreferenceSignal(row: SignalRow): PreferenceSignal | undefined {
+  const signalType = row.signal_type;
+  if (!signalType || !SIGNALS.has(signalType)) return undefined;
+  const metadataFingerprint = row.metadata?.fingerprint;
+  const fingerprint = metadataFingerprint && typeof metadataFingerprint === "object"
+    ? metadataFingerprint as PreferenceSignal["fingerprint"]
+    : signatureFingerprint(row.direction_signature);
+  return {
+    signalType: signalType as PreferenceSignal["signalType"],
+    fingerprint,
+    themeFamily: row.theme_family,
+    density: row.density,
+    shape: row.shape,
+    typography: [row.typography_display, row.typography_body].filter(Boolean).join("|") || null,
+  };
+}
+
+function signatureFingerprint(signature?: string | null): PreferenceSignal["fingerprint"] {
+  if (!signature) return undefined;
+  const parts = signature.split("|").filter(Boolean);
+  return parts.length > 4 ? { structure: parts.slice(4).join("|") } : undefined;
 }
 
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }

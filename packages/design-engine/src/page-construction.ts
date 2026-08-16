@@ -40,11 +40,11 @@ export function ensureIndustryPages(site: Site, industry?: string, subindustry?:
     const path = normalizePath(requirement.path);
     const existing = byPath.get(path);
     if (!existing) {
-      const page = makePage(next, requirement);
+      const page = makePage(next, requirement, industry);
       next.pages.push(page);
       byPath.set(path, page);
       createdPages.push(path);
-    } else if (ensurePageSectionSequence(next, existing, requirement)) {
+    } else if (ensurePageSectionSequence(next, existing, requirement, industry)) {
       updatedPages.push(path);
     }
   }
@@ -53,13 +53,13 @@ export function ensureIndustryPages(site: Site, industry?: string, subindustry?:
   return { site: next, createdPages, updatedPages };
 }
 
-function makePage(site: Site, requirement: PageRequirement): SitePage {
+function makePage(site: Site, requirement: PageRequirement, industry?: string): SitePage {
   const pageId = requirement.id === "home" ? "home" : `page-${slug(requirement.id)}`;
   return {
     id: pageId,
     path: normalizePath(requirement.path),
     name: requirement.name,
-    sections: buildSections(site, requirement),
+    sections: buildSections(site, requirement, industry),
     seo: {
       title: `${requirement.name} | ${site.name}`,
       description: requirement.purpose,
@@ -67,13 +67,13 @@ function makePage(site: Site, requirement: PageRequirement): SitePage {
   };
 }
 
-function ensurePageSectionSequence(site: Site, page: SitePage, requirement: PageRequirement): boolean {
+function ensurePageSectionSequence(site: Site, page: SitePage, requirement: PageRequirement, industry?: string): boolean {
   const existingFamilies = page.sections.map((section) => familyFromComponentId(section.component.componentId)).filter(Boolean) as SectionFamily[];
   let changed = false;
   for (const semantic of requirement.preferredSections) {
     const family = SEMANTIC_TO_FAMILY[semantic];
     if (!family || existingFamilies.includes(family)) continue;
-    page.sections.push(makeSection(site, page, family, semantic));
+    page.sections.push(makeSection(site, page, family, semantic, industry));
     existingFamilies.push(family);
     changed = true;
   }
@@ -86,25 +86,26 @@ function ensurePageSectionSequence(site: Site, page: SitePage, requirement: Page
   return changed;
 }
 
-function buildSections(site: Site, requirement: PageRequirement): SiteSection[] {
+function buildSections(site: Site, requirement: PageRequirement, industry?: string): SiteSection[] {
   const seen = new Set<SectionFamily>();
   const sections: SiteSection[] = [];
   for (const semantic of requirement.preferredSections) {
     const family = SEMANTIC_TO_FAMILY[semantic];
     if (!family || seen.has(family)) continue;
     seen.add(family);
-    sections.push(makeSection(site, { id: requirement.id, path: requirement.path, name: requirement.name } as SitePage, family, semantic));
+    sections.push(makeSection(site, { id: requirement.id, path: requirement.path, name: requirement.name } as SitePage, family, semantic, industry));
   }
-  if (!seen.has("hero")) sections.unshift(makeSection(site, { id: requirement.id, path: requirement.path, name: requirement.name } as SitePage, "hero", "hero"));
+  if (!seen.has("hero")) sections.unshift(makeSection(site, { id: requirement.id, path: requirement.path, name: requirement.name } as SitePage, "hero", "hero", industry));
   return sections;
 }
 
-function makeSection(site: Site, page: Pick<SitePage, "id" | "name" | "path">, family: SectionFamily, semantic: string): SiteSection {
+function makeSection(site: Site, page: Pick<SitePage, "id" | "name" | "path">, family: SectionFamily, semantic: string, industry?: string): SiteSection {
   const id = `${slug(page.id)}-${slug(semantic)}-${family}`;
+  const actionId = defaultNativeAction(industry, semantic);
   const base = {
     id,
     component: { componentId: sectionDesignId(site.theme.family, family, preferredVariant(family)), version: "1.0.0" },
-    bindings: {},
+    bindings: family === "cta" || family === "contact" ? { [defaultBindingKey(actionId)]: { actionId } } : {},
     hidden: false,
   };
   const subject = page.name;
@@ -117,9 +118,43 @@ function makeSection(site: Site, page: Pick<SitePage, "id" | "name" | "path">, f
   if (family === "gallery") return { ...base, props: { eyebrow: labelize(semantic), title: `${subject} gallery`, items: [{ title: "Image slot" }, { title: "Image slot" }, { title: "Image slot" }], imageSlotMode: "items", itemImageRatio: "3:2", imageFit: "cover", imageFocalPoint: "center" } };
   if (family === "process") return { ...base, props: { eyebrow: labelize(semantic), title: "How it works", items: [{ title: "Step one", description: "Describe the first real step." }, { title: "Step two", description: "Describe the next step." }, { title: "Step three", description: "Describe the final step." }], imageSlotMode: "none" } };
   if (family === "about") return { ...base, props: { eyebrow: labelize(semantic), title: `About ${site.name}`, description: "Add the real business story, experience and differentiators here.", imageSlotMode: "section", imageRatio: "4:3", imageFit: "cover", imageFocalPoint: "center" } };
-  if (family === "cta") return { ...base, props: { eyebrow: "Next step", title: `Ready to discuss ${subject.toLowerCase()}?`, primaryAction: { label: "Contact us", href: "/contact" }, imageSlotMode: "none" } };
-  if (family === "contact") return { ...base, props: { eyebrow: "Contact", title: `Contact ${site.name}`, description: "Send an enquiry and continue from here.", primaryAction: { label: "Get in touch", href: "mailto:hello@example.com" }, formAction: "contact", imageSlotMode: "none" } };
+  if (family === "cta") return { ...base, props: { eyebrow: "Next step", title: `Ready to discuss ${subject.toLowerCase()}?`, primaryAction: { label: defaultCtaLabel(actionId), href: "/contact" }, imageSlotMode: "none" } };
+  if (family === "contact") return { ...base, props: { eyebrow: "Contact", title: `Contact ${site.name}`, description: "Send an enquiry and continue from here.", primaryAction: { label: defaultCtaLabel(actionId), href: "#enquiry" }, formAction: "contact", imageSlotMode: "none" } };
   return { ...base, props: { title: subject, imageSlotMode: "none" } };
+}
+
+function defaultNativeAction(industry?: string, semantic?: string): string {
+  const value = `${industry ?? ""} ${semantic ?? ""}`.toLowerCase();
+  if (/dental|dentist|clinic|health|medical/.test(value)) return "appointment.request";
+  if (/restaurant|cafe|food|dining|reservation/.test(value)) return "reservation.request";
+  if (/real estate|real-estate|property|realtor/.test(value)) return "property.enquiry";
+  if (/saas|software|technology|tech|product/.test(value)) return "demo.request";
+  if (/education|training|school|college|course|academy/.test(value)) return "enrollment.enquiry";
+  if (/hotel|hospitality|resort|stay|accommodation/.test(value)) return "booking.request";
+  if (/consult|agency|professional|construction|industrial|corporate|service/.test(value)) return "quote.request";
+  return "lead.create";
+}
+
+function defaultBindingKey(actionId: string): string {
+  if (actionId.includes("appointment")) return "appointment";
+  if (actionId.includes("reservation")) return "reservation";
+  if (actionId.includes("property")) return "propertyEnquiry";
+  if (actionId.includes("demo")) return "demo";
+  if (actionId.includes("enrollment")) return "enrollment";
+  if (actionId.includes("booking")) return "booking";
+  if (actionId.includes("quote")) return "quote";
+  return "submit";
+}
+
+function defaultCtaLabel(actionId: string): string {
+  if (actionId === "appointment.request") return "Request appointment";
+  if (actionId === "reservation.request") return "Request reservation";
+  if (actionId === "property.enquiry") return "Enquire now";
+  if (actionId === "demo.request") return "Request demo";
+  if (actionId === "enrollment.enquiry") return "Enquire now";
+  if (actionId === "booking.request") return "Request booking";
+  if (actionId === "quote.request") return "Request quote";
+  return "Send enquiry";
 }
 
 function orderSections(sections: SiteSection[], preferred: string[]): SiteSection[] {

@@ -60,6 +60,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Resolve QA scope
+        # Push markers provide a lightweight way to force a one-off certification scope.
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "regression" ]; then
             echo "MI_QA_SCOPE=regression" >> "$GITHUB_ENV"

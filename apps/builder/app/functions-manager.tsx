@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { getDomainPack } from "@micirql/domains";
-import { buildFunctionalHref, functionalPresets, nativeFunctionCatalog } from "@micirql/functions";
+import { buildFunctionalHref, functionalPresets, nativeFunctionCatalog, rankFunctionalPresetIds } from "@micirql/functions";
 import type { Site, SiteSection } from "@micirql/schema";
+import { useOnboardingProfile } from "./onboarding-profile-context";
 
 export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimaryAction }: {
   site: Site;
@@ -13,19 +14,24 @@ export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimary
   onSetPrimaryAction?: (href: string, label: string) => void;
 }) {
   const pack = getDomainPack(site.domain);
+  const profile = useOnboardingProfile();
   const [linkValues, setLinkValues] = useState<Record<string, string>>({});
   const current = Object.entries(section.bindings);
   const recommendedActionIds = new Set([...pack.requiredActions, ...pack.optionalActions]);
+  const industryOrder = rankFunctionalPresetIds(profile?.industry);
+  const industryRank = new Map(industryOrder.map((id, index) => [id, index]));
   const entries = functionalPresets.map((preset) => {
     const nativeDefinition = preset.actionId ? nativeFunctionCatalog.find((definition) => definition.id === preset.actionId) : undefined;
-    const recommended = Boolean(preset.actionId && recommendedActionIds.has(preset.actionId));
-    return { preset, nativeDefinition, recommended };
-  }).sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.preset.category.localeCompare(b.preset.category) || a.preset.label.localeCompare(b.preset.label));
+    const domainRecommended = Boolean(preset.actionId && recommendedActionIds.has(preset.actionId));
+    const industryRecommended = industryRank.has(preset.id);
+    return { preset, nativeDefinition, recommended: domainRecommended || industryRecommended, rank: industryRank.get(preset.id) ?? 999 };
+  }).sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.rank - b.rank || a.preset.category.localeCompare(b.preset.category) || a.preset.label.localeCompare(b.preset.label));
 
   return <div className="functions-manager">
     <div className="functions-summary">
       <strong>Section functionality</strong>
       <span>Choose approved MiCirql actions. Native actions use the function gateway; phone, email, WhatsApp and directions remain safe browser links.</span>
+      {profile?.industry ? <small>Recommended for {profile.industry}: {industryOrder.slice(0, 3).map((id) => functionalPresets.find((item) => item.id === id)?.label).filter(Boolean).join(" · ")}</small> : null}
     </div>
 
     {current.length ? <div className="binding-list">
@@ -57,7 +63,7 @@ export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimary
         const value = linkValues[preset.id] ?? "";
         const href = buildFunctionalHref(preset.id, value);
         const canApply = Boolean(href && onSetPrimaryAction);
-        return <div key={preset.id} className="function-card function-link-card">
+        return <div key={preset.id} className={`function-card function-link-card ${recommended ? "is-recommended" : ""}`}>
           <span><strong>{preset.label}</strong><small>{preset.description}</small></span>
           <label>
             <span>{inputLabel(preset.valueType)}</span>

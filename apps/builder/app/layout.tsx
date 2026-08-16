@@ -12,6 +12,7 @@ import "./globals.css";
 import "./auth.css";
 import "./workspace-interactive.css";
 import "./canvas-controls.css";
+import "./completion-checklist.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",

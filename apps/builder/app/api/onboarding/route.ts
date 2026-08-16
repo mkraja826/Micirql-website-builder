@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
+import { industryPlannerContext } from "@micirql/design-engine";
 import { rankPresets } from "../../preset-ranking";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
     const notes = optionalString(body.notes);
     const logoUrl = optionalString(body.logoUrl);
     const brandColors = hexArray(body.brandColors);
+    const industryContext = industryPlannerContext(industry, subindustry ?? undefined);
 
     const aiResponse = await fetch(`${url}/functions/v1/ai-plan-site`, {
       method: "POST",
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
         languages,
         notes,
         brand_colors: brandColors,
+        industry_context: industryContext,
       }),
     });
     if (!aiResponse.ok) throw await remoteError(aiResponse);
@@ -102,7 +105,16 @@ export async function POST(request: NextRequest) {
       usage?: { inputTokens?: number; outputTokens?: number };
     };
 
-    const requestPayload = { workspace_id: workspaceId, site_id: siteId, industry: advice.industry, subindustry: advice.subindustry, style_tags: advice.styleTags, required_capabilities: advice.requiredCapabilities, goals: advice.goals };
+    const requestPayload = {
+      workspace_id: workspaceId,
+      site_id: siteId,
+      industry: advice.industry,
+      subindustry: advice.subindustry,
+      style_tags: advice.styleTags,
+      required_capabilities: advice.requiredCapabilities,
+      goals: advice.goals,
+      industry_context: industryContext,
+    };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify(requestPayload) });
     if (!planResponse.ok) throw await remoteError(planResponse);
@@ -114,7 +126,7 @@ export async function POST(request: NextRequest) {
     const buildPayload = await buildResponse.json() as { build?: any };
     const build = buildPayload.build;
     const buildId = typeof build === "object" && build ? (build.id ?? build.build_id ?? null) : null;
-    const brief = { businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, logoUrl, brandColors: advice.brandColors };
+    const brief = { businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes, logoUrl, brandColors: advice.brandColors, industryContext };
 
     let content: unknown = null;
     let contentWarning: string | null = null;
@@ -127,22 +139,9 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql content enrichment failed; continuing with structural draft.", error);
     }
 
-    let images: unknown = null;
-    let imageWarning: string | null = null;
-    if (!contentWarning) {
-      try {
-        const imageResponse = await fetch(`${url}/functions/v1/generate-site-images`, { method: "POST", headers: commonHeaders, body: JSON.stringify({ workspace_id: workspaceId, site_id: siteId, build_id: buildId }) });
-        if (!imageResponse.ok) throw await remoteError(imageResponse);
-        images = await imageResponse.json();
-        if (images && typeof images === "object" && "warning" in images) {
-          const warning = (images as { warning?: unknown }).warning;
-          imageWarning = typeof warning === "string" ? warning : null;
-        }
-      } catch (error) {
-        imageWarning = error instanceof Error ? error.message : "Image generation failed.";
-        console.error("MiCirql image generation failed; continuing with content draft.", error);
-      }
-    }
+    // MiCirql keeps media deterministic and placeholder-first. Real photos are uploaded by the user later.
+    const images = { mode: "placeholders", generated: false } as const;
+    const imageWarning: string | null = null;
 
     const recommendationProfile = { industry, subindustry, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities };
     const topRecommendation = rankPresets(recommendationProfile)[0];
@@ -192,6 +191,7 @@ export async function POST(request: NextRequest) {
       planId: plan.plan_id,
       build,
       blueprint: plan.blueprint,
+      industryContext,
       planningSource: advice.source,
       planningProvider: advice.provider ?? null,
       planningModel: advice.model ?? null,

@@ -2,7 +2,7 @@ import type { FunctionResult, RateLimiter } from "./types";
 import type { BackendConfigStore, SiteHostnameRecord, SiteIntegrationRecord, SiteRecord, WorkspaceRecord } from "./backend-config";
 import type { IdempotencyStore } from "./gateway";
 import type { RecordStore, StoredFunctionRecord } from "./record-store";
-import type { NotificationDestination } from "./notifications";
+import type { NotificationDelivery, NotificationDeliverySink, NotificationDestination, NotificationDirectory, NotificationEvent } from "./notifications";
 
 export type QueryDriver = {
   one<T>(query: string, params: unknown[]): Promise<T | undefined>;
@@ -47,6 +47,39 @@ export function createSqlRecordStore(db: QueryDriver): RecordStore {
   };
 }
 
+export type SiteFunctionRecordListItem = StoredFunctionRecord & { updatedAt?: string };
+
+export function createSqlRecordInbox(db: QueryDriver) {
+  return {
+    listForSite(siteId: string, options: { limit?: number; actionId?: string; status?: string } = {}) {
+      const limit = Math.max(1, Math.min(options.limit ?? 50, 200));
+      return db.many<SiteFunctionRecordListItem>(
+        `select id, workspace_id as \"workspaceId\", site_id as \"siteId\", action_id as \"actionId\",
+          action_version as \"actionVersion\", idempotency_key as \"idempotencyKey\", payload,
+          contact_name as \"contactName\", contact_email as \"contactEmail\", contact_phone as \"contactPhone\",
+          status, created_at as \"createdAt\", updated_at as \"updatedAt\"
+         from site_function_records
+         where site_id = $1
+           and ($2::text is null or action_id = $2)
+           and ($3::text is null or status = $3)
+         order by created_at desc
+         limit $4`,
+        [siteId, options.actionId ?? null, options.status ?? null, limit],
+      );
+    },
+    getForSite(siteId: string, recordId: string) {
+      return db.one<SiteFunctionRecordListItem>(
+        `select id, workspace_id as \"workspaceId\", site_id as \"siteId\", action_id as \"actionId\",
+          action_version as \"actionVersion\", idempotency_key as \"idempotencyKey\", payload,
+          contact_name as \"contactName\", contact_email as \"contactEmail\", contact_phone as \"contactPhone\",
+          status, created_at as \"createdAt\", updated_at as \"updatedAt\"
+         from site_function_records where site_id = $1 and id = $2`,
+        [siteId, recordId],
+      );
+    },
+  };
+}
+
 export type NotificationDestinationStore = {
   listForSite(siteId: string): Promise<NotificationDestination[]>;
 };
@@ -55,9 +88,34 @@ export function createSqlNotificationDestinationStore(db: QueryDriver): Notifica
   return {
     listForSite(siteId) {
       return db.many<NotificationDestination>(
-        `select id, site_id as \"siteId\", channel, provider, address, config_ref as \"configRef\", enabled
-         from notification_destinations where site_id = $1 and enabled = true`,
+        `select id, channel, provider, config_ref as \"configRef\", action_ids as \"actionIds\", enabled
+         from site_notification_destinations where site_id::text = $1 and enabled = true`,
         [siteId],
+      );
+    },
+  };
+}
+
+export function createSqlNotificationDirectory(db: QueryDriver): NotificationDirectory {
+  const store = createSqlNotificationDestinationStore(db);
+  return {
+    async destinationsFor(siteId, actionId) {
+      const destinations = await store.listForSite(siteId);
+      return destinations.filter((destination) => !destination.actionIds?.length || destination.actionIds.includes(actionId));
+    },
+  };
+}
+
+export function createSqlNotificationDeliverySink(db: QueryDriver): NotificationDeliverySink {
+  return {
+    async write(event: NotificationEvent, delivery: NotificationDelivery) {
+      await db.execute(
+        `insert into notification_delivery_log
+          (workspace_id, site_id, destination_id, event_id, action_id, request_id, channel, provider,
+           provider_message_id, status, occurred_at)
+         values ($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [event.workspaceId, event.siteId, delivery.destinationId || null, event.eventId, event.actionId, event.requestId,
+          delivery.channel, delivery.provider, delivery.providerMessageId ?? null, delivery.status, event.occurredAt],
       );
     },
   };

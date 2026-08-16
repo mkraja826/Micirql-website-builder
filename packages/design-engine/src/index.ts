@@ -16,3 +16,4 @@ export * from "./page-architecture";
 export * from "./navigation-architecture";
 export * from "./page-construction";
 export * from "./site-shell";
+export * from "./editor-global-shell";

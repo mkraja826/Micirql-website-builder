@@ -7,6 +7,7 @@ export * from "./execute";
 export * from "./runtime-utils";
 export * from "./record-store";
 export * from "./gateway";
+export * from "./html-form-adapter";
 export * from "./notifications";
 export * from "./integrations";
 export * from "./backend-config";

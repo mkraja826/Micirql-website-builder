@@ -58,11 +58,19 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run section QA
+      - name: Resolve QA scope
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scope }}" = "full" ]; then
-            pnpm qa:sections:full
+            echo "MI_QA_SCOPE=full" >> "$GITHUB_ENV"
           elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.event.head_commit.message }}" == *"[full-cert]"* ]]; then
+            echo "MI_QA_SCOPE=full" >> "$GITHUB_ENV"
+          else
+            echo "MI_QA_SCOPE=core" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run section QA
+        run: |
+          if [ "$MI_QA_SCOPE" = "full" ]; then
             pnpm qa:sections:full
           else
             pnpm qa:sections:core

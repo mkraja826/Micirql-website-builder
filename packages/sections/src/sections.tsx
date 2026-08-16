@@ -10,6 +10,8 @@ import { StructuralFeatures, StructuralGallery, StructuralTeam } from "./media-s
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
 export type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent";
+export type ImageSlotMode = "none" | "section" | "items" | "both";
+export type ImageRatio = "1:1" | "4:5" | "3:2" | "4:3" | "16:10" | "16:9" | "21:9";
 
 export type UniversalSectionProps = {
   eyebrow?: string;
@@ -23,6 +25,11 @@ export type UniversalSectionProps = {
   paletteRole?: PaletteRole;
   cardPaletteRole?: PaletteRole;
   ctaPaletteRole?: PaletteRole;
+  imageSlotMode?: ImageSlotMode;
+  imageRatio?: ImageRatio;
+  itemImageRatio?: ImageRatio;
+  imageFit?: "cover" | "contain";
+  imageFocalPoint?: "center" | "top" | "face-safe";
 };
 
 type VariantProps = UniversalSectionProps & { variant: SectionVariant };
@@ -40,8 +47,20 @@ function Heading(props: UniversalSectionProps) {
   return <Stack gap="sm" className="mi-section__heading">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h2" variant="h2"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}</Stack>;
 }
 
-function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
-  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}<Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
+function wantsSectionImage(props: UniversalSectionProps): boolean {
+  return props.imageSlotMode === "section" || props.imageSlotMode === "both";
+}
+
+function wantsItemImages(props: UniversalSectionProps): boolean {
+  return props.imageSlotMode === "items" || props.imageSlotMode === "both";
+}
+
+function Placeholder({ label = "Add photo" }: { label?: string }) {
+  return <div className="mi-image-slot-placeholder" aria-label={label}><span>{label}</span></div>;
+}
+
+function ItemGrid({ items = [], showPlaceholders = false }: Pick<UniversalSectionProps, "items"> & { showPlaceholders?: boolean }) {
+  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : showPlaceholders ? <Placeholder /> : null}<Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
 }
 
 function NavbarSection(props: VariantProps) {
@@ -53,7 +72,8 @@ function HeroCopy(props: UniversalSectionProps) {
 }
 
 function HeroMedia(props: UniversalSectionProps) {
-  return props.image ? <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" data-mi-image-field="image" /></figure> : null;
+  if (props.image) return <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" data-mi-image-field="image" /></figure>;
+  return wantsSectionImage(props) ? <figure className="mi-section__media mi-section__media--placeholder"><Placeholder label="Add hero photo" /></figure> : null;
 }
 
 function HeroSection(props: VariantProps) {
@@ -65,11 +85,12 @@ function HeroSection(props: VariantProps) {
 }
 
 function StandardSection(props: VariantProps) {
-  if (props.variant === 2) return <section className="mi-section"><Container><div className="mi-standard--split"><Heading {...props} /><div><ItemGrid items={props.items ?? []} /><Actions {...props} /></div></div></Container></section>;
-  if (props.variant === 3) return <section className="mi-section mi-standard--center"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items ?? []} /><Actions {...props} /></Stack></Container></section>;
-  if (props.variant === 4) return <section className="mi-section mi-standard--rail"><Container><div className="mi-standard__rail"><Heading {...props} /><ItemGrid items={props.items ?? []} /></div><Actions {...props} /></Container></section>;
-  if (props.variant === 5) return <section className="mi-section mi-standard--band"><Container><div className="mi-standard__band"><Heading {...props} /><Actions {...props} /></div><ItemGrid items={props.items ?? []} /></Container></section>;
-  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} /><ItemGrid items={props.items ?? []} /><Actions {...props} /></Stack></Container></section>;
+  const itemGrid = <ItemGrid items={props.items ?? []} showPlaceholders={wantsItemImages(props)} />;
+  if (props.variant === 2) return <section className="mi-section"><Container><div className="mi-standard--split"><Heading {...props} /><div>{itemGrid}<Actions {...props} /></div></div></Container></section>;
+  if (props.variant === 3) return <section className="mi-section mi-standard--center"><Container><Stack gap="xl"><Heading {...props} />{itemGrid}<Actions {...props} /></Stack></Container></section>;
+  if (props.variant === 4) return <section className="mi-section mi-standard--rail"><Container><div className="mi-standard__rail"><Heading {...props} />{itemGrid}</div><Actions {...props} /></Container></section>;
+  if (props.variant === 5) return <section className="mi-section mi-standard--band"><Container><div className="mi-standard__band"><Heading {...props} /><Actions {...props} /></div>{itemGrid}</Container></section>;
+  return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{itemGrid}<Actions {...props} /></Stack></Container></section>;
 }
 
 function FooterSection(props: VariantProps) {
@@ -100,5 +121,10 @@ export function SeedSection({ family, variant, props }: { family: SectionFamily;
     data-mi-palette-role={props.paletteRole ?? "surface"}
     data-mi-card-palette-role={props.cardPaletteRole ?? "background"}
     data-mi-cta-palette-role={props.ctaPaletteRole ?? "primary"}
+    data-mi-image-slot-mode={props.imageSlotMode ?? "none"}
+    data-mi-image-ratio={props.imageRatio ?? "4:3"}
+    data-mi-item-image-ratio={props.itemImageRatio ?? "4:3"}
+    data-mi-image-fit={props.imageFit ?? "cover"}
+    data-mi-image-focal={props.imageFocalPoint ?? "center"}
   ><Renderer {...props} variant={variant} /></div>;
 }

@@ -144,7 +144,7 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
   next.theme.brand.typography = { ...next.theme.brand.typography, display: typography.display, body: typography.body, ui: typography.ui };
   next.theme.brand.density = rhythm.density;
   next.theme.brand.shape = rhythm.shape;
-  if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) next.theme.modifiers = [...next.theme.modifiers.filter((modifier) => modifier !== "3d-depth"), "3d-depth"].slice(0, 3);
+  if (rhythm.surfaceTreatment === "deep" && !next.theme.modifiers.includes("3d-depth")) next.theme.modifiers = [...next.theme.modifiers.filter((modifier) => modifier !== "3d-depth"), "3d-depth"].slice(0, 3) as Site["theme"]["modifiers"];
   else if (rhythm.surfaceTreatment === "flat") next.theme.modifiers = next.theme.modifiers.filter((modifier) => modifier !== "3d-depth");
 
   const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette) ?? PALETTE_STRATEGIES[0]!;

@@ -6,6 +6,7 @@ export type ResolvedSiteContext = {
   siteId: string;
   workspaceId: string;
   hostname: string;
+  siteName?: string;
   status: "active" | "preview";
 };
 

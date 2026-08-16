@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { getDomainPack } from "@micirql/domains";
 import { buildFunctionalHref, functionalPresets, nativeFunctionCatalog } from "@micirql/functions";
 import type { Site, SiteSection } from "@micirql/schema";
@@ -10,18 +10,17 @@ export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimary
   section: SiteSection;
   onBind(bindingKey: string, actionId: string): void;
   onRemove(bindingKey: string): void;
-  onSetPrimaryAction(href: string, label: string): void;
+  onSetPrimaryAction?: (href: string, label: string) => void;
 }) {
   const pack = getDomainPack(site.domain);
   const [linkValues, setLinkValues] = useState<Record<string, string>>({});
   const current = Object.entries(section.bindings);
   const recommendedActionIds = new Set([...pack.requiredActions, ...pack.optionalActions]);
-
-  const entries = useMemo(() => functionalPresets.map((preset) => {
+  const entries = functionalPresets.map((preset) => {
     const nativeDefinition = preset.actionId ? nativeFunctionCatalog.find((definition) => definition.id === preset.actionId) : undefined;
     const recommended = Boolean(preset.actionId && recommendedActionIds.has(preset.actionId));
     return { preset, nativeDefinition, recommended };
-  }).sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.preset.category.localeCompare(b.preset.category) || a.preset.label.localeCompare(b.preset.label)), [pack.id]);
+  }).sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.preset.category.localeCompare(b.preset.category) || a.preset.label.localeCompare(b.preset.label));
 
   return <div className="functions-manager">
     <div className="functions-summary">
@@ -57,6 +56,7 @@ export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimary
 
         const value = linkValues[preset.id] ?? "";
         const href = buildFunctionalHref(preset.id, value);
+        const canApply = Boolean(href && onSetPrimaryAction);
         return <div key={preset.id} className="function-card function-link-card">
           <span><strong>{preset.label}</strong><small>{preset.description}</small></span>
           <label>
@@ -68,7 +68,7 @@ export function FunctionsManager({ site, section, onBind, onRemove, onSetPrimary
               onChange={(event) => setLinkValues((currentValues) => ({ ...currentValues, [preset.id]: event.target.value }))}
             />
           </label>
-          <button type="button" disabled={!href} onClick={() => href && onSetPrimaryAction(href, preset.ctaLabel)}>Use as primary CTA</button>
+          <button type="button" disabled={!canApply} title={onSetPrimaryAction ? undefined : "Direct CTA wiring is being enabled for this editor surface."} onClick={() => href && onSetPrimaryAction?.(href, preset.ctaLabel)}>Use as primary CTA</button>
         </div>;
       })}
     </div>

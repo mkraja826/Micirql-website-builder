@@ -83,7 +83,6 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const repaired = repairWebsiteInvariants(composed, archetypeId, clean(profile.industry), clean(profile.subindustry));
     const normalizedSite = normalizeWebsiteContent(repaired.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
-    if (!repaired.readiness.ready || contentQuality.issues.some((issue) => issue.severity === "error")) continue;
 
     const industryFit = evaluateIndustryFit(normalizedSite, clean(profile.industry), clean(profile.subindustry));
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
@@ -95,6 +94,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     });
     const designScore = applyPreferenceBias(baseScore, preferenceProfile);
     const mutationLabel = pass ? ` · variation ${pass + 1}` : "";
+    const blockingContentIssues = contentQuality.issues.filter((issue) => issue.severity === "error").length;
 
     candidates.push({
       id: `business-direction-${String(candidateIndex + 1).padStart(2, "0")}`,
@@ -110,6 +110,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         ...(repaired.repaired ? [`auto-repaired ${repaired.repairs.length} structural issue${repaired.repairs.length === 1 ? "" : "s"}`] : []),
+        ...(!repaired.readiness.ready ? [`needs ${repaired.readiness.issues.length} readiness fix${repaired.readiness.issues.length === 1 ? "" : "es"} before publish`] : []),
+        ...(blockingContentIssues ? [`needs ${blockingContentIssues} content fix${blockingContentIssues === 1 ? "" : "es"} before publish`] : []),
         ...(designScore.preferenceBias ? [`preference fit ${designScore.preferenceBias > 0 ? "+" : ""}${designScore.preferenceBias.toFixed(1)}`] : []),
         `design quality ${designScore.total}/100`,
         `readiness ${repaired.readiness.score}/100`,

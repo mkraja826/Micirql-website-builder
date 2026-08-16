@@ -13,3 +13,4 @@ export * from "./preference-learning";
 export * from "./industry-intelligence";
 export * from "./industry-fit";
 export * from "./page-architecture";
+export * from "./navigation-architecture";

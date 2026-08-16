@@ -1,6 +1,7 @@
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionVariant } from "./catalog";
 import type { UniversalSectionProps } from "./sections";
+import { FunctionalContactForm } from "./functional-form";
 
 type VariantProps = UniversalSectionProps & { variant: SectionVariant };
 type Item = NonNullable<UniversalSectionProps["items"]>[number];
@@ -50,13 +51,7 @@ export function StructuralCta(props: VariantProps) {
 
 function ContactForm(props: UniversalSectionProps) {
   if (!props.formAction) return <div className="mi-contact-actions"><Actions {...props} /></div>;
-  return <form className="mi-contact-form" action={props.formAction} method="post">
-    <label>Name<input name="name" autoComplete="name" required /></label>
-    <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-    <label>Phone<input name="phone" type="tel" autoComplete="tel" /></label>
-    <label>Message<textarea name="message" required /></label>
-    <button type="submit">Send enquiry</button>
-  </form>;
+  return <FunctionalContactForm {...(props as UniversalSectionProps & Record<string, unknown>)} />;
 }
 
 export function StructuralContact(props: VariantProps) {

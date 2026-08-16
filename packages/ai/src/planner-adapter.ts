@@ -81,6 +81,13 @@ function buildPlannerSystemPrompt(policy: ReturnType<typeof evaluatePlanningPoli
     `Never invent: ${policy.forbiddenInventions.join("; ")}.`,
     "Use only facts provided in the structured planning input. Missing facts must not be fabricated.",
     "Theme and section-family decisions should describe intent; component IDs are chosen later by the deterministic Registry ranker.",
+    "Write concise premium website copy, not essays. Hero headlines should usually stay within 12 words; normal section headings within 10 words.",
+    "Keep section descriptions roughly within 40 words and card/item descriptions within about 24 words unless the structured input explicitly requires more detail.",
+    "CTA labels should be short and actionable, ideally 2 to 4 words. Avoid vague labels such as Learn More when a specific action is known.",
+    "Do not repeat the same headline, card title, opening phrase, or marketing cliché across multiple sections.",
+    "Prefer specific factual language from the business brief over generic claims such as world-class, cutting-edge, best-in-class, revolutionary, or unmatched unless explicitly supported.",
+    "Do not invent testimonials, awards, statistics, certifications, prices, years of experience, client names, medical outcomes, legal outcomes, property figures, or guarantees.",
+    "SEO titles should stay near 60 characters and SEO descriptions near 160 characters while remaining natural and factual.",
   ].join("\n");
 }
 

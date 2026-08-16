@@ -5,6 +5,9 @@ on:
   push:
     paths:
       - '.github/workflows/live-runtime-e2e.yml'
+      - 'apps/live/**'
+      - 'packages/functions/**'
+      - 'packages/live-runtime/**'
 
 permissions:
   contents: read

@@ -1,6 +1,6 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
-import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt } from "@micirql/design-engine";
+import { PALETTE_STRATEGIES, blueprintRuleFor, typographySystemAt, rhythmSystemAt, imageStrategyAt } from "@micirql/design-engine";
 import type { OnboardingProfile } from "./preset-ranking";
 
 export type ReviewDirection = {
@@ -52,7 +52,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   return RECIPES.slice(0, Math.min(count, RECIPES.length)).map((recipe, index) => {
     const typography = typographySystemAt(index);
     const rhythm = rhythmSystemAt(index + Math.floor(index / 5));
-    const composed = composeDirection(site, recipe, typography, rhythm);
+    const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + index);
+    const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
     const palette = PALETTE_STRATEGIES.find((candidate) => candidate.id === recipe.palette);
     return {
       id: `business-direction-${String(index + 1).padStart(2, "0")}`,
@@ -64,6 +65,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",
         `${typography.name} typography`,
         `${rhythm.name} spacing and shape`,
+        `${imageStrategy.name} photo slots`,
         rule ? `${rule.conversionMode} conversion mode` : "business-specific conversion flow",
         "preserves your business content",
       ],
@@ -74,7 +76,13 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
   });
 }
 
-function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>): Site {
+function composeDirection(
+  site: Site,
+  recipe: DirectionRecipe,
+  typography: ReturnType<typeof typographySystemAt>,
+  rhythm: ReturnType<typeof rhythmSystemAt>,
+  imageStrategy: ReturnType<typeof imageStrategyAt>,
+): Site {
   const next = structuredClone(site);
   next.theme.brand.typography = {
     ...next.theme.brand.typography,
@@ -121,15 +129,34 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
       else if (family === "footer") paletteRole = palette.roles.footer;
       else paletteRole = bodyIndex++ % 2 === 0 ? palette.roles.sectionA : palette.roles.sectionB;
 
+      const imageProps = imagePropsForFamily(family, imageStrategy);
       section.props = {
         ...section.props,
         paletteRole,
         cardPaletteRole: palette.roles.card,
         ctaPaletteRole: palette.roles.primaryCta,
+        ...imageProps,
       };
     }
   }
   return next;
+}
+
+function imagePropsForFamily(family: SectionFamily, strategy: ReturnType<typeof imageStrategyAt>) {
+  const common = { imageFit: strategy.crop, imageFocal: strategy.focalPoint } as const;
+  if (family === "hero") return { ...common, imageSlotMode: "section" as const, imageRatio: strategy.heroRatio };
+  if (family === "about") return { ...common, imageSlotMode: "section" as const, imageRatio: strategy.itemRatio };
+  if (family === "services" || family === "features") return { ...common, imageSlotMode: "items" as const, itemImageRatio: strategy.itemRatio };
+  if (family === "team") return { imageFit: "cover" as const, imageFocal: "face-safe" as const, imageSlotMode: "items" as const, itemImageRatio: strategy.teamRatio };
+  if (family === "gallery") return { ...common, imageSlotMode: "items" as const, itemImageRatio: strategy.galleryRatio };
+  return { imageSlotMode: "none" as const };
+}
+
+function imageStrategyOffset(archetypeId: string): number {
+  if (archetypeId === "saas-technology" || archetypeId === "ecommerce") return 4;
+  if (archetypeId === "portfolio-creative" || archetypeId === "real-estate" || archetypeId === "hospitality") return 1;
+  if (archetypeId === "healthcare-clinic" || archetypeId === "education-training") return 3;
+  return 0;
 }
 
 function resolveArchetype(profile: OnboardingProfile): string {

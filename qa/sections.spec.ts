@@ -42,7 +42,10 @@ for (const entry of entries) {
 
         const overflowPx = Math.max(0, await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth));
 
-        const undersizedTargets = await page.locator("a, button, summary, input, select, textarea").evaluateAll((elements) =>
+        // Section certification must measure only the section under test. Next.js
+        // dev tooling may inject controls elsewhere in the document that are not
+        // part of the exported section and must not affect component evidence.
+        const undersizedTargets = await root.locator("a, button, summary, input, select, textarea").evaluateAll((elements) =>
           elements
             .filter((element) => {
               if (element.getAttribute("aria-hidden") === "true") return false;
@@ -60,8 +63,8 @@ for (const entry of entries) {
             .map((element) => ({ tag: element.tagName, text: element.textContent?.trim().slice(0, 40) ?? "" })),
         );
 
-        const imagesWithoutAlt = await page.locator("img:not([alt])").count();
-        const unlabeledControls = await page.locator("input:not([type=hidden]), select, textarea").evaluateAll((elements) =>
+        const imagesWithoutAlt = await root.locator("img:not([alt])").count();
+        const unlabeledControls = await root.locator("input:not([type=hidden]), select, textarea").evaluateAll((elements) =>
           elements.filter((element) => {
             if (element.getAttribute("aria-hidden") === "true") return false;
             const id = element.getAttribute("id");
@@ -73,7 +76,7 @@ for (const entry of entries) {
           }).length,
         );
 
-        const invalidActions = await page.locator("a, button").evaluateAll((elements) =>
+        const invalidActions = await root.locator("a, button").evaluateAll((elements) =>
           elements.filter((element) => {
             if (element instanceof HTMLAnchorElement) {
               const href = element.getAttribute("href")?.trim();

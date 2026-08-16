@@ -7,6 +7,7 @@ import "@micirql/sections/content-sections.css";
 import "@micirql/sections/conversion-styles.css";
 import "@micirql/sections/media-sections.css";
 import "@micirql/sections/palette-runtime.css";
+import "@micirql/sections/image-slots.css";
 import "./globals.css";
 import "./auth.css";
 import "./workspace-interactive.css";

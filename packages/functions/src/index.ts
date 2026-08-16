@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./catalog";
 export * from "./presets";
+export * from "./industry-strategy";
 export * from "./manifest";
 export * from "./execute";
 export * from "./runtime-utils";

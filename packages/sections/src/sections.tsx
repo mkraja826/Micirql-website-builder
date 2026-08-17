@@ -12,6 +12,15 @@ type Item = { title: string; description?: string; image?: string };
 export type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent";
 export type ImageSlotMode = "none" | "section" | "items" | "both";
 export type ImageRatio = "1:1" | "4:5" | "3:2" | "4:3" | "16:10" | "16:9" | "21:9";
+export type LogoPresentation = {
+  src: string;
+  alt?: string;
+  treatment?: "direct" | "neutral-container" | "cleanup-recommended";
+  shape?: "horizontal" | "square" | "vertical";
+  navbarMaxHeight?: number;
+  footerMaxHeight?: number;
+  paddingScale?: number;
+};
 
 export type UniversalSectionProps = {
   eyebrow?: string;
@@ -21,6 +30,7 @@ export type UniversalSectionProps = {
   secondaryAction?: Action;
   items?: Item[];
   image?: { src: string; alt: string };
+  logo?: LogoPresentation;
   formAction?: string;
   paletteRole?: PaletteRole;
   cardPaletteRole?: PaletteRole;
@@ -88,8 +98,8 @@ function StandardSection(props: VariantProps) {
   const itemGrid = <ItemGrid items={props.items ?? []} showPlaceholders={wantsItemImages(props)} />;
   if (props.variant === 2) return <section className="mi-section"><Container><div className="mi-standard--split"><Heading {...props} /><div>{itemGrid}<Actions {...props} /></div></div></Container></section>;
   if (props.variant === 3) return <section className="mi-section mi-standard--center"><Container><Stack gap="xl"><Heading {...props} />{itemGrid}<Actions {...props} /></Stack></Container></section>;
-  if (props.variant === 4) return <section className="mi-section mi-standard--rail"><Container><div className="mi-standard__rail"><Heading {...props} />{itemGrid}</div><Actions {...props} /></Container></section>;
-  if (props.variant === 5) return <section className="mi-section mi-standard--band"><Container><div className="mi-standard__band"><Heading {...props} /><Actions {...props} /></div>{itemGrid}</Container></section>;
+  if (props.variant === 4) return <section className="mi-section mi-standard--editorial"><Container><div className="mi-standard--editorial-grid"><Heading {...props} />{itemGrid}</div><Actions {...props} /></Container></section>;
+  if (props.variant === 5) return <section className="mi-section mi-standard--band"><Container><div className="mi-standard--band-grid"><Heading {...props} />{itemGrid}<Actions {...props} /></div></Container></section>;
   return <section className="mi-section"><Container><Stack gap="xl"><Heading {...props} />{itemGrid}<Actions {...props} /></Stack></Container></section>;
 }
 
@@ -97,34 +107,19 @@ function FooterSection(props: VariantProps) {
   return <StructuralFooter {...props} />;
 }
 
-const renderers: Record<SectionFamily, (props: VariantProps) => ReactNode> = {
-  navbar: NavbarSection,
-  hero: HeroSection,
-  about: StructuralAbout,
-  services: StructuralServices,
-  features: StructuralFeatures,
-  process: StructuralProcess,
-  testimonials: StructuralProof,
-  gallery: StructuralGallery,
-  team: StructuralTeam,
-  cta: StructuralCta,
-  contact: StructuralContact,
-  footer: FooterSection,
-};
-
-export function SeedSection({ family, variant, props }: { family: SectionFamily; variant: SectionVariant; props: UniversalSectionProps }) {
-  const Renderer = renderers[family];
-  return <div
-    className={`mi-section-variant mi-section-variant--${variant}`}
-    data-section-family={family}
-    data-section-variant={variant}
-    data-mi-palette-role={props.paletteRole ?? "surface"}
-    data-mi-card-palette-role={props.cardPaletteRole ?? "background"}
-    data-mi-cta-palette-role={props.ctaPaletteRole ?? "primary"}
-    data-mi-image-slot-mode={props.imageSlotMode ?? "none"}
-    data-mi-image-ratio={props.imageRatio ?? "4:3"}
-    data-mi-item-image-ratio={props.itemImageRatio ?? "4:3"}
-    data-mi-image-fit={props.imageFit ?? "cover"}
-    data-mi-image-focal={props.imageFocalPoint ?? "center"}
-  ><Renderer {...props} variant={variant} /></div>;
+export function Section({ family, variant, props }: { family: SectionFamily; variant: SectionVariant; props: UniversalSectionProps }) {
+  const variantProps = { ...props, variant };
+  if (family === "navbar") return <NavbarSection {...variantProps} />;
+  if (family === "hero") return <HeroSection {...variantProps} />;
+  if (family === "about") return <StructuralAbout {...variantProps} />;
+  if (family === "services") return <StructuralServices {...variantProps} />;
+  if (family === "features") return <StructuralFeatures {...variantProps} />;
+  if (family === "process") return <StructuralProcess {...variantProps} />;
+  if (family === "gallery") return <StructuralGallery {...variantProps} />;
+  if (family === "team") return <StructuralTeam {...variantProps} />;
+  if (family === "testimonials") return <StructuralProof {...variantProps} />;
+  if (family === "cta") return <StructuralCta {...variantProps} />;
+  if (family === "contact") return <StructuralContact {...variantProps} />;
+  if (family === "footer") return <FooterSection {...variantProps} />;
+  return <StandardSection {...variantProps} />;
 }

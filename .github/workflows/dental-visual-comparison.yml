@@ -1,0 +1,67 @@
+name: Dental Visual Comparison
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/builder/app/composition-intelligence.ts"
+      - "apps/builder/app/industry-pack-intelligence.ts"
+      - "apps/builder/app/preset-ranking.ts"
+      - "apps/builder/app/renderer-preview.tsx"
+      - "packages/sections/**"
+      - "qa/dental-visual-comparison.spec.ts"
+      - "playwright.dental-visual.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-visual-comparison.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/builder/app/composition-intelligence.ts"
+      - "apps/builder/app/industry-pack-intelligence.ts"
+      - "apps/builder/app/preset-ranking.ts"
+      - "apps/builder/app/renderer-preview.tsx"
+      - "packages/sections/**"
+      - "qa/dental-visual-comparison.spec.ts"
+      - "playwright.dental-visual.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-visual-comparison.yml"
+
+jobs:
+  visual-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Capture 10-site Dental visual comparison
+        run: pnpm qa:dental-visual
+
+      - name: Add visual benchmark summary
+        if: always()
+        run: |
+          if [ -f test-results/dental-visual-comparison/summary.md ]; then
+            cat test-results/dental-visual-comparison/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-dental-visual-comparison
+          path: test-results/dental-visual-comparison
+          retention-days: 30

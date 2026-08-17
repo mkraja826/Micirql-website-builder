@@ -2,13 +2,14 @@ import type { NextRequest } from "next/server";
 import {
   createJsonContentExecutor,
   createModelExecutorRegistry,
+  createOpenAiCompatibleJsonPlannerModel,
   generateGuardedSiteContent,
-  plannerModelFromEnvironment,
   textProviderConfigFromEnvironment,
   type ModelProfile,
+  type TextProviderUsage,
 } from "@micirql/ai";
 import type { GroundingFacts } from "@micirql/design-engine";
-import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
+import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseHeaders } from "../drafts/supabase-store";
 
 export type GuardedContentGenerationRequest = {
   workspaceId: string;
@@ -32,16 +33,31 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   }
 
   const providerConfig = textProviderConfigFromEnvironment(process.env);
-  const model = plannerModelFromEnvironment(process.env);
-  if (!providerConfig || !model) {
+  if (!providerConfig) {
     const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number };
     error.status = 503;
     throw error;
   }
 
+  const provider = providerName(providerConfig.endpoint);
+  let recordedUsage: { inputTokens: number; outputTokens: number; costMicrousd: number } | undefined;
+  const model = createOpenAiCompatibleJsonPlannerModel({
+    ...providerConfig,
+    onUsage: async (usage) => {
+      recordedUsage = await recordContentUsage(request, {
+        workspaceId: input.workspaceId,
+        siteId: input.siteId,
+        profileId: providerConfig.id,
+        provider,
+        model: providerConfig.model,
+        usage,
+      });
+    },
+  });
+
   const profile: ModelProfile = {
     id: providerConfig.id,
-    provider: providerName(providerConfig.endpoint),
+    provider,
     model: providerConfig.model,
     capabilities: ["content-generation"],
     enabled: true,
@@ -71,6 +87,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   return {
     draft: saved,
     model: { id: generated.model.id, provider: generated.model.provider, model: generated.model.model },
+    ...(recordedUsage ? { usage: recordedUsage } : {}),
     audit: {
       appliedFields: generated.appliedFields,
       structureIntact: generated.structureIntact,
@@ -79,6 +96,43 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
       groundingIssues: generated.groundingIssues,
     },
   };
+}
+
+async function recordContentUsage(request: NextRequest, input: {
+  workspaceId: string;
+  siteId: string;
+  profileId: string;
+  provider: string;
+  model: string;
+  usage: TextProviderUsage;
+}) {
+  const cfg = supabaseConfig();
+  const response = await fetch(`${cfg.url}/rest/v1/rpc/record_ai_usage`, {
+    method: "POST",
+    headers: supabaseHeaders(request),
+    body: JSON.stringify({
+      p_workspace_id: input.workspaceId,
+      p_site_id: input.siteId,
+      p_build_id: null,
+      p_task: "generate-content",
+      p_profile_id: input.profileId,
+      p_provider: input.provider,
+      p_model: input.model,
+      p_input_tokens: input.usage.inputTokens,
+      p_output_tokens: input.usage.outputTokens,
+      p_images: 0,
+      p_component_generations: 0,
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`AI usage metering failed (${response.status}): ${detail.slice(0, 240)}`);
+  }
+  const payload = await response.json() as { cost_microusd?: unknown };
+  const costMicrousd = Number(payload.cost_microusd);
+  if (!Number.isInteger(costMicrousd) || costMicrousd < 0) throw new Error("AI usage metering returned an invalid cost.");
+  return { inputTokens: input.usage.inputTokens, outputTokens: input.usage.outputTokens, costMicrousd };
 }
 
 function normalizeFacts(
@@ -103,6 +157,7 @@ function providerName(endpoint: string) {
     if (host.includes("googleapis.com")) return "google";
     if (host.includes("openai.com")) return "openai";
     if (host.includes("groq.com")) return "groq";
+    if (host.includes("nvidia.com")) return "nvidia";
     return host;
   } catch {
     return "openai-compatible";

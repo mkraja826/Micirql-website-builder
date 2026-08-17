@@ -51,7 +51,11 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     ...(providerConfig.maxOutputTokens ? { maxOutputTokens: providerConfig.maxOutputTokens } : {}),
   };
 
-  const facts = normalizeFacts(input.facts, current.snapshot);
+  const facts = normalizeFacts(input.facts, {
+    name: current.snapshot.name,
+    subtype: current.snapshot.subtype,
+    seoBlueprint: current.snapshot.seoBlueprint,
+  });
   const generated = await generateGuardedSiteContent({
     site: current.snapshot,
     facts,

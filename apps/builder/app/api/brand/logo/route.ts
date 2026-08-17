@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
       ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
       ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
+      ...(typeof fileAnalysis.edgeBackgroundRatio === "number" ? { edgeBackgroundRatio: fileAnalysis.edgeBackgroundRatio } : {}),
     });
 
     const { url, key } = supabaseConfig();
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
       ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
       ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
       ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
-      reasons: presentation.reasons,
+      reasons: [...presentation.reasons, ...(fileAnalysis.backgroundSignal ? [`Background signal: ${fileAnalysis.backgroundSignal}.`] : [])],
     };
     await saveSupabaseDraft(request, { snapshot, expectedRevision: draft.revision });
 

@@ -4,6 +4,7 @@ function config(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,
 function headers(){const{key}=config();return{apikey:key,authorization:`Bearer ${key}`,"content-type":"application/json"};}
 
 export function creditsForTask(task:"plan-site"|"generate-image"|"build-component"){const raw=task==="generate-image"?process.env.MICIRQL_CREDITS_GENERATE_IMAGE:task==="build-component"?process.env.MICIRQL_CREDITS_BUILD_COMPONENT:process.env.MICIRQL_CREDITS_PLAN_SITE;const fallback=task==="generate-image"?20:task==="build-component"?8:10;const value=Number(raw??fallback);if(!Number.isInteger(value)||value<=0)throw new Error(`Invalid credit price for ${task}.`);return value;}
+export function creditsForWebsiteGeneration(){const value=Number(process.env.MICIRQL_CREDITS_GENERATE_WEBSITE??40);if(!Number.isInteger(value)||value<=0)throw new Error("MICIRQL_CREDITS_GENERATE_WEBSITE must be a positive integer.");return value;}
 export function trialCreditAmount(){const value=Number(process.env.MICIRQL_TRIAL_CREDITS??60);if(!Number.isInteger(value)||value<=0)throw new Error("MICIRQL_TRIAL_CREDITS must be a positive integer.");return value;}
 
 export async function grantTrialCredits(workspaceId:string){return rpcBalance("grant_trial_credits",{p_workspace_id:workspaceId,p_credits:trialCreditAmount()});}

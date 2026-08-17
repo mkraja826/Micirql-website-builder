@@ -34,6 +34,8 @@ const FAMILY_ALIASES: Record<string, string[]> = {
 
 const VALID_IMAGE_MODES = new Set(["none", "section", "items", "both"]);
 const VALID_IMAGE_RATIOS = new Set(["1:1", "4:5", "3:2", "4:3", "16:10", "16:9", "21:9"]);
+const UNSAFE_SCHEMES = /^(?:javascript|data|file|vbscript):/i;
+const EXTERNAL_SCHEMES = /^(?:https?|mailto|tel|sms):/i;
 
 export function validateWebsite(site: Site, archetypeId: string): WebsiteValidationResult {
   const issues: WebsiteValidationIssue[] = [];
@@ -43,6 +45,8 @@ export function validateWebsite(site: Site, archetypeId: string): WebsiteValidat
     return finish(issues);
   }
 
+  const pagePaths = new Set(site.pages.map((page) => normalizePath(page.path)));
+  const sectionIds = new Set(site.pages.flatMap((page) => page.sections.map((section) => section.id)));
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0]!;
   const homeFamilies = home.sections.filter((section) => !section.hidden).map((section) => familyFromComponentId(section.component.componentId)).filter(Boolean) as string[];
   for (const shellFamily of SITE_INVARIANTS.requiredShell) if (!homeFamilies.includes(shellFamily)) issues.push(error("MISSING_SITE_SHELL", `${shellFamily} is mandatory on the home page.`, home.id));
@@ -69,6 +73,7 @@ export function validateWebsite(site: Site, archetypeId: string): WebsiteValidat
       if (ids.has(section.id)) issues.push(error("DUPLICATE_SECTION_ID", `Duplicate section id ${section.id}.`, page.id, section.id));
       ids.add(section.id);
       validateImageSlot(section.props, issues, page.id, section.id);
+      validateFunctionalProps(section.props, issues, page.id, section.id, pagePaths, sectionIds);
     }
   }
 
@@ -78,6 +83,96 @@ export function validateWebsite(site: Site, archetypeId: string): WebsiteValidat
   const navbar = visibleSections.find(({ section }) => familyFromComponentId(section.component.componentId) === "navbar");
   if (navbar && !isMiCirqlNavbar(navbar.section.component.componentId)) issues.push(error("MOBILE_NAV_UNVERIFIED", "Navbar must use a MiCirql shell component with guaranteed mobile burger navigation.", navbar.page.id, navbar.section.id));
   return finish(issues);
+}
+
+function validateFunctionalProps(
+  props: Record<string, unknown> | undefined,
+  issues: WebsiteValidationIssue[],
+  pageId: string,
+  sectionId: string,
+  pagePaths: Set<string>,
+  sectionIds: Set<string>,
+) {
+  if (!props) return;
+  validateAction(props.primaryAction, "primary action", issues, pageId, sectionId, pagePaths, sectionIds);
+  validateAction(props.secondaryAction, "secondary action", issues, pageId, sectionId, pagePaths, sectionIds);
+
+  if (Array.isArray(props.items)) {
+    props.items.forEach((item, index) => {
+      if (!item || typeof item !== "object") return;
+      const href = (item as Record<string, unknown>).href;
+      if (href !== undefined) validateHref(href, `item ${index + 1}`, issues, pageId, sectionId, pagePaths, sectionIds);
+    });
+  }
+
+  if (props.formAction !== undefined) {
+    if (typeof props.formAction !== "string" || !props.formAction.trim()) {
+      issues.push(error("INVALID_FORM_ACTION", "Form action must be a non-empty route or URL.", pageId, sectionId));
+    } else {
+      const value = props.formAction.trim();
+      if (UNSAFE_SCHEMES.test(value)) issues.push(error("UNSAFE_FORM_ACTION", "Form action uses an unsafe URL scheme.", pageId, sectionId));
+      else if (!value.startsWith("/") && !/^https?:\/\//i.test(value)) issues.push(error("INVALID_FORM_ACTION", "Form action must use an internal route or HTTPS endpoint.", pageId, sectionId));
+    }
+  }
+}
+
+function validateAction(
+  value: unknown,
+  label: string,
+  issues: WebsiteValidationIssue[],
+  pageId: string,
+  sectionId: string,
+  pagePaths: Set<string>,
+  sectionIds: Set<string>,
+) {
+  if (value === undefined) return;
+  if (!value || typeof value !== "object") {
+    issues.push(error("INVALID_ACTION", `${label} must contain a label and destination.`, pageId, sectionId));
+    return;
+  }
+  const action = value as Record<string, unknown>;
+  if (typeof action.label !== "string" || !action.label.trim()) issues.push(error("INVALID_ACTION_LABEL", `${label} needs visible text.`, pageId, sectionId));
+  validateHref(action.href, label, issues, pageId, sectionId, pagePaths, sectionIds);
+}
+
+function validateHref(
+  href: unknown,
+  label: string,
+  issues: WebsiteValidationIssue[],
+  pageId: string,
+  sectionId: string,
+  pagePaths: Set<string>,
+  sectionIds: Set<string>,
+) {
+  if (typeof href !== "string" || !href.trim() || href.trim() === "#") {
+    issues.push(error("INVALID_ACTION_HREF", `${label} needs a usable destination.`, pageId, sectionId));
+    return;
+  }
+  const value = href.trim();
+  if (UNSAFE_SCHEMES.test(value)) {
+    issues.push(error("UNSAFE_ACTION_HREF", `${label} uses an unsafe URL scheme.`, pageId, sectionId));
+    return;
+  }
+  if (EXTERNAL_SCHEMES.test(value)) {
+    if (/^mailto:/i.test(value) && !/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+/i.test(value)) issues.push(error("INVALID_CONTACT_ACTION", `${label} has an invalid email destination.`, pageId, sectionId));
+    if (/^tel:/i.test(value) && !/^tel:\+?[0-9().\-\s]{6,}$/i.test(value)) issues.push(error("INVALID_CONTACT_ACTION", `${label} has an invalid phone destination.`, pageId, sectionId));
+    return;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+    issues.push(error("UNSUPPORTED_ACTION_SCHEME", `${label} uses an unsupported URL scheme.`, pageId, sectionId));
+    return;
+  }
+  if (value.startsWith("#")) {
+    const anchor = decodeURIComponent(value.slice(1));
+    if (!sectionIds.has(anchor) && !/^section-\d+$/i.test(anchor)) issues.push(warning("UNRESOLVED_ANCHOR", `${label} points to an anchor that cannot be verified from the site schema.`, pageId, sectionId));
+    return;
+  }
+  if (value.startsWith("/")) {
+    const route = normalizePath(value.split(/[?#]/, 1)[0] || "/");
+    if (!route.startsWith("/api/") && !pagePaths.has(route)) issues.push(warning("BROKEN_INTERNAL_ROUTE", `${label} points to ${route}, which is not currently a generated page.`, pageId, sectionId));
+    return;
+  }
+  issues.push(error("INVALID_ACTION_HREF", `${label} must use an absolute URL, contact link, page route, or anchor.`, pageId, sectionId));
 }
 
 function validateImageSlot(props: Record<string, unknown> | undefined, issues: WebsiteValidationIssue[], pageId: string, sectionId: string) {
@@ -100,11 +195,17 @@ function familyFromComponentId(componentId: string): string | undefined {
   return undefined;
 }
 
+function normalizePath(path: string): string {
+  const value = path.trim() || "/";
+  const clean = value.startsWith("/") ? value : `/${value}`;
+  return clean !== "/" ? clean.replace(/\/+$/, "") : clean;
+}
+
 function satisfiesRequirement(families: string[], requirement: string): boolean {
   const directFamily = Object.entries(FAMILY_ALIASES).find(([, aliases]) => aliases.includes(requirement))?.[0] ?? requirement;
   return families.includes(directFamily);
 }
-function hasAction(value: unknown): boolean { if (!value || typeof value !== "object") return false; const action = value as Record<string, unknown>; return typeof action.label === "string" && action.label.trim().length > 0 && typeof action.href === "string" && action.href.trim().length > 0; }
+function hasAction(value: unknown): boolean { if (!value || typeof value !== "object") return false; const action = value as Record<string, unknown>; return typeof action.label === "string" && action.label.trim().length > 0 && typeof action.href === "string" && action.href.trim().length > 0 && action.href.trim() !== "#" && !UNSAFE_SCHEMES.test(action.href.trim()); }
 function isMiCirqlNavbar(componentId: string): boolean { const value = componentId.toLowerCase(); return value.startsWith("navbar.") || value.includes("-nav-"); }
 function error(code: string, message: string, pageId?: string, sectionId?: string): WebsiteValidationIssue { return { code, severity: "error", message, ...(pageId ? { pageId } : {}), ...(sectionId ? { sectionId } : {}) }; }
 function warning(code: string, message: string, pageId?: string, sectionId?: string): WebsiteValidationIssue { return { code, severity: "warning", message, ...(pageId ? { pageId } : {}), ...(sectionId ? { sectionId } : {}) }; }

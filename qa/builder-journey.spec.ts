@@ -70,18 +70,28 @@ test("dashboard to editor to preview and publish review", async ({ page }) => {
   await expect(page.getByRole("button", { name: /Mobile/i })).toBeVisible();
 });
 
-test("guided discovery generates a site and opens it in the editor", async ({ page }) => {
+test("generated design choices survive editor back-navigation and can be reselected", async ({ page }) => {
   let generated = false;
   await page.unroute("**/api/onboarding**");
   await page.unroute("**/api/drafts**");
 
+  const profile = {
+    industry: "dental",
+    subindustry: "dental implants",
+    goals: ["book appointments"],
+    style_tags: ["premium", "professional"],
+    required_capabilities: ["booking"],
+    services: ["Dental implants", "Crowns", "Root canal"],
+  };
+
   await page.route("**/api/onboarding**", async route => {
     if (route.request().method() === "POST") {
       generated = true;
-      return route.fulfill({ json: { ok: true, profile: null } });
+      return route.fulfill({ json: { ok: true, profile } });
     }
     return route.fulfill({ json: { completed: false, profile: null } });
   });
+  await page.route("**/api/design-preferences**", async route => route.fulfill({ json: {} }));
   await page.route("**/api/drafts**", async route => {
     const draft = { workspaceId: "workspace-demo", siteId: "workspace-preview", revision: generated ? 4 : 3, snapshot: generated ? generatedSite : site, updatedAt: now, updatedBy: "smoke-user" };
     return route.fulfill({ json: { draft } });
@@ -105,9 +115,19 @@ test("guided discovery generates a site and opens it in the editor", async ({ pa
   await expect(page.getByRole("heading", { name: "Review before we build." })).toBeVisible();
   await page.getByRole("button", { name: "Create my website" }).click();
 
-  await expect(page.getByText("AI Generated Dental")).toBeVisible();
-  await expect(page.getByText("Restore your smile with confidence")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Preview.*publish/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose from 20 different directions." })).toBeVisible();
+  const useButtons = page.getByRole("button", { name: "Use this design" });
+  await expect(useButtons.first()).toBeVisible();
+  await useButtons.first().click();
+
+  await expect(page.getByRole("button", { name: "← Designs" })).toBeVisible();
+  await expect(page.getByText("Restore your smile with confidence").first()).toBeVisible();
+  await page.getByRole("button", { name: "← Designs" }).click();
+
+  await expect(page.getByRole("heading", { name: "Choose from 20 different directions." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use this design" }).nth(1)).toBeVisible();
+  await page.getByRole("button", { name: "Use this design" }).nth(1).click();
+  await expect(page.getByRole("button", { name: "← Designs" })).toBeVisible();
 });
 
 test("repairs heading-only generated content before the editor", async () => {

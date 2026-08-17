@@ -14,6 +14,7 @@ const INSTITUTIONAL_IDS=new Set(["enterprise-corporate","technology-corporate","
 const SHOWCASE_IDS=new Set(["artist","photographer","creative-studio","musician","fashion-brand","jewellery","furniture-interiors","beauty-brand","hotel-resort","events-wedding","real-estate","construction"]);
 const EDUCATION_IDS=new Set(["school-education","coaching-training","online-course","edtech-startup"]);
 const TRUST_IDS=new Set(["medical-clinic","dental-clinic","premium-implant-clinic","legal","finance-accounting","insurance","mental-wellness","veterinary"]);
+const DENTAL_IDS=new Set(["dental-clinic","premium-implant-clinic"]);
 const INTENT_VARIANTS:Record<CompositionIntent,Partial<Record<SectionFamily,SectionVariant>>>={conversion:{hero:2,services:3,features:3,process:2,testimonials:2,cta:4,contact:1},trust:{hero:2,about:2,services:3,team:3,features:2,testimonials:2,cta:2,contact:2},showcase:{hero:5,about:4,gallery:5,services:4,testimonials:4,cta:3,contact:2},education:{hero:3,features:3,services:3,process:4,team:2,testimonials:3,cta:2,contact:2},product:{hero:5,features:3,services:4,process:3,gallery:4,testimonials:2,cta:5,contact:2},institutional:{hero:4,about:3,features:2,services:2,team:3,gallery:4,cta:3,contact:1}};
 
 export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
@@ -44,5 +45,19 @@ function recipeFamily(value:string):SectionFamily|undefined{
 }
 function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested);}
 function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance/.test(text))return 1;return preferred;}
-function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();if(/demo|trial|waitlist|download|product|platform|api/.test(text)||PRODUCT_IDS.has(id))return"product";if(/admission|enrol|learn|course|training/.test(text)||EDUCATION_IDS.has(id))return"education";if(/portfolio|gallery|showcase|projects|collection/.test(text)||SHOWCASE_IDS.has(id))return"showcase";if(/enterprise|institution|global|manufactur|infrastructure|group company/.test(text)||INSTITUTIONAL_IDS.has(id))return"institutional";if(/trust|credib|doctor|clinic|law|finance|insurance/.test(text)||TRUST_IDS.has(id))return"trust";return"conversion";}
+function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{
+ const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),...(profile.services||[])].filter(Boolean).join(" ").toLowerCase();
+ const isDental=DENTAL_IDS.has(id)||/dental|dentist|dentistry|orthodont|endodont|implant|smile design|root canal|tooth|oral care/.test(text);
+ if(isDental){
+  if(/emergency|urgent|tooth pain|broken tooth|same.?day|contact clinic|call clinic/.test(text))return"conversion";
+  if(/learn|education|educational|explain treatment|treatment process|how it works|endodont|root canal/.test(text))return"education";
+  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(text))return"showcase";
+ }
+ if(/demo|trial|waitlist|download|product|platform|api/.test(text)||PRODUCT_IDS.has(id))return"product";
+ if(/admission|enrol|learn|course|training/.test(text)||EDUCATION_IDS.has(id))return"education";
+ if(/portfolio|gallery|showcase|projects|collection/.test(text)||SHOWCASE_IDS.has(id))return"showcase";
+ if(/enterprise|institution|global|manufactur|infrastructure|group company/.test(text)||INSTITUTIONAL_IDS.has(id))return"institutional";
+ if(/trust|credib|doctor|clinic|law|finance|insurance/.test(text)||TRUST_IDS.has(id))return"trust";
+ return"conversion";
+}
 function dedupe<T>(xs:T[]):T[]{return[...new Set(xs)];}

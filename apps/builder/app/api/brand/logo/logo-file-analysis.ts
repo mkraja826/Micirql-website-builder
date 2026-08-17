@@ -78,12 +78,12 @@ function analyzeSvg(bytes: Uint8Array): LogoFileAnalysis {
   const width = numberAttr(svg,"width");
   const height = numberAttr(svg,"height");
   const viewBox = svg.match(/viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
-  const viewBoxWidth = positiveNumber(viewBox?.[1]);
-  const viewBoxHeight = positiveNumber(viewBox?.[2]);
-  const fullCanvasBackground = hasSvgCanvasBackground(text, width ?? viewBoxWidth, height ?? viewBoxHeight);
+  const effectiveWidth = width ?? positiveNumber(viewBox?.[1]);
+  const effectiveHeight = height ?? positiveNumber(viewBox?.[2]);
+  const fullCanvasBackground = hasSvgCanvasBackground(text, effectiveWidth, effectiveHeight);
   return {
-    ...(width ?? viewBoxWidth ? { width: width ?? viewBoxWidth } : {}),
-    ...(height ?? viewBoxHeight ? { height: height ?? viewBoxHeight } : {}),
+    ...(effectiveWidth ? { width: effectiveWidth } : {}),
+    ...(effectiveHeight ? { height: effectiveHeight } : {}),
     hasTransparency: !fullCanvasBackground,
     edgeBackgroundRatio: fullCanvasBackground ? 0.96 : 0,
     backgroundSignal: fullCanvasBackground ? "embedded" : "transparent",

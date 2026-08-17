@@ -2,6 +2,8 @@ export type LogoFileAnalysis = {
   width?: number;
   height?: number;
   hasTransparency?: boolean;
+  edgeBackgroundRatio?: number;
+  backgroundSignal?: "transparent" | "embedded" | "unknown";
 };
 
 export function analyzeLogoFile(bytes: Uint8Array, contentType: string): LogoFileAnalysis {
@@ -22,7 +24,14 @@ function analyzePng(bytes: Uint8Array): LogoFileAnalysis {
   const colorType = bytes[25];
   const hasAlphaChannel = colorType === 4 || colorType === 6;
   const text = ascii(bytes);
-  return { width, height, hasTransparency: hasAlphaChannel || text.includes("tRNS") };
+  const hasTransparency = hasAlphaChannel || text.includes("tRNS");
+  return {
+    width,
+    height,
+    hasTransparency,
+    edgeBackgroundRatio: hasTransparency ? 0 : 0.86,
+    backgroundSignal: hasTransparency ? "transparent" : "embedded",
+  };
 }
 
 function analyzeJpeg(bytes: Uint8Array): LogoFileAnalysis {
@@ -37,11 +46,11 @@ function analyzeJpeg(bytes: Uint8Array): LogoFileAnalysis {
     if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) {
       const height = ((bytes[offset + 5] ?? 0) << 8) | (bytes[offset + 6] ?? 0);
       const width = ((bytes[offset + 7] ?? 0) << 8) | (bytes[offset + 8] ?? 0);
-      return { width, height, hasTransparency: false };
+      return { width, height, hasTransparency: false, edgeBackgroundRatio: 0.9, backgroundSignal: "embedded" };
     }
     offset += length + 2;
   }
-  return { hasTransparency: false };
+  return { hasTransparency: false, edgeBackgroundRatio: 0.9, backgroundSignal: "embedded" };
 }
 
 function analyzeWebp(bytes: Uint8Array): LogoFileAnalysis {
@@ -51,15 +60,16 @@ function analyzeWebp(bytes: Uint8Array): LogoFileAnalysis {
     const flags = bytes[20] ?? 0;
     const width = 1 + u24(bytes,24);
     const height = 1 + u24(bytes,27);
-    return { width, height, hasTransparency: Boolean(flags & 0x10) };
+    const hasTransparency = Boolean(flags & 0x10);
+    return { width, height, hasTransparency, edgeBackgroundRatio: hasTransparency ? 0 : 0.86, backgroundSignal: hasTransparency ? "transparent" : "embedded" };
   }
   if (chunk === "VP8L" && bytes.length >= 25) {
     const b1=bytes[21]??0,b2=bytes[22]??0,b3=bytes[23]??0,b4=bytes[24]??0;
     const width = 1 + (((b2 & 0x3f) << 8) | b1);
     const height = 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6));
-    return { width, height, hasTransparency: true };
+    return { width, height, hasTransparency: true, edgeBackgroundRatio: 0, backgroundSignal: "transparent" };
   }
-  return {};
+  return { edgeBackgroundRatio: 0.72, backgroundSignal: "unknown" };
 }
 
 function analyzeSvg(bytes: Uint8Array): LogoFileAnalysis {
@@ -67,15 +77,30 @@ function analyzeSvg(bytes: Uint8Array): LogoFileAnalysis {
   const svg = text.match(/<svg\b[^>]*>/i)?.[0] ?? "";
   const width = numberAttr(svg,"width");
   const height = numberAttr(svg,"height");
-  if (width && height) return { width, height, hasTransparency: true };
   const viewBox = svg.match(/viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
   const viewBoxWidth = positiveNumber(viewBox?.[1]);
   const viewBoxHeight = positiveNumber(viewBox?.[2]);
+  const fullCanvasBackground = hasSvgCanvasBackground(text, width ?? viewBoxWidth, height ?? viewBoxHeight);
   return {
-    ...(viewBoxWidth ? { width: viewBoxWidth } : {}),
-    ...(viewBoxHeight ? { height: viewBoxHeight } : {}),
-    hasTransparency: true,
+    ...(width ?? viewBoxWidth ? { width: width ?? viewBoxWidth } : {}),
+    ...(height ?? viewBoxHeight ? { height: height ?? viewBoxHeight } : {}),
+    hasTransparency: !fullCanvasBackground,
+    edgeBackgroundRatio: fullCanvasBackground ? 0.96 : 0,
+    backgroundSignal: fullCanvasBackground ? "embedded" : "transparent",
   };
+}
+
+function hasSvgCanvasBackground(text:string,width?:number,height?:number){
+  const rects=[...text.matchAll(/<rect\b[^>]*>/gi)].map(match=>match[0]);
+  return rects.some(rect=>{
+    const fill=rect.match(/\bfill\s*=\s*["']([^"']+)["']/i)?.[1]?.trim().toLowerCase();
+    if(!fill||fill==="none"||fill==="transparent")return false;
+    const x=numberAttr(rect,"x")??0,y=numberAttr(rect,"y")??0;
+    const rw=numberAttr(rect,"width"),rh=numberAttr(rect,"height");
+    const percentFull=/\bwidth\s*=\s*["']100%["']/i.test(rect)&&/\bheight\s*=\s*["']100%["']/i.test(rect);
+    const numericFull=Boolean(width&&height&&rw&&rh&&x===0&&y===0&&rw>=width*.95&&rh>=height*.95);
+    return percentFull||numericFull;
+  });
 }
 
 function numberAttr(svg:string,name:string){return positiveNumber(svg.match(new RegExp(`${name}\\s*=\\s*["']([\\d.]+)`,"i"))?.[1]);}

@@ -88,7 +88,7 @@ export function deriveBrandIntelligence(input: BrandIntelligenceInput): BrandInt
   if (premium) {
     tone = "premium";
     density = "spacious";
-    typographyMood = typographyMood === "technical" ? "classic" : "editorial";
+    typographyMood = "editorial";
     motion = motion === "rich" ? "standard" : motion;
     recommendations.push("Premium positioning should use restraint: more whitespace, fewer competing accents and slower motion.");
   }
@@ -104,7 +104,6 @@ export function deriveBrandIntelligence(input: BrandIntelligenceInput): BrandInt
   }
 
   if (input.logoShape === "vertical") {
-    density = density === "compact" ? "comfortable" : density;
     recommendations.push("Reserve additional brand whitespace so the vertical mark never compresses navigation.");
   }
 

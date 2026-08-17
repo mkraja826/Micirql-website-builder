@@ -36,6 +36,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       MICIRQL_SUPABASE_SECRET_KEY: ${{ secrets.MICIRQL_SUPABASE_SECRET_KEY }}
+      MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
       NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
       MICIRQL_DRAFT_STORE: supabase
@@ -67,3 +68,9 @@ jobs:
         working-directory: apps/builder
         shell: bash
         run: printf '%s' "$MICIRQL_SUPABASE_SECRET_KEY" | pnpm exec wrangler secret put MICIRQL_SUPABASE_SECRET_KEY
+
+      - name: Upload Dental library admin token to Builder Worker
+        if: ${{ env.MICIRQL_LIBRARY_ADMIN_TOKEN != '' }}
+        working-directory: apps/builder
+        shell: bash
+        run: printf '%s' "$MICIRQL_LIBRARY_ADMIN_TOKEN" | pnpm exec wrangler secret put MICIRQL_LIBRARY_ADMIN_TOKEN

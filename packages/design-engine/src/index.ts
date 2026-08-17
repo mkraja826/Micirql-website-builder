@@ -11,6 +11,7 @@ export * from "./archetype-blueprint-rules";
 export * from "./typography-spacing-systems";
 export * from "./image-slot-strategies";
 export * from "./site-validator";
+export * from "./premium-quality-gate";
 export * from "./content-quality";
 export * from "./design-diversity";
 export * from "./design-genome";

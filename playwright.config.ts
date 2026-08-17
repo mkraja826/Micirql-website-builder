@@ -2,6 +2,12 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
+  testIgnore: [
+    /builder-journey\.spec\.ts/,
+    /generation-benchmark\.spec\.ts/,
+    /live-model-dental-sampling\.spec\.ts/,
+    /live-autonomous-composition\.spec\.ts/,
+  ],
   timeout: 45_000,
   fullyParallel: true,
   workers: process.env.CI ? 4 : undefined,

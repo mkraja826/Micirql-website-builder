@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "deploy:live": "cd apps/live && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy -- --keep-vars",
+    "deploy:live": "cd apps/live && pnpm generate:runtime-css && pnpm exec opennextjs-cloudflare build && pnpm exec opennextjs-cloudflare deploy -- --keep-vars",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",

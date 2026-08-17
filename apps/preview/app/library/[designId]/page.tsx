@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
-import { SeedSection, seedSectionCatalog } from "@micirql/sections";
+import { Section, seedSectionCatalog } from "@micirql/sections";
 import { resolveTheme } from "@micirql/themes";
 import { sectionPreviewProps } from "../../../lib/sample-section";
 
@@ -47,7 +47,7 @@ export default async function DesignPreviewPage({ params }: { params: Promise<{ 
       data-mi-family={entry.family}
       style={theme.cssVariables as CSSProperties}
     >
-      <SeedSection family={entry.family} variant={entry.variant} props={sectionPreviewProps} />
+      <Section family={entry.family} variant={entry.variant} props={sectionPreviewProps} />
     </main>
   );
 }

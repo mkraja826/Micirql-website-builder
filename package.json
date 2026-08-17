@@ -13,6 +13,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "qa:generation-benchmark": "playwright test --config=playwright.benchmark.config.ts",
+    "qa:live-model-dental": "playwright test --config=playwright.live-model.config.ts",
     "qa:sections": "playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",
     "qa:sections:core": "MI_QA_CORE=1 playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",

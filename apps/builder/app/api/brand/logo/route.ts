@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { evaluateLogoUsability } from "@micirql/design-engine";
+import { evaluateFaviconStrategy, evaluateLogoUsability } from "@micirql/design-engine";
 import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, bearerToken } from "../../drafts/supabase-store";
 import { analyzeLogoFile } from "./logo-file-analysis";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_FAVICON_BYTES = 1024 * 1024;
 const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
 const BACKGROUND_SIGNALS = new Set(["transparent", "embedded", "clean-opaque", "unknown"]);
+const FAVICON_STRATEGIES = new Set(["reuse-logo", "derive-symbol"]);
 
 type ClientPixelAnalysis = {
   width?: number;
@@ -14,6 +16,8 @@ type ClientPixelAnalysis = {
   edgeBackgroundRatio?: number;
   backgroundSignal?: "transparent" | "embedded" | "clean-opaque" | "unknown";
   edgeColor?: string;
+  faviconDataUrl?: string;
+  faviconStrategy?: "reuse-logo" | "derive-symbol";
 };
 
 export async function POST(request: NextRequest) {
@@ -94,11 +98,42 @@ export async function POST(request: NextRequest) {
 
     const draft = await getSupabaseDraft(request, workspaceId, siteId);
     if (!draft) throw new Error("Workspace draft could not be loaded to attach the logo.");
+
+    const faviconDecision = evaluateFaviconStrategy({
+      logoShape: presentation.shape,
+      ...(effectiveAnalysis.width ? { width: effectiveAnalysis.width } : {}),
+      ...(effectiveAnalysis.height ? { height: effectiveAnalysis.height } : {}),
+      hasTransparency: cleanupApplied || effectiveAnalysis.hasTransparency === true,
+      cleanupApplied,
+      businessName: draft.snapshot.name,
+    });
+    const faviconCandidate = decodeFaviconDataUrl(clientAnalysis?.faviconDataUrl);
+    let faviconUrl: string;
+    let faviconStrategy: "reuse-logo" | "derive-symbol" | "initial-mark";
+
+    if (faviconCandidate && clientAnalysis?.faviconStrategy && FAVICON_STRATEGIES.has(clientAnalysis.faviconStrategy)) {
+      const faviconPath = `${workspaceId}/${siteId}/branding/favicon-${crypto.randomUUID()}.png`;
+      await uploadPublicAsset({ url, key, token, path: faviconPath, contentType: "image/png", bytes: faviconCandidate });
+      faviconUrl = publicAssetUrl(url, faviconPath);
+      faviconStrategy = clientAnalysis.faviconStrategy;
+    } else if (faviconDecision.strategy === "reuse-logo") {
+      faviconUrl = activeUrl;
+      faviconStrategy = "reuse-logo";
+    } else {
+      const faviconPath = `${workspaceId}/${siteId}/branding/favicon-${crypto.randomUUID()}.svg`;
+      const svgBytes = Buffer.from(initialFaviconSvg(draft.snapshot.name, draft.snapshot.theme.brand.colors.primary), "utf8");
+      await uploadPublicAsset({ url, key, token, path: faviconPath, contentType: "image/svg+xml", bytes: svgBytes });
+      faviconUrl = publicAssetUrl(url, faviconPath);
+      faviconStrategy = "initial-mark";
+    }
+
     const snapshot = structuredClone(draft.snapshot);
     snapshot.theme.brand.logoAssetId = activeUrl;
     snapshot.theme.brand.logoOriginalAssetId = originalUrl;
     if (cleanupUrl) snapshot.theme.brand.logoCleanupAssetId = cleanupUrl;
     else delete snapshot.theme.brand.logoCleanupAssetId;
+    snapshot.theme.brand.faviconAssetId = faviconUrl;
+    snapshot.theme.brand.faviconStrategy = faviconStrategy;
     snapshot.theme.brand.logoPresentation = {
       shape: presentation.shape,
       treatment: presentation.treatment,
@@ -116,6 +151,7 @@ export async function POST(request: NextRequest) {
       reasons: [
         ...presentation.reasons,
         ...(effectiveAnalysis.backgroundSignal ? [`Background signal: ${effectiveAnalysis.backgroundSignal}${clientAnalysis ? " (pixel sampled)" : ""}.`] : []),
+        `Favicon strategy: ${faviconStrategy}.`,
       ],
     };
     await saveSupabaseDraft(request, { snapshot, expectedRevision: draft.revision });
@@ -129,6 +165,8 @@ export async function POST(request: NextRequest) {
       originalUrl,
       cleanupUrl,
       cleanupApplied,
+      faviconUrl,
+      faviconStrategy,
       analysis: effectiveAnalysis,
       recommendation,
       presentation,
@@ -150,6 +188,10 @@ function sanitizeClientAnalysis(value: unknown): ClientPixelAnalysis | undefined
     ? source.backgroundSignal as ClientPixelAnalysis["backgroundSignal"]
     : undefined;
   const edgeColor = typeof source.edgeColor === "string" && /^#[0-9a-f]{6}$/i.test(source.edgeColor) ? source.edgeColor.toUpperCase() : undefined;
+  const faviconDataUrl = typeof source.faviconDataUrl === "string" && source.faviconDataUrl.startsWith("data:image/png;base64,") ? source.faviconDataUrl : undefined;
+  const faviconStrategy = typeof source.faviconStrategy === "string" && FAVICON_STRATEGIES.has(source.faviconStrategy)
+    ? source.faviconStrategy as ClientPixelAnalysis["faviconStrategy"]
+    : undefined;
   return {
     ...(width ? { width } : {}),
     ...(height ? { height } : {}),
@@ -157,6 +199,8 @@ function sanitizeClientAnalysis(value: unknown): ClientPixelAnalysis | undefined
     ...(typeof ratio === "number" ? { edgeBackgroundRatio: ratio } : {}),
     ...(signal ? { backgroundSignal: signal } : {}),
     ...(edgeColor ? { edgeColor } : {}),
+    ...(faviconDataUrl ? { faviconDataUrl } : {}),
+    ...(faviconStrategy ? { faviconStrategy } : {}),
   };
 }
 
@@ -170,6 +214,12 @@ function decodeDataUrl(dataUrl: string, expectedType: string): Buffer | undefine
 function decodeCleanupDataUrl(value: unknown): Buffer | undefined {
   if (typeof value !== "string" || !value.startsWith("data:image/png;base64,")) return undefined;
   return decodeDataUrl(value, "image/png");
+}
+
+function decodeFaviconDataUrl(value?: string): Buffer | undefined {
+  if (!value) return undefined;
+  const bytes = decodeDataUrl(value, "image/png");
+  return bytes && bytes.length <= MAX_FAVICON_BYTES ? bytes : undefined;
 }
 
 async function uploadPublicAsset(input: { url: string; key: string; token: string; path: string; contentType: string; bytes: Buffer }) {
@@ -187,16 +237,26 @@ async function uploadPublicAsset(input: { url: string; key: string; token: strin
   });
   if (!upload.ok) {
     const detail = await upload.text();
-    throw new Error(detail || `Logo upload failed (${upload.status}).`);
+    throw new Error(detail || `Brand asset upload failed (${upload.status}).`);
   }
 }
 
-function publicAssetUrl(baseUrl: string, path: string) {
-  return `${baseUrl}/storage/v1/object/public/public-assets/${encodePath(path)}`;
+function initialFaviconSvg(name: string, primary: string) {
+  const initial = name.trim().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() ?? "M";
+  const background = /^#[0-9a-f]{6}$/i.test(primary) ? primary : "#6D5EF5";
+  const foreground = contrastFor(background);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" rx="52" fill="${background}"/><text x="128" y="142" text-anchor="middle" dominant-baseline="middle" font-family="Arial,Helvetica,sans-serif" font-size="142" font-weight="700" fill="${foreground}">${escapeXml(initial)}</text></svg>`;
 }
-function boundedPositive(value: unknown, max: number) {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= max ? value : undefined;
+
+function contrastFor(color: string) {
+  const hex = color.slice(1);
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return "#FFFFFF";
+  const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.58 ? "#111111" : "#FFFFFF";
 }
+function escapeXml(value: string) { return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[char] ?? char)); }
+function publicAssetUrl(baseUrl: string, path: string) { return `${baseUrl}/storage/v1/object/public/public-assets/${encodePath(path)}`; }
+function boundedPositive(value: unknown, max: number) { return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= max ? value : undefined; }
 function clean(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function encodePath(path: string) { return path.split("/").map(encodeURIComponent).join("/"); }
 function extension(type: string) {

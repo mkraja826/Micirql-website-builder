@@ -50,8 +50,9 @@ export function assessBrandPalette(input: BrandPaletteInput): BrandPaletteAssess
 
 function fallback(reason: string): BrandPaletteAssessment { return { decision:"decouple", score:0, logoColors:[], primary:FALLBACK.primary, secondary:FALLBACK.secondary, accent:FALLBACK.accent, neutrals:["#FFFFFF","#111111"], logoSurface:"neutral-container", reasons:[reason] }; }
 function normalizeHex(value:string){const v=value.trim();if(/^#[0-9a-f]{6}$/i.test(v))return v.toUpperCase();if(/^#[0-9a-f]{3}$/i.test(v))return `#${v.slice(1).split("").map(x=>x+x).join("")}`.toUpperCase();return undefined;}
-function rgb(hex:string){return [1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255) as [number,number,number];}
-function relativeLuminance(hex:string){const [r,g,b]=rgb(hex).map(v=>v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*r+.7152*g+.0722*b;}
-function contrastRatio(a:string,b:string){const [x,y]=[relativeLuminance(a),relativeLuminance(b)].sort((m,n)=>n-m);return (x+.05)/(y+.05);}
+function rgb(hex:string):[number,number,number]{return [parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255];}
+function channel(v:number){return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);}
+function relativeLuminance(hex:string){const [r,g,b]=rgb(hex);return .2126*channel(r)+.7152*channel(g)+.0722*channel(b);}
+function contrastRatio(a:string,b:string){const aLum=relativeLuminance(a),bLum=relativeLuminance(b);const high=Math.max(aLum,bLum),low=Math.min(aLum,bLum);return (high+.05)/(low+.05);}
 function saturation(hex:string){const [r,g,b]=rgb(hex);const max=Math.max(r,g,b),min=Math.min(r,g,b);if(max===min)return 0;const l=(max+min)/2;return (max-min)/(1-Math.abs(2*l-1));}
 function pickSurface(brand:string){return relativeLuminance(brand)<.35?"#F8F8F6":"#171717";}

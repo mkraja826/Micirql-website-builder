@@ -16,6 +16,7 @@ export * from "./design-diversity";
 export * from "./design-genome";
 export * from "./preference-learning";
 export * from "./industry-intelligence";
+export * from "./industry-pack-framework";
 export * from "./industry-fit";
 export * from "./page-architecture";
 export * from "./navigation-architecture";

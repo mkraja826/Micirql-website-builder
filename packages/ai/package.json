@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@micirql/assets": "workspace:*",
+    "@micirql/design-engine": "workspace:*",
     "@micirql/domains": "workspace:*",
     "@micirql/registry": "workspace:*",
     "@micirql/schema": "workspace:*",

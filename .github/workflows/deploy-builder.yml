@@ -1,6 +1,6 @@
 name: Deploy Builder to Cloudflare
 
-# Secret refresh trigger: 2026-08-17
+# Secret refresh trigger: 2026-08-18
 on:
   workflow_dispatch:
   push:

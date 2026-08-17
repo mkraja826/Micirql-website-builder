@@ -2,14 +2,17 @@
   "name": "@micirql/live",
   "private": true,
   "scripts": {
+    "generate:runtime-css": "node scripts/build-runtime-css.mjs",
+    "predev": "pnpm generate:runtime-css",
     "dev": "next dev --port 3002",
+    "prebuild": "pnpm generate:runtime-css",
     "build": "next build",
     "start": "next start --port 3002",
-    "typecheck": "tsc --noEmit",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "preview": "pnpm generate:runtime-css && opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "pnpm generate:runtime-css && opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
+    "upload": "pnpm generate:runtime-css && opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@micirql/functions": "workspace:*",

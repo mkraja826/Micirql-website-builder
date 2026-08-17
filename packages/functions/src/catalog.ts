@@ -26,7 +26,7 @@ export const nativeFunctionCatalog = [
     id: "lead.create",
     version: "1.0.0",
     description: "Capture a general website enquiry.",
-    input: contactSchema.extend({ sourcePage: z.string().startsWith("/").optional() }),
+    input: contactSchema.safeExtend({ sourcePage: z.string().startsWith("/").optional() }),
     output: createdOutputSchema,
     access: "public",
     rateLimit: publicRateLimit,
@@ -38,7 +38,7 @@ export const nativeFunctionCatalog = [
     id: "appointment.request",
     version: "1.0.0",
     description: "Capture an appointment request without implying confirmed availability.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       phone: z.string().trim().min(6).max(40),
       consent: z.literal(true),
       service: z.string().trim().min(1).max(160),
@@ -57,7 +57,7 @@ export const nativeFunctionCatalog = [
     id: "reservation.request",
     version: "1.0.0",
     description: "Capture a restaurant reservation request without confirming a table.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       requestedDate: z.string().date(),
       requestedTime: z.string().trim().min(1).max(40),
       partySize: z.number().int().min(1).max(100),
@@ -73,7 +73,7 @@ export const nativeFunctionCatalog = [
     id: "quote.request",
     version: "1.0.0",
     description: "Capture a service or project quote request.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       service: z.string().trim().min(1).max(160),
       location: z.string().trim().max(240).optional(),
       budgetRange: z.string().trim().max(120).optional(),
@@ -105,7 +105,7 @@ export const nativeFunctionCatalog = [
     id: "property.enquiry",
     version: "1.0.0",
     description: "Capture an enquiry about a real-estate property or project.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       propertyId: z.string().trim().min(1).max(160),
       enquiryType: z.enum(["details", "visit", "brochure", "callback"]).default("details"),
     }),
@@ -120,7 +120,7 @@ export const nativeFunctionCatalog = [
     id: "demo.request",
     version: "1.0.0",
     description: "Capture a SaaS or technology product demo request.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       company: z.string().trim().max(180).optional(),
       role: z.string().trim().max(120).optional(),
     }),
@@ -135,7 +135,7 @@ export const nativeFunctionCatalog = [
     id: "booking.request",
     version: "1.0.0",
     description: "Capture a hospitality booking enquiry without confirming inventory.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       checkIn: z.string().date(),
       checkOut: z.string().date(),
       guests: z.number().int().min(1).max(50),
@@ -152,7 +152,7 @@ export const nativeFunctionCatalog = [
     id: "enrollment.enquiry",
     version: "1.0.0",
     description: "Capture an education or training programme enquiry.",
-    input: contactSchema.extend({
+    input: contactSchema.safeExtend({
       course: z.string().trim().max(180).optional(),
       deliveryMode: z.enum(["online", "in-person", "hybrid", "unsure"]).optional(),
     }),

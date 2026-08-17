@@ -36,7 +36,7 @@ export async function preparePage(args: {
     if (!resolved) { issues.push({ code: "COMPONENT_NOT_FOUND", message: `Component ${section.component.componentId}@${section.component.version} is unavailable.`, sectionId: section.id }); continue; }
     if (mode === "production" && resolved.registry.status !== "production") issues.push({ code: "COMPONENT_NOT_PRODUCTION", message: `Component ${resolved.registry.id} is not production approved.`, sectionId: section.id });
     if (!resolved.registry.protocol.passed) issues.push({ code: "COMPONENT_PROTOCOL_FAILED", message: `Component ${resolved.registry.id} has not passed the MiCirql Protocol.`, sectionId: section.id });
-    if (resolved.registry.theme !== site.theme.family) issues.push({ code: "THEME_MISMATCH", message: `Component ${resolved.registry.id} belongs to ${resolved.registry.theme}, not ${site.theme.family}.`, sectionId: section.id });
+    if (resolved.registry.theme !== site.theme.family) issues.push({ code: "THEME_MISMATCH", message: `Component ${resolved.registry.id} belongs to ${site.theme.family}, not ${site.theme.family}.`, sectionId: section.id });
 
     const props: Record<string, unknown> = { ...section.props };
     injectBrandLogo(site, section.component.componentId, props);
@@ -90,6 +90,9 @@ function injectBrandLogo(site:Site, componentId:string, props:Record<string,unkn
       navbarMaxHeight: presentation.navbarMaxHeight,
       footerMaxHeight: presentation.footerMaxHeight,
       paddingScale: presentation.paddingScale,
+      ...(typeof presentation.hasTransparency === "boolean" ? { hasTransparency: presentation.hasTransparency } : {}),
+      ...(presentation.backgroundSignal ? { backgroundSignal: presentation.backgroundSignal } : {}),
+      ...(presentation.edgeColor ? { edgeColor: presentation.edgeColor } : {}),
     } : {}),
   };
 }

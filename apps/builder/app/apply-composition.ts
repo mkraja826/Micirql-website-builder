@@ -4,6 +4,9 @@ import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, ty
 import type { WebsiteComposition } from "./composition-intelligence";
 import type { GenerationQualityProfile } from "./generation-quality-intelligence";
 
+const SINGLETON_FAMILIES = new Set<SectionFamily>(["hero", "services", "testimonials", "gallery", "team", "cta", "contact"]);
+const SCAFFOLD_COPY = /primary offering|supporting offering|additional offering|point (one|two|three|four|five)|team member|verified proof|image slot|add (a|an|the|another|real|verified)|ready to discuss (home|contact|doctor|cases|services|treatments)|a clear overview of (home|contact|doctor|cases|services|treatments)|explore (home|contact|doctor|cases) and find the right next step/i;
+
 /** Applies composition and quality decisions without inventing content/components. */
 export function applyComposition(site: Site, composition: WebsiteComposition, quality?: GenerationQualityProfile): Site {
   const next = structuredClone(site);
@@ -15,7 +18,14 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
     for (const section of page.sections) {
       const family = familyFromId(section.component.componentId);
       if (!family) { unknown.push(section); continue; }
-      const bucket = buckets.get(family) ?? []; bucket.push(section); buckets.set(family, bucket);
+      const bucket = buckets.get(family) ?? [];
+      if (SINGLETON_FAMILIES.has(family) && bucket.length) {
+        const current = bucket[0];
+        if (sectionQualityScore(section) > sectionQualityScore(current)) bucket[0] = section;
+      } else {
+        bucket.push(section);
+      }
+      buckets.set(family, bucket);
     }
     const decisions = quality ? prioritize(composition.sections, quality) : composition.sections;
     const ordered: typeof page.sections = [];
@@ -53,7 +63,7 @@ function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality
   preserveGeneratedBrandAssets(theme.brand, existingBrand);
 
   const intelligence=deriveBrandIntelligence({
-    industry: site.subtype ?? composition.preset.id,
+    industry: [site.domain, site.subtype, composition.preset.id].filter(Boolean).join(" "),
     businessType: `${composition.preset.id} ${composition.preset.name}`,
     audience: site.seoBlueprint.audiences.join(" "),
     ...(existingBrand.logoPresentation?.shape ? { logoShape: existingBrand.logoPresentation.shape } : {}),
@@ -77,6 +87,10 @@ function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality
     if(quality.sectionRhythm==="cinematic"&&theme.brand.motion!=="none")theme.brand.motion="rich";
     else if(quality.sectionRhythm==="tight"&&theme.brand.motion==="standard")theme.brand.motion="subtle";
   }
+  if(site.domain==="clinic"){
+    theme.brand.motion="subtle";
+    if(theme.brand.density==="compact")theme.brand.density="comfortable";
+  }
   return theme;
 }
 
@@ -98,6 +112,17 @@ function typographyFor(mood:BrandIntelligenceProfile["typographyMood"],fallback:
   if(mood==="geometric")return{...fallback,display:'"Avenir Next", Avenir, Montserrat, ui-sans-serif, system-ui, sans-serif',body:sans,ui:sans};
   if(mood==="technical")return{...fallback,display:sans,body:sans,ui:sans,mono:'"SFMono-Regular", Consolas, "Liberation Mono", monospace'};
   return{...fallback,display:sans,body:sans,ui:sans};
+}
+
+function sectionQualityScore(section:Site["pages"][number]["sections"][number]){
+  const props=section.props??{};
+  const values:string[]=[];
+  for(const key of ["title","heading","description","body","eyebrow"]){const value=props[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}
+  if(Array.isArray(props.items))for(const raw of props.items){if(!raw||typeof raw!=="object")continue;const item=raw as Record<string,unknown>;for(const key of ["title","description"]){const value=item[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}}
+  let score=values.join(" ").length;
+  for(const value of values)if(SCAFFOLD_COPY.test(value))score-=250;
+  if(Array.isArray(props.items)&&props.items.length===0)score-=80;
+  return score;
 }
 
 function familyFromId(componentId:string):SectionFamily|undefined{const normalized=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>normalized===`${f}.placeholder`||normalized.startsWith(`${f}.`));if(legacy)return legacy;const upper=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>upper.includes(`-${FAMILY_CODES[f]}-`));}

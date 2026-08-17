@@ -90,7 +90,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
 
   if (loading) return <main style={shellStyle}><div style={loadingStyle}>Preparing your MiCirql workspace…</div></main>;
   if (reviewing && context && profile) return <FirstBuildReview session={session} workspaceId={context.workspaceId} siteId={context.siteId} profile={profile} onComplete={() => { setReviewing(false); setReady(true); }} />;
-  if (ready) return <OnboardingProfileProvider profile={profile}><>{onBack ? <button style={backStyle} onClick={onBack}>← Projects</button> : null}<WorkspaceClient /></></OnboardingProfileProvider>;
+  if (ready && context) return <OnboardingProfileProvider profile={profile}><>{onBack ? <button style={backStyle} onClick={onBack}>← Projects</button> : null}<WorkspaceClient session={session} workspaceId={context.workspaceId} siteId={context.siteId} /></></OnboardingProfileProvider>;
   if (!context) return <main style={shellStyle}><div style={loadingStyle}>{error || "Workspace is unavailable."}</div></main>;
 
   return <GuidedOnboarding session={session} workspaceId={context.workspaceId} siteId={context.siteId} building={building} error={error} {...(onBack ? { onBack } : {})} onSubmit={submit} />;

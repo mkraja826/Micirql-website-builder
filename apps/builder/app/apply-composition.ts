@@ -14,10 +14,14 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
   for (const page of next.pages) {
     if (!page.sections.length) continue;
     const buckets = new Map<SectionFamily, typeof page.sections>();
+    const shellStart: typeof page.sections = [];
+    const shellEnd: typeof page.sections = [];
     const unknown: typeof page.sections = [];
     for (const section of page.sections) {
       const family = familyFromId(section.component.componentId);
       if (!family) { unknown.push(section); continue; }
+      if (family === "navbar") { shellStart.push(section); continue; }
+      if (family === "footer") { shellEnd.push(section); continue; }
       const bucket = buckets.get(family) ?? [];
       if (SINGLETON_FAMILIES.has(family) && bucket.length) {
         const current = bucket[0];
@@ -37,9 +41,7 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
       }
       buckets.delete(decision.family);
     }
-    for (const sections of buckets.values()) ordered.push(...sections);
-    ordered.push(...unknown);
-    page.sections=ordered;
+    page.sections=[...shellStart,...ordered,...unknown,...shellEnd];
   }
   return siteSchema.parse(next);
 }

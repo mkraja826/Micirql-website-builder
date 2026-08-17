@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { readStoredSession } from "./auth-client";
 import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
@@ -26,6 +26,10 @@ export function AiEditorAssistant({
   const [pendingSectionAdd, setPendingSectionAdd] = useState<Extract<AiEditorOperation, { type: "section.add" }>>();
   const [preferenceProfile, setPreferenceProfile] = useState<unknown>(null);
 
+  const activePage = useMemo(() => site.pages.find((page) => page.id === pageId) ?? site.pages[0], [site.pages, pageId]);
+  const activeSection = useMemo(() => activePage?.sections.find((section) => section.id === sectionId), [activePage, sectionId]);
+  const sectionLabel = activeSection ? sectionName(activeSection.component.componentId) : undefined;
+
   useEffect(() => {
     let cancelled = false;
     const session = readStoredSession();
@@ -46,9 +50,10 @@ export function AiEditorAssistant({
     if (!next || busy) return;
     const session = readStoredSession();
     if (!session?.access_token) {
-      setError("Your session has expired. Sign in again to use AI editing.");
+      setError("Your session has expired. Sign in again to use Ask MiCirql.");
       return;
     }
+    setPrompt(next);
     setBusy(true);
     setError("");
     setProposal(undefined);
@@ -101,26 +106,84 @@ export function AiEditorAssistant({
     />;
   }
 
+  const selectedContext = sectionId
+    ? `${sectionLabel ?? "Selected section"} on ${activePage?.name ?? "this page"}`
+    : activePage?.name ? `${activePage.name} page` : "Current page";
+
   return <section className={styles.shell}>
-    <div className={styles.heading}><span>MiCirql AI</span><strong>Tell the editor what to change</strong><small>Structured edits only. Your existing design system and undo history stay intact.</small></div>
-    <div className={styles.chips}>
-      {sectionId ? <>
-        <button type="button" onClick={() => void ask("Give me another layout for this section")}>Another layout</button>
-        <button type="button" onClick={() => void ask("Make this section feel more premium")}>More premium</button>
-        <button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve copy</button>
-        <button type="button" onClick={() => void ask("Change the image in this section")}>Change image</button>
-        <button type="button" onClick={() => void ask("Move this section down")}>Move down</button>
-        <button type="button" onClick={() => void ask("Connect an action for this section")}>Connect action</button>
-      </> : null}
-      <button type="button" onClick={() => setPrompt("Add a testimonials section")}>Add section</button>
-      <button type="button" onClick={() => void ask("Improve the SEO title and description for this page")}>Improve SEO</button>
-      <button type="button" onClick={() => setPrompt("Create an About page")}>Add About page</button>
+    <div className={styles.hero}>
+      <div className={styles.spark}>✦</div>
+      <div className={styles.heading}>
+        <span>Ask MiCirql</span>
+        <strong>What would you like to improve?</strong>
+        <small>{selectedContext}. MiCirql proposes a safe structured edit first—you decide whether to apply it.</small>
+      </div>
     </div>
-    <div className={styles.input}><textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "e.g. Make this hero more editorial and concise" : "e.g. Create an About page"} /><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Thinking…" : "Generate edit"}</button></div>
-    {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}><div><span>{proposal.source === "ai" ? "AI proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{proposal.operation.type.replace(".", " · ")}{proposal.model ? ` · ${proposal.model}` : ""}</small></div><div><button type="button" onClick={() => setProposal(undefined)}>Dismiss</button><button type="button" className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={() => {
-      if (proposal.operation.type === "section.remove" && !window.confirm("Remove this section? You can undo it afterward.")) return;
-      apply();
-    }}>{proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}</button></div></div> : null}
+
+    <div className={styles.suggestionGroup}>
+      <span className={styles.groupLabel}>{sectionId ? "For this section" : "For this page"}</span>
+      <div className={styles.chips}>
+        {sectionId ? <>
+          <button type="button" onClick={() => void ask("Give me another layout for this section")}>Try another layout</button>
+          <button type="button" onClick={() => void ask("Make this section feel more premium")}>Make it more premium</button>
+          <button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve the copy</button>
+          <button type="button" onClick={() => void ask("Change the image in this section")}>Replace the image</button>
+          <button type="button" onClick={() => void ask("Connect an action for this section")}>Add an action</button>
+        </> : <>
+          <button type="button" onClick={() => setPrompt("Add a testimonials section")}>Add a section</button>
+          <button type="button" onClick={() => void ask("Improve the SEO title and description for this page")}>Improve page SEO</button>
+          <button type="button" onClick={() => setPrompt("Create an About page")}>Create an About page</button>
+        </>}
+      </div>
+    </div>
+
+    <div className={styles.input}>
+      <textarea
+        value={prompt}
+        onChange={(event) => setPrompt(event.target.value)}
+        placeholder={sectionId ? "Ask MiCirql to change this section…" : "Ask MiCirql to improve this page…"}
+      />
+      <div className={styles.inputFooter}>
+        <small>Design-safe edits · Undo supported</small>
+        <button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Working…" : "Create proposal"}</button>
+      </div>
+    </div>
+
+    {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}>
+      <div className={styles.proposalCopy}>
+        <span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span>
+        <strong>{proposal.operation.rationale}</strong>
+        <small>{humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small>
+      </div>
+      <div className={styles.proposalActions}>
+        <button type="button" onClick={() => setProposal(undefined)}>Not now</button>
+        <button type="button" className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>
+          {proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}
+        </button>
+      </div>
+    </div> : null}
     {error ? <p className={styles.error}>{error}</p> : null}
   </section>;
+}
+
+function sectionName(componentId: string) {
+  const match = componentId.match(/(?:^|\.)(hero|about|services|features|process|testimonials|gallery|team|cta|contact)(?:\.|-|$)/i);
+  const value = match?.[1] ?? componentId.split(/[.-]/).find((part) => ["hero","about","services","features","process","testimonials","gallery","team","cta","contact"].includes(part.toLowerCase()));
+  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)} section` : "Selected section";
+}
+
+function humanOperation(type: AiEditorOperation["type"]) {
+  const labels: Record<string, string> = {
+    "section.variant": "Layout change",
+    "section.copy": "Copy improvement",
+    "section.add": "New section",
+    "section.visibility": "Visibility change",
+    "section.remove": "Remove section",
+    "section.move": "Reorder section",
+    "media.open": "Media change",
+    "functions.open": "Function setup",
+    "seo.patch": "SEO improvement",
+    "page.add": "New page",
+  };
+  return labels[type] ?? type;
 }

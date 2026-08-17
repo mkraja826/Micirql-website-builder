@@ -5,6 +5,16 @@ import { analyzeLogoFile } from "./logo-file-analysis";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
+const BACKGROUND_SIGNALS = new Set(["transparent", "embedded", "clean-opaque", "unknown"]);
+
+type ClientPixelAnalysis = {
+  width?: number;
+  height?: number;
+  hasTransparency?: boolean;
+  edgeBackgroundRatio?: number;
+  backgroundSignal?: "transparent" | "embedded" | "clean-opaque" | "unknown";
+  edgeColor?: string;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +24,7 @@ export async function POST(request: NextRequest) {
       fileName?: string;
       contentType?: string;
       dataUrl?: string;
+      clientAnalysis?: unknown;
     };
 
     const workspaceId = clean(body.workspaceId);
@@ -36,11 +47,20 @@ export async function POST(request: NextRequest) {
     if (!bytes.length || bytes.length > MAX_BYTES) return NextResponse.json({ error: "Logo must be smaller than 5 MB." }, { status: 413 });
 
     const fileAnalysis = analyzeLogoFile(Uint8Array.from(bytes), contentType);
+    const clientAnalysis = contentType === "image/svg+xml" ? undefined : sanitizeClientAnalysis(body.clientAnalysis);
+    const effectiveAnalysis = {
+      ...(fileAnalysis.width ?? clientAnalysis?.width ? { width: fileAnalysis.width ?? clientAnalysis?.width } : {}),
+      ...(fileAnalysis.height ?? clientAnalysis?.height ? { height: fileAnalysis.height ?? clientAnalysis?.height } : {}),
+      ...(typeof (clientAnalysis?.hasTransparency ?? fileAnalysis.hasTransparency) === "boolean" ? { hasTransparency: clientAnalysis?.hasTransparency ?? fileAnalysis.hasTransparency } : {}),
+      ...(typeof (clientAnalysis?.edgeBackgroundRatio ?? fileAnalysis.edgeBackgroundRatio) === "number" ? { edgeBackgroundRatio: clientAnalysis?.edgeBackgroundRatio ?? fileAnalysis.edgeBackgroundRatio } : {}),
+      ...((clientAnalysis?.backgroundSignal ?? fileAnalysis.backgroundSignal) ? { backgroundSignal: clientAnalysis?.backgroundSignal ?? fileAnalysis.backgroundSignal } : {}),
+      ...(clientAnalysis?.edgeColor ? { edgeColor: clientAnalysis.edgeColor } : {}),
+    };
     const presentation = evaluateLogoUsability({
-      ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
-      ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
-      ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
-      ...(typeof fileAnalysis.edgeBackgroundRatio === "number" ? { edgeBackgroundRatio: fileAnalysis.edgeBackgroundRatio } : {}),
+      ...(effectiveAnalysis.width ? { width: effectiveAnalysis.width } : {}),
+      ...(effectiveAnalysis.height ? { height: effectiveAnalysis.height } : {}),
+      ...(typeof effectiveAnalysis.hasTransparency === "boolean" ? { hasTransparency: effectiveAnalysis.hasTransparency } : {}),
+      ...(typeof effectiveAnalysis.edgeBackgroundRatio === "number" ? { edgeBackgroundRatio: effectiveAnalysis.edgeBackgroundRatio } : {}),
     });
 
     const { url, key } = supabaseConfig();
@@ -76,19 +96,50 @@ export async function POST(request: NextRequest) {
       footerMaxHeight: presentation.footerMaxHeight,
       paddingScale: presentation.paddingScale,
       preserveOriginal: true,
-      ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
-      ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
-      ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
-      reasons: [...presentation.reasons, ...(fileAnalysis.backgroundSignal ? [`Background signal: ${fileAnalysis.backgroundSignal}.`] : [])],
+      ...(effectiveAnalysis.width ? { width: effectiveAnalysis.width } : {}),
+      ...(effectiveAnalysis.height ? { height: effectiveAnalysis.height } : {}),
+      ...(typeof effectiveAnalysis.hasTransparency === "boolean" ? { hasTransparency: effectiveAnalysis.hasTransparency } : {}),
+      ...(typeof effectiveAnalysis.edgeBackgroundRatio === "number" ? { edgeBackgroundRatio: effectiveAnalysis.edgeBackgroundRatio } : {}),
+      ...(effectiveAnalysis.backgroundSignal ? { backgroundSignal: effectiveAnalysis.backgroundSignal } : {}),
+      ...(effectiveAnalysis.edgeColor ? { edgeColor: effectiveAnalysis.edgeColor } : {}),
+      reasons: [
+        ...presentation.reasons,
+        ...(effectiveAnalysis.backgroundSignal ? [`Background signal: ${effectiveAnalysis.backgroundSignal}${clientAnalysis ? " (pixel sampled)" : ""}.`] : []),
+      ],
     };
     await saveSupabaseDraft(request, { snapshot, expectedRevision: draft.revision });
 
-    return NextResponse.json({ ok: true, path, url: publicUrl, analysis: fileAnalysis, presentation }, { status: 201 });
+    return NextResponse.json({ ok: true, path, url: publicUrl, analysis: effectiveAnalysis, presentation }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Logo upload failed." }, { status: 500 });
   }
 }
 
+function sanitizeClientAnalysis(value: unknown): ClientPixelAnalysis | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Record<string, unknown>;
+  const width = boundedPositive(source.width, 100000);
+  const height = boundedPositive(source.height, 100000);
+  const ratio = typeof source.edgeBackgroundRatio === "number" && Number.isFinite(source.edgeBackgroundRatio)
+    ? Math.max(0, Math.min(1, source.edgeBackgroundRatio))
+    : undefined;
+  const signal = typeof source.backgroundSignal === "string" && BACKGROUND_SIGNALS.has(source.backgroundSignal)
+    ? source.backgroundSignal as ClientPixelAnalysis["backgroundSignal"]
+    : undefined;
+  const edgeColor = typeof source.edgeColor === "string" && /^#[0-9a-f]{6}$/i.test(source.edgeColor) ? source.edgeColor.toUpperCase() : undefined;
+  return {
+    ...(width ? { width } : {}),
+    ...(height ? { height } : {}),
+    ...(typeof source.hasTransparency === "boolean" ? { hasTransparency: source.hasTransparency } : {}),
+    ...(typeof ratio === "number" ? { edgeBackgroundRatio: ratio } : {}),
+    ...(signal ? { backgroundSignal: signal } : {}),
+    ...(edgeColor ? { edgeColor } : {}),
+  };
+}
+
+function boundedPositive(value: unknown, max: number) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= max ? value : undefined;
+}
 function clean(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function encodePath(path: string) { return path.split("/").map(encodeURIComponent).join("/"); }
 function extension(type: string) {

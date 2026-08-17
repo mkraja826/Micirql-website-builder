@@ -93,7 +93,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
   if (ready) return <OnboardingProfileProvider profile={profile}><>{onBack ? <button style={backStyle} onClick={onBack}>← Projects</button> : null}<WorkspaceClient /></></OnboardingProfileProvider>;
   if (!context) return <main style={shellStyle}><div style={loadingStyle}>{error || "Workspace is unavailable."}</div></main>;
 
-  return <GuidedOnboarding session={session} workspaceId={context.workspaceId} siteId={context.siteId} building={building} error={error} onBack={onBack} onSubmit={submit} />;
+  return <GuidedOnboarding session={session} workspaceId={context.workspaceId} siteId={context.siteId} building={building} error={error} {...(onBack ? { onBack } : {})} onSubmit={submit} />;
 }
 
 function commaList(value: string) { return value.split(",").map((item) => item.trim()).filter(Boolean); }

@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
 
     const fileAnalysis = analyzeLogoFile(Uint8Array.from(bytes), contentType);
     const presentation = evaluateLogoUsability({
-      width: fileAnalysis.width,
-      height: fileAnalysis.height,
-      hasTransparency: fileAnalysis.hasTransparency,
+      ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
+      ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
+      ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
     });
 
     const { url, key } = supabaseConfig();

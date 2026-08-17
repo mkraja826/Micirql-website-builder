@@ -25,7 +25,7 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
       const bucket = buckets.get(family) ?? [];
       if (SINGLETON_FAMILIES.has(family) && bucket.length) {
         const current = bucket[0];
-        if (sectionQualityScore(section) > sectionQualityScore(current)) bucket[0] = section;
+        if (current && sectionQualityScore(section) > sectionQualityScore(current)) bucket[0] = section;
       } else {
         bucket.push(section);
       }

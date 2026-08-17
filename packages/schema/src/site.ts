@@ -15,6 +15,8 @@ export const brandTokensSchema = z.object({
   logoCleanupAssetId: z.string().optional(),
   faviconAssetId: z.string().optional(),
   faviconStrategy: z.enum(["reuse-logo", "derive-symbol", "initial-mark"]).optional(),
+  socialImageAssetId: z.string().optional(),
+  socialImageStrategy: z.enum(["generated-card", "logo-fallback", "favicon-fallback"]).optional(),
   logoPresentation: z.object({
     shape: z.enum(["horizontal", "square", "vertical"]),
     treatment: z.enum(["direct", "neutral-container", "cleanup-recommended"]),

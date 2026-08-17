@@ -38,7 +38,8 @@ export async function materializeGeneratedMedia(input:{
    const payload=await response.json() as{asset?:{id?:string;originalUrl?:string;url?:string;tags?:string[];alt?:string;aspectRatio?:number;orientation?:string}};
    if(!payload.asset?.id)throw new Error("Generated image asset was not returned.");
    const url=payload.asset.originalUrl??payload.asset.url;if(!url)throw new Error("Generated image URL was not returned.");
-   const asset:MediaAsset={id:payload.asset.id,url,source:"generated",tags:[...(payload.asset.tags??[]),media.family,"ai-generated"],...(payload.asset.alt?{alt:payload.asset.alt}:{}),aspect:aspectFromAsset(payload.asset.aspectRatio,payload.asset.orientation),verified:true};
+   const aspect=aspectFromAsset(payload.asset.aspectRatio,payload.asset.orientation);
+   const asset:MediaAsset={id:payload.asset.id,url,source:"generated",tags:[...(payload.asset.tags??[]),media.family,"ai-generated"],...(payload.asset.alt?{alt:payload.asset.alt}:{}),...(aspect?{aspect}:{}),verified:true};
    requests.push({...media,asset,alt:media.alt||payload.asset.alt||`${media.family} supporting visual`,reason:`${media.reason} Generated asset was materialized and persisted.`});generated++;
   }catch(error){warnings.push(`${media.family}: ${error instanceof Error?error.message:"Image generation failed."}`);requests.push(media);}
  }

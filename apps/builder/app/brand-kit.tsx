@@ -7,6 +7,7 @@ import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel
 import styles from "./brand-kit.module.css";
 
 type Brand = ThemeConfig["brand"];
+type HistoryEntry = Brand["history"][number];
 type ColorPreference = "keep" | "match";
 
 const COLOR_KEYS = ["primary","secondary","accent","background","surface","textPrimary"] as const;
@@ -22,6 +23,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
   const social = brand.socialImageAssetId;
   const cleanup = presentation?.cleanupApplied === true;
   const ready = Boolean(logo || favicon || social);
+  const history = brand.history ?? [];
 
   async function replaceLogo(file?:File){
     if(!file)return;
@@ -41,7 +43,9 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       const response=await fetch("/api/brand/logo/editor",{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"content-type":"application/json"},body:JSON.stringify({workspaceId:project.workspaceId,siteId:project.siteId,fileName:file.name,contentType:file.type,dataUrl,clientAnalysis:clientAnalysis??null,cleanupDataUrl:cleanupDataUrl??null,logoColors,colorPreference,brand})});
       const payload=await response.json() as {ok?:boolean;brand?:Brand;paletteDecision?:"use"|"repair"|"decouple";paletteScore?:number;paletteApplied?:boolean;error?:string};
       if(!response.ok||!payload.brand)throw new Error(payload.error??`Logo replacement failed (${response.status}).`);
-      onChange(payload.brand);
+      const next=structuredClone(payload.brand);
+      next.history=[captureHistory(brand,"logo-replacement"),...history].slice(0,5);
+      onChange(next);
       if(colorPreference==="keep")setMessage("Brand updated. Existing website colors were preserved. Saving draft…");
       else{
         const decision=payload.paletteDecision?humanize(payload.paletteDecision):"Checked";
@@ -51,6 +55,15 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       }
       window.setTimeout(()=>setMessage(""),3600);
     }catch(error){setMessage(error instanceof Error?error.message:"Logo replacement failed.")}finally{setBusy(false)}
+  }
+
+  function restoreBrand(entry:HistoryEntry){
+    const next=structuredClone(brand);
+    applyHistoryEntry(next,entry);
+    next.history=[captureHistory(brand,"brand-restore"),...history.filter(item=>item.id!==entry.id)].slice(0,5);
+    onChange(next);
+    setMessage("Previous Brand Kit restored. Saving draft…");
+    window.setTimeout(()=>setMessage(""),3000);
   }
 
   return <section className={styles.kit} aria-label="Brand Kit">
@@ -112,10 +125,24 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       <div className={styles.detail}><span>Social image</span><strong>{brand.socialImageStrategy?humanize(brand.socialImageStrategy):social?"Generated":"Pending"}</strong></div>
     </div>
 
+    {history.length?<div className={styles.history}>
+      <div className={styles.historyHeader}><span>Brand history</span><small>Last {history.length} saved {history.length===1?"version":"versions"}</small></div>
+      <div className={styles.historyList}>{history.map(entry=><div className={styles.historyItem} key={entry.id}>
+        <div className={styles.historyThumb}>{entry.logoAssetId?<img src={entry.logoAssetId} alt="Previous logo"/>:<span>—</span>}</div>
+        <div className={styles.historyMeta}><strong>{historyReason(entry.reason)}</strong><span>{formatHistoryDate(entry.createdAt)}</span><div>{[entry.colors.primary,entry.colors.accent,entry.colors.background].map((color,index)=><i key={`${entry.id}-${index}`} style={{background:color}}/>)}</div></div>
+        <button type="button" onClick={()=>restoreBrand(entry)} disabled={busy}>Restore</button>
+      </div>)}</div>
+    </div>:null}
+
     <p className={styles.note}>{cleanup?"MiCirql preserved the original upload and uses a cleaned derivative on the website.":"Your original uploaded logo remains preserved. Website colors can change without altering the logo itself."}</p>
   </section>;
 }
 
+function captureHistory(brand:Brand,reason:HistoryEntry["reason"]):HistoryEntry{return {id:crypto.randomUUID(),createdAt:new Date().toISOString(),reason,...(brand.logoAssetId?{logoAssetId:brand.logoAssetId}:{}),...(brand.logoOriginalAssetId?{logoOriginalAssetId:brand.logoOriginalAssetId}:{}),...(brand.logoCleanupAssetId?{logoCleanupAssetId:brand.logoCleanupAssetId}:{}),...(brand.faviconAssetId?{faviconAssetId:brand.faviconAssetId}:{}),...(brand.faviconStrategy?{faviconStrategy:brand.faviconStrategy}:{}),...(brand.socialImageAssetId?{socialImageAssetId:brand.socialImageAssetId}:{}),...(brand.socialImageStrategy?{socialImageStrategy:brand.socialImageStrategy}:{}),...(brand.logoPresentation?{logoPresentation:structuredClone(brand.logoPresentation)}:{}),colors:structuredClone(brand.colors)}}
+function applyHistoryEntry(target:Brand,entry:HistoryEntry){setOptional(target,"logoAssetId",entry.logoAssetId);setOptional(target,"logoOriginalAssetId",entry.logoOriginalAssetId);setOptional(target,"logoCleanupAssetId",entry.logoCleanupAssetId);setOptional(target,"faviconAssetId",entry.faviconAssetId);setOptional(target,"faviconStrategy",entry.faviconStrategy);setOptional(target,"socialImageAssetId",entry.socialImageAssetId);setOptional(target,"socialImageStrategy",entry.socialImageStrategy);setOptional(target,"logoPresentation",entry.logoPresentation?structuredClone(entry.logoPresentation):undefined);target.colors=structuredClone(entry.colors)}
+function setOptional<K extends keyof Brand>(target:Brand,key:K,value:Brand[K]|undefined){if(value===undefined)delete target[key];else target[key]=value}
+function historyReason(reason:HistoryEntry["reason"]){if(reason==="logo-replacement")return"Before logo change";if(reason==="brand-restore")return"Before restore";return"Before palette change"}
+function formatHistoryDate(value:string){const date=new Date(value);return Number.isNaN(date.getTime())?"Saved version":date.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
 function activeProject(){if(typeof window==="undefined")return undefined;try{const raw=window.localStorage.getItem("micirql_active_project");if(!raw)return undefined;const value=JSON.parse(raw) as {workspaceId?:unknown;siteId?:unknown};return typeof value.workspaceId==="string"&&typeof value.siteId==="string"?{workspaceId:value.workspaceId,siteId:value.siteId}:undefined}catch{return undefined}}
 function fileDataUrl(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>typeof reader.result==="string"?resolve(reader.result):reject(new Error("Could not read logo."));reader.onerror=()=>reject(new Error("Could not read logo."));reader.readAsDataURL(file)})}
 function extractBrandColors(file:File){return new Promise<string[]>((resolve)=>{const objectUrl=URL.createObjectURL(file);const image=new Image();image.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=64;canvas.height=64;const ctx=canvas.getContext("2d",{willReadFrequently:true});if(!ctx){resolve([]);return}ctx.clearRect(0,0,64,64);ctx.drawImage(image,0,0,64,64);const pixels=ctx.getImageData(0,0,64,64).data;const counts=new Map<string,number>();for(let i=0;i<pixels.length;i+=16){const a=pixels[i+3]??0;if(a<120)continue;const r=pixels[i]??0,g=pixels[i+1]??0,b=pixels[i+2]??0;if(r>242&&g>242&&b>242)continue;const q=(v:number)=>Math.max(0,Math.min(255,Math.round(v/32)*32));const color=toHex(q(r),q(g),q(b));counts.set(color,(counts.get(color)??0)+1)}const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(([color])=>color);const chosen:string[]=[];for(const color of ranked){if(chosen.every(existing=>colorDistance(existing,color)>72)){chosen.push(color);if(chosen.length===5)break}}resolve(chosen)}catch{resolve([])}finally{URL.revokeObjectURL(objectUrl)}};image.onerror=()=>{URL.revokeObjectURL(objectUrl);resolve([])};image.src=objectUrl})}

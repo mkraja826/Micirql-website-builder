@@ -1,6 +1,6 @@
 import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionVariant } from "./catalog";
-import type { UniversalSectionProps } from "./sections";
+import type { LogoPresentation, UniversalSectionProps } from "./sections";
 
 type VariantProps = UniversalSectionProps & { variant: SectionVariant };
 type BaseItem = NonNullable<UniversalSectionProps["items"]>[number];
@@ -25,6 +25,24 @@ function PrimaryAction({ action }: { action?: UniversalSectionProps["primaryActi
   return action ? <a className="mi-shell-cta" href={action.href}><InlineField path="primaryAction.label">{action.label}</InlineField></a> : null
 }
 
+function logoPlacement(logo: LogoPresentation, location: "navbar" | "footer") {
+  const shape = logo.shape ?? "horizontal";
+  const maxHeight = location === "navbar" ? (logo.navbarMaxHeight ?? 44) : (logo.footerMaxHeight ?? 58);
+  const desktopWidth = location === "navbar"
+    ? shape === "horizontal" ? 240 : shape === "square" ? 96 : 82
+    : shape === "horizontal" ? 300 : shape === "square" ? 118 : 96;
+  const mobileWidth = location === "navbar"
+    ? shape === "horizontal" ? 188 : shape === "square" ? 72 : 62
+    : shape === "horizontal" ? 230 : shape === "square" ? 100 : 82;
+  const mobileHeight = Math.max(30, Math.round(maxHeight * (location === "navbar" ? 0.84 : 0.92)));
+  const surface = logo.treatment === "neutral-container" || logo.treatment === "cleanup-recommended"
+    ? "light"
+    : logo.backgroundSignal === "embedded" && logo.edgeColor
+      ? "embedded"
+      : "auto";
+  return { shape, maxHeight, desktopWidth, mobileWidth, mobileHeight, surface };
+}
+
 function BrandMark({ props, location }: { props: VariantProps; location: "navbar" | "footer" }) {
   if (!props.logo?.src) {
     return location === "navbar"
@@ -32,11 +50,18 @@ function BrandMark({ props, location }: { props: VariantProps; location: "navbar
       : <div className="mi-footer-brand"><strong><InlineField path="title">{props.title}</InlineField></strong>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div>
   }
 
-  const maxHeight = location === "navbar" ? (props.logo.navbarMaxHeight ?? 44) : (props.logo.footerMaxHeight ?? 58);
   const treatment = props.logo.treatment ?? "direct";
-  const style = { "--mi-logo-max-height": `${maxHeight}px`, "--mi-logo-padding-scale": String(props.logo.paddingScale ?? 1) } as React.CSSProperties;
+  const placement = logoPlacement(props.logo, location);
+  const style = {
+    "--mi-logo-max-height": `${placement.maxHeight}px`,
+    "--mi-logo-max-width": `${placement.desktopWidth}px`,
+    "--mi-logo-mobile-max-height": `${placement.mobileHeight}px`,
+    "--mi-logo-mobile-max-width": `${placement.mobileWidth}px`,
+    "--mi-logo-padding-scale": String(props.logo.paddingScale ?? 1),
+    ...(placement.surface === "embedded" && props.logo.edgeColor ? { "--mi-logo-surface": props.logo.edgeColor } : {}),
+  } as React.CSSProperties;
   const image = <img src={props.logo.src} alt={props.logo.alt || `${props.title} logo`} className="mi-brand-logo__image" loading="eager" />;
-  const mark = <span className={`mi-brand-logo mi-brand-logo--${treatment} mi-brand-logo--${props.logo.shape ?? "horizontal"}`} style={style}>{image}<span className="mi-visually-hidden"><InlineField path="title">{props.title}</InlineField></span></span>;
+  const mark = <span data-logo-location={location} data-logo-surface={placement.surface} className={`mi-brand-logo mi-brand-logo--${treatment} mi-brand-logo--${placement.shape} mi-brand-logo--${location}`} style={style}>{image}<span className="mi-visually-hidden"><InlineField path="title">{props.title}</InlineField></span></span>;
 
   if (location === "navbar") return <a href="/" className="mi-shell-brand mi-shell-brand--logo">{mark}</a>;
   return <div className="mi-footer-brand mi-footer-brand--logo">{mark}{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div>

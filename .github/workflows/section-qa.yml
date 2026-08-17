@@ -1,4 +1,5 @@
 # Certification workflow for the MiCirql section catalog.
+# Shell regression passed; promote the same QA protocol to full catalog certification.
 name: Section QA
 
 on:

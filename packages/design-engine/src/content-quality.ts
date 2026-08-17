@@ -25,6 +25,22 @@ const LIMITS = {
   seoDescriptionChars: 160,
 } as const;
 
+const ITEM_FAMILIES = new Set(["services", "features", "testimonials", "gallery", "team", "process"]);
+const SINGLETON_FAMILIES = new Set(["hero", "services", "testimonials", "gallery", "team", "cta", "contact"]);
+const PLACEHOLDER_PATTERNS = [
+  /\bprimary offering\b/i,
+  /\bsupporting offering\b/i,
+  /\badditional offering\b/i,
+  /\bpoint (one|two|three|four|five)\b/i,
+  /\bteam member\b/i,
+  /\bverified proof\b/i,
+  /\bimage slot\b/i,
+  /\badd (a|an|the|another|real|verified)\b/i,
+  /\bready to discuss (home|contact|doctor|cases|services|treatments)\??$/i,
+  /\ba clear overview of (home|contact|doctor|cases|services|treatments)\.?$/i,
+  /\bexplore (home|contact|doctor|cases) and find the right next step\.?$/i,
+];
+
 export function normalizeWebsiteContent(site: Site): Site {
   const next = structuredClone(site);
   for (const page of next.pages) {
@@ -69,6 +85,7 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
   const seenPhrases = new Map<string, { pageId: string; sectionId: string }>();
 
   for (const page of site.pages) {
+    const seenFamilies = new Map<string, string>();
     if (page.seo.title.length > LIMITS.seoTitleChars) issues.push(issue("SEO_TITLE_LONG", "warning", "SEO title is longer than the recommended limit.", page.id));
     if (page.seo.description.length > LIMITS.seoDescriptionChars) issues.push(issue("SEO_DESCRIPTION_LONG", "warning", "SEO description is longer than the recommended limit.", page.id));
 
@@ -79,20 +96,38 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
       const title = text(props.title);
       const description = text(props.description);
 
+      if (family && SINGLETON_FAMILIES.has(family)) {
+        const priorSection = seenFamilies.get(family);
+        if (priorSection) {
+          issues.push(issue("DUPLICATE_SECTION_FAMILY", "error", `Page contains more than one visible ${family} section.`, page.id, section.id));
+        } else {
+          seenFamilies.set(family, section.id);
+        }
+      }
+
       if (!title) issues.push(issue("MISSING_SECTION_TITLE", "error", "Visible sections need a clear title.", page.id, section.id, "title"));
       if (title) {
         const max = family === "hero" ? LIMITS.heroTitleWords : LIMITS.sectionTitleWords;
         if (wordCount(title) > max) issues.push(issue("TITLE_TOO_LONG", "warning", `${family ?? "Section"} title is too long for its layout.`, page.id, section.id, "title"));
         detectDuplicate(title, page.id, section.id, seenPhrases, issues);
+        detectPlaceholder(title, page.id, section.id, "title", issues);
       }
-      if (description && wordCount(description) > LIMITS.descriptionWords) issues.push(issue("DESCRIPTION_TOO_LONG", "warning", "Section paragraph is too dense.", page.id, section.id, "description"));
+      if (description) {
+        if (wordCount(description) > LIMITS.descriptionWords) issues.push(issue("DESCRIPTION_TOO_LONG", "warning", "Section paragraph is too dense.", page.id, section.id, "description"));
+        detectPlaceholder(description, page.id, section.id, "description", issues);
+      }
 
       for (const key of ["primaryAction", "secondaryAction"] as const) {
         const action = props[key];
         if (action && typeof action === "object") {
           const label = text((action as Record<string, unknown>).label);
           if (label && wordCount(label) > LIMITS.ctaLabelWords) issues.push(issue("CTA_TOO_LONG", "warning", "CTA label should stay short and actionable.", page.id, section.id, `${key}.label`));
+          if (label) detectPlaceholder(label, page.id, section.id, `${key}.label`, issues);
         }
+      }
+
+      if (family && ITEM_FAMILIES.has(family) && (!Array.isArray(props.items) || props.items.length === 0)) {
+        issues.push(issue("EMPTY_CONTENT_SECTION", "error", `${family} section cannot be empty in a generated website.`, page.id, section.id, "items"));
       }
 
       if (Array.isArray(props.items)) {
@@ -103,7 +138,11 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
           const itemDescription = text(item.description);
           if (itemTitle && wordCount(itemTitle) > LIMITS.itemTitleWords) issues.push(issue("ITEM_TITLE_LONG", "warning", "Card/item title is too long.", page.id, section.id, `items.${index}.title`));
           if (itemDescription && wordCount(itemDescription) > LIMITS.itemDescriptionWords) issues.push(issue("ITEM_COPY_DENSE", "warning", "Card/item copy is too dense.", page.id, section.id, `items.${index}.description`));
-          if (itemTitle) detectDuplicate(itemTitle, page.id, section.id, seenPhrases, issues);
+          if (itemTitle) {
+            detectDuplicate(itemTitle, page.id, section.id, seenPhrases, issues);
+            detectPlaceholder(itemTitle, page.id, section.id, `items.${index}.title`, issues);
+          }
+          if (itemDescription) detectPlaceholder(itemDescription, page.id, section.id, `items.${index}.description`, issues);
         });
       }
     }
@@ -122,6 +161,11 @@ function detectDuplicate(value: string, pageId: string, sectionId: string, seen:
   } else {
     seen.set(key, { pageId, sectionId });
   }
+}
+
+function detectPlaceholder(value: string, pageId: string, sectionId: string, path: string, issues: ContentQualityIssue[]) {
+  if (!PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.trim()))) return;
+  issues.push(issue("PLACEHOLDER_COPY", "error", "Generated website contains placeholder or scaffolding copy.", pageId, sectionId, path));
 }
 
 function familyFromComponentId(componentId: string): string | undefined {

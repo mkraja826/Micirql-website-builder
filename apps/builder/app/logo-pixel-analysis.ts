@@ -80,6 +80,92 @@ export async function analyzeLogoPixels(file: File): Promise<LogoPixelAnalysis |
   }
 }
 
+/**
+ * Creates a transparent PNG derivative without touching the original file.
+ * Only border-connected pixels close to the sampled edge color are removed,
+ * which avoids globally deleting matching colors from the logo artwork.
+ */
+export async function createTransparentLogoDerivative(file: File, analysis?: LogoPixelAnalysis): Promise<string | undefined> {
+  if (!analysis || file.type === "image/svg+xml" || analysis.hasTransparency) return undefined;
+  if (analysis.backgroundSignal !== "embedded" || analysis.edgeBackgroundRatio < 0.9 || !analysis.edgeColor) return undefined;
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(objectUrl);
+    const naturalWidth = image.naturalWidth || image.width;
+    const naturalHeight = image.naturalHeight || image.height;
+    if (!naturalWidth || !naturalHeight) return undefined;
+
+    const maxDimension = 1600;
+    const scale = Math.min(1, maxDimension / Math.max(naturalWidth, naturalHeight));
+    const width = Math.max(1, Math.round(naturalWidth * scale));
+    const height = Math.max(1, Math.round(naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return undefined;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const background = hexToRgb(analysis.edgeColor);
+    if (!background) return undefined;
+
+    const pixelCount = width * height;
+    const visited = new Uint8Array(pixelCount);
+    const queue = new Uint32Array(pixelCount);
+    let head = 0;
+    let tail = 0;
+    const tolerance = 66;
+
+    const enqueue = (index: number) => {
+      if (visited[index]) return;
+      const offset = index * 4;
+      const alpha = data[offset + 3] ?? 0;
+      const color: [number, number, number] = [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0];
+      if (alpha < 18 || rgbDistance(color, background) <= tolerance) {
+        visited[index] = 1;
+        queue[tail++] = index;
+      }
+    };
+
+    for (let x = 0; x < width; x++) {
+      enqueue(x);
+      enqueue((height - 1) * width + x);
+    }
+    for (let y = 1; y < height - 1; y++) {
+      enqueue(y * width);
+      enqueue(y * width + width - 1);
+    }
+
+    while (head < tail) {
+      const index = queue[head++] ?? 0;
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const offset = index * 4;
+      const color: [number, number, number] = [data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0];
+      const distance = rgbDistance(color, background);
+      const existingAlpha = data[offset + 3] ?? 255;
+      const fade = distance <= 30 ? 0 : Math.min(1, (distance - 30) / (tolerance - 30));
+      data[offset + 3] = Math.min(existingAlpha, Math.round(255 * fade));
+
+      if (x > 0) enqueue(index - 1);
+      if (x + 1 < width) enqueue(index + 1);
+      if (y > 0) enqueue(index - width);
+      if (y + 1 < height) enqueue(index + width);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return undefined;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -101,4 +187,10 @@ function rgbDistance(a: [number, number, number], b: [number, number, number]) {
 
 function toHex(r: number, g: number, b: number) {
   return `#${[r, g, b].map((value) => value.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+function hexToRgb(value: string): [number, number, number] | undefined {
+  const match = value.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!match) return undefined;
+  return [parseInt(match[1] ?? "0", 16), parseInt(match[2] ?? "0", 16), parseInt(match[3] ?? "0", 16)];
 }

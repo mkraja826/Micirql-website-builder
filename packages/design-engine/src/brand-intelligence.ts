@@ -28,6 +28,7 @@ const CREATIVE = /creative|design|studio|fashion|beauty|photography|media|agency
 export function deriveBrandIntelligence(input: BrandIntelligenceInput): BrandIntelligenceProfile {
   const descriptor = [input.industry, input.businessType, input.audience].filter(Boolean).join(" ");
   const premium = input.premium === true || /luxury|premium|boutique|exclusive/i.test(descriptor);
+  const isClinical = CLINICAL.test(descriptor);
   const recommendations: string[] = [];
 
   let tone: BrandIntelligenceProfile["tone"] = "neutral";
@@ -38,7 +39,7 @@ export function deriveBrandIntelligence(input: BrandIntelligenceInput): BrandInt
   let imageryStyle: BrandIntelligenceProfile["imageryStyle"] = "clean-realistic";
   let motion: BrandIntelligenceProfile["motion"] = "subtle";
 
-  if (CLINICAL.test(descriptor)) {
+  if (isClinical) {
     tone = "clinical";
     typographyMood = "humanist";
     density = "comfortable";
@@ -86,11 +87,19 @@ export function deriveBrandIntelligence(input: BrandIntelligenceInput): BrandInt
   }
 
   if (premium) {
-    tone = "premium";
     density = "spacious";
-    typographyMood = "editorial";
     motion = motion === "rich" ? "standard" : motion;
-    recommendations.push("Premium positioning should use restraint: more whitespace, fewer competing accents and slower motion.");
+    if (isClinical) {
+      tone = "clinical";
+      typographyMood = "humanist";
+      imageryStyle = "clean-realistic";
+      shape = "soft";
+      recommendations.push("Premium healthcare should feel calm and precise, using refined spacing and real clinical imagery rather than fashion-style display typography.");
+    } else {
+      tone = "premium";
+      typographyMood = "editorial";
+      recommendations.push("Premium positioning should use restraint: more whitespace, fewer competing accents and slower motion.");
+    }
   }
 
   if (typeof input.paletteScore === "number" && input.paletteScore < 55) {

@@ -105,6 +105,10 @@ jobs:
         if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: pnpm qa:sections:visual-review
 
+      - name: Enforce premium certification gate
+        if: env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
+        run: node qa/enforce-premium-certification.mjs
+
       - name: Add certification summary
         if: always() && env.MI_QA_SCOPE != 'regression' && env.MI_QA_SCOPE != 'shell-regression'
         run: |

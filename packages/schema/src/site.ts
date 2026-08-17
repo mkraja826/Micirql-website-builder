@@ -40,6 +40,14 @@ const brandColorsSchema = z.object({
   error: z.string().min(1),
 });
 
+const brandIntelligenceSchema = z.object({
+  tone: z.enum(["clinical", "corporate", "premium", "friendly", "bold", "editorial", "neutral"]),
+  typographyMood: z.enum(["technical", "humanist", "editorial", "geometric", "classic"]),
+  buttonStyle: z.enum(["solid", "soft", "outline-accent", "high-contrast"]),
+  imageryStyle: z.enum(["clean-realistic", "editorial-lifestyle", "product-led", "architectural", "minimal-illustrative"]),
+  recommendations: z.array(z.string()).max(12).default([]),
+}).optional();
+
 export const brandHistoryEntrySchema = z.object({
   id: z.string().min(1),
   createdAt: z.string().datetime(),
@@ -64,6 +72,7 @@ export const brandTokensSchema = z.object({
   socialImageAssetId: z.string().optional(),
   socialImageStrategy: z.enum(["generated-card", "logo-fallback", "favicon-fallback"]).optional(),
   logoPresentation: logoPresentationSchema.optional(),
+  intelligence: brandIntelligenceSchema,
   history: z.array(brandHistoryEntrySchema).max(5).optional(),
   colors: brandColorsSchema,
   typography: z.object({

@@ -1,0 +1,47 @@
+/*
+ * Editor V2 layout guard.
+ *
+ * workspace-interactive.css still contains the legacy desktop shell grid used
+ * before .workspace-main became the container for rail/canvas/inspector.
+ * Keep the current hierarchy authoritative so the editor body cannot collapse
+ * and clip the preview/inspector to a thin strip.
+ */
+@media (min-width: 900px) {
+  .workspace-shell.editor-v2 {
+    height: 100svh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .editor-v2 .workspace-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    overflow: hidden;
+  }
+
+  .editor-v2 .workspace-canvas {
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    grid-column: auto;
+  }
+
+  .editor-v2 .canvas-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .editor-v2 .workspace-inspector {
+    min-height: 0;
+    grid-column: auto;
+  }
+}

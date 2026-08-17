@@ -18,6 +18,7 @@ import "./workspace-interactive.css";
 import "./canvas-controls.css";
 import "./completion-checklist.css";
 import "./actionable-checklist.css";
+import "./editor-layout-guard.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",

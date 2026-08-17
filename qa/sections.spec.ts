@@ -113,20 +113,33 @@ for (const entry of entries) {
           return [...byUrl.values()].reduce((sum, bytes) => sum + bytes, 0);
         }, [...baselineJsUrls]);
 
-        // Only visible text can clip for a user. Responsive shells deliberately
-        // keep desktop actions/links in the DOM with display:none on mobile; those
-        // nodes can retain a non-zero scrollWidth while clientWidth is zero and
-        // must not be reported as visible text overflow.
-        const textOverflowCount = rootVisible
+        // Text clipping is distinct from normal wrapping. scrollWidth can exceed
+        // clientWidth for a wrapping inline/link because of sub-pixel layout and
+        // descendant geometry even when every glyph is visible. Treat text as
+        // clipped only when the element actually conceals horizontal overflow.
+        // Uncontained visible overflow is still rejected separately by overflowPx.
+        const clippedTextTargets = rootVisible
           ? await root.locator("h1,h2,h3,p,a,button").evaluateAll((elements) =>
-              elements.filter((element) => {
-                const style = getComputedStyle(element);
-                const rect = element.getBoundingClientRect();
-                if (style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height <= 0) return false;
-                return element.scrollWidth > element.clientWidth + 2;
-              }).length,
+              elements
+                .filter((element) => {
+                  const style = getComputedStyle(element);
+                  const rect = element.getBoundingClientRect();
+                  if (style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height <= 0) return false;
+
+                  const concealsOverflow = style.overflowX === "hidden" || style.overflowX === "clip" || style.textOverflow === "ellipsis";
+                  if (!concealsOverflow) return false;
+
+                  return element.scrollWidth > element.clientWidth + 2;
+                })
+                .map((element) => ({
+                  tag: element.tagName,
+                  text: element.textContent?.trim().slice(0, 60) ?? "",
+                  clientWidth: element.clientWidth,
+                  scrollWidth: element.scrollWidth,
+                })),
             )
-          : 1;
+          : [{ tag: "ROOT", text: "section root not visible", clientWidth: 0, scrollWidth: 1 }];
+        const textOverflowCount = clippedTextTargets.length;
 
         const passed = routePassed
           && rootVisible
@@ -163,6 +176,7 @@ for (const entry of entries) {
             unlabeledControls,
             invalidActions,
             textOverflowCount,
+            clippedTextTargets,
             clientJsKb: Math.round((sectionClientJsBytes / 1024) * 10) / 10,
             clientJsMeasurement: "incremental-over-preview-shell",
             accessibilityPassed: imagesWithoutAlt === 0 && unlabeledControls === 0,
@@ -180,7 +194,7 @@ for (const entry of entries) {
         expect(unlabeledControls, "form controls require accessible labels").toBe(0);
         expect(invalidActions, "interactive actions must have a valid destination").toBe(0);
         expect(sectionClientJsBytes, "incremental section JavaScript must remain within MiCirql budget").toBeLessThanOrEqual(sectionClientJsBudgetBytes);
-        expect(textOverflowCount, "text must not clip horizontally").toBe(0);
+        expect(clippedTextTargets, `text must not be concealed horizontally: ${JSON.stringify(clippedTextTargets)}`).toEqual([]);
       });
     }
   });

@@ -1,0 +1,48 @@
+name: Seed Dental Media Library
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Number of missing certified Dental assets to generate
+        required: false
+        default: '3'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/seed-dental-media.yml'
+
+permissions:
+  contents: read
+
+env:
+  BUILDER_BASE_URL: https://builder.micirql.com
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Verify library admin token
+        shell: bash
+        env:
+          MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
+        run: test -n "$MICIRQL_LIBRARY_ADMIN_TOKEN" || { echo 'Missing MICIRQL_LIBRARY_ADMIN_TOKEN'; exit 1; }
+
+      - name: Seed certified Dental assets
+        shell: bash
+        env:
+          MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
+          SEED_LIMIT: ${{ github.event.inputs.limit || '3' }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          http_code=$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --request POST \
+            --header 'content-type: application/json' \
+            --header "x-micirql-library-token: $MICIRQL_LIBRARY_ADMIN_TOKEN" \
+            --data "{\"limit\":${SEED_LIMIT}}" \
+            "$BUILDER_BASE_URL/api/admin/media-library/dental")
+          cat "$response_file"
+          echo
+          test "$http_code" -ge 200 -a "$http_code" -lt 300 || { echo "Dental media seeder returned HTTP $http_code"; exit 1; }

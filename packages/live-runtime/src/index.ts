@@ -69,7 +69,8 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   }
 
   const content = await dependencies.renderPage(prepared.value);
-  const document = pageDocument(prepared.value.seo, content);
+  const favicon = faviconFor(site);
+  const document = pageDocument(prepared.value.seo, content, favicon);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
@@ -91,9 +92,17 @@ function functionActionFromPath(pathname: string): string | undefined {
   }
 }
 
-function pageDocument(seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] }, body: string) {
+function faviconFor(site: Site) {
+  if (site.theme.brand.faviconAssetId) return site.theme.brand.faviconAssetId;
+  const presentation = site.theme.brand.logoPresentation;
+  if (presentation?.shape === "square") return site.theme.brand.logoAssetId;
+  return undefined;
+}
+
+function pageDocument(seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] }, body: string, favicon?: string) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}</head><body>${body}${formFeedbackScript()}</body></html>`;
+  const icon = favicon ? `<link rel="icon" href="${escapeAttr(favicon)}"><link rel="apple-touch-icon" href="${escapeAttr(favicon)}">` : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${structured}</head><body>${body}${formFeedbackScript()}</body></html>`;
 }
 
 function formFeedbackScript() {

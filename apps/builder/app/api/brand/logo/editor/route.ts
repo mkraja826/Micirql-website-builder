@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       clientAnalysis?: unknown;
       cleanupDataUrl?: unknown;
       logoColors?: unknown;
+      colorPreference?: unknown;
       brand?: unknown;
     };
     const workspaceId = clean(body.workspaceId);
@@ -53,10 +54,12 @@ export async function POST(request: NextRequest) {
     if (!draft) return NextResponse.json({ error: "Workspace draft could not be loaded." }, { status: 404 });
     const baseBrand = body.brand ? brandTokensSchema.parse(body.brand) : draft.snapshot.theme.brand;
     const logoColors = sanitizeLogoColors(body.logoColors);
+    const colorPreference = body.colorPreference === "match" ? "match" : "keep";
     const paletteAssessment = assessBrandPalette({ logoColors });
-    const approvedColors = paletteAssessment.decision === "decouple"
-      ? baseBrand.colors
-      : colorsFromAssessment(baseBrand.colors, paletteAssessment);
+    const paletteApplied = colorPreference === "match" && paletteAssessment.decision !== "decouple";
+    const approvedColors = paletteApplied
+      ? colorsFromAssessment(baseBrand.colors, paletteAssessment)
+      : baseBrand.colors;
 
     const fileAnalysis = analyzeLogoFile(Uint8Array.from(originalBytes), contentType);
     const clientAnalysis = contentType === "image/svg+xml" ? undefined : sanitizeClientAnalysis(body.clientAnalysis);
@@ -126,6 +129,12 @@ export async function POST(request: NextRequest) {
       faviconStrategy = "initial-mark";
     }
 
+    const paletteReason = colorPreference === "keep"
+      ? "Website colors preserved by user preference."
+      : paletteAssessment.decision === "decouple"
+        ? "Logo palette was rejected by the quality gate, so existing website colors were preserved."
+        : `Logo palette ${paletteAssessment.decision} decision applied (${paletteAssessment.score}/100).`;
+
     const nextBrand = brandTokensSchema.parse({
       ...baseBrand,
       colors: approvedColors,
@@ -151,7 +160,7 @@ export async function POST(request: NextRequest) {
         reasons: [
           ...presentation.reasons,
           ...(effectiveAnalysis.backgroundSignal ? [`Background signal: ${effectiveAnalysis.backgroundSignal}${clientAnalysis ? " (pixel sampled)" : ""}.`] : []),
-          `Palette decision: ${paletteAssessment.decision} (${paletteAssessment.score}/100).`,
+          paletteReason,
           `Favicon strategy: ${faviconStrategy}.`,
         ],
       },
@@ -169,6 +178,8 @@ export async function POST(request: NextRequest) {
       faviconUrl,
       socialImageUrl: social.url,
       cleanupApplied,
+      colorPreference,
+      paletteApplied,
       paletteDecision: paletteAssessment.decision,
       paletteScore: paletteAssessment.score,
       paletteReasons: paletteAssessment.reasons,

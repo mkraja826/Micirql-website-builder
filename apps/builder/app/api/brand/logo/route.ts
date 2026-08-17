@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseConfig, bearerToken } from "../../drafts/supabase-store";
+import { evaluateLogoUsability } from "@micirql/design-engine";
+import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, bearerToken } from "../../drafts/supabase-store";
+import { analyzeLogoFile } from "./logo-file-analysis";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
@@ -33,6 +35,13 @@ export async function POST(request: NextRequest) {
     const bytes = Buffer.from(encoded, "base64");
     if (!bytes.length || bytes.length > MAX_BYTES) return NextResponse.json({ error: "Logo must be smaller than 5 MB." }, { status: 413 });
 
+    const fileAnalysis = analyzeLogoFile(Uint8Array.from(bytes), contentType);
+    const presentation = evaluateLogoUsability({
+      width: fileAnalysis.width,
+      height: fileAnalysis.height,
+      hasTransparency: fileAnalysis.hasTransparency,
+    });
+
     const { url, key } = supabaseConfig();
     const token = bearerToken(request);
     const ext = extension(contentType);
@@ -55,7 +64,25 @@ export async function POST(request: NextRequest) {
     }
 
     const publicUrl = `${url}/storage/v1/object/public/public-assets/${encodePath(path)}`;
-    return NextResponse.json({ ok: true, path, url: publicUrl }, { status: 201 });
+    const draft = await getSupabaseDraft(request, workspaceId, siteId);
+    if (!draft) throw new Error("Workspace draft could not be loaded to attach the logo.");
+    const snapshot = structuredClone(draft.snapshot);
+    snapshot.theme.brand.logoAssetId = publicUrl;
+    snapshot.theme.brand.logoPresentation = {
+      shape: presentation.shape,
+      treatment: presentation.treatment,
+      navbarMaxHeight: presentation.navbarMaxHeight,
+      footerMaxHeight: presentation.footerMaxHeight,
+      paddingScale: presentation.paddingScale,
+      preserveOriginal: true,
+      ...(fileAnalysis.width ? { width: fileAnalysis.width } : {}),
+      ...(fileAnalysis.height ? { height: fileAnalysis.height } : {}),
+      ...(typeof fileAnalysis.hasTransparency === "boolean" ? { hasTransparency: fileAnalysis.hasTransparency } : {}),
+      reasons: presentation.reasons,
+    };
+    await saveSupabaseDraft(request, { snapshot, expectedRevision: draft.revision });
+
+    return NextResponse.json({ ok: true, path, url: publicUrl, analysis: fileAnalysis, presentation }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Logo upload failed." }, { status: 500 });
   }

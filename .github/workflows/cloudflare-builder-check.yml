@@ -1,6 +1,14 @@
 name: Cloudflare Builder Check
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/builder/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/cloudflare-builder-check.yml'
   pull_request:
     paths:
       - 'apps/builder/**'
@@ -9,9 +17,14 @@ on:
       - 'pnpm-workspace.yaml'
       - '.github/workflows/cloudflare-builder-check.yml'
 
+concurrency:
+  group: builder-cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-worker:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_build_check
@@ -24,5 +37,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @micirql/builder exec opennextjs-cloudflare build

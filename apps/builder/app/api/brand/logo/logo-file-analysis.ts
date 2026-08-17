@@ -69,7 +69,13 @@ function analyzeSvg(bytes: Uint8Array): LogoFileAnalysis {
   const height = numberAttr(svg,"height");
   if (width && height) return { width, height, hasTransparency: true };
   const viewBox = svg.match(/viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
-  return { width: positiveNumber(viewBox?.[1]), height: positiveNumber(viewBox?.[2]), hasTransparency: true };
+  const viewBoxWidth = positiveNumber(viewBox?.[1]);
+  const viewBoxHeight = positiveNumber(viewBox?.[2]);
+  return {
+    ...(viewBoxWidth ? { width: viewBoxWidth } : {}),
+    ...(viewBoxHeight ? { height: viewBoxHeight } : {}),
+    hasTransparency: true,
+  };
 }
 
 function numberAttr(svg:string,name:string){return positiveNumber(svg.match(new RegExp(`${name}\\s*=\\s*["']([\\d.]+)`,"i"))?.[1]);}

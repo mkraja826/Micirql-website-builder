@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 const root = process.cwd();
 const servicePath = path.join(root, "apps/builder/app/api/generate-content/service.ts");
-const migrationPath = path.join(root, "supabase/migrations/20260817101700_allow_generate_content_ai_usage_task.sql");
+const migrationPath = path.join(root, "supabase/migrations/20260817102000_allow_generate_content_ai_usage_task.sql");
 
 const service = fs.readFileSync(servicePath, "utf8");
 const migration = fs.readFileSync(migrationPath, "utf8");

@@ -1,0 +1,20 @@
+@media(max-width:47.99rem){
+.mi-section{--mi-section-space:clamp(3rem,12vw,4.75rem)}
+.mi-section--hero{padding-top:clamp(2.5rem,10vw,4rem);padding-bottom:clamp(3rem,11vw,4.75rem)}
+.mi-hero__split,.mi-hero__editorial-grid{gap:clamp(1.5rem,6vw,2.25rem)}
+.mi-hero__copy{gap:1rem!important}
+.mi-hero__copy h1{font-size:clamp(2.35rem,11vw,3.8rem)!important;line-height:.96!important;letter-spacing:-.04em!important;text-wrap:balance}
+.mi-hero__copy p{font-size:clamp(1rem,4.3vw,1.125rem);line-height:1.6;max-width:38rem}
+.mi-hero__copy .mi-section__actions{display:grid;width:100%;gap:.65rem}
+.mi-hero__copy .mi-section__action{width:100%;min-height:48px;padding:.85rem 1rem}
+.mi-hero__editorial-grid .mi-hero__index{font-size:clamp(2.5rem,18vw,4.5rem);line-height:.75}
+.mi-hero--centered .mi-section__media{margin-top:1.5rem}
+.mi-hero--media-first .mi-section__media{order:-1}
+.mi-section--hero:not(.mi-hero--immersive) .mi-section__media{border-radius:clamp(.85rem,4vw,1.35rem);box-shadow:0 1rem 2.5rem color-mix(in srgb,var(--mi-color-text) 9%,transparent)}
+.mi-hero--immersive,.mi-hero--immersive .mi-hero__overlay{min-height:min(76svh,42rem)}
+.mi-hero__overlay{padding-block:calc(env(safe-area-inset-top) + 5rem) max(3rem,calc(env(safe-area-inset-bottom) + 2rem));background:linear-gradient(180deg,rgba(0,0,0,.08) 0%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.82) 100%)}
+.mi-hero--immersive .mi-hero__copy{max-width:34rem}
+.mi-standard--split>.mi-section__heading{position:static}
+.mi-section-variant--4 .mi-section__heading{padding-left:1rem}
+.mi-section-variant--5 .mi-section:not(.mi-hero--immersive)::before{width:12rem;height:12rem;opacity:.7}
+}

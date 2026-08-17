@@ -9,6 +9,52 @@ import {
   themeModifierSchema,
 } from "./core";
 
+const logoPresentationSchema = z.object({
+  shape: z.enum(["horizontal", "square", "vertical"]),
+  treatment: z.enum(["direct", "neutral-container", "cleanup-recommended"]),
+  navbarMaxHeight: z.number().positive(),
+  footerMaxHeight: z.number().positive(),
+  paddingScale: z.number().positive(),
+  preserveOriginal: z.literal(true),
+  cleanupApplied: z.boolean().optional(),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  hasTransparency: z.boolean().optional(),
+  edgeBackgroundRatio: z.number().min(0).max(1).optional(),
+  backgroundSignal: z.enum(["transparent", "embedded", "clean-opaque", "unknown"]).optional(),
+  edgeColor: z.string().optional(),
+  reasons: z.array(z.string()).default([]),
+});
+
+const brandColorsSchema = z.object({
+  primary: z.string().min(1),
+  secondary: z.string().min(1),
+  accent: z.string().min(1),
+  background: z.string().min(1),
+  surface: z.string().min(1),
+  textPrimary: z.string().min(1),
+  textSecondary: z.string().min(1),
+  border: z.string().min(1),
+  success: z.string().min(1),
+  warning: z.string().min(1),
+  error: z.string().min(1),
+});
+
+export const brandHistoryEntrySchema = z.object({
+  id: z.string().min(1),
+  createdAt: z.string().datetime(),
+  reason: z.enum(["logo-replacement", "brand-restore", "manual-palette"]),
+  logoAssetId: z.string().optional(),
+  logoOriginalAssetId: z.string().optional(),
+  logoCleanupAssetId: z.string().optional(),
+  faviconAssetId: z.string().optional(),
+  faviconStrategy: z.enum(["reuse-logo", "derive-symbol", "initial-mark"]).optional(),
+  socialImageAssetId: z.string().optional(),
+  socialImageStrategy: z.enum(["generated-card", "logo-fallback", "favicon-fallback"]).optional(),
+  logoPresentation: logoPresentationSchema.optional(),
+  colors: brandColorsSchema,
+});
+
 export const brandTokensSchema = z.object({
   logoAssetId: z.string().optional(),
   logoOriginalAssetId: z.string().optional(),
@@ -17,35 +63,9 @@ export const brandTokensSchema = z.object({
   faviconStrategy: z.enum(["reuse-logo", "derive-symbol", "initial-mark"]).optional(),
   socialImageAssetId: z.string().optional(),
   socialImageStrategy: z.enum(["generated-card", "logo-fallback", "favicon-fallback"]).optional(),
-  logoPresentation: z.object({
-    shape: z.enum(["horizontal", "square", "vertical"]),
-    treatment: z.enum(["direct", "neutral-container", "cleanup-recommended"]),
-    navbarMaxHeight: z.number().positive(),
-    footerMaxHeight: z.number().positive(),
-    paddingScale: z.number().positive(),
-    preserveOriginal: z.literal(true),
-    cleanupApplied: z.boolean().optional(),
-    width: z.number().positive().optional(),
-    height: z.number().positive().optional(),
-    hasTransparency: z.boolean().optional(),
-    edgeBackgroundRatio: z.number().min(0).max(1).optional(),
-    backgroundSignal: z.enum(["transparent", "embedded", "clean-opaque", "unknown"]).optional(),
-    edgeColor: z.string().optional(),
-    reasons: z.array(z.string()).default([]),
-  }).optional(),
-  colors: z.object({
-    primary: z.string().min(1),
-    secondary: z.string().min(1),
-    accent: z.string().min(1),
-    background: z.string().min(1),
-    surface: z.string().min(1),
-    textPrimary: z.string().min(1),
-    textSecondary: z.string().min(1),
-    border: z.string().min(1),
-    success: z.string().min(1),
-    warning: z.string().min(1),
-    error: z.string().min(1),
-  }),
+  logoPresentation: logoPresentationSchema.optional(),
+  history: z.array(brandHistoryEntrySchema).max(5).default([]),
+  colors: brandColorsSchema,
   typography: z.object({
     display: z.string().min(1),
     body: z.string().min(1),
@@ -138,3 +158,4 @@ export type SitePage = z.infer<typeof pageSchema>;
 export type SiteSection = z.infer<typeof sectionSchema>;
 export type ThemeConfig = z.infer<typeof themeConfigSchema>;
 export type BrandTokens = z.infer<typeof brandTokensSchema>;
+export type BrandHistoryEntry = z.infer<typeof brandHistoryEntrySchema>;

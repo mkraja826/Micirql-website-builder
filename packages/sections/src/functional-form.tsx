@@ -12,8 +12,11 @@ const BASE: Field[] = [
 export function FunctionalContactForm(props: Props) {
   if (!props.formAction) return null;
   const actionId = String(props.formActionId ?? detectActionId(props));
-  const fields = [...BASE, ...fieldsFor(actionId)];
+  const fields = [...baseFieldsFor(actionId), ...fieldsFor(actionId)];
   const submit = submitLabel(actionId);
+  const status = actionId === "appointment.request"
+    ? "Send your preferred treatment and time. The clinic will contact you to confirm the appointment."
+    : "Submitting this form sends a request. Appointments, reservations and bookings are confirmed separately.";
   return <form id="enquiry" className="mi-contact-form mi-functional-form" action={props.formAction} method="post" data-mi-action-id={actionId}>
     {props.formSourcePage ? <input type="hidden" name="sourcePage" value={String(props.formSourcePage)} /> : null}
     <input type="text" name="website" tabIndex={-1} autoComplete="off" className="mi-form-honeypot" aria-hidden="true" />
@@ -24,16 +27,21 @@ export function FunctionalContactForm(props: Props) {
       </label>)}
       {actionId === "enrollment.enquiry" ? <label><span>Delivery mode</span><select name="deliveryMode" defaultValue="unsure"><option value="unsure">Not sure yet</option><option value="online">Online</option><option value="in-person">In person</option><option value="hybrid">Hybrid</option></select></label> : null}
       {actionId === "property.enquiry" ? <label><span>Enquiry type</span><select name="enquiryType" defaultValue="details"><option value="details">Property details</option><option value="visit">Arrange a visit</option><option value="brochure">Request brochure</option><option value="callback">Request callback</option></select></label> : null}
-      <label className="mi-form-field--wide"><span>Message</span><textarea name="message" rows={5} placeholder="Tell us how we can help" /></label>
+      <label className="mi-form-field--wide"><span>Message</span><textarea name="message" rows={5} placeholder={actionId === "appointment.request" ? "Share any symptoms, concerns, or accessibility needs" : "Tell us how we can help"} /></label>
     </div>
-    <label className="mi-form-consent"><input type="checkbox" name="consent" value="true" /> <span>I agree to be contacted about this request.</span></label>
+    <label className="mi-form-consent"><input type="checkbox" name="consent" value="true" required /> <span>I agree to be contacted about this request.</span></label>
     <button type="submit" className="mi-functional-form__submit">{submit}</button>
-    <p className="mi-form-status" data-mi-form-status aria-live="polite">Submitting this form sends a request. Appointments, reservations and bookings are confirmed separately.</p>
+    <p className="mi-form-status" data-mi-form-status aria-live="polite">{status}</p>
   </form>;
 }
 
+function baseFieldsFor(actionId: string): Field[] {
+  if (actionId === "appointment.request") return BASE.map((field) => field.name === "phone" ? { ...field, required: true } : field);
+  return BASE;
+}
+
 function fieldsFor(actionId: string): Field[] {
-  if (actionId === "appointment.request") return [{ name: "service", label: "Treatment / service" }, { name: "clinician", label: "Preferred clinician" }, { name: "preferredDate", label: "Preferred date", type: "date" }, { name: "preferredTime", label: "Preferred time", type: "time" }];
+  if (actionId === "appointment.request") return [{ name: "service", label: "Treatment / service", required: true }, { name: "clinician", label: "Preferred clinician" }, { name: "preferredDate", label: "Preferred date", type: "date" }, { name: "preferredTime", label: "Preferred time", type: "time" }];
   if (actionId === "reservation.request") return [{ name: "requestedDate", label: "Date", type: "date", required: true }, { name: "requestedTime", label: "Time", type: "time", required: true }, { name: "partySize", label: "Guests", type: "number", required: true, min: 1, max: 100 }];
   if (actionId === "quote.request") return [{ name: "service", label: "Service", required: true }, { name: "location", label: "Project location" }, { name: "budgetRange", label: "Budget range" }];
   if (actionId === "property.enquiry") return [{ name: "propertyId", label: "Property / project", required: true }];

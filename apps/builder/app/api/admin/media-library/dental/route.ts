@@ -18,12 +18,12 @@ export async function POST(request:Request){
   const generated:AssetRecord[]=[];const failures:Array<{id:string;error:string}>=[];
   for(const seed of pending.slice(0,limit)){
    try{
-    const result=await executor.run({prompt:`${seed.prompt} Preferred composition: ${seed.aspect}.`,purpose:`certified Dental media library ${seed.role}`,domain:"dental",sectionFamily:seed.sectionFamily});
+    const result=await executor.run({prompt:`${seed.prompt} Preferred composition: ${seed.aspect}.`,purpose:`certified Dental media library ${seed.role}`,domain:"clinic",sectionFamily:seed.sectionFamily});
     const id=`library-dental-${seed.id}-${crypto.randomUUID()}`;
     const stored=await uploadAssetBinary("_library/dental",id,result.output.bytes,result.output.contentType);
     const size=parseProviderSize(provider.size),ratio=size.width/size.height;
     const orientation:AssetRecord["orientation"]=ratio>2?"panoramic":ratio>1.08?"landscape":ratio<.92?"portrait":"square";
-    const asset:AssetRecord={id,source:"ai-generated",kind:"image",name:`Dental library: ${seed.id}`,alt:result.output.alt??seed.alt,width:size.width,height:size.height,orientation,aspectRatio:ratio,focalPoint:result.output.focalPoint??{x:.5,y:.5},domains:["dental","healthcare"],subtypes:[seed.subindustry],sectionFamilies:[seed.sectionFamily],themes:[],tags:[...new Set([...(result.output.tags??[]),...seed.tags,seed.certificationId,`library-seed:${seed.id}`,`preferred-aspect:${seed.aspect}`,"certified-dental-media"])],license:"micirql-owned",sourceReference:`generated:${new URL(provider.endpoint).hostname}:${provider.model}:${seed.id}`,originalUrl:stored.url,variants:[],active:true,createdAt:new Date().toISOString()};
+    const asset:AssetRecord={id,source:"ai-generated",kind:"image",name:`Dental library: ${seed.id}`,alt:result.output.alt??seed.alt,width:size.width,height:size.height,orientation,aspectRatio:ratio,focalPoint:result.output.focalPoint??{x:.5,y:.5},domains:["clinic"],subtypes:[seed.subindustry],sectionFamilies:[seed.sectionFamily],themes:[],tags:[...new Set([...(result.output.tags??[]),...seed.tags,seed.certificationId,`library-seed:${seed.id}`,`preferred-aspect:${seed.aspect}`,"certified-dental-media"])],license:"micirql-owned",sourceReference:`generated:${new URL(provider.endpoint).hostname}:${provider.model}:${seed.id}`,originalUrl:stored.url,variants:[],active:true,createdAt:new Date().toISOString()};
     generated.push(await insertAsset(asset,stored.key));
    }catch(error){failures.push({id:seed.id,error:error instanceof Error?error.message:"Generation failed."});}
   }

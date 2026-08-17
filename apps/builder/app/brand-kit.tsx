@@ -7,6 +7,7 @@ import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel
 import styles from "./brand-kit.module.css";
 
 type Brand = ThemeConfig["brand"];
+type ColorPreference = "keep" | "match";
 
 const COLOR_KEYS = ["primary","secondary","accent","background","surface","textPrimary"] as const;
 const ALLOWED = new Set(["image/png","image/jpeg","image/webp","image/svg+xml"]);
@@ -14,6 +15,7 @@ const ALLOWED = new Set(["image/png","image/jpeg","image/webp","image/svg+xml"])
 export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Brand): void }) {
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
+  const [colorPreference,setColorPreference]=useState<ColorPreference>("keep");
   const presentation = brand.logoPresentation;
   const logo = brand.logoAssetId;
   const favicon = brand.faviconAssetId;
@@ -35,15 +37,19 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       const dataUrl=await fileDataUrl(file);
       const [clientAnalysis,logoColors]=await Promise.all([analyzeLogoPixels(file),extractBrandColors(file)]);
       const cleanupDataUrl=await createTransparentLogoDerivative(file,clientAnalysis);
-      setMessage("Checking palette, favicon and social card…");
-      const response=await fetch("/api/brand/logo/editor",{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"content-type":"application/json"},body:JSON.stringify({workspaceId:project.workspaceId,siteId:project.siteId,fileName:file.name,contentType:file.type,dataUrl,clientAnalysis:clientAnalysis??null,cleanupDataUrl:cleanupDataUrl??null,logoColors,brand})});
-      const payload=await response.json() as {ok?:boolean;brand?:Brand;paletteDecision?:"use"|"repair"|"decouple";paletteScore?:number;error?:string};
+      setMessage(colorPreference==="match"?"Checking logo palette, favicon and social card…":"Keeping website colors and rebuilding brand assets…");
+      const response=await fetch("/api/brand/logo/editor",{method:"POST",headers:{Authorization:`Bearer ${session.access_token}`,"content-type":"application/json"},body:JSON.stringify({workspaceId:project.workspaceId,siteId:project.siteId,fileName:file.name,contentType:file.type,dataUrl,clientAnalysis:clientAnalysis??null,cleanupDataUrl:cleanupDataUrl??null,logoColors,colorPreference,brand})});
+      const payload=await response.json() as {ok?:boolean;brand?:Brand;paletteDecision?:"use"|"repair"|"decouple";paletteScore?:number;paletteApplied?:boolean;error?:string};
       if(!response.ok||!payload.brand)throw new Error(payload.error??`Logo replacement failed (${response.status}).`);
       onChange(payload.brand);
-      const decision=payload.paletteDecision?humanize(payload.paletteDecision):"Checked";
-      const score=typeof payload.paletteScore==="number"?` · ${payload.paletteScore}/100`:"";
-      setMessage(`Brand updated. Palette: ${decision}${score}. Saving draft…`);
-      window.setTimeout(()=>setMessage(""),3200);
+      if(colorPreference==="keep")setMessage("Brand updated. Existing website colors were preserved. Saving draft…");
+      else{
+        const decision=payload.paletteDecision?humanize(payload.paletteDecision):"Checked";
+        const score=typeof payload.paletteScore==="number"?` · ${payload.paletteScore}/100`:"";
+        const applied=payload.paletteApplied===false?" · existing colors kept for safety":"";
+        setMessage(`Brand updated. Palette: ${decision}${score}${applied}. Saving draft…`);
+      }
+      window.setTimeout(()=>setMessage(""),3600);
     }catch(error){setMessage(error instanceof Error?error.message:"Logo replacement failed.")}finally{setBusy(false)}
   }
 
@@ -51,6 +57,19 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
     <div className={styles.header}>
       <div><span>Brand Kit</span><strong>Your generated brand assets</strong></div>
       <div className={styles.status}>{busy?"Working…":ready?"Ready":"Awaiting logo"}</div>
+    </div>
+
+    <div className={styles.preference} aria-label="Logo color preference">
+      <span>When replacing the logo</span>
+      <div className={styles.preferenceOptions}>
+        <button type="button" className={colorPreference==="keep"?styles.preferenceActive:undefined} onClick={()=>setColorPreference("keep")} disabled={busy}>
+          <strong>Keep current colors</strong><small>Change the logo only</small>
+        </button>
+        <button type="button" className={colorPreference==="match"?styles.preferenceActive:undefined} onClick={()=>setColorPreference("match")} disabled={busy}>
+          <strong>Match website to logo</strong><small>Use only a safe approved palette</small>
+        </button>
+      </div>
+      <p>MiCirql never forces an unsafe logo palette. If the new colors fail the quality gate, the current professional website colors stay in place.</p>
     </div>
 
     <div className={styles.actions}>

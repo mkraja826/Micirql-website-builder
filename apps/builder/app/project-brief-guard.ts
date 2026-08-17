@@ -1,3 +1,5 @@
+import { assessBrandPalette, type BrandPaletteAssessment } from "@micirql/design-engine";
+
 export type LockedProjectBrief = {
   workspaceId: string;
   siteId: string;
@@ -29,10 +31,16 @@ export function mergeAiPlanningAdvice<T extends {
   brandColors?: unknown;
 }>(brief: LockedProjectBrief, advice: T) {
   const locked = lockProjectBrief(brief);
+  const proposedColors = hexColors(advice.brandColors);
+  const brandPaletteAssessment = proposedColors.length
+    ? assessBrandPalette({ logoColors: proposedColors, industry: locked.industry })
+    : null;
   return {
     ...advice,
     industry: locked.industry,
     subindustry: locked.subindustry,
+    brandColors: brandPaletteAssessment ? paletteForTheme(brandPaletteAssessment) : proposedColors,
+    brandPaletteAssessment,
   };
 }
 
@@ -57,6 +65,19 @@ export function canonicalIndustry(value: string): string {
   if (/retail|store|shop|e-?commerce/.test(text)) return "retail";
   if (/professional|consult|legal|account|agency/.test(text)) return "professional services";
   return text;
+}
+
+function hexColors(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string" && /^#[0-9a-f]{6}$/i.test(item.trim()))
+    .map(item => item.trim().toUpperCase())
+    .slice(0, 6);
+}
+
+function paletteForTheme(assessment: BrandPaletteAssessment): string[] {
+  const border = assessment.neutrals[0] === "#FFFFFF" ? "#E5E5E5" : assessment.neutrals[0];
+  return [assessment.primary, assessment.accent, assessment.neutrals[1], assessment.secondary, border];
 }
 
 function clean(value: string) { return value.trim(); }

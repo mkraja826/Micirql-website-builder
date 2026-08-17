@@ -7,7 +7,7 @@ import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel
 import styles from "./brand-kit.module.css";
 
 type Brand = ThemeConfig["brand"];
-type HistoryEntry = Brand["history"][number];
+type HistoryEntry = NonNullable<Brand["history"]>[number];
 type ColorPreference = "keep" | "match";
 
 const COLOR_KEYS = ["primary","secondary","accent","background","surface","textPrimary"] as const;

@@ -77,10 +77,14 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   };
 }
 
-function normalizeFacts(value: Partial<GroundingFacts> | undefined, site: { name: string; subtype?: string; seoBlueprint: { targetLocations: string[]; priorityTopics: string[] } }): GroundingFacts {
+function normalizeFacts(
+  value: Partial<GroundingFacts> | undefined,
+  site: { name: string; subtype: string | undefined; seoBlueprint: { targetLocations: string[]; priorityTopics: string[] } },
+): GroundingFacts {
+  const industry = text(value?.industry) || site.subtype;
   return {
     businessName: text(value?.businessName) || site.name,
-    industry: text(value?.industry) || site.subtype,
+    ...(industry ? { industry } : {}),
     subindustry: optionalText(value?.subindustry) ?? site.subtype ?? null,
     location: optionalText(value?.location) ?? site.seoBlueprint.targetLocations[0] ?? null,
     services: Array.isArray(value?.services) && value.services.length ? value.services.filter(Boolean) : site.seoBlueprint.priorityTopics,

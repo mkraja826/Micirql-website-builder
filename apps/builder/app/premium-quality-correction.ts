@@ -1,11 +1,13 @@
 import { evaluatePremiumQualityGate, type PremiumQualityResult } from "@micirql/design-engine";
 import { siteSchema, type Site } from "@micirql/schema";
 import { repairContentDepth } from "./content-depth-repair";
+import { evaluateFirstBuildQuality, type FirstBuildQualityResult } from "./first-build-quality";
 
 export type PremiumCorrectionResult = {
   site: Site;
   initial: PremiumQualityResult;
   final: PremiumQualityResult;
+  firstBuild: FirstBuildQualityResult;
   attempted: boolean;
   applied: boolean;
 };
@@ -16,7 +18,19 @@ const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
   const depthRepaired = repairContentDepth(site);
   const initial = evaluatePremiumQualityGate(depthRepaired);
-  if (initial.premiumReady) return { site: depthRepaired, initial, final: initial, attempted: JSON.stringify(depthRepaired) !== JSON.stringify(site), applied: JSON.stringify(depthRepaired) !== JSON.stringify(site) };
+  const initialFirstBuild = evaluateFirstBuildQuality(depthRepaired);
+  const contentChanged = JSON.stringify(depthRepaired) !== JSON.stringify(site);
+
+  if (initial.premiumReady && initialFirstBuild.ready) {
+    return {
+      site: depthRepaired,
+      initial,
+      final: initial,
+      firstBuild: initialFirstBuild,
+      attempted: contentChanged,
+      applied: contentChanged,
+    };
+  }
 
   const candidate = structuredClone(depthRepaired);
   repairContrast(candidate);
@@ -26,15 +40,23 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
 
   const validated = repairContentDepth(siteSchema.parse(candidate));
   const final = evaluatePremiumQualityGate(validated);
-  const contentChanged = JSON.stringify(depthRepaired) !== JSON.stringify(site);
-  const improved = final.score > initial.score || (final.blockers.length < initial.blockers.length && final.score >= initial.score);
+  const finalFirstBuild = evaluateFirstBuildQuality(validated);
+  const useCandidate = qualityRank(final, finalFirstBuild) > qualityRank(initial, initialFirstBuild);
+
   return {
-    site: improved ? validated : depthRepaired,
+    site: useCandidate ? validated : depthRepaired,
     initial,
-    final: improved ? final : initial,
+    final: useCandidate ? final : initial,
+    firstBuild: useCandidate ? finalFirstBuild : initialFirstBuild,
     attempted: true,
-    applied: improved || contentChanged,
+    applied: useCandidate || contentChanged,
   };
+}
+
+function qualityRank(premium: PremiumQualityResult, firstBuild: FirstBuildQualityResult): number {
+  const readinessBonus = (premium.premiumReady ? 20 : 0) + (firstBuild.ready ? 20 : 0);
+  const blockerPenalty = premium.blockers.length * 15 + firstBuild.issues.filter((issue) => issue.severity === "blocker").length * 15;
+  return premium.score + firstBuild.score + readinessBonus - blockerPenalty;
 }
 
 function repairContrast(site: Site) {
@@ -95,7 +117,7 @@ function familyFromId(componentId: string): string | undefined {
   const value = componentId.toLowerCase();
   const families = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "team", "pricing", "cta", "contact", "lead-capture", "form", "footer"];
   for (const family of families) if (value === `${family}.placeholder` || value.startsWith(`${family}.`)) return family;
-  const codes: Record<string, string> = { nav: "navbar", hero: "hero", about: "about", services: "services", features: "features", process: "process", testimonials: "testimonials", gallery: "gallery", team: "team", pricing: "pricing", cta: "cta", contact: "contact", footer: "footer" };
+  const codes: Record<string, string> = { nav: "navbar", hero: "hero", about: "about", serv: "services", services: "services", feat: "features", features: "features", proc: "process", process: "process", test: "testimonials", testimonials: "testimonials", gallery: "gallery", team: "team", pricing: "pricing", cta: "cta", cont: "contact", contact: "contact", foot: "footer", footer: "footer" };
   for (const [code, family] of Object.entries(codes)) if (value.includes(`-${code}-`)) return family;
   return undefined;
 }

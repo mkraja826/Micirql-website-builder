@@ -6,7 +6,7 @@ import type { GenerationQualityProfile } from "./generation-quality-intelligence
 export type VisualRole="none"|"hero-photo"|"people"|"product-ui"|"portfolio"|"place"|"process"|"illustration"|"abstract"|"texture";
 export type VisualProminence="supporting"|"balanced"|"dominant";
 export type VisualAspect="1:1"|"4:3"|"3:2"|"16:9"|"portrait"|"wide";
-export type SectionVisualDecision={family:SectionFamily;role:VisualRole;prominence:VisualProminence;aspect:VisualAspect;subject:string;avoid:string[]};
+export type SectionVisualDecision={family:SectionFamily;role:VisualRole;prominence:VisualProminence;aspect:VisualAspect;subject:string;avoid:string[];preferredTags?:string[]};
 export type VisualMediaPlan={style:"photographic"|"editorial"|"product"|"illustrative"|"mixed";sections:SectionVisualDecision[];rules:string[]};
 
 const PHOTO_IDS=new Set(["medical-clinic","dental-clinic","premium-implant-clinic","physiotherapy","dermatology","fitness","yoga-spa","veterinary","salon-beauty","hotel-resort","bakery-catering","events-wedding","travel-tourism","restaurant","real-estate","construction","fashion-brand","jewellery","furniture-interiors","beauty-brand","photographer","artist"]);
@@ -22,7 +22,6 @@ export function planVisualMedia(profile:OnboardingProfile,composition:WebsiteCom
  const pack=composition.industryPack;
  const dental=pack?.pack.id==="dental"?{subindustry:pack.subindustry?.id??null,imagery:pack.subindustry?.imageryProfile??[]}:null;
  const sections=composition.sections.map((s,index)=>dental?decideDental(s.family,index,style,quality,dental.subindustry,dental.imagery):decide(s.family,index,style,quality,text));
- // Avoid monotonous pages: adjacent sections should not both demand dominant imagery.
  for(let i=1;i<sections.length;i++){const prev=sections[i-1],cur=sections[i];if(prev&&cur&&prev.prominence==="dominant"&&cur.prominence==="dominant")cur.prominence="balanced";}
  const industryRules=dental?[
   "Dental imagery must match the selected dental sub-industry rather than generic healthcare imagery",
@@ -60,7 +59,19 @@ function decideDental(family:SectionFamily,index:number,style:VisualMediaPlan["s
   role=style==="editorial"?"texture":"none";prominence="supporting";aspect="wide";subject="Subtle abstract dental brand atmosphere using the selected palette, with no clinical claims";
  }
  const avoid=["generic handshake stock photography","generic corporate office imagery","fake doctors or patient identities","fabricated clinic interiors","fabricated equipment or credentials","synthetic before-and-after treatment results","graphic or distressing procedure imagery",...(index>0?["repeating the hero visual"]:[])];
- return{family,role,prominence,aspect,subject,avoid};
+ const preferredTags=dentalPreferredTags(subindustry,family,role);
+ return{family,role,prominence,aspect,subject,avoid,...(preferredTags.length?{preferredTags}:{})};
+}
+
+function dentalPreferredTags(subindustry:string|null,family:SectionFamily,role:VisualRole){
+ const base=["dental","dentistry",subindustry??"general-dentistry",family,role];
+ const specialty=subindustry==="implant-dentistry"?["implant","implant-planning","restorative","precision"]
+  :subindustry==="cosmetic-dentistry"?["cosmetic","smile-design","natural-smile","aesthetic"]
+  :subindustry==="orthodontics"?["orthodontics","aligner","braces","scanning"]
+  :subindustry==="endodontics"?["endodontics","root-canal","tooth-preservation","precision"]
+  :["general-dentistry","preventive-care","consultation","welcoming"];
+ const roleTags=family==="hero"?["hero"]:family==="services"?["treatment","service"]:family==="features"?["technology"]:family==="process"?["consultation","journey"]:family==="gallery"?["case-context"]:family==="about"?["clinic-environment"]:family==="team"?["verified-team"]:[];
+ return [...new Set([...base,...specialty,...roleTags])];
 }
 
 function dentalProfile(subindustry:string|null,imagery:string[]){

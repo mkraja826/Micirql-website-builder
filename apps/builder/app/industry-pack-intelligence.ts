@@ -8,11 +8,11 @@ import {
 } from "@micirql/design-engine";
 
 export type IndustryPackSelectionInput = {
-  industry?: string | null;
-  subindustry?: string | null;
-  goals?: string[] | null;
-  styleTags?: string[] | null;
-  services?: string[] | null;
+  industry?: string | null | undefined;
+  subindustry?: string | null | undefined;
+  goals?: string[] | null | undefined;
+  styleTags?: string[] | null | undefined;
+  services?: string[] | null | undefined;
 };
 
 export type IndustryPackSelection = {

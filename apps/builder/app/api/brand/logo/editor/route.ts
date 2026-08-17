@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { brandTokensSchema } from "@micirql/schema";
-import { evaluateFaviconStrategy, evaluateLogoUsability } from "@micirql/design-engine";
+import { assessBrandPalette, evaluateFaviconStrategy, evaluateLogoUsability } from "@micirql/design-engine";
 import { bearerToken, getSupabaseDraft, supabaseConfig } from "../../../drafts/supabase-store";
 import { generateAndUploadSocialCard } from "../../../onboarding/social-card";
 import { analyzeLogoFile } from "../logo-file-analysis";
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       dataUrl?: string;
       clientAnalysis?: unknown;
       cleanupDataUrl?: unknown;
+      logoColors?: unknown;
       brand?: unknown;
     };
     const workspaceId = clean(body.workspaceId);
@@ -51,6 +52,12 @@ export async function POST(request: NextRequest) {
     const draft = await getSupabaseDraft(request, workspaceId, siteId);
     if (!draft) return NextResponse.json({ error: "Workspace draft could not be loaded." }, { status: 404 });
     const baseBrand = body.brand ? brandTokensSchema.parse(body.brand) : draft.snapshot.theme.brand;
+    const logoColors = sanitizeLogoColors(body.logoColors);
+    const paletteAssessment = assessBrandPalette({ logoColors });
+    const approvedColors = paletteAssessment.decision === "decouple"
+      ? baseBrand.colors
+      : colorsFromAssessment(baseBrand.colors, paletteAssessment);
+
     const fileAnalysis = analyzeLogoFile(Uint8Array.from(originalBytes), contentType);
     const clientAnalysis = contentType === "image/svg+xml" ? undefined : sanitizeClientAnalysis(body.clientAnalysis);
     const effectiveAnalysis = {
@@ -113,7 +120,7 @@ export async function POST(request: NextRequest) {
       faviconStrategy = "reuse-logo";
     } else {
       const faviconPath = `${workspaceId}/${siteId}/branding/favicon-${crypto.randomUUID()}.svg`;
-      const svgBytes = Buffer.from(initialFaviconSvg(draft.snapshot.name, baseBrand.colors.primary), "utf8");
+      const svgBytes = Buffer.from(initialFaviconSvg(draft.snapshot.name, approvedColors.primary), "utf8");
       await uploadPublicAsset({ url, key, token, path: faviconPath, contentType: "image/svg+xml", bytes: svgBytes });
       faviconUrl = publicAssetUrl(url, faviconPath);
       faviconStrategy = "initial-mark";
@@ -121,6 +128,7 @@ export async function POST(request: NextRequest) {
 
     const nextBrand = brandTokensSchema.parse({
       ...baseBrand,
+      colors: approvedColors,
       logoAssetId: activeUrl,
       logoOriginalAssetId: originalUrl,
       ...(cleanupUrl ? { logoCleanupAssetId: cleanupUrl } : { logoCleanupAssetId: undefined }),
@@ -140,7 +148,12 @@ export async function POST(request: NextRequest) {
         ...(typeof effectiveAnalysis.edgeBackgroundRatio === "number" ? { edgeBackgroundRatio: effectiveAnalysis.edgeBackgroundRatio } : {}),
         ...(effectiveAnalysis.backgroundSignal ? { backgroundSignal: effectiveAnalysis.backgroundSignal } : {}),
         ...(effectiveAnalysis.edgeColor ? { edgeColor: effectiveAnalysis.edgeColor } : {}),
-        reasons: [...presentation.reasons, ...(effectiveAnalysis.backgroundSignal ? [`Background signal: ${effectiveAnalysis.backgroundSignal}${clientAnalysis ? " (pixel sampled)" : ""}.`] : []), `Favicon strategy: ${faviconStrategy}.`],
+        reasons: [
+          ...presentation.reasons,
+          ...(effectiveAnalysis.backgroundSignal ? [`Background signal: ${effectiveAnalysis.backgroundSignal}${clientAnalysis ? " (pixel sampled)" : ""}.`] : []),
+          `Palette decision: ${paletteAssessment.decision} (${paletteAssessment.score}/100).`,
+          `Favicon strategy: ${faviconStrategy}.`,
+        ],
       },
     });
 
@@ -149,11 +162,45 @@ export async function POST(request: NextRequest) {
     const social = await generateAndUploadSocialCard({ site: socialSite, supabaseUrl: url, supabaseKey: key, authorization: `Bearer ${token}` });
     const brand = brandTokensSchema.parse({ ...nextBrand, socialImageAssetId: social.url, socialImageStrategy: "generated-card" });
 
-    return NextResponse.json({ ok: true, brand, logoUrl: activeUrl, faviconUrl, socialImageUrl: social.url, cleanupApplied }, { status: 201 });
+    return NextResponse.json({
+      ok: true,
+      brand,
+      logoUrl: activeUrl,
+      faviconUrl,
+      socialImageUrl: social.url,
+      cleanupApplied,
+      paletteDecision: paletteAssessment.decision,
+      paletteScore: paletteAssessment.score,
+      paletteReasons: paletteAssessment.reasons,
+    }, { status: 201 });
   } catch (error) {
     const status = typeof (error as { status?: unknown })?.status === "number" ? Number((error as { status?: number }).status) : 500;
     return NextResponse.json({ error: error instanceof Error ? error.message : "Brand replacement failed." }, { status });
   }
+}
+
+function sanitizeLogoColors(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string" && /^#[0-9a-f]{6}$/i.test(item.trim()))
+    .map((item) => item.trim().toUpperCase())
+    .slice(0, 6);
+}
+
+function colorsFromAssessment(base: ReturnType<typeof brandTokensSchema.parse>["colors"], assessment: ReturnType<typeof assessBrandPalette>) {
+  const lightBackground = assessment.neutrals[0];
+  const darkText = assessment.neutrals[1];
+  return {
+    ...base,
+    primary: assessment.primary,
+    secondary: assessment.secondary,
+    accent: assessment.accent,
+    background: lightBackground,
+    surface: assessment.decision === "repair" ? "#FAFAF8" : "#F7F7F5",
+    textPrimary: darkText,
+    textSecondary: "#5F6368",
+    border: "#DFE1E5",
+  };
 }
 
 function sanitizeClientAnalysis(value: unknown): ClientPixelAnalysis | undefined {

@@ -15,7 +15,7 @@ type PreviewSection = {
 type PreviewPayload = {
   ok: boolean;
   siteId?: string;
-  pageId?: string;
+  pageId?: string | undefined;
   theme?: string;
   themeStyle?: Record<string, string>;
   sections?: PreviewSection[];

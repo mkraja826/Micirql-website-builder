@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       contentType?: string;
       dataUrl?: string;
       clientAnalysis?: unknown;
+      cleanupDataUrl?: unknown;
     };
 
     const workspaceId = clean(body.workspaceId);
@@ -37,26 +38,21 @@ export async function POST(request: NextRequest) {
     }
     if (!ALLOWED.has(contentType)) return NextResponse.json({ error: "Unsupported logo format." }, { status: 415 });
 
-    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    const detectedType = match?.[1];
-    const encoded = match?.[2];
-    if (!detectedType || !encoded || detectedType !== contentType) {
-      return NextResponse.json({ error: "Invalid logo image data." }, { status: 400 });
-    }
-    const bytes = Buffer.from(encoded, "base64");
-    if (!bytes.length || bytes.length > MAX_BYTES) return NextResponse.json({ error: "Logo must be smaller than 5 MB." }, { status: 413 });
+    const originalBytes = decodeDataUrl(dataUrl, contentType);
+    if (!originalBytes) return NextResponse.json({ error: "Invalid logo image data." }, { status: 400 });
+    if (originalBytes.length > MAX_BYTES) return NextResponse.json({ error: "Logo must be smaller than 5 MB." }, { status: 413 });
 
-    const fileAnalysis = analyzeLogoFile(Uint8Array.from(bytes), contentType);
+    const fileAnalysis = analyzeLogoFile(Uint8Array.from(originalBytes), contentType);
     const clientAnalysis = contentType === "image/svg+xml" ? undefined : sanitizeClientAnalysis(body.clientAnalysis);
     const effectiveAnalysis = {
-      ...(fileAnalysis.width ?? clientAnalysis?.width ? { width: fileAnalysis.width ?? clientAnalysis?.width } : {}),
-      ...(fileAnalysis.height ?? clientAnalysis?.height ? { height: fileAnalysis.height ?? clientAnalysis?.height } : {}),
+      ...((fileAnalysis.width ?? clientAnalysis?.width) ? { width: fileAnalysis.width ?? clientAnalysis?.width } : {}),
+      ...((fileAnalysis.height ?? clientAnalysis?.height) ? { height: fileAnalysis.height ?? clientAnalysis?.height } : {}),
       ...(typeof (clientAnalysis?.hasTransparency ?? fileAnalysis.hasTransparency) === "boolean" ? { hasTransparency: clientAnalysis?.hasTransparency ?? fileAnalysis.hasTransparency } : {}),
       ...(typeof (clientAnalysis?.edgeBackgroundRatio ?? fileAnalysis.edgeBackgroundRatio) === "number" ? { edgeBackgroundRatio: clientAnalysis?.edgeBackgroundRatio ?? fileAnalysis.edgeBackgroundRatio } : {}),
       ...((clientAnalysis?.backgroundSignal ?? fileAnalysis.backgroundSignal) ? { backgroundSignal: clientAnalysis?.backgroundSignal ?? fileAnalysis.backgroundSignal } : {}),
       ...(clientAnalysis?.edgeColor ? { edgeColor: clientAnalysis.edgeColor } : {}),
     };
-    const presentation = evaluateLogoUsability({
+    const recommendation = evaluateLogoUsability({
       ...(effectiveAnalysis.width ? { width: effectiveAnalysis.width } : {}),
       ...(effectiveAnalysis.height ? { height: effectiveAnalysis.height } : {}),
       ...(typeof effectiveAnalysis.hasTransparency === "boolean" ? { hasTransparency: effectiveAnalysis.hasTransparency } : {}),
@@ -65,30 +61,44 @@ export async function POST(request: NextRequest) {
 
     const { url, key } = supabaseConfig();
     const token = bearerToken(request);
-    const ext = extension(contentType);
-    const path = `${workspaceId}/${siteId}/branding/logo-${crypto.randomUUID()}.${ext}`;
-    const objectUrl = `${url}/storage/v1/object/public-assets/${encodePath(path)}`;
-    const upload = await fetch(objectUrl, {
-      method: "POST",
-      headers: {
-        apikey: key,
-        authorization: `Bearer ${token}`,
-        "content-type": contentType,
-        "x-upsert": "false",
-      },
-      body: Uint8Array.from(bytes),
-      cache: "no-store",
-    });
-    if (!upload.ok) {
-      const detail = await upload.text();
-      return NextResponse.json({ error: detail || `Logo upload failed (${upload.status}).` }, { status: upload.status });
+    const originalPath = `${workspaceId}/${siteId}/branding/logo-original-${crypto.randomUUID()}.${extension(contentType)}`;
+    await uploadPublicAsset({ url, key, token, path: originalPath, contentType, bytes: originalBytes });
+    const originalUrl = publicAssetUrl(url, originalPath);
+
+    let cleanupPath: string | undefined;
+    let cleanupUrl: string | undefined;
+    if (recommendation.treatment === "cleanup-recommended") {
+      const cleanupBytes = decodeCleanupDataUrl(body.cleanupDataUrl);
+      if (cleanupBytes && cleanupBytes.length <= MAX_BYTES) {
+        cleanupPath = `${workspaceId}/${siteId}/branding/logo-clean-${crypto.randomUUID()}.png`;
+        try {
+          await uploadPublicAsset({ url, key, token, path: cleanupPath, contentType: "image/png", bytes: cleanupBytes });
+          cleanupUrl = publicAssetUrl(url, cleanupPath);
+        } catch {
+          cleanupPath = undefined;
+          cleanupUrl = undefined;
+        }
+      }
     }
 
-    const publicUrl = `${url}/storage/v1/object/public/public-assets/${encodePath(path)}`;
+    const cleanupApplied = Boolean(cleanupUrl);
+    const activeUrl = cleanupUrl ?? originalUrl;
+    const presentation = cleanupApplied
+      ? {
+          ...recommendation,
+          treatment: "direct" as const,
+          paddingScale: 1,
+          reasons: [...recommendation.reasons, "A transparent cleanup derivative was applied while the original logo was preserved."],
+        }
+      : recommendation;
+
     const draft = await getSupabaseDraft(request, workspaceId, siteId);
     if (!draft) throw new Error("Workspace draft could not be loaded to attach the logo.");
     const snapshot = structuredClone(draft.snapshot);
-    snapshot.theme.brand.logoAssetId = publicUrl;
+    snapshot.theme.brand.logoAssetId = activeUrl;
+    snapshot.theme.brand.logoOriginalAssetId = originalUrl;
+    if (cleanupUrl) snapshot.theme.brand.logoCleanupAssetId = cleanupUrl;
+    else delete snapshot.theme.brand.logoCleanupAssetId;
     snapshot.theme.brand.logoPresentation = {
       shape: presentation.shape,
       treatment: presentation.treatment,
@@ -96,6 +106,7 @@ export async function POST(request: NextRequest) {
       footerMaxHeight: presentation.footerMaxHeight,
       paddingScale: presentation.paddingScale,
       preserveOriginal: true,
+      cleanupApplied,
       ...(effectiveAnalysis.width ? { width: effectiveAnalysis.width } : {}),
       ...(effectiveAnalysis.height ? { height: effectiveAnalysis.height } : {}),
       ...(typeof effectiveAnalysis.hasTransparency === "boolean" ? { hasTransparency: effectiveAnalysis.hasTransparency } : {}),
@@ -109,7 +120,19 @@ export async function POST(request: NextRequest) {
     };
     await saveSupabaseDraft(request, { snapshot, expectedRevision: draft.revision });
 
-    return NextResponse.json({ ok: true, path, url: publicUrl, analysis: effectiveAnalysis, presentation }, { status: 201 });
+    return NextResponse.json({
+      ok: true,
+      path: cleanupPath ?? originalPath,
+      originalPath,
+      cleanupPath,
+      url: activeUrl,
+      originalUrl,
+      cleanupUrl,
+      cleanupApplied,
+      analysis: effectiveAnalysis,
+      recommendation,
+      presentation,
+    }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Logo upload failed." }, { status: 500 });
   }
@@ -137,6 +160,40 @@ function sanitizeClientAnalysis(value: unknown): ClientPixelAnalysis | undefined
   };
 }
 
+function decodeDataUrl(dataUrl: string, expectedType: string): Buffer | undefined {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match?.[1] || !match[2] || match[1] !== expectedType) return undefined;
+  const bytes = Buffer.from(match[2], "base64");
+  return bytes.length ? bytes : undefined;
+}
+
+function decodeCleanupDataUrl(value: unknown): Buffer | undefined {
+  if (typeof value !== "string" || !value.startsWith("data:image/png;base64,")) return undefined;
+  return decodeDataUrl(value, "image/png");
+}
+
+async function uploadPublicAsset(input: { url: string; key: string; token: string; path: string; contentType: string; bytes: Buffer }) {
+  const objectUrl = `${input.url}/storage/v1/object/public-assets/${encodePath(input.path)}`;
+  const upload = await fetch(objectUrl, {
+    method: "POST",
+    headers: {
+      apikey: input.key,
+      authorization: `Bearer ${input.token}`,
+      "content-type": input.contentType,
+      "x-upsert": "false",
+    },
+    body: Uint8Array.from(input.bytes),
+    cache: "no-store",
+  });
+  if (!upload.ok) {
+    const detail = await upload.text();
+    throw new Error(detail || `Logo upload failed (${upload.status}).`);
+  }
+}
+
+function publicAssetUrl(baseUrl: string, path: string) {
+  return `${baseUrl}/storage/v1/object/public/public-assets/${encodePath(path)}`;
+}
 function boundedPositive(value: unknown, max: number) {
   return typeof value === "number" && Number.isFinite(value) && value > 0 && value <= max ? value : undefined;
 }

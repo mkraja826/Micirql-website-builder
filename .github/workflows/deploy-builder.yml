@@ -37,6 +37,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       MICIRQL_SUPABASE_SECRET_KEY: ${{ secrets.MICIRQL_SUPABASE_SECRET_KEY }}
       MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
+      MICIRQL_BFL_API_KEY: ${{ secrets.MICIRQL_BFL_API_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
       MICIRQL_DRAFT_STORE: supabase
@@ -74,3 +75,9 @@ jobs:
         working-directory: apps/builder
         shell: bash
         run: printf '%s' "$MICIRQL_LIBRARY_ADMIN_TOKEN" | pnpm exec wrangler secret put MICIRQL_LIBRARY_ADMIN_TOKEN
+
+      - name: Upload BFL image API key to Builder Worker
+        if: ${{ env.MICIRQL_BFL_API_KEY != '' }}
+        working-directory: apps/builder
+        shell: bash
+        run: printf '%s' "$MICIRQL_BFL_API_KEY" | pnpm exec wrangler secret put MICIRQL_BFL_API_KEY

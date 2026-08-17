@@ -16,7 +16,7 @@ permissions:
 jobs:
   live-dental-model:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
     env:
       CI: "1"
       MI_LIVE_SAMPLE_COUNT: ${{ inputs.sample_count }}
@@ -60,8 +60,11 @@ jobs:
             exit 1
           fi
 
-      - name: Run live dental sampling
+      - name: Run live dental copy sampling
         run: pnpm qa:live-model-dental
+
+      - name: Run live autonomous composition sampling
+        run: pnpm qa:live-autonomous-composition
 
       - name: Add model quality summary
         if: always()
@@ -70,8 +73,17 @@ jobs:
           if [[ -f test-results/live-model-dental/summary.md ]]; then
             cat test-results/live-model-dental/summary.md >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "## Live model dental sampling" >> "$GITHUB_STEP_SUMMARY"
-            echo "No report was produced." >> "$GITHUB_STEP_SUMMARY"
+            echo "## Live model dental copy sampling" >> "$GITHUB_STEP_SUMMARY"
+            echo "No copy report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [[ -f test-results/live-autonomous-composition/report.json ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
+            node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("test-results/live-autonomous-composition/report.json","utf8"));console.log(`- Model: **${r.modelId}**\n- AI acceptance: **${Math.round(r.acceptanceRate*100)}%** (${r.aiAccepted}/${r.scenarios})\n- Composition pass rate: **${Math.round(r.passRate*100)}%**`)' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
+            echo "No composition report was produced." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload live model evidence
@@ -79,6 +91,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: micirql-live-dental-model-${{ github.run_number }}
-          path: test-results/live-model-dental/
+          path: |
+            test-results/live-model-dental/
+            test-results/live-autonomous-composition/
           if-no-files-found: warn
           retention-days: 14

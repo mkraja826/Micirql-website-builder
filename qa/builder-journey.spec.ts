@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { repairContentDepth } from "../apps/builder/app/content-depth-repair";
 
 const now = new Date().toISOString();
 const site = {
@@ -107,4 +108,14 @@ test("guided discovery generates a site and opens it in the editor", async ({ pa
   await expect(page.getByText("AI Generated Dental")).toBeVisible();
   await expect(page.getByText("Restore your smile with confidence")).toBeVisible();
   await expect(page.getByRole("button", { name: /Preview.*publish/i })).toBeVisible();
+});
+
+test("repairs heading-only generated content before the editor", async () => {
+  const shallow = structuredClone(site);
+  shallow.pages[0]!.sections[0]!.props = { eyebrow: "Dental clinic", heading: "Advanced dental care" };
+  const repaired = repairContentDepth(shallow as Parameters<typeof repairContentDepth>[0]);
+  const props = repaired.pages[0]!.sections[0]!.props as Record<string, unknown>;
+  const body = typeof props.body === "string" ? props.body : typeof props.description === "string" ? props.description : "";
+  expect(body.length).toBeGreaterThanOrEqual(48);
+  expect(body).toContain("Smoke Test Clinic");
 });

@@ -20,7 +20,10 @@ export async function assertWorkspaceAccess(request:Request,workspaceId:string){
  if(!memberships.ok)throw statusError(memberships.status,"Workspace access check failed.");const rows=await memberships.json() as unknown[];if(!rows.length)throw statusError(403,"WORKSPACE_FORBIDDEN");
 }
 export async function listAssets(workspaceId:string){
- const{url}=assetConfig();const query=new URLSearchParams({select:"*",active:"eq.true",deleted_at:"is.null",or:`(workspace_id.is.null,workspace_id.eq.${workspaceId})`,order:"created_at.desc"});
+ const{url}=assetConfig();
+ const query=new URLSearchParams({select:"*",active:"eq.true",deleted_at:"is.null",order:"created_at.desc"});
+ if(workspaceId==="_library")query.set("workspace_id","is.null");
+ else query.set("or",`(workspace_id.is.null,workspace_id.eq.${workspaceId})`);
  const response=await fetch(`${url}/rest/v1/assets?${query}`,{headers:serverHeaders(),cache:"no-store"});if(!response.ok)throw statusError(response.status,await response.text());return(await response.json() as DbAsset[]).map(fromDb);
 }
 export async function insertAsset(asset:AssetRecord,storageKey:string){

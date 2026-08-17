@@ -36,9 +36,10 @@ export async function preparePage(args: {
     if (!resolved) { issues.push({ code: "COMPONENT_NOT_FOUND", message: `Component ${section.component.componentId}@${section.component.version} is unavailable.`, sectionId: section.id }); continue; }
     if (mode === "production" && resolved.registry.status !== "production") issues.push({ code: "COMPONENT_NOT_PRODUCTION", message: `Component ${resolved.registry.id} is not production approved.`, sectionId: section.id });
     if (!resolved.registry.protocol.passed) issues.push({ code: "COMPONENT_PROTOCOL_FAILED", message: `Component ${resolved.registry.id} has not passed the MiCirql Protocol.`, sectionId: section.id });
-    if (resolved.registry.theme !== site.theme.family) issues.push({ code: "THEME_MISMATCH", message: `Component ${resolved.registry.id} belongs to ${resolved.registry.theme}, not ${site.theme.family}.`, sectionId: section.id });
+    if (resolved.registry.theme !== site.theme.family) issues.push({ code: "THEME_MISMATCH", message: `Component ${resolved.registry.id} belongs to ${site.theme.family}, not ${site.theme.family}.`, sectionId: section.id });
 
     const props: Record<string, unknown> = { ...section.props };
+    injectBrandLogo(site, section.component.componentId, props);
     let primaryAction: { id: string; endpoint: string } | undefined;
     for (const [bindingName, binding] of Object.entries(section.bindings)) {
       const registered = await args.functions.isRegistered(binding.actionId);
@@ -76,5 +77,27 @@ export async function preparePage(args: {
   return { ok: true, value: { site, page, sections, themeStyle: theme.cssVariables, seo: buildRenderedSeo(site, page, args.origin) } };
 }
 
+function injectBrandLogo(site:Site, componentId:string, props:Record<string,unknown>) {
+  const src = site.theme.brand.logoAssetId;
+  if (!src || !isShellBrandComponent(componentId)) return;
+  const presentation = site.theme.brand.logoPresentation;
+  props.logo = {
+    src,
+    alt: `${site.name} logo`,
+    ...(presentation ? {
+      treatment: presentation.treatment,
+      shape: presentation.shape,
+      navbarMaxHeight: presentation.navbarMaxHeight,
+      footerMaxHeight: presentation.footerMaxHeight,
+      paddingScale: presentation.paddingScale,
+    } : {}),
+  };
+}
+
+function isShellBrandComponent(componentId:string) {
+  const normalized = componentId.toLowerCase();
+  const upper = componentId.toUpperCase();
+  return normalized.startsWith("navbar.") || normalized.startsWith("footer.") || upper.includes("-NAV-") || upper.includes("-FOOT-");
+}
 function normalizePath(value: string): string { const clean = value.split("?")[0]?.split("#")[0] ?? "/"; if (!clean.startsWith("/")) return `/${clean}`; return clean.length > 1 ? clean.replace(/\/+$/, "") : clean; }
 function contrastFor(color: string): string { const hex = color.trim().replace(/^#/, ""); if (!/^[0-9a-fA-F]{6}$/.test(hex)) return "#ffffff"; const r = Number.parseInt(hex.slice(0,2),16), g = Number.parseInt(hex.slice(2,4),16), b = Number.parseInt(hex.slice(4,6),16); return (0.2126*r+0.7152*g+0.0722*b)/255 > .55 ? "#111111" : "#ffffff"; }

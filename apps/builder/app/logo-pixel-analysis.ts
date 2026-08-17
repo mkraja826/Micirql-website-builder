@@ -5,6 +5,8 @@ export type LogoPixelAnalysis = {
   edgeBackgroundRatio: number;
   backgroundSignal: "transparent" | "embedded" | "clean-opaque" | "unknown";
   edgeColor?: string;
+  faviconDataUrl?: string;
+  faviconStrategy?: "reuse-logo" | "derive-symbol";
 };
 
 /**
@@ -48,11 +50,16 @@ export async function analyzeLogoPixels(file: File): Promise<LogoPixelAnalysis |
     const transparent = edge.filter(([, , , a]) => a < 24).length;
     const transparentRatio = transparent / edge.length;
     const opaque = edge.filter(([, , , a]) => a >= 220);
-    if (transparentRatio >= 0.18) {
-      return { width: naturalWidth, height: naturalHeight, hasTransparency: true, edgeBackgroundRatio: 0, backgroundSignal: "transparent" };
-    }
-    if (!opaque.length) {
-      return { width: naturalWidth, height: naturalHeight, hasTransparency: true, edgeBackgroundRatio: 0, backgroundSignal: "transparent" };
+    if (transparentRatio >= 0.18 || !opaque.length) {
+      const favicon = createFaviconCandidate(image, pixels, width, height, true);
+      return {
+        width: naturalWidth,
+        height: naturalHeight,
+        hasTransparency: true,
+        edgeBackgroundRatio: 0,
+        backgroundSignal: "transparent",
+        ...(favicon ? { faviconDataUrl: favicon.dataUrl, faviconStrategy: favicon.strategy } : {}),
+      };
     }
 
     const median = medianColor(opaque);
@@ -65,6 +72,7 @@ export async function analyzeLogoPixels(file: File): Promise<LogoPixelAnalysis |
     // background. Low consistency means the artwork itself reaches the edge.
     const embedded = consistency >= 0.78;
     const cleanOpaque = consistency <= 0.48;
+    const favicon = !embedded ? createFaviconCandidate(image, pixels, width, height, false, median) : undefined;
     return {
       width: naturalWidth,
       height: naturalHeight,
@@ -72,6 +80,7 @@ export async function analyzeLogoPixels(file: File): Promise<LogoPixelAnalysis |
       edgeBackgroundRatio: Number(consistency.toFixed(3)),
       backgroundSignal: embedded ? "embedded" : cleanOpaque ? "clean-opaque" : "unknown",
       edgeColor,
+      ...(favicon ? { faviconDataUrl: favicon.dataUrl, faviconStrategy: favicon.strategy } : {}),
     };
   } catch {
     return undefined;
@@ -164,6 +173,119 @@ export async function createTransparentLogoDerivative(file: File, analysis?: Log
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
+}
+
+function createFaviconCandidate(
+  image: HTMLImageElement,
+  pixels: Uint8ClampedArray,
+  sampleWidth: number,
+  sampleHeight: number,
+  transparent: boolean,
+  background?: [number, number, number],
+): { dataUrl: string; strategy: "reuse-logo" | "derive-symbol" } | undefined {
+  const ratio = image.naturalWidth / image.naturalHeight;
+  const compact = ratio >= 0.72 && ratio <= 1.65;
+  const bounds = foregroundBounds(pixels, sampleWidth, sampleHeight, transparent, background);
+  if (!bounds) return undefined;
+
+  let crop = bounds;
+  let strategy: "reuse-logo" | "derive-symbol" = "reuse-logo";
+  if (!compact) {
+    const derived = deriveCompactRegion(pixels, sampleWidth, sampleHeight, bounds, transparent, background, ratio > 1.65 ? "horizontal" : "vertical");
+    if (!derived) return undefined;
+    crop = derived;
+    strategy = "derive-symbol";
+  }
+
+  const scaleX = image.naturalWidth / sampleWidth;
+  const scaleY = image.naturalHeight / sampleHeight;
+  const sx = Math.max(0, Math.floor(crop.x * scaleX));
+  const sy = Math.max(0, Math.floor(crop.y * scaleY));
+  const sw = Math.max(1, Math.ceil(crop.width * scaleX));
+  const sh = Math.max(1, Math.ceil(crop.height * scaleY));
+  const out = document.createElement("canvas");
+  out.width = 256;
+  out.height = 256;
+  const ctx = out.getContext("2d");
+  if (!ctx) return undefined;
+  ctx.clearRect(0, 0, 256, 256);
+  const padding = strategy === "reuse-logo" ? 30 : 24;
+  const available = 256 - padding * 2;
+  const drawScale = Math.min(available / sw, available / sh);
+  const dw = Math.max(1, sw * drawScale);
+  const dh = Math.max(1, sh * drawScale);
+  const dx = (256 - dw) / 2;
+  const dy = (256 - dh) / 2;
+  ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+  return { dataUrl: out.toDataURL("image/png"), strategy };
+}
+
+function foregroundBounds(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  transparent: boolean,
+  background?: [number, number, number],
+) {
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!isForeground(pixels, (y * width + x) * 4, transparent, background)) continue;
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+  }
+  return maxX >= minX && maxY >= minY ? { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 } : undefined;
+}
+
+function deriveCompactRegion(
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bounds: { x: number; y: number; width: number; height: number },
+  transparent: boolean,
+  background: [number, number, number] | undefined,
+  orientation: "horizontal" | "vertical",
+) {
+  const length = orientation === "horizontal" ? bounds.width : bounds.height;
+  const densities = new Array<number>(length).fill(0);
+  for (let i = 0; i < length; i++) {
+    const cross = orientation === "horizontal" ? bounds.height : bounds.width;
+    for (let j = 0; j < cross; j++) {
+      const x = orientation === "horizontal" ? bounds.x + i : bounds.x + j;
+      const y = orientation === "horizontal" ? bounds.y + j : bounds.y + i;
+      if (isForeground(pixels, (y * width + x) * 4, transparent, background)) densities[i] = (densities[i] ?? 0) + 1;
+    }
+  }
+  const maxDensity = Math.max(...densities, 1);
+  const start = Math.max(2, Math.floor(length * 0.18));
+  const end = Math.max(start + 1, Math.floor(length * 0.58));
+  let valley = -1;
+  let valleyDensity = Number.POSITIVE_INFINITY;
+  for (let i = start; i < end; i++) {
+    const density = densities[i] ?? 0;
+    if (density < valleyDensity) { valleyDensity = density; valley = i; }
+  }
+  if (valley < 0 || valleyDensity / maxDensity > 0.16) return undefined;
+  const region = orientation === "horizontal"
+    ? { x: bounds.x, y: bounds.y, width: valley + 1, height: bounds.height }
+    : { x: bounds.x, y: bounds.y, width: bounds.width, height: valley + 1 };
+  const regionRatio = region.width / region.height;
+  if (regionRatio < 0.5 || regionRatio > 2) return undefined;
+  if ((orientation === "horizontal" ? region.width / bounds.width : region.height / bounds.height) > 0.62) return undefined;
+  return region;
+}
+
+function isForeground(
+  pixels: Uint8ClampedArray,
+  offset: number,
+  transparent: boolean,
+  background?: [number, number, number],
+) {
+  const alpha = pixels[offset + 3] ?? 0;
+  if (alpha < 30) return false;
+  if (transparent || !background) return true;
+  const color: [number, number, number] = [pixels[offset] ?? 0, pixels[offset + 1] ?? 0, pixels[offset + 2] ?? 0];
+  return rgbDistance(color, background) > 55;
 }
 
 function loadImage(src: string) {

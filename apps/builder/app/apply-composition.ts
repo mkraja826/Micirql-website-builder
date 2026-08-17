@@ -44,7 +44,9 @@ function prioritize(sections:WebsiteComposition["sections"],q:GenerationQualityP
 }
 function weight(f:SectionFamily,q:GenerationQualityProfile){let w=50;if(f==="hero")return 100;if(f==="cta"||f==="contact")w+=q.ctaStrength==="strong"?35:20;if(f==="testimonials"||f==="team"||f==="about")w+=Math.round(q.trustWeight/4);if(f==="gallery")w+=Math.round(q.visualWeight/3);if(f==="features"||f==="process")w+=q.heroEmphasis==="product"?25:5;if(f==="services")w+=q.mobileStrategy==="conversion-first"?20:8;return w;}
 function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality?:GenerationQualityProfile){
-  const existingColors=structuredClone(site.theme.brand.colors);const theme=structuredClone(composition.preset.theme);theme.brand.colors=existingColors;
+  const existingBrand=structuredClone(site.theme.brand);const theme=structuredClone(composition.preset.theme);theme.brand.colors=existingBrand.colors;
+  if(existingBrand.logoAssetId)theme.brand.logoAssetId=existingBrand.logoAssetId;
+  if(existingBrand.logoPresentation)theme.brand.logoPresentation=existingBrand.logoPresentation;
   if(quality){
     theme.brand.density=quality.contentDensity==="compact"?"compact":quality.contentDensity==="rich"?"spacious":"comfortable";
     theme.brand.motion=quality.sectionRhythm==="cinematic"?"rich":quality.sectionRhythm==="tight"?"subtle":theme.brand.motion;

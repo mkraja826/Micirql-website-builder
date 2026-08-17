@@ -5,6 +5,7 @@ import type { WebsiteComposition } from "./composition-intelligence";
 import type { GenerationQualityProfile } from "./generation-quality-intelligence";
 
 const SINGLETON_FAMILIES = new Set<SectionFamily>(["hero", "services", "testimonials", "gallery", "team", "cta", "contact"]);
+const ITEM_CONTENT_FAMILIES = new Set<SectionFamily>(["services", "features", "process", "testimonials", "gallery", "team"]);
 const SCAFFOLD_COPY = /primary offering|supporting offering|additional offering|point (one|two|three|four|five)|team member|verified proof|image slot|add (a|an|the|another|real|verified)|ready to discuss (home|contact|doctor|cases|services|treatments)|a clear overview of (home|contact|doctor|cases|services|treatments)|explore (home|contact|doctor|cases) and find the right next step/i;
 
 /** Applies composition and quality decisions without inventing content/components. */
@@ -41,7 +42,7 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
       }
       buckets.delete(decision.family);
     }
-    page.sections=[...shellStart,...ordered,...unknown,...shellEnd];
+    page.sections=[...shellStart,...ordered.filter(section=>!isScaffoldSection(section)),...unknown.filter(section=>!isScaffoldSection(section)),...shellEnd];
   }
   return siteSchema.parse(next);
 }
@@ -92,6 +93,8 @@ function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality
   if(site.domain==="clinic"){
     theme.brand.motion="subtle";
     if(theme.brand.density==="compact")theme.brand.density="comfortable";
+    const surface=theme.brand.colors.surface.toLowerCase();
+    if(surface==="#171717"||surface==="#111111"||surface==="#000000")theme.brand.colors.surface="#F4F8FA";
   }
   return theme;
 }
@@ -118,13 +121,28 @@ function typographyFor(mood:BrandIntelligenceProfile["typographyMood"],fallback:
 
 function sectionQualityScore(section:Site["pages"][number]["sections"][number]){
   const props=section.props??{};
-  const values:string[]=[];
-  for(const key of ["title","heading","description","body","eyebrow"]){const value=props[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}
-  if(Array.isArray(props.items))for(const raw of props.items){if(!raw||typeof raw!=="object")continue;const item=raw as Record<string,unknown>;for(const key of ["title","description"]){const value=item[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}}
+  const values=sectionTextValues(section);
   let score=values.join(" ").length;
   for(const value of values)if(SCAFFOLD_COPY.test(value))score-=250;
   if(Array.isArray(props.items)&&props.items.length===0)score-=80;
   return score;
+}
+
+function isScaffoldSection(section:Site["pages"][number]["sections"][number]){
+  const family=familyFromId(section.component.componentId);
+  if(family==="navbar"||family==="footer"||family==="contact")return false;
+  const props=section.props??{};
+  if(family&&ITEM_CONTENT_FAMILIES.has(family)&&(!Array.isArray(props.items)||props.items.length===0))return true;
+  const values=sectionTextValues(section);
+  return values.some(value=>SCAFFOLD_COPY.test(value));
+}
+
+function sectionTextValues(section:Site["pages"][number]["sections"][number]){
+  const props=section.props??{};
+  const values:string[]=[];
+  for(const key of ["title","heading","description","body","eyebrow"]){const value=props[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}
+  if(Array.isArray(props.items))for(const raw of props.items){if(!raw||typeof raw!=="object")continue;const item=raw as Record<string,unknown>;for(const key of ["title","description"]){const value=item[key];if(typeof value==="string"&&value.trim())values.push(value.trim());}}
+  return values;
 }
 
 function familyFromId(componentId:string):SectionFamily|undefined{const normalized=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>normalized===`${f}.placeholder`||normalized.startsWith(`${f}.`));if(legacy)return legacy;const upper=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>upper.includes(`-${FAMILY_CODES[f]}-`));}

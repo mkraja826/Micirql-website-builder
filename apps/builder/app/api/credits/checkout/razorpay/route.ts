@@ -2,7 +2,7 @@ import { assertWorkspaceAccess } from "../../../assets/supabase-assets";
 import { creditPackageById } from "../../packages/config";
 
 function razorpayConfig(){const keyId=process.env.RAZORPAY_KEY_ID?.trim(),keySecret=process.env.RAZORPAY_KEY_SECRET?.trim();if(!keyId||!keySecret)throw statusError(503,"RAZORPAY_NOT_CONFIGURED");return{keyId,keySecret};}
-function supabaseConfig(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,""),key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error("Server payment configuration is missing.");return{url,key};}
+function supabaseConfig(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,""),key=process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;if(!url||!key)throw new Error("Server payment configuration is missing.");return{url,key};}
 function serviceHeaders(){const{key}=supabaseConfig();return{apikey:key,authorization:`Bearer ${key}`,"content-type":"application/json"};}
 
 export async function POST(request:Request){

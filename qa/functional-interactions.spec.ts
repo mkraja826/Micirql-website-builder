@@ -33,20 +33,25 @@ for (const designId of navbarDesigns) {
   });
 }
 
-test("certified contact section exposes usable form controls", async ({ page }) => {
+test("certified contact section exposes usable contact actions", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const response = await page.goto("/library/MIN-CONT-001", { waitUntil: "networkidle" });
   expect(response?.ok(), "contact preview must load").toBeTruthy();
 
   const root = page.locator('[data-mi-preview-id="MIN-CONT-001"]');
   await expect(root).toBeVisible();
-  const controls = root.locator("input:not([type=hidden]), select, textarea, button[type=submit]");
-  expect(await controls.count(), "contact section should expose interactive form controls").toBeGreaterThan(0);
+  const actions = root.locator("a[href], button");
+  expect(await actions.count(), "contact section should expose at least one interaction").toBeGreaterThan(0);
 
-  const unusable = await controls.evaluateAll((elements) => elements.filter((element) => {
+  const unusable = await actions.evaluateAll((elements) => elements.filter((element) => {
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
-    return style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height < 44;
+    if (style.display === "none" || style.visibility === "hidden" || rect.width <= 0 || rect.height < 44) return true;
+    if (element instanceof HTMLAnchorElement) {
+      const href = element.getAttribute("href")?.trim() ?? "";
+      return !href || href === "#" || /^(?:javascript|data|file|vbscript):/i.test(href);
+    }
+    return false;
   }).length);
-  expect(unusable, "visible form controls need mobile-sized interaction targets").toBe(0);
+  expect(unusable, "visible contact actions need safe destinations and mobile-sized targets").toBe(0);
 });

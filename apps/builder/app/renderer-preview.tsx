@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
-import { SeedSection, seedSectionCatalog } from "@micirql/sections";
+import { SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
 
 type PreviewSection = {
   id: string;
@@ -51,8 +51,8 @@ export function RendererPreview({
   onRequestAddSection?(afterSectionId?: string): void;
   onReorderSection?(sectionId: string, toIndex: number): void;
 }) {
-  const [preview, setPreview] = useState<PreviewPayload>();
-  const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
+  const [preview, setPreview] = useState<PreviewPayload>(() => localPreview(site, path));
+  const [status, setStatus] = useState<"rendering" | "ready" | "error">("ready");
   const [error, setError] = useState("");
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
   const [dropIndex, setDropIndex] = useState<number>();
@@ -60,8 +60,11 @@ export function RendererPreview({
 
   useEffect(() => {
     const id = ++requestId.current;
+    // Render the current Site snapshot immediately so the canvas can never go blank
+    // while the server preview is being prepared or if that request fails.
+    setPreview(localPreview(site, path));
+    setStatus("ready");
     const timer = window.setTimeout(async () => {
-      setStatus("rendering");
       try {
         const response = await fetch("/api/preview", {
           method: "POST",
@@ -78,8 +81,11 @@ export function RendererPreview({
         setStatus("ready");
       } catch (caught) {
         if (id !== requestId.current) return;
+        // Keep the already-rendered local snapshot visible. Surface the server issue
+        // non-destructively instead of replacing the website with an empty/error canvas.
+        setPreview(localPreview(site, path));
         setError(caught instanceof Error ? caught.message : "Preview failed.");
-        setStatus("error");
+        setStatus("ready");
       }
     }, 120);
     return () => window.clearTimeout(timer);
@@ -167,10 +173,62 @@ export function RendererPreview({
               {insertionZone(section.id, index + 1)}
             </Fragment>;
           })}
+          {error ? <div className="renderer-preview-warning" role="status">Using local preview while the server preview reconnects.</div> : null}
         </main>
       ) : null}
     </div>
   );
+}
+
+function localPreview(site: Site, path: string): PreviewPayload {
+  const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
+  const sections: PreviewSection[] = (page?.sections ?? []).map((section) => {
+    let componentId = section.component.componentId;
+    if (!seedSectionCatalog.some((candidate) => candidate.id === componentId)) {
+      const family = legacyFamily(componentId);
+      if (family) componentId = sectionDesignId(site.theme.family, family, 1);
+    }
+    return {
+      id: section.id,
+      componentId,
+      componentVersion: section.component.version,
+      props: normalizeLocalProps(section.props as Record<string, unknown>),
+    };
+  });
+  const colors = site.theme.brand.colors;
+  return {
+    ok: true,
+    siteId: site.siteId,
+    pageId: page?.id,
+    theme: site.theme.family,
+    themeStyle: {
+      "--mi-primary": colors.primary,
+      "--mi-secondary": colors.secondary,
+      "--mi-accent": colors.accent,
+      "--mi-background": colors.background,
+      "--mi-surface": colors.surface,
+      "--mi-text-primary": colors.textPrimary,
+      "--mi-text-secondary": colors.textSecondary,
+      "--mi-border": colors.border,
+    },
+    sections,
+  };
+}
+
+function legacyFamily(componentId: string): SectionFamily | undefined {
+  const value = componentId.toLowerCase();
+  const families: SectionFamily[] = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "team", "cta", "contact", "footer"];
+  return families.find((family) => value === `${family}.placeholder` || value.startsWith(`${family}.`));
+}
+
+function normalizeLocalProps(props: Record<string, unknown>) {
+  const title = stringValue(props.title) ?? stringValue(props.heading) ?? "Untitled section";
+  const description = stringValue(props.description) ?? stringValue(props.body);
+  return { ...props, title, ...(description ? { description } : {}) };
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 function beginInlineEditing(element: HTMLElement, sectionId: string, onChange: (sectionId: string, propPath: string, value: string) => void) {

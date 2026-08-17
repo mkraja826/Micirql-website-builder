@@ -6,12 +6,14 @@ type BflSubmitResponse = {
   id?: string;
   polling_url?: string;
   detail?: unknown;
+  error?: unknown;
 };
 
 type BflPollResponse = {
   status?: string;
   result?: { sample?: string };
   detail?: unknown;
+  error?: unknown;
 };
 
 export function createBflImageExecutor(config: ImageProviderConfig) {
@@ -29,7 +31,9 @@ export function createBflImageExecutor(config: ImageProviderConfig) {
         body: JSON.stringify({ prompt: input.prompt, width, height }),
       });
       const submitted = await json<BflSubmitResponse>(submit);
-      if (!submit.ok) throw new Error(`BFL image request failed (${submit.status}).`);
+      if (!submit.ok) {
+        throw new Error(`BFL image request failed (${submit.status}): ${describeProviderError(submitted)}`);
+      }
       if (!submitted.polling_url) throw new Error("BFL image request returned no polling URL.");
 
       const imageUrl = await waitForImage(submitted.polling_url, config.apiKey);
@@ -61,7 +65,7 @@ async function waitForImage(pollingUrl: string, apiKey: string): Promise<string>
     if (attempt > 0) await sleep(500);
     const response = await fetch(target, { headers: { accept: "application/json", "x-key": apiKey }, cache: "no-store" });
     const payload = await json<BflPollResponse>(response);
-    if (!response.ok) throw new Error(`BFL image polling failed (${response.status}).`);
+    if (!response.ok) throw new Error(`BFL image polling failed (${response.status}): ${describeProviderError(payload)}`);
     if (payload.status === "Ready") {
       const sample = payload.result?.sample;
       if (!sample) throw new Error("BFL image result returned no sample URL.");
@@ -69,7 +73,9 @@ async function waitForImage(pollingUrl: string, apiKey: string): Promise<string>
       if (sampleUrl.protocol !== "https:") throw new Error("BFL image result URL must use HTTPS.");
       return sampleUrl.toString();
     }
-    if (payload.status === "Error" || payload.status === "Failed") throw new Error("BFL image generation failed.");
+    if (payload.status === "Error" || payload.status === "Failed") {
+      throw new Error(`BFL image generation failed: ${describeProviderError(payload)}`);
+    }
   }
   throw new Error("BFL image generation timed out.");
 }
@@ -83,6 +89,16 @@ function parseSize(size: `${number}x${number}`) {
 async function json<T>(response: Response): Promise<T> {
   try { return await response.json() as T; }
   catch { throw new Error(`BFL returned invalid JSON (${response.status}).`); }
+}
+
+function describeProviderError(payload: { detail?: unknown; error?: unknown }): string {
+  const value = payload.detail ?? payload.error;
+  if (typeof value === "string") return value.slice(0, 600);
+  if (value !== undefined) {
+    try { return JSON.stringify(value).slice(0, 600); }
+    catch { return "provider returned structured validation details"; }
+  }
+  return "provider returned no validation detail";
 }
 
 function sleep(ms: number) { return new Promise((resolve) => setTimeout(resolve, ms)); }

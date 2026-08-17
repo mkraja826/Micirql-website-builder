@@ -11,6 +11,7 @@ export type PremiumCorrectionResult = {
 };
 
 type SiteSection = Site["pages"][number]["sections"][number];
+type ThemeFamily = Site["theme"]["family"];
 type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent";
 
 export function applyPremiumCorrectivePass(site: Site): PremiumCorrectionResult {
@@ -59,7 +60,7 @@ function normalizeSurfaceRhythm(sections: SiteSection[], corrections: string[]) 
   if (changed) corrections.push("normalized premium surface rhythm");
 }
 
-function diversifyRepeatedComponents(sections: SiteSection[], themeFamily: string, corrections: string[]) {
+function diversifyRepeatedComponents(sections: SiteSection[], themeFamily: ThemeFamily, corrections: string[]) {
   const seen = new Map<string, number>();
   let changed = false;
   for (const section of sections) {

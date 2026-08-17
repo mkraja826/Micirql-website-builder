@@ -1,7 +1,8 @@
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import type { ThemeConfig } from "@micirql/schema";
 const base={success:"#168a4a",warning:"#ad6a00",error:"#c93636"};
-const t=(family:ThemeConfig["family"],primary:string,secondary:string,accent:string,bg:string,surface:string,display="Inter",density:"compact"|"comfortable"|"spacious"="comfortable",shape:"sharp"|"balanced"|"soft"="balanced",motion:"none"|"subtle"|"standard"|"rich"="subtle",mods:string[]=["light"]):ThemeConfig=>({family,modifiers:mods,brand:{colors:{primary,secondary,accent,background:bg,surface,textPrimary:secondary,textSecondary:"#667085",border:"#d8dde5",...base},typography:{display,body:"Inter",ui:"Inter"},density,shape,motion}});
+type ThemeModifier=ThemeConfig["modifiers"][number];
+const t=(family:ThemeConfig["family"],primary:string,secondary:string,accent:string,bg:string,surface:string,display="Inter",density:"compact"|"comfortable"|"spacious"="comfortable",shape:"sharp"|"balanced"|"soft"="balanced",motion:"none"|"subtle"|"standard"|"rich"="subtle",mods:ThemeModifier[]=["light"]):ThemeConfig=>({family,modifiers:mods,brand:{colors:{primary,secondary,accent,background:bg,surface,textPrimary:secondary,textSecondary:"#667085",border:"#d8dde5",...base},typography:{display,body:"Inter",ui:"Inter"},density,shape,motion}});
 const P=(id:string,name:string,description:string,theme:ThemeConfig,variants:IndustryDesignPreset["variants"]):IndustryDesignPreset=>({id,name,description,theme,variants});
 export const CORPORATE_STARTUP_PRESETS:IndustryDesignPreset[]=[
 P("enterprise-corporate","Enterprise / Institutional","Large-scale authority, governance and institutional credibility.",t("corporate","#234d78","#182534","#507ba6","#ffffff","#f3f6f8","Inter","compact","sharp"),{hero:2,about:2,features:3,services:2,team:3,testimonials:1,cta:2,contact:1}),

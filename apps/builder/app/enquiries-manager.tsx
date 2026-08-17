@@ -98,6 +98,7 @@ export function EnquiriesManager({ siteId, initialSelectedId }: Props) {
       </button>)}</div>
       {selected ? <article className="enquiry-detail">
         <header><div><span>{actionLabel(selected.action_id)}</span><h3>{selected.contact_name || fallbackContact(selected)}</h3><small>{formatDate(selected.created_at)}</small></div><span className={`enquiry-status status-${selected.status}`}>{statusLabel(selected.status)}</span></header>
+        {selected.action_id === "appointment.request" ? <AppointmentSummary payload={selected.payload} /> : null}
         <div className="enquiry-contact-actions">
           {selected.contact_phone ? <a href={`tel:${cleanPhone(selected.contact_phone)}`}>Call</a> : null}
           {selected.contact_email ? <a href={`mailto:${selected.contact_email}`}>Email</a> : null}
@@ -116,12 +117,28 @@ export function EnquiriesManager({ siteId, initialSelectedId }: Props) {
   </section>;
 }
 
+function AppointmentSummary({ payload }: { payload: Record<string, unknown> }) {
+  const entries = [
+    ["Treatment", payload.service],
+    ["Clinician", payload.clinician],
+    ["Preferred date", payload.preferredDate],
+    ["Preferred time", payload.preferredTime],
+  ].filter((entry): entry is [string, unknown] => entry[1] !== undefined && entry[1] !== null && String(entry[1]).trim().length > 0);
+
+  if (!entries.length) return null;
+  return <div className="enquiry-appointment-summary" aria-label="Appointment preferences">
+    <strong>Appointment preferences</strong>
+    <dl>{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{formatAppointmentValue(label, value)}</dd></div>)}</dl>
+  </div>;
+}
+
 function actionLabel(actionId: string) {
   const labels: Record<string,string> = { "lead.create":"Website enquiry", "appointment.request":"Appointment request", "reservation.request":"Reservation request", "quote.request":"Quote request", "property.enquiry":"Property enquiry", "demo.request":"Demo request", "booking.request":"Booking request", "enrollment.enquiry":"Enrollment enquiry", "newsletter.subscribe":"Newsletter signup" };
   return labels[actionId] ?? "Website submission";
 }
 function statusLabel(status: SubmissionStatus) { return status === "received" ? "New" : status === "processing" ? "In progress" : status.charAt(0).toUpperCase() + status.slice(1); }
 function formatDate(value: string) { try { return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); } catch { return value; } }
+function formatAppointmentValue(label: string, value: unknown) { if (label !== "Preferred date") return String(value); try { return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(`${String(value)}T00:00:00`)); } catch { return String(value); } }
 function fieldLabel(value: string) { return value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").replace(/^./, char => char.toUpperCase()); }
 function payloadEntries(payload: Record<string, unknown>) { return Object.entries(payload).filter(([key, value]) => !["website", "consent", "sourcePage", "name", "email", "phone"].includes(key) && value !== undefined && value !== null && String(value).trim()).map(([key,value]) => [key, typeof value === "object" ? JSON.stringify(value) : String(value)] as const); }
 function fallbackContact(item: Submission) { return item.contact_email || item.contact_phone || "Website visitor"; }

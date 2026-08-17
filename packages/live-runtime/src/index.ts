@@ -71,7 +71,12 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   const content = await dependencies.renderPage(prepared.value);
   const favicon = faviconFor(site);
   const socialImage = socialImageFor(site);
-  const document = pageDocument(prepared.value.seo, content, { favicon, socialImage, siteName: site.name });
+  const brandMeta = {
+    siteName: site.name,
+    ...(favicon ? { favicon } : {}),
+    ...(socialImage ? { socialImage } : {}),
+  };
+  const document = pageDocument(prepared.value.seo, content, brandMeta);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,

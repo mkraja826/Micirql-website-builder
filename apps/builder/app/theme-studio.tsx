@@ -1,6 +1,7 @@
 "use client";
 
 import type { ThemeConfig } from "@micirql/schema";
+import { BrandKit } from "./brand-kit";
 import styles from "./theme-studio.module.css";
 
 const FAMILIES: ThemeConfig["family"][] = ["minimalist","corporate","luxury","editorial","glass","maximalist","organic","futuristic","playful","cinematic"];
@@ -26,6 +27,7 @@ export function ThemeStudio({ theme, onChange }: { theme: ThemeConfig; onChange(
   const setFamily = (family: ThemeConfig["family"]) => onChange({ ...theme, family });
 
   return <div className={styles.studio}>
+    <BrandKit brand={theme.brand}/>
     <section className={styles.section}><span className={styles.label}>Theme</span><div className={styles.chips}>{FAMILIES.map(f=><button type="button" key={f} className={theme.family===f?styles.active:undefined} onClick={()=>setFamily(f)}>{f}</button>)}</div></section>
     <section className={styles.section}><span className={styles.label}>Palette</span><div className={styles.palette}>{PALETTES.map(p=><button type="button" key={p.id} onClick={()=>patchBrand({colors:p.colors})}><span className={styles.swatch} style={{background:`linear-gradient(135deg, ${p.colors.primary} 0 50%, ${p.colors.background} 50%)`}}/><span>{p.name}</span></button>)}</div></section>
     <section className={styles.section}><span className={styles.label}>Typography</span><div className={styles.type}>{TYPE.map(t=><button type="button" key={t.id} onClick={()=>patchBrand({typography:t.value})}><strong style={{fontFamily:t.value.display}}>{t.name}</strong><small>{t.value.display}</small></button>)}</div></section>

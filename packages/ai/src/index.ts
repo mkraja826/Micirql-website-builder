@@ -18,3 +18,4 @@ export * from "./image-provider-env";
 export * from "./pricing";
 export * from "./text-provider";
 export * from "./text-provider-env";
+export * from "./content-generation-pipeline";

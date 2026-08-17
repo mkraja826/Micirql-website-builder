@@ -1,4 +1,5 @@
 import { siteSchema, type Site } from "@micirql/schema";
+import { deriveBrandIntelligence, type BrandIntelligenceProfile } from "@micirql/design-engine";
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { WebsiteComposition } from "./composition-intelligence";
 import type { GenerationQualityProfile } from "./generation-quality-intelligence";
@@ -43,15 +44,61 @@ function prioritize(sections:WebsiteComposition["sections"],q:GenerationQualityP
   return result.map(x=>x.s);
 }
 function weight(f:SectionFamily,q:GenerationQualityProfile){let w=50;if(f==="hero")return 100;if(f==="cta"||f==="contact")w+=q.ctaStrength==="strong"?35:20;if(f==="testimonials"||f==="team"||f==="about")w+=Math.round(q.trustWeight/4);if(f==="gallery")w+=Math.round(q.visualWeight/3);if(f==="features"||f==="process")w+=q.heroEmphasis==="product"?25:5;if(f==="services")w+=q.mobileStrategy==="conversion-first"?20:8;return w;}
+
 function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality?:GenerationQualityProfile){
-  const existingBrand=structuredClone(site.theme.brand);const theme=structuredClone(composition.preset.theme);theme.brand.colors=existingBrand.colors;
-  if(existingBrand.logoAssetId)theme.brand.logoAssetId=existingBrand.logoAssetId;
-  if(existingBrand.logoPresentation)theme.brand.logoPresentation=existingBrand.logoPresentation;
+  const existingBrand=structuredClone(site.theme.brand);
+  const theme=structuredClone(composition.preset.theme);
+
+  theme.brand.colors=existingBrand.colors;
+  preserveGeneratedBrandAssets(theme.brand, existingBrand);
+
+  const intelligence=deriveBrandIntelligence({
+    industry: site.subtype ?? composition.preset.id,
+    businessType: `${composition.preset.id} ${composition.preset.name}`,
+    audience: site.seoBlueprint.audiences.join(" "),
+    ...(existingBrand.logoPresentation?.shape ? { logoShape: existingBrand.logoPresentation.shape } : {}),
+  });
+
+  theme.brand.density=intelligence.density;
+  theme.brand.shape=intelligence.shape;
+  theme.brand.motion=intelligence.motion;
+  theme.brand.typography=typographyFor(intelligence.typographyMood, theme.brand.typography);
+  theme.brand.intelligence={
+    tone:intelligence.tone,
+    typographyMood:intelligence.typographyMood,
+    buttonStyle:intelligence.buttonStyle,
+    imageryStyle:intelligence.imageryStyle,
+    recommendations:intelligence.recommendations,
+  };
+
   if(quality){
-    theme.brand.density=quality.contentDensity==="compact"?"compact":quality.contentDensity==="rich"?"spacious":"comfortable";
-    theme.brand.motion=quality.sectionRhythm==="cinematic"?"rich":quality.sectionRhythm==="tight"?"subtle":theme.brand.motion;
+    if(quality.contentDensity==="compact")theme.brand.density="compact";
+    else if(quality.contentDensity==="rich"&&theme.brand.density!=="compact")theme.brand.density="spacious";
+    if(quality.sectionRhythm==="cinematic"&&theme.brand.motion!=="none")theme.brand.motion="rich";
+    else if(quality.sectionRhythm==="tight"&&theme.brand.motion==="standard")theme.brand.motion="subtle";
   }
   return theme;
 }
+
+function preserveGeneratedBrandAssets(target:Site["theme"]["brand"],source:Site["theme"]["brand"]){
+  if(source.logoAssetId)target.logoAssetId=source.logoAssetId;
+  if(source.logoOriginalAssetId)target.logoOriginalAssetId=source.logoOriginalAssetId;
+  if(source.logoCleanupAssetId)target.logoCleanupAssetId=source.logoCleanupAssetId;
+  if(source.logoPresentation)target.logoPresentation=source.logoPresentation;
+  if(source.faviconAssetId)target.faviconAssetId=source.faviconAssetId;
+  if(source.faviconStrategy)target.faviconStrategy=source.faviconStrategy;
+  if(source.socialImageAssetId)target.socialImageAssetId=source.socialImageAssetId;
+  if(source.socialImageStrategy)target.socialImageStrategy=source.socialImageStrategy;
+  if(source.history)target.history=source.history;
+}
+
+function typographyFor(mood:BrandIntelligenceProfile["typographyMood"],fallback:Site["theme"]["brand"]["typography"]):Site["theme"]["brand"]["typography"]{
+  const sans='Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  if(mood==="editorial"||mood==="classic")return{...fallback,display:'Georgia, "Times New Roman", serif',body:sans,ui:sans};
+  if(mood==="geometric")return{...fallback,display:'"Avenir Next", Avenir, Montserrat, ui-sans-serif, system-ui, sans-serif',body:sans,ui:sans};
+  if(mood==="technical")return{...fallback,display:sans,body:sans,ui:sans,mono:'"SFMono-Regular", Consolas, "Liberation Mono", monospace'};
+  return{...fallback,display:sans,body:sans,ui:sans};
+}
+
 function familyFromId(componentId:string):SectionFamily|undefined{const normalized=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>normalized===`${f}.placeholder`||normalized.startsWith(`${f}.`));if(legacy)return legacy;const upper=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>upper.includes(`-${FAMILY_CODES[f]}-`));}
 export function currentVariant(componentId:string):SectionVariant{const match=componentId.match(/-(00[1-5])$/);const value=match?Number(match[1]):1;return value>=1&&value<=5?value as SectionVariant:1;}

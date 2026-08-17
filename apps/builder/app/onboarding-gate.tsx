@@ -1,55 +1,103 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import type { OnboardingProfile } from "./recommended-presets";
 import { OnboardingProfileProvider } from "./onboarding-profile-context";
 import { FirstBuildReview } from "./first-build-review";
-import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel-analysis";
+import { GuidedOnboarding, type GuidedOnboardingValue } from "./guided-onboarding";
 import WorkspaceClient from "./workspace-client";
 
 type DraftContext = { workspaceId: string; siteId: string; snapshot?: { name?: string } };
-type FormState = { businessName: string; industry: string; subindustry: string; location: string; services: string; goals: string[]; styleTags: string[]; requiredCapabilities: string[]; languages: string; notes: string };
-const initialForm: FormState = { businessName: "", industry: "dental", subindustry: "", location: "", services: "", goals: ["generate leads"], styleTags: ["professional", "modern"], requiredCapabilities: ["contact form"], languages: "en", notes: "" };
 
 export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onBack }: { session: SupabaseSession; initialWorkspaceId?: string; initialSiteId?: string; onBack?: () => void }) {
-  const [context, setContext] = useState<DraftContext>(); const [profile,setProfile]=useState<OnboardingProfile|null>(null); const [ready,setReady]=useState(false); const [reviewing,setReviewing]=useState(false); const [loading,setLoading]=useState(true); const [building,setBuilding]=useState(false); const [error,setError]=useState(""); const [form,setForm]=useState<FormState>(initialForm); const [logoUrl,setLogoUrl]=useState(""); const [logoPreview,setLogoPreview]=useState(""); const [brandColors,setBrandColors]=useState<string[]>([]); const [logoBusy,setLogoBusy]=useState(false); const authHeaders={Authorization:`Bearer ${session.access_token}`};
-  useEffect(()=>{let cancelled=false;(async()=>{try{const workspaceId=initialWorkspaceId??"workspace-demo",siteId=initialSiteId??"workspace-preview"; if(initialWorkspaceId&&initialSiteId){localStorage.setItem("micirql_active_project",JSON.stringify({workspaceId:initialWorkspaceId,siteId:initialSiteId}))} const draftResponse=await fetch(`/api/drafts?workspaceId=${encodeURIComponent(workspaceId)}&siteId=${encodeURIComponent(siteId)}`,{headers:authHeaders,cache:"no-store"});const draftPayload=await draftResponse.json();if(!draftResponse.ok||!draftPayload?.draft)throw new Error(draftPayload?.error??"Could not open your workspace.");const nextContext={workspaceId:String(draftPayload.draft.workspaceId),siteId:String(draftPayload.draft.siteId),snapshot:draftPayload.draft.snapshot};if(cancelled)return;setContext(nextContext);localStorage.setItem("micirql_active_project",JSON.stringify({workspaceId:nextContext.workspaceId,siteId:nextContext.siteId}));const statusResponse=await fetch(`/api/onboarding?workspaceId=${encodeURIComponent(nextContext.workspaceId)}&siteId=${encodeURIComponent(nextContext.siteId)}`,{headers:authHeaders,cache:"no-store"});const statusPayload=await statusResponse.json();if(!statusResponse.ok)throw new Error(statusPayload?.error??"Could not load onboarding status.");if(!cancelled){setProfile((statusPayload.profile??null) as OnboardingProfile|null);setReady(Boolean(statusPayload.completed))}}catch(caught){if(!cancelled)setError(caught instanceof Error?caught.message:"Could not start the builder.")}finally{if(!cancelled)setLoading(false)}})();return()=>{cancelled=true}},[session.access_token,initialWorkspaceId,initialSiteId]);
-  async function selectLogo(file?:File){if(!file){setLogoUrl("");setLogoPreview("");setBrandColors([]);return}if(!context){setError("Workspace is still loading.");return}if(file.size>5*1024*1024){setError("Logo must be smaller than 5 MB.");return}if(!["image/png","image/jpeg","image/webp","image/svg+xml"].includes(file.type)){setError("Use a PNG, JPG, WebP or SVG logo.");return}setLogoBusy(true);setError("");try{const dataUrl=await fileDataUrl(file);setLogoPreview(dataUrl);const[colors,clientAnalysis]=await Promise.all([extractBrandColors(file),analyzeLogoPixels(file)]);setBrandColors(colors);const cleanupDataUrl=await createTransparentLogoDerivative(file,clientAnalysis);const response=await fetch("/api/brand/logo",{method:"POST",headers:{...authHeaders,"content-type":"application/json"},body:JSON.stringify({workspaceId:context.workspaceId,siteId:context.siteId,fileName:file.name,contentType:file.type,dataUrl,clientAnalysis:clientAnalysis??null,cleanupDataUrl:cleanupDataUrl??null})});const payload=await response.json();if(!response.ok||!payload?.url)throw new Error(payload?.error??"Logo upload failed.");setLogoUrl(String(payload.url));if(payload?.cleanupApplied&&payload?.url)setLogoPreview(String(payload.url))}catch(caught){setLogoUrl("");setError(caught instanceof Error?caught.message:"Logo upload failed.")}finally{setLogoBusy(false)}}
-  async function submit(event:FormEvent){event.preventDefault();if(!context||logoBusy)return;setBuilding(true);setError("");try{const response=await fetch("/api/onboarding",{method:"POST",headers:{...authHeaders,"content-type":"application/json"},body:JSON.stringify({workspaceId:context.workspaceId,siteId:context.siteId,businessName:form.businessName,industry:form.industry,subindustry:form.subindustry,location:form.location,services:commaList(form.services),goals:form.goals,styleTags:form.styleTags,requiredCapabilities:form.requiredCapabilities,languages:commaList(form.languages),notes:form.notes,logoUrl:logoUrl||null,brandColors})});const payload=await response.json();if(!response.ok||!payload?.ok)throw new Error(payload?.error??"Website build failed.");const nextProfile=(payload.profile??null) as OnboardingProfile|null;setProfile(nextProfile);if(nextProfile)setReviewing(true);else setReady(true)}catch(caught){setError(caught instanceof Error?caught.message:"Website build failed.")}finally{setBuilding(false)}}
-  if(loading)return <main style={shellStyle}><div style={loadingCardStyle}>Preparing your MiCirql workspace…</div></main>;
-  if(reviewing&&context&&profile)return <FirstBuildReview session={session} workspaceId={context.workspaceId} siteId={context.siteId} profile={profile} onComplete={()=>{setReviewing(false);setReady(true)}}/>;
-  if(ready)return <OnboardingProfileProvider profile={profile}><>{onBack?<button style={backStyle} onClick={onBack}>← Projects</button>:null}<WorkspaceClient/></></OnboardingProfileProvider>;
-  return <main style={shellStyle}><form onSubmit={submit} style={cardStyle}>{onBack?<button type="button" onClick={onBack} style={plainBack}>← Back to projects</button>:null}<div><div style={eyebrowStyle}>MiCirql business discovery</div><h1 style={headingStyle}>Tell us what you need. We’ll assemble the right site.</h1><p style={introStyle}>We use this brief to choose the industry pack, theme, sections and functionality before the editor opens.</p></div><div style={brandBoxStyle}><div style={{display:"grid",gap:5}}><strong style={{fontSize:15}}>Brand logo <span style={{color:"#777783",fontWeight:600}}>(optional)</span></strong><span style={{fontSize:13,color:"#9c9ca7",lineHeight:1.45}}>Upload your existing logo. MiCirql checks its colors, transparency and background, then chooses a professional website palette and safe logo treatment automatically.</span></div><div style={logoRowStyle}><label style={uploadButtonStyle}><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{display:"none"}} onChange={e=>void selectLogo(e.target.files?.[0])}/>{logoBusy?"Uploading…":logoUrl?"Replace logo":"Upload logo"}</label>{logoPreview?<div style={logoPreviewStyle}><img src={logoPreview} alt="Logo preview" style={{width:"100%",height:"100%",objectFit:"contain"}}/></div>:<div style={logoPlaceholderStyle}>LOGO</div>}<div style={{display:"grid",gap:7,minWidth:140}}><span style={{fontSize:12,color:"#8f8f9a"}}>Detected brand colors</span><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{brandColors.length?brandColors.map(color=><span key={color} title={color} style={{width:27,height:27,borderRadius:8,background:color,border:"1px solid rgba(255,255,255,.18)",boxShadow:"0 3px 10px rgba(0,0,0,.2)"}}/>):<span style={{fontSize:12,color:"#696974"}}>Upload a logo to detect colors</span>}</div></div></div>{logoUrl?<div style={{fontSize:12,color:"#86d7a5"}}>✓ Logo analyzed, stored and ready for the website brand system.</div>:null}</div><div style={gridStyle}><Field label="Business name"><input style={controlStyle} required value={form.businessName} onChange={e=>setForm({...form,businessName:e.target.value})}/></Field><Field label="Industry"><select style={controlStyle} value={form.industry} onChange={e=>setForm({...form,industry:e.target.value})}><option value="dental">Dental / Clinic</option><option value="restaurant">Restaurant / Hospitality</option><option value="real estate">Real Estate</option><option value="professional services">Professional Services</option><option value="retail">Retail</option><option value="other">Other</option></select></Field><Field label="Speciality / subindustry"><input style={controlStyle} value={form.subindustry} placeholder="Implants, fine dining, residential…" onChange={e=>setForm({...form,subindustry:e.target.value})}/></Field><Field label="Primary location"><input style={controlStyle} value={form.location} placeholder="Hyderabad, Telangana" onChange={e=>setForm({...form,location:e.target.value})}/></Field></div><Field label="Main services"><textarea style={{...controlStyle,minHeight:104,resize:"vertical"}} required value={form.services} placeholder="Dental implants, crowns, root canal…" onChange={e=>setForm({...form,services:e.target.value})}/></Field><ChoiceGroup label="Main goals" values={["generate leads","book appointments","sell online","show portfolio","build trust","rank in search"]} selected={form.goals} onChange={goals=>setForm({...form,goals})}/><ChoiceGroup label="Visual direction" values={["professional","modern","premium","minimal","bold","friendly","editorial"]} selected={form.styleTags} onChange={styleTags=>setForm({...form,styleTags})}/><ChoiceGroup label="Required functionality" values={["contact form","booking","gallery","blog","payments","maps","lead capture","multilingual"]} selected={form.requiredCapabilities} onChange={requiredCapabilities=>setForm({...form,requiredCapabilities})}/><div style={gridStyle}><Field label="Languages"><input style={controlStyle} value={form.languages} placeholder="en, hi, te" onChange={e=>setForm({...form,languages:e.target.value})}/></Field><Field label="Anything else"><input style={controlStyle} value={form.notes} placeholder="International patients, 24/7 enquiries…" onChange={e=>setForm({...form,notes:e.target.value})}/></Field></div>{error?<div style={errorStyle}>{error}</div>:null}<button type="submit" disabled={building||logoBusy||!context} style={{...buttonStyle,opacity:building||logoBusy||!context?.72:1}}>{building?"Building your website…":logoBusy?"Preparing logo…":"Create my website"}</button></form></main>;
-}
-function Field({label,children}:{label:string;children:React.ReactNode}){return <label style={fieldStyle}>{label}{children}</label>};
-function ChoiceGroup({label,values,selected,onChange}:{label:string;values:string[];selected:string[];onChange(value:string[]):void}){return <fieldset style={fieldsetStyle}><legend style={legendStyle}>{label}</legend><div style={choiceWrapStyle}>{values.map(value=>{const active=selected.includes(value);return <button key={value} type="button" aria-pressed={active} onClick={()=>onChange(active?selected.filter(item=>item!==value):[...selected,value])} style={{...choiceStyle,...(active?choiceActiveStyle:{})}}>{value}</button>})}</div></fieldset>};
-function commaList(value:string){return value.split(",").map(item=>item.trim()).filter(Boolean)}
-function fileDataUrl(file:File){return new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>typeof reader.result==="string"?resolve(reader.result):reject(new Error("Could not read logo."));reader.onerror=()=>reject(new Error("Could not read logo."));reader.readAsDataURL(file)})}
-function extractBrandColors(file:File){return new Promise<string[]>((resolve)=>{const objectUrl=URL.createObjectURL(file);const image=new Image();image.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=64;canvas.height=64;const ctx=canvas.getContext("2d",{willReadFrequently:true});if(!ctx){resolve([]);return}ctx.clearRect(0,0,64,64);ctx.drawImage(image,0,0,64,64);const pixels=ctx.getImageData(0,0,64,64).data;const counts=new Map<string,number>();for(let i=0;i<pixels.length;i+=16){const a=pixels[i+3]??0;if(a<120)continue;const r=pixels[i]??0,g=pixels[i+1]??0,b=pixels[i+2]??0;if(r>242&&g>242&&b>242)continue;const q=(v:number)=>Math.max(0,Math.min(255,Math.round(v/32)*32));const color=toHex(q(r),q(g),q(b));counts.set(color,(counts.get(color)??0)+1)}const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(([color])=>color);const chosen:string[]=[];for(const color of ranked){if(chosen.every(existing=>colorDistance(existing,color)>72)){chosen.push(color);if(chosen.length===5)break}}resolve(chosen)}catch{resolve([])}finally{URL.revokeObjectURL(objectUrl)}};image.onerror=()=>{URL.revokeObjectURL(objectUrl);resolve([])};image.src=objectUrl})}
-function toHex(r:number,g:number,b:number){return `#${[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("")}`}
-function colorDistance(a:string,b:string){const av=[1,3,5].map(i=>parseInt(a.slice(i,i+2),16));const bv=[1,3,5].map(i=>parseInt(b.slice(i,i+2),16));return Math.sqrt(av.reduce((sum,v,i)=>sum+(v-(bv[i]??0))**2,0))}
+  const [context, setContext] = useState<DraftContext>();
+  const [profile, setProfile] = useState<OnboardingProfile | null>(null);
+  const [ready, setReady] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [building, setBuilding] = useState(false);
+  const [error, setError] = useState("");
+  const authHeaders = { Authorization: `Bearer ${session.access_token}` };
 
-const shellStyle:React.CSSProperties={minHeight:"100vh",padding:"24px 16px 56px",background:"#09090b",color:"#f7f7fb",fontFamily:"Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"};
-const cardStyle:React.CSSProperties={width:"100%",maxWidth:920,margin:"0 auto",display:"grid",gap:24,padding:"clamp(18px,4vw,34px)",borderRadius:24,background:"#111115",border:"1px solid #292933",boxShadow:"0 22px 70px rgba(0,0,0,.35)",color:"#f7f7fb"};
-const loadingCardStyle:React.CSSProperties={...cardStyle,maxWidth:560,margin:"15vh auto 0",textAlign:"center"};
-const gridStyle:React.CSSProperties={display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,240px),1fr))",gap:18};
-const fieldStyle:React.CSSProperties={display:"grid",gap:8,fontSize:14,fontWeight:700,color:"#e7e7ee"};
-const controlStyle:React.CSSProperties={width:"100%",boxSizing:"border-box",minHeight:50,border:"1px solid #34343f",borderRadius:12,background:"#19191f",color:"#f8f8fb",padding:"12px 14px",fontSize:16,lineHeight:1.4,outline:"none"};
-const fieldsetStyle:React.CSSProperties={border:0,padding:0,margin:0};
-const legendStyle:React.CSSProperties={fontSize:14,fontWeight:800,marginBottom:12,color:"#e7e7ee"};
-const choiceWrapStyle:React.CSSProperties={display:"flex",flexWrap:"wrap",gap:9};
-const choiceStyle:React.CSSProperties={padding:"10px 14px",borderRadius:999,border:"1px solid #34343f",background:"#18181e",color:"#d4d4dc",cursor:"pointer",fontSize:14,fontWeight:650};
-const choiceActiveStyle:React.CSSProperties={border:"1px solid #7c5cff",background:"#6d4aff",color:"white",boxShadow:"0 0 0 3px rgba(109,74,255,.14)"};
-const buttonStyle:React.CSSProperties={minHeight:52,border:0,borderRadius:14,background:"linear-gradient(135deg,#775cff,#6542f4)",color:"white",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 12px 30px rgba(109,74,255,.25)"};
-const plainBack:React.CSSProperties={justifySelf:"start",border:0,background:"transparent",color:"#aaa7b8",cursor:"pointer",padding:"4px 0",fontSize:14};
-const eyebrowStyle:React.CSSProperties={fontSize:13,fontWeight:800,color:"#9c89ff",letterSpacing:".02em",marginBottom:12};
-const headingStyle:React.CSSProperties={margin:"0 0 10px",fontSize:"clamp(32px,8vw,52px)",lineHeight:1.03,letterSpacing:"-.04em",color:"#fafafe",maxWidth:760};
-const introStyle:React.CSSProperties={margin:0,color:"#a7a7b2",fontSize:"clamp(15px,3.8vw,18px)",lineHeight:1.55,maxWidth:720};
-const errorStyle:React.CSSProperties={color:"#ff9aa8",fontSize:14,padding:"12px 14px",border:"1px solid #58303a",background:"#24151a",borderRadius:12};
-const backStyle:React.CSSProperties={position:"fixed",zIndex:20,left:12,top:12,border:"1px solid #333",background:"#151519",color:"white",padding:"8px 11px",borderRadius:9,cursor:"pointer"};
-const brandBoxStyle:React.CSSProperties={display:"grid",gap:15,padding:"16px",border:"1px solid #30303a",borderRadius:16,background:"linear-gradient(145deg,#17171d,#131318)"};
-const logoRowStyle:React.CSSProperties={display:"flex",gap:14,alignItems:"center",flexWrap:"wrap"};
-const uploadButtonStyle:React.CSSProperties={display:"inline-flex",alignItems:"center",justifyContent:"center",minHeight:42,padding:"0 14px",borderRadius:11,border:"1px solid #54428f",background:"#211b35",color:"#cbbfff",fontSize:13,fontWeight:750,cursor:"pointer"};
-const logoPreviewStyle:React.CSSProperties={width:82,height:58,padding:7,border:"1px solid #33333d",borderRadius:11,background:"#fff",overflow:"hidden"};
-const logoPlaceholderStyle:React.CSSProperties={width:82,height:58,display:"grid",placeItems:"center",border:"1px dashed #3b3b45",borderRadius:11,color:"#666671",fontSize:11,fontWeight:800,letterSpacing:".08em"};
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const workspaceId = initialWorkspaceId ?? "workspace-demo";
+        const siteId = initialSiteId ?? "workspace-preview";
+        if (initialWorkspaceId && initialSiteId) localStorage.setItem("micirql_active_project", JSON.stringify({ workspaceId: initialWorkspaceId, siteId: initialSiteId }));
+        const draftResponse = await fetch(`/api/drafts?workspaceId=${encodeURIComponent(workspaceId)}&siteId=${encodeURIComponent(siteId)}`, { headers: authHeaders, cache: "no-store" });
+        const draftPayload = await draftResponse.json();
+        if (!draftResponse.ok || !draftPayload?.draft) throw new Error(draftPayload?.error ?? "Could not open your workspace.");
+        const nextContext = { workspaceId: String(draftPayload.draft.workspaceId), siteId: String(draftPayload.draft.siteId), snapshot: draftPayload.draft.snapshot };
+        if (cancelled) return;
+        setContext(nextContext);
+        localStorage.setItem("micirql_active_project", JSON.stringify({ workspaceId: nextContext.workspaceId, siteId: nextContext.siteId }));
+        const statusResponse = await fetch(`/api/onboarding?workspaceId=${encodeURIComponent(nextContext.workspaceId)}&siteId=${encodeURIComponent(nextContext.siteId)}`, { headers: authHeaders, cache: "no-store" });
+        const statusPayload = await statusResponse.json();
+        if (!statusResponse.ok) throw new Error(statusPayload?.error ?? "Could not load onboarding status.");
+        if (!cancelled) {
+          setProfile((statusPayload.profile ?? null) as OnboardingProfile | null);
+          setReady(Boolean(statusPayload.completed));
+        }
+      } catch (caught) {
+        if (!cancelled) setError(caught instanceof Error ? caught.message : "Could not start the builder.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session.access_token, initialWorkspaceId, initialSiteId]);
+
+  async function submit(value: GuidedOnboardingValue) {
+    if (!context) return;
+    setBuilding(true);
+    setError("");
+    try {
+      const response = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { ...authHeaders, "content-type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: context.workspaceId,
+          siteId: context.siteId,
+          businessName: value.businessName,
+          industry: value.industry,
+          subindustry: value.subindustry,
+          location: value.location,
+          services: commaList(value.services),
+          goals: value.goals,
+          styleTags: value.styleTags,
+          requiredCapabilities: value.requiredCapabilities,
+          languages: commaList(value.languages),
+          notes: value.notes,
+          logoUrl: value.logoUrl,
+          brandColors: value.brandColors,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
+      const nextProfile = (payload.profile ?? null) as OnboardingProfile | null;
+      setProfile(nextProfile);
+      if (nextProfile) setReviewing(true);
+      else setReady(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Website build failed.");
+    } finally {
+      setBuilding(false);
+    }
+  }
+
+  if (loading) return <main style={shellStyle}><div style={loadingStyle}>Preparing your MiCirql workspace…</div></main>;
+  if (reviewing && context && profile) return <FirstBuildReview session={session} workspaceId={context.workspaceId} siteId={context.siteId} profile={profile} onComplete={() => { setReviewing(false); setReady(true); }} />;
+  if (ready) return <OnboardingProfileProvider profile={profile}><>{onBack ? <button style={backStyle} onClick={onBack}>← Projects</button> : null}<WorkspaceClient /></></OnboardingProfileProvider>;
+  if (!context) return <main style={shellStyle}><div style={loadingStyle}>{error || "Workspace is unavailable."}</div></main>;
+
+  return <GuidedOnboarding session={session} workspaceId={context.workspaceId} siteId={context.siteId} building={building} error={error} onBack={onBack} onSubmit={submit} />;
+}
+
+function commaList(value: string) { return value.split(",").map((item) => item.trim()).filter(Boolean); }
+
+const shellStyle: React.CSSProperties = { minHeight: "100vh", padding: "24px 16px 56px", background: "#09090b", color: "#f7f7fb", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
+const loadingStyle: React.CSSProperties = { maxWidth: 560, margin: "15vh auto 0", padding: 28, border: "1px solid #292933", borderRadius: 20, background: "#111115", textAlign: "center", color: "#b7b7c1" };
+const backStyle: React.CSSProperties = { position: "fixed", zIndex: 50, top: 14, left: 14, border: "1px solid #34343f", borderRadius: 10, background: "rgba(18,18,22,.92)", color: "#f4f4f7", padding: "9px 12px", fontWeight: 800, cursor: "pointer", backdropFilter: "blur(10px)" };

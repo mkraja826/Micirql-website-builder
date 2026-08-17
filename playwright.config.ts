@@ -6,6 +6,7 @@ export default defineConfig({
     /builder-journey\.spec\.ts/,
     /generation-benchmark\.spec\.ts/,
     /dental-diversity-benchmark\.spec\.ts/,
+    /dental-visual-comparison\.spec\.ts/,
     /live-model-dental-sampling\.spec\.ts/,
     /live-autonomous-composition\.spec\.ts/,
   ],

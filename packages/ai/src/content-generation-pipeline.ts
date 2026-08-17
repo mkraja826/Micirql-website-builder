@@ -5,8 +5,9 @@ import {
   groundSiteContent,
   type GroundingFacts,
 } from "@micirql/design-engine";
-import { executeRoutedTask, type ModelExecutorRegistry } from "./model-executor";
+import { executeRoutedTask, type ModelExecutor, type ModelExecutorRegistry } from "./model-executor";
 import type { ModelProfile } from "./model-routing";
+import type { PlannerModel } from "./planner-adapter";
 
 export type ContentGenerationInput = {
   site: Site;
@@ -31,6 +32,31 @@ export type ContentGenerationResult = {
   groundingIssues: ReturnType<typeof groundSiteContent>["issues"];
   structureIntact: boolean;
 };
+
+/** Adapts any JSON-capable MiCirql text provider into the routed content executor interface. */
+export function createJsonContentExecutor(model: PlannerModel): ModelExecutor<ContentGenerationModelInput, unknown> {
+  return {
+    profileId: model.id,
+    run(input) {
+      return model.generate({
+        system: [
+          "You are the MiCirql content writer. Return JSON only.",
+          "You are editing an existing schema-driven website snapshot, not designing or coding a website.",
+          ...input.rules,
+          "Follow every page and section content contract exactly, including industry guidance, trust rules, CTA patterns and character limits.",
+          "If a requested fact is missing, use neutral factual wording or preserve the existing placeholder instead of inventing it.",
+        ].join("\n"),
+        input,
+        responseFormat: "json",
+      });
+    },
+  };
+}
+
+export function createModelExecutorRegistry(executors: readonly ModelExecutor[]): ModelExecutorRegistry {
+  const byProfile = new Map(executors.map((executor) => [executor.profileId, executor]));
+  return { get(profileId) { return byProfile.get(profileId); } };
+}
 
 /**
  * Runs content generation through the MiCirql safety boundary.

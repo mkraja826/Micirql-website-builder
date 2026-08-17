@@ -1,16 +1,22 @@
 import type { AssetRecord } from "@micirql/assets";
 
+function publicSupabaseConfig(){
+ const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,"");
+ const apiKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY??process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+ if(!url||!apiKey)throw new Error("Server Supabase public configuration is missing.");
+ return{url,apiKey};
+}
 export function assetConfig(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,"");
- const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+ const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;
  if(!url||!serviceKey)throw new Error("Server asset storage configuration is missing.");
  return{url,serviceKey,bucket:process.env.SUPABASE_ASSET_BUCKET||"site-assets"};
 }
 export function serverHeaders(){const{serviceKey}=assetConfig();return{apikey:serviceKey,authorization:`Bearer ${serviceKey}`};}
 export async function assertWorkspaceAccess(request:Request,workspaceId:string){
  const auth=request.headers.get("authorization");if(!auth?.startsWith("Bearer "))throw statusError(401,"AUTH_REQUIRED");
- const{url,serviceKey}=assetConfig();const user=await fetch(`${url}/auth/v1/user`,{headers:{apikey:serviceKey,authorization:auth},cache:"no-store"});if(!user.ok)throw statusError(401,"AUTH_REQUIRED");
- const memberships=await fetch(`${url}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=workspace_id&limit=1`,{headers:{...serverHeaders(),authorization:auth},cache:"no-store"});
+ const{url,apiKey}=publicSupabaseConfig();const user=await fetch(`${url}/auth/v1/user`,{headers:{apikey:apiKey,authorization:auth},cache:"no-store"});if(!user.ok)throw statusError(401,"AUTH_REQUIRED");
+ const memberships=await fetch(`${url}/rest/v1/workspace_members?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=workspace_id&limit=1`,{headers:{apikey:apiKey,authorization:auth},cache:"no-store"});
  if(!memberships.ok)throw statusError(memberships.status,"Workspace access check failed.");const rows=await memberships.json() as unknown[];if(!rows.length)throw statusError(403,"WORKSPACE_FORBIDDEN");
 }
 export async function listAssets(workspaceId:string){

@@ -3,6 +3,7 @@ import { deriveBrandIntelligence, type BrandIntelligenceProfile } from "@micirql
 import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { WebsiteComposition } from "./composition-intelligence";
 import type { GenerationQualityProfile } from "./generation-quality-intelligence";
+import { applyPremiumCorrectivePass } from "./premium-corrective-pass";
 
 const SINGLETON_FAMILIES = new Set<SectionFamily>(["hero", "services", "testimonials", "gallery", "team", "cta", "contact"]);
 const ITEM_CONTENT_FAMILIES = new Set<SectionFamily>(["services", "features", "process", "testimonials", "gallery", "team"]);
@@ -32,7 +33,8 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
     const composed=[...shellStart,...ordered.filter(section=>!isScaffoldSection(section)),...unknown.filter(section=>!isScaffoldSection(section)),...shellEnd];
     page.sections=applyIndustryPresentation(composed,composition);
   }
-  return siteSchema.parse(next);
+  const composedSite = siteSchema.parse(next);
+  return applyPremiumCorrectivePass(composedSite).site;
 }
 
 function applyIndustryPresentation(sections:SiteSection[],composition:WebsiteComposition):SiteSection[]{

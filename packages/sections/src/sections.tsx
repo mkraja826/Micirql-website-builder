@@ -20,6 +20,9 @@ export type LogoPresentation = {
   navbarMaxHeight?: number;
   footerMaxHeight?: number;
   paddingScale?: number;
+  hasTransparency?: boolean;
+  backgroundSignal?: "transparent" | "embedded" | "clean-opaque" | "unknown";
+  edgeColor?: string;
 };
 
 export type UniversalSectionProps = {

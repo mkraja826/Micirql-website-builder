@@ -1,0 +1,63 @@
+name: Dental Diversity Benchmark
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "packages/design-engine/**"
+      - "apps/builder/app/composition-intelligence.ts"
+      - "apps/builder/app/industry-pack-intelligence.ts"
+      - "apps/builder/app/preset-ranking.ts"
+      - "apps/builder/app/industry-design-preset-data.ts"
+      - "qa/dental-diversity-benchmark.spec.ts"
+      - "playwright.dental-diversity.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-diversity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/design-engine/**"
+      - "apps/builder/app/composition-intelligence.ts"
+      - "apps/builder/app/industry-pack-intelligence.ts"
+      - "apps/builder/app/preset-ranking.ts"
+      - "apps/builder/app/industry-design-preset-data.ts"
+      - "qa/dental-diversity-benchmark.spec.ts"
+      - "playwright.dental-diversity.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-diversity.yml"
+
+jobs:
+  dental-diversity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run Dental diversity benchmark
+        run: pnpm qa:dental-diversity
+
+      - name: Add diversity summary
+        if: always()
+        run: |
+          if [ -f test-results/dental-diversity/summary.md ]; then
+            cat test-results/dental-diversity/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload diversity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-dental-diversity
+          path: test-results/dental-diversity
+          retention-days: 30

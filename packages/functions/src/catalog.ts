@@ -39,7 +39,9 @@ export const nativeFunctionCatalog = [
     version: "1.0.0",
     description: "Capture an appointment request without implying confirmed availability.",
     input: contactSchema.extend({
-      service: z.string().trim().max(160).optional(),
+      phone: z.string().trim().min(6).max(40),
+      consent: z.literal(true),
+      service: z.string().trim().min(1).max(160),
       clinician: z.string().trim().max(160).optional(),
       preferredDate: z.string().date().optional(),
       preferredTime: z.string().trim().max(40).optional(),

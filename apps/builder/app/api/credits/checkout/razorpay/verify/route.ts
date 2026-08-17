@@ -2,7 +2,7 @@ import { addPurchasedCredits } from "../../../supabase-credit-runtime";
 import { assertWorkspaceAccess } from "../../../../assets/supabase-assets";
 
 function razorpayConfig(){const keyId=process.env.RAZORPAY_KEY_ID?.trim(),keySecret=process.env.RAZORPAY_KEY_SECRET?.trim();if(!keyId||!keySecret)throw statusError(503,"RAZORPAY_NOT_CONFIGURED");return{keyId,keySecret};}
-function supabaseConfig(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,""),key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error("Server payment configuration is missing.");return{url,key};}
+function supabaseConfig(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,""),key=process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;if(!url||!key)throw new Error("Server payment configuration is missing.");return{url,key};}
 function serviceHeaders(){const{key}=supabaseConfig();return{apikey:key,authorization:`Bearer ${key}`,"content-type":"application/json"};}
 
 export async function POST(request:Request){
@@ -20,7 +20,7 @@ export async function POST(request:Request){
   const balance=await addPurchasedCredits({workspaceId,credits:stored.credits,operationKey:`razorpay:${paymentId}`,description:`${stored.package_id} credit recharge`,metadata:{provider:"razorpay",providerOrderId:stored.provider_order_id,providerPaymentId:paymentId,packageId:stored.package_id,amountInr:stored.amount_inr}});
   const patch=await fetch(`${url}/rest/v1/credit_payment_orders?id=eq.${stored.id}`,{method:"PATCH",headers:{...serviceHeaders(),Prefer:"return=minimal"},body:JSON.stringify({status:"paid",provider_payment_id:paymentId,settled_at:new Date().toISOString(),updated_at:new Date().toISOString()})});if(!patch.ok)console.error("MiCirql Razorpay payment order status update failed",await patch.text());
   return Response.json({ok:true,balance,creditsAdded:stored.credits,alreadySettled:false});
- }catch(error){const status=(error as Error&{status?:number}).status??500;return Response.json({error:error instanceof Error?error.message:"Payment verification failed."},{status});}
+ }catch(error){const status=(error as Error&{status?:number}).status??500;return Response.json({error:error instanceof Error?error.message:"Payment verification failed."},{status});
 }
 async function hmacHex(secret:string,message:string){const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);const signature=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(message));return Array.from(new Uint8Array(signature),byte=>byte.toString(16).padStart(2,"0")).join("");}
 function safeEqual(a:string,b:string){if(a.length!==b.length)return false;let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;}

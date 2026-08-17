@@ -21,6 +21,9 @@ export const brandTokensSchema = z.object({
     width: z.number().positive().optional(),
     height: z.number().positive().optional(),
     hasTransparency: z.boolean().optional(),
+    edgeBackgroundRatio: z.number().min(0).max(1).optional(),
+    backgroundSignal: z.enum(["transparent", "embedded", "clean-opaque", "unknown"]).optional(),
+    edgeColor: z.string().optional(),
     reasons: z.array(z.string()).default([]),
   }).optional(),
   colors: z.object({

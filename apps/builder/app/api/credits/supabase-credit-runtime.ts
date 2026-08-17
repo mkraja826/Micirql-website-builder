@@ -1,6 +1,6 @@
 import type { AiUsageRecord, AiUsageScope, AiUsageStore } from "@micirql/ai";
 
-function config(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,"");const key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error("Server credit configuration is missing.");return{url,key};}
+function config(){const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,"");const key=process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;if(!url||!key)throw new Error("Server credit configuration is missing.");return{url,key};}
 function headers(){const{key}=config();return{apikey:key,authorization:`Bearer ${key}`,"content-type":"application/json"};}
 
 export function creditsForTask(task:"plan-site"|"generate-image"|"build-component"){const raw=task==="generate-image"?process.env.MICIRQL_CREDITS_GENERATE_IMAGE:task==="build-component"?process.env.MICIRQL_CREDITS_BUILD_COMPONENT:process.env.MICIRQL_CREDITS_PLAN_SITE;const fallback=task==="generate-image"?20:task==="build-component"?8:10;const value=Number(raw??fallback);if(!Number.isInteger(value)||value<=0)throw new Error(`Invalid credit price for ${task}.`);return value;}

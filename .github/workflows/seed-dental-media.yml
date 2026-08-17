@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 env:
-  BUILDER_BASE_URL: https://builder.micirql.com
+  BUILDER_BASE_URL: https://micirql-website-builder.karthikraja826.workers.dev
 
 jobs:
   seed:

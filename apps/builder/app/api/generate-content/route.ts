@@ -18,11 +18,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "expectedRevision must be a non-negative integer" }, { status: 400 });
     }
 
+    const facts = normalizeFacts(body.facts);
     const result = await runGuardedContentGeneration(request, {
       workspaceId,
       siteId,
       expectedRevision,
-      facts: normalizeFacts(body.facts),
+      ...(facts ? { facts } : {}),
     });
 
     return NextResponse.json({ ok: true, ...result });
@@ -37,9 +38,11 @@ export async function POST(request: NextRequest) {
 function normalizeFacts(value: unknown): Partial<GroundingFacts> | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const input = value as Record<string, unknown>;
+  const businessName = optionalText(input.businessName);
+  const industry = optionalText(input.industry);
   return {
-    businessName: optionalText(input.businessName),
-    industry: optionalText(input.industry),
+    ...(businessName ? { businessName } : {}),
+    ...(industry ? { industry } : {}),
     subindustry: optionalText(input.subindustry) ?? null,
     location: optionalText(input.location) ?? null,
     services: stringArray(input.services),

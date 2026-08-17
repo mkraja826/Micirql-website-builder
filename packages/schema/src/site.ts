@@ -64,7 +64,7 @@ export const brandTokensSchema = z.object({
   socialImageAssetId: z.string().optional(),
   socialImageStrategy: z.enum(["generated-card", "logo-fallback", "favicon-fallback"]).optional(),
   logoPresentation: logoPresentationSchema.optional(),
-  history: z.array(brandHistoryEntrySchema).max(5).default([]),
+  history: z.array(brandHistoryEntrySchema).max(5).optional(),
   colors: brandColorsSchema,
   typography: z.object({
     display: z.string().min(1),

@@ -4,7 +4,7 @@
  * workspace-interactive.css still contains the legacy desktop shell grid used
  * before .workspace-main became the container for rail/canvas/inspector.
  * Keep the current hierarchy authoritative so the editor body cannot collapse
- * and clip the preview/inspector to a thin strip.
+ * and keep desktop/final-review previews large enough to judge the real site.
  */
 @media (min-width: 900px) {
   .workspace-shell.editor-v2 {
@@ -20,6 +20,7 @@
     min-height: 0;
     width: 100%;
     display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) 288px;
     overflow: hidden;
   }
 
@@ -38,10 +39,58 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
+    padding: 16px;
+  }
+
+  .editor-v2 .site-preview.viewport-desktop {
+    width: 100%;
+    max-width: 1440px;
   }
 
   .editor-v2 .workspace-inspector {
     min-height: 0;
     grid-column: auto;
+  }
+
+  /* Final publish review should show the website, not a thumbnail-sized frame. */
+  .publish-review-body {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .publish-review-canvas {
+    padding: 16px;
+  }
+
+  .publish-review-frame {
+    width: 100%;
+    max-width: none;
+    min-height: calc(100svh - 96px);
+    border-radius: 12px;
+  }
+
+  .publish-review-frame .site-preview.viewport-desktop {
+    width: 100%;
+    max-width: none;
+    min-height: inherit;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .editor-v2 .workspace-main {
+    grid-template-columns: 176px minmax(0, 1fr) 300px;
+  }
+}
+
+@media (min-width: 1500px) {
+  .editor-v2 .workspace-main {
+    grid-template-columns: 180px minmax(0, 1fr) 306px;
+  }
+
+  .editor-v2 .canvas-stage {
+    padding-inline: 18px;
   }
 }

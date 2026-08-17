@@ -25,6 +25,12 @@ const site = {
   domains: [],
 };
 
+const generatedSite = {
+  ...site,
+  name: "AI Generated Dental",
+  pages: [{ ...site.pages[0], sections: [{ ...site.pages[0]!.sections[0], props: { eyebrow: "Dental implants in Hyderabad", heading: "Restore your smile with confidence", body: "Explore implant care and request an appointment." } }] }],
+};
+
 const project = { id: "workspace-preview", workspace_id: "workspace-demo", name: "Smoke Test Clinic", status: "draft", published_version_id: null, updated_at: now, draft: { revision: 3, updated_at: now }, hostname: null };
 
 test.beforeEach(async ({ page }) => {
@@ -42,7 +48,7 @@ test.beforeEach(async ({ page }) => {
     return route.fulfill({ json: { draft } });
   });
   await page.route("**/api/credits**", async route => route.fulfill({ json: { balance: 100 } }));
-  await page.route("**/api/publish**", async route => route.fulfill({ json: { ok: true, url: "https://smoke.micirql.com", versionId: "v-smoke" } }));
+  await page.route("**/api/publish**", async route => route.fulfill({ json: { ok: true, version: { versionId: "v-smoke" }, liveUrl: "https://smoke.micirql.com" } }));
 });
 
 test("dashboard to editor to preview and publish review", async ({ page }) => {
@@ -58,7 +64,47 @@ test("dashboard to editor to preview and publish review", async ({ page }) => {
   const previewPublish = page.getByRole("button", { name: /Preview.*publish|Publish/i }).last();
   await expect(previewPublish).toBeVisible();
   await previewPublish.click();
-  await expect(page.getByText(/Launch ready|launch blocker/i)).toBeVisible();
+  await expect(page.getByText(/Ready to launch|blocker/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /Desktop/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /Mobile/i })).toBeVisible();
+});
+
+test("guided discovery generates a site and opens it in the editor", async ({ page }) => {
+  let generated = false;
+  await page.unroute("**/api/onboarding**");
+  await page.unroute("**/api/drafts**");
+
+  await page.route("**/api/onboarding**", async route => {
+    if (route.request().method() === "POST") {
+      generated = true;
+      return route.fulfill({ json: { ok: true, profile: null } });
+    }
+    return route.fulfill({ json: { completed: false, profile: null } });
+  });
+  await page.route("**/api/drafts**", async route => {
+    const draft = { workspaceId: "workspace-demo", siteId: "workspace-preview", revision: generated ? 4 : 3, snapshot: generated ? generatedSite : site, updatedAt: now, updatedBy: "smoke-user" };
+    return route.fulfill({ json: { draft } });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open editor" }).first().click();
+  await expect(page.getByRole("heading", { name: "Tell us about your business." })).toBeVisible();
+
+  await page.getByLabel("Business name").fill("AI Generated Dental");
+  await page.getByLabel("Speciality").fill("Dental implants");
+  await page.getByLabel("Primary location").fill("Hyderabad");
+  await page.getByLabel("Main services").fill("Dental implants, crowns, root canal");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Give MiCirql your brand direction." })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "What should this website achieve?" })).toBeVisible();
+  await page.getByRole("button", { name: "book appointments" }).click();
+  await page.getByRole("button", { name: "booking" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Review before we build." })).toBeVisible();
+  await page.getByRole("button", { name: "Create my website" }).click();
+
+  await expect(page.getByText("AI Generated Dental")).toBeVisible();
+  await expect(page.getByText("Restore your smile with confidence")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Preview.*publish/i })).toBeVisible();
 });

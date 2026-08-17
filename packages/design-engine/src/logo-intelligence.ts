@@ -22,7 +22,7 @@ export type LogoIntelligenceResult = {
 
 /**
  * Decides presentation treatment only. It never mutates the customer's logo.
- * Cleanup/redesign can be offered as a separate explicit workflow later.
+ * A cleanup derivative may be generated separately while the original remains preserved.
  */
 export function evaluateLogoUsability(input: LogoIntelligenceInput): LogoIntelligenceResult {
   const width = positive(input.width) ?? 1;
@@ -34,15 +34,22 @@ export function evaluateLogoUsability(input: LogoIntelligenceInput): LogoIntelli
   let treatment: LogoTreatment = "direct";
   let paddingScale = 1;
 
-  const backgroundHeavy = typeof input.edgeBackgroundRatio === "number" && input.edgeBackgroundRatio >= 0.72;
+  const edgeBackgroundRatio = typeof input.edgeBackgroundRatio === "number" ? input.edgeBackgroundRatio : undefined;
+  const backgroundHeavy = typeof edgeBackgroundRatio === "number" && edgeBackgroundRatio >= 0.72;
+  const stronglyEmbeddedBackground = typeof edgeBackgroundRatio === "number" && edgeBackgroundRatio >= 0.9;
   if (backgroundHeavy && !input.hasTransparency) {
     treatment = "neutral-container";
     paddingScale = 1.15;
     reasons.push("Logo appears to include a strong rectangular background, so it should sit on a controlled neutral surface.");
   }
 
+  if (stronglyEmbeddedBackground && !input.hasTransparency) {
+    treatment = "cleanup-recommended";
+    reasons.push("The opaque outer edge is highly uniform, which strongly indicates a removable embedded background.");
+  }
+
   if (input.paletteDecision === "decouple") {
-    treatment = "neutral-container";
+    if (treatment !== "cleanup-recommended") treatment = "neutral-container";
     paddingScale = Math.max(paddingScale, 1.12);
     reasons.push("Website colors are decoupled from the logo, so a neutral logo surface prevents visual conflict.");
   }

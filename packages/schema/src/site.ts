@@ -11,6 +11,8 @@ import {
 
 export const brandTokensSchema = z.object({
   logoAssetId: z.string().optional(),
+  logoOriginalAssetId: z.string().optional(),
+  logoCleanupAssetId: z.string().optional(),
   logoPresentation: z.object({
     shape: z.enum(["horizontal", "square", "vertical"]),
     treatment: z.enum(["direct", "neutral-container", "cleanup-recommended"]),
@@ -18,6 +20,7 @@ export const brandTokensSchema = z.object({
     footerMaxHeight: z.number().positive(),
     paddingScale: z.number().positive(),
     preserveOriginal: z.literal(true),
+    cleanupApplied: z.boolean().optional(),
     width: z.number().positive().optional(),
     height: z.number().positive().optional(),
     hasTransparency: z.boolean().optional(),

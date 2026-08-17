@@ -74,7 +74,31 @@ export async function preparePage(args: {
     typography: { display: site.theme.brand.typography.display, body: site.theme.brand.typography.body },
     density: site.theme.brand.density, shape: site.theme.brand.shape,
   });
-  return { ok: true, value: { site, page, sections, themeStyle: theme.cssVariables, seo: buildRenderedSeo(site, page, args.origin) } };
+  return {
+    ok: true,
+    value: {
+      site,
+      page,
+      sections,
+      themeStyle: { ...theme.cssVariables, ...brandRuntimeTokens(site) },
+      seo: buildRenderedSeo(site, page, args.origin),
+    },
+  };
+}
+
+function brandRuntimeTokens(site: Site): Record<string, string> {
+  const intelligence = site.theme.brand.intelligence;
+  return {
+    "--mi-brand-density": site.theme.brand.density,
+    "--mi-brand-shape": site.theme.brand.shape,
+    "--mi-brand-motion": site.theme.brand.motion,
+    ...(intelligence ? {
+      "--mi-brand-tone": intelligence.tone,
+      "--mi-brand-typography-mood": intelligence.typographyMood,
+      "--mi-brand-button-style": intelligence.buttonStyle,
+      "--mi-brand-imagery-style": intelligence.imageryStyle,
+    } : {}),
+  };
 }
 
 function injectBrandLogo(site:Site, componentId:string, props:Record<string,unknown>) {

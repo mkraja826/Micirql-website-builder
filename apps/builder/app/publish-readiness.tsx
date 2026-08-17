@@ -21,13 +21,13 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
 
   const checks: ReadinessCheck[] = [
     { id: "pages", label: "Required pages", ok: missingPages.length === 0, detail: missingPages.length ? `Missing: ${missingPages.map((p) => p.label).join(", ")}` : "All required pages are present.", blocking: true },
-    { id: "functions", label: "Required functionality", ok: missingActions.length === 0, detail: missingActions.length ? `Missing: ${missingActions.join(", ")}` : "Required actions are bound.", blocking: true },
-    { id: "seo", label: "SEO completeness", ok: seoProblems.length === 0, detail: seoProblems.length ? `${seoProblems.length} page${seoProblems.length === 1 ? "" : "s"} need SEO fixes.` : "Page titles and descriptions are complete.", blocking: true },
-    { id: "assets", label: "Resolved images", ok: unresolvedAssets.length === 0, detail: unresolvedAssets.length ? `${unresolvedAssets.length} section${unresolvedAssets.length === 1 ? "" : "s"} still contain unresolved asset slots.` : "All visual slots are resolved.", blocking: true },
-    { id: "registry", label: "Registry approval", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? `${unapprovedComponents.length} preview/draft component${unapprovedComponents.length === 1 ? "" : "s"} still need promotion.` : "No preview placeholder components remain.", blocking: true },
-    { id: "domain", label: "Domain & SSL", ok: domainOk, detail: !primaryDomain ? "MiCirql subdomain will be used until a custom domain is connected." : domainOk ? `${primaryDomain.hostname} is active with SSL.` : `${primaryDomain.hostname} is not fully active yet.`, blocking: Boolean(primaryDomain) },
-    { id: "mobile", label: "Mobile-first structure", ok: true, detail: "Renderer uses the same responsive section system as production.", blocking: false },
-    { id: "performance", label: "Performance protocol", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? "Final protocol/performance checks run after Registry promotion." : "Only publishable Registry components remain.", blocking: true },
+    { id: "functions", label: "Required functionality", ok: missingActions.length === 0, detail: missingActions.length ? `Missing: ${missingActions.join(", ")}` : "Required actions are connected.", blocking: true },
+    { id: "seo", label: "SEO", ok: seoProblems.length === 0, detail: seoProblems.length ? `${seoProblems.length} page${seoProblems.length === 1 ? "" : "s"} need title or description fixes.` : "Titles and descriptions are ready.", blocking: true },
+    { id: "assets", label: "Images", ok: unresolvedAssets.length === 0, detail: unresolvedAssets.length ? `${unresolvedAssets.length} section${unresolvedAssets.length === 1 ? "" : "s"} still need final images.` : "All visual slots are resolved.", blocking: true },
+    { id: "registry", label: "Approved sections", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? `${unapprovedComponents.length} draft section${unapprovedComponents.length === 1 ? "" : "s"} still need final promotion.` : "All sections are publishable.", blocking: true },
+    { id: "domain", label: "Domain & SSL", ok: domainOk, detail: !primaryDomain ? "A MiCirql subdomain will be used until you connect a custom domain." : domainOk ? `${primaryDomain.hostname} is active and secured with SSL.` : `${primaryDomain.hostname} is still being connected or secured.`, blocking: Boolean(primaryDomain) },
+    { id: "mobile", label: "Mobile layout", ok: true, detail: "Responsive rendering uses the same production section system.", blocking: false },
+    { id: "performance", label: "Performance", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? "Final performance checks complete after draft sections are promoted." : "Only publishable Registry components remain.", blocking: true },
   ];
   return { ready: checks.every((check) => !check.blocking || check.ok), checks };
 }
@@ -35,13 +35,30 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
 export function PublishReadinessManager({ site }: { site: Site }) {
   const report = publishReadiness(site);
   const completion = analyzeMissingInformation(site);
-  return <div className="publish-readiness">
-    <div className={`readiness-summary ${report.ready ? "is-ready" : "is-blocked"}`}><strong>{report.ready ? "Ready to publish" : "Not ready to publish"}</strong><span>{report.ready ? "All blocking checks passed." : "Fix the blocking items below first."}</span></div>
-    <div className="readiness-list">{report.checks.map((check) => <div key={check.id} className={`readiness-row ${check.ok ? "is-ok" : "is-fail"}`}><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div>{check.blocking ? <b>{check.ok ? "Pass" : "Block"}</b> : <b>Info</b>}</div>)}</div>
+  const blockers = report.checks.filter((check) => check.blocking && !check.ok);
+  const passed = report.checks.filter((check) => check.ok);
+  const info = report.checks.filter((check) => !check.blocking && !check.ok);
+  const primaryDomain = site.domains.find((domain) => domain.primary) ?? site.domains[0];
+
+  return <div className="publish-readiness launch-readiness">
+    <section className={`launch-summary ${report.ready ? "is-ready" : "is-blocked"}`}>
+      <div className="launch-summary-copy"><span>{report.ready ? "Launch ready" : `${blockers.length} launch blocker${blockers.length === 1 ? "" : "s"}`}</span><strong>{report.ready ? "Your website is ready to go live." : "Finish these items before publishing."}</strong><small>{report.ready ? "Your required pages, actions, SEO, media and publishing checks have passed." : "MiCirql will keep Publish disabled until every blocking item is resolved."}</small></div>
+      <div className="launch-score"><strong>{passed.length}/{report.checks.length}</strong><span>checks passed</span></div>
+    </section>
+
+    <section className="launch-domain-card">
+      <div><span>Where your site will go live</span><strong>{primaryDomain?.hostname ?? `${site.domain}.micirql.site`}</strong><small>{primaryDomain ? (primaryDomain.status === "active" && primaryDomain.sslStatus === "active" ? "Custom domain connected · SSL active" : "Custom domain setup still in progress") : "MiCirql subdomain ready · connect a custom domain anytime"}</small></div>
+      <b className={primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "is-waiting" : "is-live"}>{primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "Pending" : "Ready"}</b>
+    </section>
+
+    {blockers.length ? <section className="launch-blockers"><div className="launch-section-heading"><span>Fix before launch</span><strong>{blockers.length} item{blockers.length === 1 ? "" : "s"}</strong></div><div className="readiness-list">{blockers.map((check) => <div key={check.id} className="readiness-row is-fail"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>Required</b></div>)}</div></section> : null}
+
+    <section className="launch-passed"><div className="launch-section-heading"><span>Launch checks</span><strong>{passed.length} passed</strong></div><div className="readiness-list">{passed.map((check) => <div key={check.id} className="readiness-row is-ok"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>{check.blocking ? "Ready" : "Checked"}</b></div>)}{info.map((check) => <div key={check.id} className="readiness-row"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>Info</b></div>)}</div></section>
+
     <section className="content-completion" aria-label="Website completion checklist">
-      <div className="content-completion-heading"><div><span>Business details</span><strong>{completion.completion}% complete</strong></div><small>{completion.highPriority ? `${completion.highPriority} important item${completion.highPriority === 1 ? "" : "s"} still need attention.` : "No critical business details are missing."}</small></div>
+      <div className="content-completion-heading"><div><span>Recommended improvements</span><strong>{completion.completion}% business details complete</strong></div><small>{completion.highPriority ? `${completion.highPriority} important item${completion.highPriority === 1 ? "" : "s"} still need attention.` : "No critical business details are missing."}</small></div>
       {completion.items.length ? <div className="content-completion-list">{completion.items.map((item) => <button type="button" key={item.id} className={`content-completion-row priority-${item.priority}`} onClick={() => openCompletionItem(site, item)}><span aria-hidden="true">{item.priority === "high" ? "!" : item.priority === "recommended" ? "•" : "○"}</span><div><strong>{item.title}</strong><small>{item.detail}</small></div><span className="content-completion-action"><b>{item.priority === "high" ? "Important" : item.priority === "recommended" ? "Recommended" : "Optional"}</b><em>{actionLabel(item.action)} →</em></span></button>)}</div> : <div className="content-completion-done"><strong>Business details look complete.</strong><small>You can still refine copy, media and proof later.</small></div>}
-      <p className="content-completion-note">Tap an item to jump directly to the relevant page, section and editor tool. These recommendations remain separate from blocking publish checks.</p>
+      <p className="content-completion-note">Recommendations improve the website but do not block publishing unless they also appear above under “Fix before launch”.</p>
     </section>
   </div>;
 }

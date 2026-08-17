@@ -1,5 +1,6 @@
 import { evaluatePremiumQualityGate, type PremiumQualityResult } from "@micirql/design-engine";
 import { siteSchema, type Site } from "@micirql/schema";
+import { repairContentDepth } from "./content-depth-repair";
 
 export type PremiumCorrectionResult = {
   site: Site;
@@ -13,24 +14,26 @@ const SHELL = new Set(["navbar", "footer"]);
 const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
-  const initial = evaluatePremiumQualityGate(site);
-  if (initial.premiumReady) return { site, initial, final: initial, attempted: false, applied: false };
+  const depthRepaired = repairContentDepth(site);
+  const initial = evaluatePremiumQualityGate(depthRepaired);
+  if (initial.premiumReady) return { site: depthRepaired, initial, final: initial, attempted: JSON.stringify(depthRepaired) !== JSON.stringify(site), applied: JSON.stringify(depthRepaired) !== JSON.stringify(site) };
 
-  const candidate = structuredClone(site);
+  const candidate = structuredClone(depthRepaired);
   repairContrast(candidate);
   repairHomeRhythm(candidate);
   diversifyRepeatedVariants(candidate);
   repairLateConversion(candidate);
 
-  const validated = siteSchema.parse(candidate);
+  const validated = repairContentDepth(siteSchema.parse(candidate));
   const final = evaluatePremiumQualityGate(validated);
+  const contentChanged = JSON.stringify(depthRepaired) !== JSON.stringify(site);
   const improved = final.score > initial.score || (final.blockers.length < initial.blockers.length && final.score >= initial.score);
   return {
-    site: improved ? validated : site,
+    site: improved ? validated : depthRepaired,
     initial,
     final: improved ? final : initial,
     attempted: true,
-    applied: improved,
+    applied: improved || contentChanged,
   };
 }
 

@@ -4,6 +4,7 @@ export * from "./core-structural-blueprints";
 export * from "./content-structural-blueprints";
 export * from "./palette-strategies";
 export * from "./brand-palette-intelligence";
+export * from "./logo-intelligence";
 export * from "./archetype-blueprint-rules";
 export * from "./typography-spacing-systems";
 export * from "./image-slot-strategies";

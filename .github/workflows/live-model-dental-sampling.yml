@@ -1,0 +1,84 @@
+name: Live Model Dental Sampling
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_count:
+        description: "Number of dental scenarios to sample (1-6)"
+        required: true
+        default: "3"
+        type: choice
+        options: ["1", "2", "3", "4", "5", "6"]
+
+permissions:
+  contents: read
+
+jobs:
+  live-dental-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CI: "1"
+      MI_LIVE_SAMPLE_COUNT: ${{ inputs.sample_count }}
+      MICIRQL_TEXT_MODEL_ENDPOINT: ${{ secrets.MICIRQL_TEXT_MODEL_ENDPOINT }}
+      MICIRQL_TEXT_MODEL_API_KEY: ${{ secrets.MICIRQL_TEXT_MODEL_API_KEY }}
+      MICIRQL_TEXT_MODEL: ${{ secrets.MICIRQL_TEXT_MODEL }}
+      MICIRQL_TEXT_MODEL_PROFILE_ID: ${{ secrets.MICIRQL_TEXT_MODEL_PROFILE_ID }}
+      MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION: ${{ secrets.MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION || '0' }}
+      MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION: ${{ secrets.MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION || '0' }}
+      MICIRQL_TEXT_MODEL_TEMPERATURE: "0.2"
+      MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS: "900"
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Provider preflight
+        shell: bash
+        run: |
+          if [[ -z "$MICIRQL_TEXT_MODEL_API_KEY" && -z "$GEMINI_API_KEY" ]]; then
+            echo "::error::No live text-model secret is configured. Add MICIRQL_TEXT_MODEL_* or GEMINI_API_KEY before running this workflow."
+            exit 1
+          fi
+          if [[ -n "$MICIRQL_TEXT_MODEL_API_KEY" && ( -z "$MICIRQL_TEXT_MODEL_ENDPOINT" || -z "$MICIRQL_TEXT_MODEL" ) ]]; then
+            echo "::error::MICIRQL_TEXT_MODEL_API_KEY is present but endpoint/model secrets are incomplete."
+            exit 1
+          fi
+
+      - name: Run live dental sampling
+        run: pnpm qa:live-model-dental
+
+      - name: Add model quality summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f test-results/live-model-dental/summary.md ]]; then
+            cat test-results/live-model-dental/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Live model dental sampling" >> "$GITHUB_STEP_SUMMARY"
+            echo "No report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload live model evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-live-dental-model-${{ github.run_number }}
+          path: test-results/live-model-dental/
+          if-no-files-found: warn
+          retention-days: 14

@@ -5,6 +5,7 @@ import { executeMediaPlan, type MediaAsset } from "../../../media-execution";
 import { materializeGeneratedMedia } from "../../../materialize-media-execution";
 import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
+import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
 import { loadMediaPools } from "../media-assets";
@@ -98,7 +99,19 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql exact asset placement failed; keeping page-level media placement.", error);
     }
 
-    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, content, contentWarning });
+    let functionalBindings = { bound: [] as string[] };
+    try {
+      const current = await getSupabaseDraft(request, workspaceId, siteId);
+      if (current) {
+        const functional = applyFunctionalBindings(current.snapshot, { notes: facts.notes, goals: facts.goals, location: facts.location });
+        functionalBindings = { bound: functional.bound };
+        if (functional.bound.length) await saveSupabaseDraft(request, { snapshot: functional.site, expectedRevision: current.revision });
+      }
+    } catch (error) {
+      console.error("MiCirql functional binding pass failed; keeping generated content and media.", error);
+    }
+
+    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed." }, { status: 500 });
   }

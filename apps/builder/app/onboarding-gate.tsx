@@ -79,9 +79,6 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
 
-      // The base build remains valid even if this enrichment pass fails. The
-      // architecture endpoint rewrites the sitemap from the brief and then runs
-      // grounded content generation over the resulting page set.
       try {
         const architectureResponse = await fetch("/api/onboarding/architect", {
           method: "POST",
@@ -125,7 +122,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
     </OnboardingProfileProvider>;
   }
 
-  if (ready) return <OnboardingProfileProvider profile={profile}><>{onBack ? <button style={backStyle} onClick={onBack}>← Projects</button> : null}<WorkspaceClient session={session} workspaceId={context.workspaceId} siteId={context.siteId} /></></OnboardingProfileProvider>;
+  if (ready) return <OnboardingProfileProvider profile={profile}><WorkspaceClient session={session} workspaceId={context.workspaceId} siteId={context.siteId} /></OnboardingProfileProvider>;
 
   return <GuidedOnboarding session={session} workspaceId={context.workspaceId} siteId={context.siteId} building={building} error={error} {...(onBack ? { onBack } : {})} onSubmit={submit} />;
 }

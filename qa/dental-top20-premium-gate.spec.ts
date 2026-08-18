@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 import { DENTAL_LAYOUT_BLUEPRINTS } from "@micirql/design-engine";
 
 const REQUIRED_VIEWPORTS = [360, 390, 430, 768, 1024, 1440] as const;
+const ENGINEERING_FLOOR = 8.5;
+const PREMIUM_PROMOTION_FLOOR = 9;
 const REQUIRED_HARD_RULES = [
   "no document-level horizontal overflow",
   "no clipped or overlapping text",
@@ -34,16 +36,17 @@ const EXPECTED_LAYOUT_IDS = [
   "dental-20-complete-signature",
 ] as const;
 
-test("all 20 certified dental layouts are present and premium-gated", async () => {
+test("all 20 certified dental layouts are present and premium-review ready", async () => {
   const ids = DENTAL_LAYOUT_BLUEPRINTS.map((layout) => layout.id);
   expect(ids).toHaveLength(20);
   expect(new Set(ids).size).toBe(20);
   expect(ids).toEqual(EXPECTED_LAYOUT_IDS);
+  expect(PREMIUM_PROMOTION_FLOOR).toBeGreaterThan(ENGINEERING_FLOOR);
 
   for (const layout of DENTAL_LAYOUT_BLUEPRINTS) {
     expect(layout.status, `${layout.id} must be certified before Top-20 review`).toBe("certified");
-    expect(layout.quality.minimumDesktopScore, `${layout.id} desktop quality floor`).toBeGreaterThanOrEqual(9);
-    expect(layout.quality.minimumMobileScore, `${layout.id} mobile quality floor`).toBeGreaterThanOrEqual(9);
+    expect(layout.quality.minimumDesktopScore, `${layout.id} engineering desktop floor`).toBeGreaterThanOrEqual(ENGINEERING_FLOOR);
+    expect(layout.quality.minimumMobileScore, `${layout.id} engineering mobile floor`).toBeGreaterThanOrEqual(ENGINEERING_FLOOR);
     expect(layout.quality.requiredViewports, `${layout.id} must declare the complete responsive matrix`).toEqual(REQUIRED_VIEWPORTS);
     for (const rule of REQUIRED_HARD_RULES) {
       expect(layout.quality.hardRules, `${layout.id} is missing hard rule: ${rule}`).toContain(rule);

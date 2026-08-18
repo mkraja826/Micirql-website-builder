@@ -1,0 +1,76 @@
+/* Final mobile safety layer. Keep this import last so it wins over earlier editor polish. */
+html,body{max-width:100%;overflow-x:hidden}
+img,video,iframe,canvas,svg{max-width:100%}
+
+@media (max-width:899px){
+  .editor-v2{height:100svh;max-width:100vw;overflow:hidden}
+  .editor-v2 .workspace-topbar{width:100%;min-width:0;min-height:54px;padding:7px 8px;gap:6px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}
+  .editor-v2 .editor-brand-lockup{min-width:0;overflow:hidden}
+  .editor-v2 .editor-project-title{min-width:0;overflow:hidden}
+  .editor-v2 .editor-project-title span{max-width:min(28vw,120px)}
+  .editor-v2 .page-switcher{display:none!important}
+  .editor-v2 .workspace-actions{min-width:0;max-width:48vw;margin-left:0;justify-content:flex-end;overflow:hidden}
+  .editor-v2 .workspace-actions .publish-button{min-width:66px;max-width:88px;padding-inline:8px}
+
+  .editor-v2 .workspace-main{min-width:0;width:100%;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;overflow:hidden}
+  .editor-v2 .workspace-canvas{min-width:0;width:100%;min-height:0;overflow:hidden}
+  .editor-v2 .canvas-toolbar{width:100%;min-width:0;min-height:46px;padding:6px 8px;gap:6px;overflow:hidden}
+  .editor-v2 .canvas-context{min-width:0;max-width:42%;overflow:hidden}
+  .editor-v2 .canvas-context strong,.editor-v2 .canvas-context span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .editor-v2 .viewport-switcher{min-width:0;max-width:58%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .editor-v2 .viewport-switcher::-webkit-scrollbar{display:none}
+  .editor-v2 .viewport-switcher button{flex:0 0 auto;min-width:34px;min-height:30px;padding-inline:6px}
+  .editor-v2 .canvas-stage{width:100%;min-width:0;max-width:100vw;padding:8px 6px calc(78px + env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain}
+  .editor-v2 .canvas-stage>*{min-width:0!important;max-width:100%!important}
+  .editor-v2 .canvas-stage iframe{width:100%!important;max-width:100%!important}
+
+  .editor-v2 .workspace-inspector{width:100%;min-width:0;max-width:100vw;max-height:38svh;min-height:0;padding:12px 10px calc(82px + env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain}
+  .editor-v2 .inspector-heading{min-width:0;gap:8px}
+  .editor-v2 .inspector-heading small{display:none}
+  .editor-v2 .context-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .editor-v2 .inspector-form,.editor-v2 .inspector-form label,.editor-v2 .inspector-form input,.editor-v2 .inspector-form textarea,.editor-v2 .inspector-form select{min-width:0;max-width:100%}
+
+  .editor-v2 .mobile-editor-bar{left:0;right:0;bottom:0;width:100%;max-width:100vw;min-height:64px;padding:4px max(4px,env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-right));overflow-x:auto;overflow-y:hidden}
+  .editor-v2 .mobile-editor-bar button{flex:0 0 58px;min-width:58px;min-height:52px;padding:3px 2px}
+  .editor-v2 .mobile-editor-bar small{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .mi-editor-canvas-toolbar{top:5px;right:5px;left:auto;max-width:calc(100% - 10px);gap:3px;padding:4px 5px;border-radius:10px;overflow:hidden}
+  .mi-editor-canvas-toolbar span{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mi-editor-canvas-toolbar button{padding:5px 7px}
+
+  .draft-conflict{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:9px 10px}
+  .draft-conflict button{width:100%}
+}
+
+@media (max-width:480px){
+  .editor-v2 .editor-project-title span{display:none}
+  .editor-v2 .workspace-actions{max-width:52vw}
+  .editor-v2 .canvas-context{max-width:34%}
+  .editor-v2 .viewport-switcher{max-width:66%}
+  .editor-v2 .workspace-inspector{max-height:36svh}
+}
+
+/* Enquiries/lead inbox mobile containment. */
+@media (max-width:700px){
+  .enquiries-page{width:100%;max-width:100vw;padding:12px!important;overflow-x:hidden}
+  .enquiries-page__header,.notification-settings-card,.enquiries-manager{width:100%;max-width:100%;min-width:0}
+  .notification-settings-card{padding:13px!important;border-radius:14px!important}
+  .notification-settings-card input[type=email]{width:100%;min-width:0}
+  .notification-settings-card button{width:100%;justify-self:stretch}
+  .enquiries-manager{padding:11px!important;border-radius:14px!important}
+  .enquiries-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:start!important;gap:8px!important}
+  .enquiries-tabs{max-width:100%;padding-bottom:3px;overscroll-behavior-x:contain}
+  .enquiries-search input{width:100%;min-width:0}
+  .enquiries-layout{min-width:0!important;grid-template-columns:minmax(0,1fr)!important}
+  .enquiries-list,.enquiry-detail,.enquiry-row{min-width:0;max-width:100%}
+  .enquiry-row{grid-template-columns:minmax(0,1fr) auto!important}
+  .enquiry-row div{min-width:0}
+  .enquiry-row strong,.enquiry-row span{overflow-wrap:anywhere}
+  .enquiry-detail header{display:grid!important;grid-template-columns:minmax(0,1fr);gap:8px!important}
+  .enquiry-contact-actions{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:7px!important}
+  .enquiry-contact-actions a{width:100%;min-width:0;padding-inline:8px!important}
+  .enquiry-contact-grid{grid-template-columns:minmax(70px,.35fr) minmax(0,1fr)!important;gap:7px 10px!important}
+  .enquiry-request dl,.enquiry-request dl div{min-width:0}
+  .enquiry-workflow{display:grid!important;grid-template-columns:1fr;width:100%}
+  .enquiry-workflow button{width:100%}
+}

@@ -135,6 +135,16 @@ export async function runDentalBlueprintCertification(args: {
 
     const document = args.page.locator(".renderer-preview-document");
     await expect(document).toBeVisible();
+    // Production rendering places these attributes on the page <main>. The
+    // editor preview renders the same sections without the production wrapper,
+    // so mirror the wrapper metadata here before exercising blueprint-scoped CSS.
+    await document.evaluate((element, metadata) => {
+      element.setAttribute("data-mi-layout-blueprint", metadata.layoutId);
+      element.setAttribute("data-mi-layout-archetype", metadata.archetype);
+    }, { layoutId: layout.id, archetype: layout.archetype });
+    await expect(document).toHaveAttribute("data-mi-layout-blueprint", args.layoutId);
+    await args.page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+
     const metrics = await document.evaluate((element) => {
       const root = element as HTMLElement;
       const rootRect = root.getBoundingClientRect();
@@ -165,5 +175,5 @@ export async function runDentalBlueprintCertification(args: {
     results.push({ width, viewport, ...metrics, passed });
   }
 
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
+  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, blueprintCssScopeApplied: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
 }

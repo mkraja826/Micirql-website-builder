@@ -1,0 +1,435 @@
+/* Dental 03 — Smile Studio
+ * Cosmetic, image-led Dental blueprint with asymmetric desktop storytelling and
+ * deliberately simplified mobile composition. Scoped so the design can be
+ * certified independently from every other curated Dental layout.
+ */
+
+[data-mi-layout-blueprint="dental-03-smile-studio"]{
+  --mi-content-lg:82rem;
+  --mi-section-space:clamp(4.75rem,8.5vw,8rem);
+  --mi-smile-ink:color-mix(in srgb,var(--mi-color-text) 88%,#302b36);
+  --mi-smile-muted:color-mix(in srgb,var(--mi-color-text-muted) 82%,#786f7c);
+  --mi-smile-lilac:color-mix(in srgb,var(--mi-color-accent) 18%,#eee8f5);
+  --mi-smile-blush:color-mix(in srgb,var(--mi-color-primary) 10%,#f8edef);
+  --mi-smile-ivory:color-mix(in srgb,var(--mi-color-surface) 88%,#fffaf5);
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-navbar--centered{
+  position:relative;
+  z-index:5;
+  border-bottom:1px solid color-mix(in srgb,var(--mi-color-border) 58%,transparent);
+  background:color-mix(in srgb,var(--mi-color-surface) 96%,transparent);
+  backdrop-filter:blur(18px);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered{min-height:5.5rem;gap:1.25rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered .mi-shell-brand{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:1.12rem;
+  letter-spacing:.02em;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-links{gap:1.1rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-links a{
+  font-size:.86rem;
+  letter-spacing:.035em;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-btn--primary{
+  border-radius:999px;
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.75rem,8vw,7.75rem);
+  padding-bottom:clamp(5.25rem,9vw,8.5rem);
+  background:
+    radial-gradient(circle at 84% 14%,var(--mi-smile-lilac),transparent 25rem),
+    radial-gradient(circle at 13% 82%,var(--mi-smile-blush),transparent 23rem),
+    var(--mi-smile-ivory);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid{
+  grid-template-columns:minmax(3.5rem,.18fr) minmax(0,1.05fr) minmax(20rem,.82fr);
+  gap:clamp(1.4rem,3vw,3.5rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__index{
+  align-self:start;
+  padding-top:.75rem;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4rem,7vw,7rem);
+  font-weight:400;
+  color:color-mix(in srgb,var(--mi-color-primary) 13%,transparent);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__copy{
+  max-width:43rem;
+  gap:1.25rem;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--eyebrow{
+  color:var(--mi-color-primary);
+  letter-spacing:.16em;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--display{
+  max-width:11ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(3.8rem,6.4vw,6.8rem);
+  font-weight:500;
+  line-height:.91;
+  letter-spacing:-.05em;
+  color:var(--mi-smile-ink);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--body{
+  max-width:35rem;
+  color:var(--mi-smile-muted);
+  font-size:clamp(1.02rem,1.3vw,1.16rem);
+  line-height:1.7;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media{
+  margin:0;
+  border-radius:clamp(1.5rem,3vw,2.75rem) clamp(1.5rem,3vw,2.75rem) .7rem .7rem;
+  box-shadow:0 2.1rem 5.2rem color-mix(in srgb,var(--mi-smile-ink) 13%,transparent);
+  transform:translateY(clamp(0rem,2vw,1.6rem));
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media img{
+  aspect-ratio:4/5;
+  min-height:36rem;
+  object-position:center 28%;
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-section--mosaic{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-section--mosaic .mi-section__heading{
+  max-width:52rem;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic{
+  grid-auto-rows:6.7rem;
+  gap:clamp(.55rem,1vw,.9rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:clamp(.8rem,1.4vw,1.25rem);
+  background:var(--mi-smile-ivory);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(1){grid-column:span 7;grid-row:span 4}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(2){grid-column:span 5;grid-row:span 2;margin-top:2.2rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(3){grid-column:8/span 5;grid-row:span 2}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(4){grid-column:span 5;grid-row:span 3}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(5){grid-column:span 7;grid-row:span 3;margin-top:1.4rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card figcaption{
+  padding:1rem 1.15rem;
+  background:linear-gradient(180deg,transparent,rgba(25,20,30,.72));
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight{
+  background:color-mix(in srgb,var(--mi-smile-lilac) 52%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-content-heading{
+  max-width:52rem;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-services-spotlight{
+  gap:clamp(.85rem,1.5vw,1.25rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item{
+  border-color:color-mix(in srgb,var(--mi-color-border) 68%,transparent);
+  background:color-mix(in srgb,var(--mi-color-surface) 92%,transparent);
+  box-shadow:0 .85rem 2.4rem color-mix(in srgb,var(--mi-smile-ink) 5%,transparent);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item:first-child{
+  background:var(--mi-smile-ink);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item:first-child p,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item:first-child h3{color:inherit}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured{
+  background:var(--mi-smile-ivory);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-featured{
+  grid-template-columns:minmax(0,1.25fr) minmax(16rem,.55fr);
+  gap:clamp(1.5rem,4vw,4rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead{
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:clamp(1.4rem,3vw,2.8rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  aspect-ratio:4/5;
+  border-radius:clamp(1rem,2vw,1.8rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team-card--compact{
+  grid-template-columns:4.5rem minmax(0,1fr);
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote{
+  padding-block:clamp(5rem,11vw,9.5rem);
+  background:var(--mi-smile-ink);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote .mi-content-heading,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote .mi-content-heading h2,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote .mi-content-heading p,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote blockquote,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote cite{color:inherit}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote blockquote p{
+  max-width:16ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:400;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote cite{opacity:.68}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process--timeline{
+  background:color-mix(in srgb,var(--mi-smile-blush) 62%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-timeline{
+  gap:0;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-node{
+  position:relative;
+  padding:1.25rem 1.1rem 1.35rem;
+  border-top:1px solid color-mix(in srgb,var(--mi-color-border) 72%,transparent);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-node>span{
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split{
+  padding-block:clamp(4rem,8vw,7rem);
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-cta-split{
+  border:0;
+  border-radius:clamp(1.25rem,2.5vw,2rem);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--mi-color-primary) 88%,#6f587b),color-mix(in srgb,var(--mi-color-accent) 72%,#9a7689));
+  color:#fff;
+  box-shadow:0 1.8rem 4rem color-mix(in srgb,var(--mi-color-primary) 17%,transparent);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:#fff;
+  color:var(--mi-smile-ink);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn--secondary{
+  border-color:rgba(255,255,255,.46);
+  color:#fff;
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-struct--split{
+  background:var(--mi-smile-ivory);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-split{
+  gap:clamp(2rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-form{
+  border-radius:1.4rem;
+  box-shadow:0 1rem 3rem color-mix(in srgb,var(--mi-smile-ink) 7%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-footer--editorial{
+  background:var(--mi-smile-ink);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-footer--editorial a,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-footer--editorial p,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-footer--editorial small{color:rgba(255,255,255,.7)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-footer-wordmark{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:400;
+  letter-spacing:-.045em;
+}
+
+@media(min-width:48rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic{grid-template-columns:repeat(12,minmax(0,1fr))}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-timeline{grid-template-columns:repeat(3,minmax(0,1fr))}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-node:not(:last-child)::after{
+    content:"";
+    position:absolute;
+    top:2.1rem;
+    right:-1px;
+    width:1px;
+    height:calc(100% - 3.4rem);
+    background:color-mix(in srgb,var(--mi-color-border) 64%,transparent);
+  }
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"]{
+    --mi-section-space:clamp(3.25rem,13vw,4.75rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-container{
+    width:min(100% - 1.75rem,var(--mi-content-lg));
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered{
+    min-height:4.35rem;
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered>.mi-shell-links{
+    display:none;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered .mi-shell-brand{
+    justify-self:start;
+    order:1;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered__action{
+    justify-self:end;
+    order:2;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial{
+    padding-top:1.25rem;
+    padding-bottom:clamp(3.5rem,13vw,5rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:flex;
+    flex-direction:column;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__index{
+    display:none;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media{
+    order:1;
+    width:100%;
+    margin:0;
+    transform:none;
+    border-radius:1rem;
+    box-shadow:0 1rem 2.5rem color-mix(in srgb,var(--mi-smile-ink) 10%,transparent);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media img{
+    width:100%;
+    min-height:0;
+    aspect-ratio:5/4;
+    object-position:center 28%;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__copy{
+    order:2;
+    width:100%;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.65rem,12vw,4rem)!important;
+    line-height:.94!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__actions,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__action,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-btn{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-auto-rows:auto;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    margin:0;
+    transform:none!important;
+    overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--mi-color-border) 64%,transparent);
+    background:var(--mi-color-surface);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-placeholder{
+    height:auto;
+    aspect-ratio:4/3;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:first-child img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card:first-child .mi-gallery-placeholder{
+    aspect-ratio:4/5;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card figcaption{
+    position:static;
+    padding:.9rem 1rem 1rem;
+    background:var(--mi-color-surface);
+    color:var(--mi-color-text);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card figcaption span{
+    color:var(--mi-color-text-muted);
+    opacity:1;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item{
+    min-height:0;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item:first-child{
+    grid-column:auto;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/5;
+    max-height:31rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team-card--compact{
+    grid-template-columns:4rem minmax(0,1fr);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote{
+    padding-block:clamp(4rem,15vw,6rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.8rem,9vw,3rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-timeline{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-node{
+    min-width:0;
+    padding:1.2rem 0 1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-cta-split,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-cta-split{
+    padding:1.4rem;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] video,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] iframe{
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] *{
+    min-width:0;
+  }
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-container{width:min(100% - 1.35rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--display{font-size:clamp(2.35rem,12vw,3.35rem)!important}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team-card--compact{grid-template-columns:3.5rem minmax(0,1fr)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card img{transition:none}
+}

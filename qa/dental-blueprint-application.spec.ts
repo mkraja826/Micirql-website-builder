@@ -5,6 +5,8 @@ import { applyComposition } from "../apps/builder/app/apply-composition";
 import { layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
 import { inferGenerationQuality } from "../apps/builder/app/generation-quality-intelligence";
 import { planVisualMedia } from "../apps/builder/app/visual-media-intelligence";
+import { applyPremiumQualityCorrection } from "../apps/builder/app/premium-quality-correction";
+import { harmonizeExplicitBrandColors, mergeAiPlanningAdvice } from "../apps/builder/app/project-brief-guard";
 
 const profile = {
   industry: "dental clinic",
@@ -152,4 +154,61 @@ test("the production planner layout remains the single source of truth through c
   const home = result.pages.find((page) => page.path === "/") ?? result.pages[0];
   expect(home?.sections.map((section) => section.props.layoutBlueprintId)).toEqual(candidate.layout.sections.map(() => candidate.layout.id));
   expect(home?.sections.map((section) => section.props.layoutSectionId)).toEqual(candidate.layout.sections.map((section) => section.id));
+});
+
+test("AI planning colors cannot replace the curated Dental palette", () => {
+  const brief = {
+    workspaceId: "palette-qa-workspace",
+    siteId: "palette-qa-site",
+    businessName: "Harbor Dental Care",
+    industry: "dental",
+    subindustry: "general dentistry",
+    location: "Hyderabad",
+    services: ["checkups", "crowns"],
+  };
+  const advice = mergeAiPlanningAdvice(brief, {
+    brandColors: ["#8A3D21", "#D18A4E", "#FFF3E8"],
+    goals: ["book appointments"],
+  });
+
+  expect(advice.brandPaletteSource).toBe("curated");
+  expect(advice.brandColors).toEqual([]);
+  expect(advice.suggestedBrandColors).toEqual(["#8A3D21", "#D18A4E", "#FFF3E8"]);
+
+  const explicit = harmonizeExplicitBrandColors(["#0B3A53", "#F2C14E"], "dental");
+  expect(explicit.assessment?.decision).not.toBe("decouple");
+  expect(explicit.colors.length).toBeGreaterThan(0);
+});
+
+test("Clove-like scaffold headings and generic Dental CTA copy are repaired before premium acceptance", () => {
+  const source = buildPlannerCompleteDentalSite();
+  const home = source.pages.find((page) => page.path === "/") ?? source.pages[0];
+  if (!home) throw new Error("Dental QA home page missing.");
+
+  const hero = home.sections.find((item) => item.id === "hero");
+  const services = home.sections.find((item) => item.id === "services");
+  const technology = home.sections.find((item) => item.id === "technology");
+  const cta = home.sections.find((item) => item.id === "cta");
+  if (!hero || !services || !technology || !cta) throw new Error("Dental QA fixture is incomplete.");
+
+  hero.props = { ...hero.props, heading: "Harbor Dental Care: ALL DENTAL RELATED TREATMENTS in Hyderabad", primaryAction: { label: "Get started", href: "#contact" } };
+  services.props = { ...services.props, heading: "Home" };
+  technology.props = { ...technology.props, heading: "What matters about home" };
+  cta.props = { ...cta.props, heading: "Ready to discuss home?" };
+
+  const result = applyPremiumQualityCorrection(source);
+  const repairedHome = result.site.pages.find((page) => page.path === "/") ?? result.site.pages[0];
+  if (!repairedHome) throw new Error("Repaired Dental home page missing.");
+
+  const repairedHero = repairedHome.sections.find((item) => item.id === "hero");
+  const repairedServices = repairedHome.sections.find((item) => item.id === "services");
+  const repairedTechnology = repairedHome.sections.find((item) => item.id === "technology");
+  const repairedCta = repairedHome.sections.find((item) => item.id === "cta");
+
+  expect(repairedHero?.props.heading).toBe("Dental care in Hyderabad");
+  expect((repairedHero?.props.primaryAction as { label?: string } | undefined)?.label).toBe("Book an appointment");
+  expect(repairedServices?.props.heading).toBe("Dental treatments and services");
+  expect(repairedTechnology?.props.heading).toBe("What to expect from your dental care");
+  expect(repairedCta?.props.heading).toBe("Ready to discuss your dental care?");
+  expect(result.firstBuild.issues.filter((issue) => issue.code === "SCAFFOLD_COPY")).toHaveLength(0);
 });

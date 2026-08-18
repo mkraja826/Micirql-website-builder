@@ -2,6 +2,7 @@ import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
 
 export type DesignFingerprint = {
+  system: string;
   structure: string;
   palette: string;
   typography: string;
@@ -96,13 +97,14 @@ export function selectDiverseDesigns<T extends { designScore: DesignScore }>(can
 }
 
 export function designSimilarity(a: DesignFingerprint, b: DesignFingerprint): number {
+  const system = a.system === b.system ? 1 : 0;
   const structural = orderedTokenSimilarity(a.structure, b.structure);
   const palette = a.palette === b.palette ? 1 : 0;
   const typography = a.typography === b.typography ? 1 : 0;
   const density = a.density === b.density ? 1 : 0;
   const shape = a.shape === b.shape ? 1 : 0;
   const modifiers = tokenSetSimilarity(a.modifiers, b.modifiers);
-  return structural * 0.5 + palette * 0.15 + typography * 0.15 + density * 0.05 + shape * 0.05 + modifiers * 0.1;
+  return system * 0.12 + structural * 0.43 + palette * 0.13 + typography * 0.13 + density * 0.05 + shape * 0.05 + modifiers * 0.09;
 }
 
 export function fingerprintDesign(site: Site): DesignFingerprint {
@@ -111,6 +113,7 @@ export function fingerprintDesign(site: Site): DesignFingerprint {
   const palette = home.sections.filter((section) => !section.hidden).map((section) => String(section.props?.paletteRole ?? "surface")).join("|");
   const typography = [site.theme.brand.typography.display, site.theme.brand.typography.body, site.theme.brand.typography.ui].join("|");
   return {
+    system: site.theme.family,
     structure,
     palette,
     typography,

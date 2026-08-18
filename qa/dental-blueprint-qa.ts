@@ -15,6 +15,9 @@ const CAPTURE_STYLES = `
 .renderer-preview-warning {
   display: none !important;
 }
+details:not([open]) > :not(summary) {
+  display: none !important;
+}
 .renderer-preview-document .mi-editor-section {
   outline: none !important;
   box-shadow: none !important;

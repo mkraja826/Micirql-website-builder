@@ -4,6 +4,9 @@ export type FunctionalFacts = {
   notes?: string | null;
   goals?: string[];
   location?: string | null;
+  workspaceId?: string;
+  siteId?: string;
+  industry?: string | null;
 };
 
 type Action = { label: string; href: string };
@@ -28,8 +31,18 @@ export function applyFunctionalBindings(site: Site, facts: FunctionalFacts): { s
       }
 
       if (family === "contact") {
-        const form = destinations.form;
-        if (form) { props.formAction = form; bound.add("form"); }
+        const externalForm = destinations.form;
+        if (externalForm) {
+          props.formAction = externalForm;
+          bound.add("external-form");
+        } else if (facts.workspaceId && facts.siteId) {
+          props.formAction = nativeFormEndpoint();
+          props.formWorkspaceId = facts.workspaceId;
+          props.formSiteId = facts.siteId;
+          props.formSourcePage = page.path;
+          props.formActionId = actionIdFor(facts.goals ?? [], facts.industry ?? "");
+          bound.add("native-form");
+        }
         const items = Array.isArray(props.items) ? props.items as Array<Record<string, unknown>> : [];
         for (const item of contactItems(destinations)) if (!items.some((existing) => existing.title === item.title)) items.push(item);
         if (items.length) props.items = items;
@@ -96,6 +109,8 @@ function contactItems(d: ReturnType<typeof extractDestinations>) {
   ].filter(Boolean) as Array<Record<string, unknown>>;
 }
 
+function actionIdFor(goals:string[],industry:string){const text=`${goals.join(" ")} ${industry}`.toLowerCase();if(/dental|clinic|medical|health|appointment/.test(text))return"appointment.request";if(/hotel|booking/.test(text))return"booking.request";if(/restaurant|reservation/.test(text))return"reservation.request";if(/property|real estate/.test(text))return"property.enquiry";if(/demo|saas|software/.test(text))return"demo.request";if(/course|school|education|enrollment/.test(text))return"enrollment.enquiry";if(/quote|construction|service/.test(text))return"quote.request";return"lead.create";}
+function nativeFormEndpoint(){return process.env.NEXT_PUBLIC_MICIRQL_FORM_ENDPOINT?.trim()||"https://builder.micirql.com/api/public/leads";}
 function normalizePhone(value: string) { return value.trim().replace(/\s+/g, " "); }
 function kind(href: string) { if (href.startsWith("tel:")) return "phone"; if (href.startsWith("mailto:")) return "email"; if (/wa\.me|whatsapp/i.test(href)) return "whatsapp"; if (/maps/i.test(href)) return "maps"; if (/book|appointment|schedule|calendly|practo/i.test(href)) return "booking"; return "url"; }
 function familyFromId(componentId: string) { const id = componentId.toLowerCase(); for (const family of ["hero","cta","contact"] as const) if (id.includes(family) || id.includes(`-${family === "hero" ? "hr" : family === "cta" ? "ct" : "cn"}-`)) return family; return null; }

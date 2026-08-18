@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { domainSchema, themeFamilySchema } from "@micirql/schema";
 
-export const assetSourceSchema = z.enum(["user-upload", "micirql-placeholder", "ai-generated"]);
+export const assetSourceSchema = z.enum(["user-upload", "micirql-placeholder", "ai-generated", "licensed-stock"]);
 export const assetKindSchema = z.enum(["image", "logo", "icon", "illustration"]);
 export const assetOrientationSchema = z.enum(["square", "portrait", "landscape", "panoramic"]);
 export const assetLicenseSchema = z.enum(["user-owned", "micirql-owned", "licensed", "generated"]);

@@ -53,15 +53,7 @@ export async function POST(request: NextRequest) {
       const pools = await loadMediaPools(workspaceId);
       customerAssets = pools.customerAssets;
       mediaExecution = executeMediaPlan({ plan: mediaPlan, ...pools, allowGeneration: true });
-      const materialized = await materializeGeneratedMedia({
-        request,
-        site: architecturalSite,
-        execution: mediaExecution,
-        workspaceId,
-        siteId,
-        domain: industry,
-        maxGenerated: 1,
-      });
+      const materialized = await materializeGeneratedMedia({ request, site: architecturalSite, execution: mediaExecution, workspaceId, siteId, domain: industry, maxGenerated: 1 });
       mediaExecution = materialized.execution;
       generatedMediaCount = materialized.generated;
       if (materialized.warnings.length) mediaWarning = materialized.warnings.join(" ");
@@ -76,12 +68,7 @@ export async function POST(request: NextRequest) {
     let content = null;
     let contentWarning: string | null = null;
     try {
-      content = await runGuardedContentGeneration(request, {
-        workspaceId,
-        siteId,
-        expectedRevision: saved.revision,
-        facts,
-      });
+      content = await runGuardedContentGeneration(request, { workspaceId, siteId, expectedRevision: saved.revision, facts });
     } catch (error) {
       contentWarning = error instanceof Error ? error.message : "Page-specific content generation failed.";
       console.error("MiCirql architecture content pass failed; keeping architectural draft.", error);
@@ -103,7 +90,7 @@ export async function POST(request: NextRequest) {
     try {
       const current = await getSupabaseDraft(request, workspaceId, siteId);
       if (current) {
-        const functional = applyFunctionalBindings(current.snapshot, { notes: facts.notes, goals: facts.goals, location: facts.location });
+        const functional = applyFunctionalBindings(current.snapshot, { notes: facts.notes, goals: facts.goals, location: facts.location, workspaceId, siteId, industry });
         functionalBindings = { bound: functional.bound };
         if (functional.bound.length) await saveSupabaseDraft(request, { snapshot: functional.site, expectedRevision: current.revision });
       }

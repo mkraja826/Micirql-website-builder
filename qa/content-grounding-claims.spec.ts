@@ -76,6 +76,7 @@ test("one supplied authority adjective does not hide another unsupported claim",
   );
 
   expect(result.grounded).toBe(false);
-  expect(result.issues).toHaveLength(2);
-  expect(result.issues.every((issue) => issue.reason === "unsupplied expertise or trust claim")).toBe(true);
+  expect(result.issues).toHaveLength(1);
+  expect(result.issues[0]?.field).toBe("items[0].description");
+  expect(result.issues[0]?.reason).toBe("unsupplied expertise or trust claim");
 });

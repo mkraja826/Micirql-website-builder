@@ -22,6 +22,9 @@ html.${CAPTURE_CLASS} .site-preview {
   z-index: 2147483647 !important;
   margin: 0 !important;
 }
+html.${CAPTURE_CLASS} .renderer-preview-document {
+  background: var(--mi-background, #ffffff) !important;
+}
 html.${CAPTURE_CLASS} [data-mi-canvas-action],
 html.${CAPTURE_CLASS} .mi-editor-insert-zone,
 html.${CAPTURE_CLASS} .mi-editor-canvas-toolbar,
@@ -158,5 +161,5 @@ export async function runDentalBlueprintCertification(args: {
     results.push({ width, viewport, ...metrics, passed });
   }
 
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, screenshotsIsolatedFromEditorChrome: true, results }, null, 2), "utf8");
+  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
 }

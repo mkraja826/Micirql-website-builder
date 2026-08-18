@@ -45,3 +45,12 @@ test("legacy dotted component IDs also retain variants above five", () => {
 
   expect(fingerprint.structure).toBe("hero:17|services:11|cta:9");
 });
+
+test("structural similarity recognizes section-order changes as meaningful", () => {
+  const trustFlow = fingerprintDesign(siteWith(["CIN-HERO-002", "CIN-ABOUT-002", "CIN-SERV-003", "CIN-TEAM-003", "CIN-CTA-002"]));
+  const serviceFirstFlow = fingerprintDesign(siteWith(["CIN-HERO-002", "CIN-SERV-003", "CIN-ABOUT-002", "CIN-TEAM-003", "CIN-CTA-002"]));
+
+  expect(new Set(trustFlow.structure.split("|"))).toEqual(new Set(serviceFirstFlow.structure.split("|")));
+  expect(trustFlow.structure).not.toBe(serviceFirstFlow.structure);
+  expect(designSimilarity(trustFlow, serviceFirstFlow)).toBeLessThan(1);
+});

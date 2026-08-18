@@ -124,6 +124,12 @@ function layoutVariant(layout: WebsiteLayoutBlueprint, section: WebsiteLayoutSec
   if (family === "hero") return heroVariant(layout.shell.heroBlueprintId);
   if (family === "footer") return footerVariant(layout.shell.footerBlueprintId);
 
+  // Proof First is intentionally the one Dental blueprint where the generic
+  // patient-proof section expands into a real review wall. This makes the
+  // blueprint's credibility-first hierarchy materially different while the
+  // same patient-proof pattern remains a concise quote elsewhere.
+  if (family === "testimonials" && layout.id === "dental-18-proof-first" && section.id === "proof") return 4;
+
   const pattern = section.pattern.toLowerCase();
   if (family === "testimonials") {
     if (/trust-strip|metric|proof-strip/.test(pattern)) return 3;

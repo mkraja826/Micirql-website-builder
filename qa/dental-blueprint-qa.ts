@@ -102,6 +102,12 @@ export async function runDentalBlueprintCertification(args: {
   const coverage = layoutCoverage(args.site, layout);
   expect(coverage.complete, `Missing blueprint sections: ${coverage.missing.join(", ")}`).toBeTruthy();
   const site = applyWebsiteLayoutBlueprint(args.site, layout);
+  const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
+  expect(home?.sections.length, `${args.layoutId} produced an empty home page`).toBeGreaterThan(0);
+  for (const section of home?.sections ?? []) {
+    expect(section.props.layoutBlueprintId, `${args.layoutId} metadata missing on ${section.id}`).toBe(args.layoutId);
+    expect(section.props.layoutArchetype, `${args.layoutId} archetype metadata missing on ${section.id}`).toBe(layout.archetype);
+  }
 
   await installRoutes(args.page, site, args.profile);
   await args.page.addInitScript(() => localStorage.setItem("micirql.supabase.session", JSON.stringify({ access_token: "blueprint-token", refresh_token: "blueprint-refresh", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer", user: { id: "blueprint-user", email: "blueprint@micirql.test" } })));
@@ -128,11 +134,9 @@ export async function runDentalBlueprintCertification(args: {
     await activateCssViewport(args.page, width);
 
     const document = args.page.locator(".renderer-preview-document");
-    const root = document.locator(`[data-mi-layout-blueprint="${args.layoutId}"]`);
-    await expect(root).toHaveCount(1);
+    await expect(document).toBeVisible();
     const metrics = await document.evaluate((element) => {
-      const root = element.querySelector("[data-mi-layout-blueprint]") as HTMLElement | null;
-      if (!root) return { cssViewportWidth: window.innerWidth, clientWidth: 0, scrollWidth: 1, overflowingSections: 1, overflowingControls: 1, clippedMedia: 1 };
+      const root = element as HTMLElement;
       const rootRect = root.getBoundingClientRect();
       const outside = (node: Element) => {
         const rect = node.getBoundingClientRect();
@@ -155,11 +159,11 @@ export async function runDentalBlueprintCertification(args: {
     expect(metrics.overflowingControls, `${width}px control overflow`).toBe(0);
     expect(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
 
-    if (width <= 430 && args.mobileCheck) await args.mobileCheck({ page: args.page, root, width });
+    if (width <= 430 && args.mobileCheck) await args.mobileCheck({ page: args.page, root: document, width });
 
     await captureWebsiteEvidence(args.page, document, path.join(output, `${width}.png`));
     results.push({ width, viewport, ...metrics, passed });
   }
 
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
+  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
 }

@@ -10,6 +10,7 @@ import "@micirql/sections/palette-runtime.css";
 import "@micirql/sections/image-slots.css";
 import "@micirql/sections/premium-mobile.css";
 import "@micirql/sections/premium-output-system.css";
+import "@micirql/sections/premium-geometry.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Preview",

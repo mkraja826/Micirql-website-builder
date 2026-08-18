@@ -1,5 +1,5 @@
 import type { Site } from "@micirql/schema";
-import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
+import { FAMILY_CODES, SECTION_FAMILIES, certifiedVariantsFor, resolvePremiumCertifiedVariant, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import {
   PALETTE_STRATEGIES,
   blueprintRuleFor,
@@ -135,9 +135,11 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
 function mutateRecipe(recipe: DirectionRecipe, pass: number): DirectionRecipe {
   const variants: Partial<Record<SectionFamily, SectionVariant>> = {};
   for (const family of SECTION_FAMILIES) {
-    const current = recipe.variants[family] ?? 1;
+    const approved = certifiedVariantsFor(family);
+    const current = resolvePremiumCertifiedVariant(family, recipe.variants[family] ?? approved[0]!);
+    const currentIndex = Math.max(0, approved.indexOf(current));
     const familyOffset = family === "navbar" || family === "hero" || family === "footer" ? pass : pass + FAMILY_CODES[family].length;
-    variants[family] = (((current - 1 + familyOffset) % 5) + 1) as SectionVariant;
+    variants[family] = approved[(currentIndex + familyOffset) % approved.length]!;
   }
   const paletteIndex = PALETTE_STRATEGIES.findIndex((candidate) => candidate.id === recipe.palette);
   const palette = PALETTE_STRATEGIES[(Math.max(0, paletteIndex) + pass) % PALETTE_STRATEGIES.length]?.id ?? recipe.palette;
@@ -156,7 +158,11 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);
-      if (family) section.component.componentId = sectionDesignId(next.theme.family, family, recipe.variants[family] ?? 1);
+      if (family) {
+        const requested = recipe.variants[family] ?? certifiedVariantsFor(family)[0]!;
+        const certified = resolvePremiumCertifiedVariant(family, requested);
+        section.component.componentId = sectionDesignId(next.theme.family, family, certified);
+      }
     }
     if (recipe.sequence?.length) {
       const order = new Map(recipe.sequence.map((family, index) => [family, index]));

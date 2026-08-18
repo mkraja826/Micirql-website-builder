@@ -1,6 +1,7 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
 import { resolveIndustryIntelligence, type IndustryIntelligencePack } from "./industry-intelligence";
+import { layoutsForIndustry } from "./layout-library";
 import { evaluatePageArchitecture, plannerPageArchitecture } from "./page-architecture";
 
 const SEMANTIC_TO_FAMILY: Record<string, SectionFamily> = {
@@ -66,6 +67,7 @@ export function evaluateIndustryFit(site: Site, industry?: string, subindustry?:
 export function industryPlannerContext(industry?: string, subindustry?: string) {
   const pack = resolveIndustryIntelligence(industry, subindustry);
   if (!pack) return undefined;
+  const certifiedLayouts = layoutsForIndustry(industry ?? pack.id);
   return {
     industryPack: pack.id,
     archetypeId: pack.archetypeId,
@@ -76,6 +78,23 @@ export function industryPlannerContext(industry?: string, subindustry?: string) 
     preferredCtaPatterns: pack.ctaPatterns,
     seoTopics: pack.seoTopics,
     sectionWritingGuidance: pack.contentPrompts,
+    certifiedLayoutSelectorVersion: 1,
+    certifiedLayoutCandidates: certifiedLayouts.map((layout) => ({
+      id: layout.id,
+      industry: layout.industry,
+      name: layout.name,
+      archetype: layout.archetype,
+      status: layout.status,
+      styleTags: layout.styleTags,
+      fit: layout.fit,
+      sections: layout.sections.map((section) => ({
+        id: section.id,
+        family: section.family,
+        pattern: section.pattern,
+        purpose: section.purpose,
+        required: section.required,
+      })),
+    })),
     pageArchitectureRule: "Required pages should be created when facts support them. Recommended pages should be created when useful. Optional pages are not mandatory.",
     rule: "Use only supplied business facts. These are communication priorities, not permission to invent claims.",
   };

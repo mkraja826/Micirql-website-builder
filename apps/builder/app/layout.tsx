@@ -15,6 +15,7 @@ import "@micirql/sections/dental-03-smile-studio.css";
 import "@micirql/sections/dental-04-family-care.css";
 import "@micirql/sections/dental-05-digital-dentistry.css";
 import "@micirql/sections/dental-06-doctor-signature.css";
+import "@micirql/sections/dental-07-consultation-engine.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

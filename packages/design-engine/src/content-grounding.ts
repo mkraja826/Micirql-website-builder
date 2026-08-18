@@ -82,7 +82,7 @@ function sanitizeRecord(record: Record<string, unknown>, pageId: string, section
     }
     if (Array.isArray(value)) {
       value.forEach((item, index) => {
-        if (item && typeof item === "object" && !Array.isArray(item)) sanitizeRecord(item as Record<string, unknown>, pageId, section.id, family, factText, issues, `${field}[${index}]`);
+        if (item && typeof item === "object" && !Array.isArray(item)) sanitizeRecord(item as Record<string, unknown>, pageId, sectionId, family, factText, issues, `${field}[${index}]`);
       });
       continue;
     }

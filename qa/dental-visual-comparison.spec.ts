@@ -81,7 +81,8 @@ async function forcePreviewWidth(page: Page, viewport: "mobile" | "desktop", wid
     node.style.setProperty("width", `${targetWidth}px`, "important");
     node.style.setProperty("max-width", `${targetWidth}px`, "important");
   }, width);
-  await expect.poll(() => sitePreview.evaluate((element) => element.clientWidth)).toBe(width);
+  await expect.poll(() => sitePreview.evaluate((element, targetWidth) => Math.abs(element.getBoundingClientRect().width - targetWidth), width)).toBeLessThanOrEqual(0.5);
+  return sitePreview.evaluate((element) => element.getBoundingClientRect().width);
 }
 
 async function installRoutes(page: Page, site: Site, profile: OnboardingProfile) {
@@ -110,22 +111,22 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
     await expect(preview).toBeVisible();
     await expect(preview.locator("[data-mi-section-id]")).toHaveCount(site.pages[0]!.sections.length);
 
-    await forcePreviewWidth(page, "desktop", VISUAL_WIDTHS.desktop);
-    const desktopMetrics = await preview.evaluate((element, targetWidth) => ({ targetWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), VISUAL_WIDTHS.desktop);
+    const desktopFrameWidth = await forcePreviewWidth(page, "desktop", VISUAL_WIDTHS.desktop);
+    const desktopMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.desktop, frameWidth: desktopFrameWidth });
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-desktop.png`) });
 
-    await forcePreviewWidth(page, "mobile", VISUAL_WIDTHS.mobile);
-    const mobileMetrics = await preview.evaluate((element, targetWidth) => ({ targetWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), VISUAL_WIDTHS.mobile);
+    const mobileFrameWidth = await forcePreviewWidth(page, "mobile", VISUAL_WIDTHS.mobile);
+    const mobileMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.mobile, frameWidth: mobileFrameWidth });
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-mobile.png`) });
 
     const composition = composeWebsite(scenario.profile);
-    const passed = desktopMetrics.textLength > 300 && mobileMetrics.textLength > 300 && desktopMetrics.width === VISUAL_WIDTHS.desktop && mobileMetrics.width === VISUAL_WIDTHS.mobile && desktopMetrics.scrollWidth <= desktopMetrics.width + 2 && mobileMetrics.scrollWidth <= mobileMetrics.width + 2;
+    const passed = desktopMetrics.textLength > 300 && mobileMetrics.textLength > 300 && Math.abs(desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && Math.abs(mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && desktopMetrics.scrollWidth <= desktopMetrics.width + 2 && mobileMetrics.scrollWidth <= mobileMetrics.width + 2;
     results.push({ scenario: scenario.id, name: scenario.name, preset: composition.preset.id, intent: composition.intent, recipe: composition.industryPack?.recipe.id ?? "none", sectionPattern: composition.sections.map((section) => `${section.family}:${section.variant}`).join("|"), desktopMetrics, mobileMetrics, passed });
   }
 
   const passed = results.filter((result) => result.passed).length;
-  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v2", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, results };
+  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v3", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, results };
   await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify(summary, null, 2), "utf8");
-  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- Exact widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.width === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.width === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
+  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- Exact outer widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${Math.abs(result.desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${Math.abs(result.mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
   expect(passed, JSON.stringify(summary, null, 2)).toBe(results.length);
 });

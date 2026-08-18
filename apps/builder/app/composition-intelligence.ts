@@ -56,16 +56,18 @@ function recipeFamily(value:string):SectionFamily|undefined{
 function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested);}
 function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance/.test(text))return 1;return preferred;}
 function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{
- const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),...(profile.services||[])].filter(Boolean).join(" ").toLowerCase();
+ const primaryText=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();
+ const serviceText=(profile.services||[]).filter(Boolean).join(" ").toLowerCase();
+ const text=`${primaryText} ${serviceText}`.trim();
  const isDental=DENTAL_IDS.has(id)||/dental|dentist|dentistry|orthodont|endodont|implant|smile design|root canal|tooth|oral care/.test(text);
  if(isDental){
   if(/emergency|urgent|tooth pain|broken tooth|same.?day|contact clinic|call clinic/.test(text))return"conversion";
-  if(/learn|education|educational|explain treatment|treatment process|how it works|endodont|root canal/.test(text))return"education";
-  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(text))return"showcase";
+  if(/learn|education|educational|explain treatment|treatment process|how it works/.test(primaryText))return"education";
+  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(primaryText))return"showcase";
  }
  if(/demo|trial|waitlist|download|product|platform|api/.test(text)||PRODUCT_IDS.has(id))return"product";
- if(/admission|enrol|learn|course|training/.test(text)||EDUCATION_IDS.has(id))return"education";
- if(/portfolio|gallery|showcase|projects|collection/.test(text)||SHOWCASE_IDS.has(id))return"showcase";
+ if(/admission|enrol|learn|course|training/.test(primaryText)||EDUCATION_IDS.has(id))return"education";
+ if(/portfolio|gallery|showcase|projects|collection/.test(primaryText)||SHOWCASE_IDS.has(id))return"showcase";
  if(/enterprise|institution|global|manufactur|infrastructure|group company/.test(text)||INSTITUTIONAL_IDS.has(id))return"institutional";
  if(/trust|credib|doctor|clinic|law|finance|insurance/.test(text)||TRUST_IDS.has(id))return"trust";
  return"conversion";

@@ -1,4 +1,4 @@
-import type { Site } from "@micirql/schema";
+import type { Site, ThemeFamily } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, certifiedVariantsFor, resolvePremiumCertifiedVariant, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import {
   PALETTE_STRATEGIES,
@@ -65,6 +65,19 @@ const RECIPES: DirectionRecipe[] = [
   { name: "High Impact", description: "Strong branded surfaces and assertive conversion moments for maximum presence.", palette: "brand-heavy", variants: { navbar: 4, hero: 5, about: 5, services: 5, features: 5, process: 5, testimonials: 5, gallery: 2, team: 5, cta: 5, contact: 5, footer: 3 } },
 ];
 
+const ARCHETYPE_THEME_FAMILIES: Record<string, readonly ThemeFamily[]> = {
+  "healthcare-clinic": ["corporate", "minimalist", "luxury", "editorial", "organic", "cinematic"],
+  hospitality: ["luxury", "cinematic", "organic", "editorial", "minimalist"],
+  "real-estate": ["luxury", "corporate", "editorial", "cinematic", "minimalist"],
+  ecommerce: ["minimalist", "editorial", "luxury", "playful", "cinematic"],
+  "saas-technology": ["corporate", "minimalist", "glass", "futuristic", "editorial"],
+  "portfolio-creative": ["editorial", "minimalist", "cinematic", "maximalist", "organic"],
+  "education-training": ["corporate", "minimalist", "organic", "editorial", "playful"],
+  "corporate-company": ["corporate", "minimalist", "editorial", "luxury", "glass"],
+  "professional-services": ["corporate", "minimalist", "editorial", "luxury", "organic"],
+  "local-service": ["corporate", "minimalist", "organic", "editorial", "luxury"],
+};
+
 export function buildReviewDirections(site: Site, profile: OnboardingProfile, count = 20, preferenceProfile?: DesignPreferenceProfile): ReviewDirection[] {
   const industry = clean(profile.industry) || clean(profile.subindustry) || "your business";
   const archetypeId = resolveArchetype(profile);
@@ -78,10 +91,11 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const pass = Math.floor(candidateIndex / recipePool.length);
     const baseRecipe = recipePool[recipeIndex]!;
     const recipe = pass === 0 ? baseRecipe : mutateRecipe(baseRecipe, pass);
+    const themeFamily = themeFamilyForCandidate(archetypeId, site.theme.family, candidateIndex);
     const typography = typographySystemAt(candidateIndex + pass);
     const rhythm = rhythmSystemAt(candidateIndex + Math.floor(candidateIndex / 5) + pass);
     const imageStrategy = imageStrategyAt(imageStrategyOffset(archetypeId) + candidateIndex + pass);
-    const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy);
+    const composed = composeDirection(site, recipe, typography, rhythm, imageStrategy, themeFamily);
     const repaired = repairWebsiteInvariants(composed, archetypeId, clean(profile.industry), clean(profile.subindustry));
     const normalizedSite = normalizeWebsiteContent(repaired.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
@@ -105,6 +119,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
       reasons: [
         `built for ${industry}`,
         ...(archetypeId === "hospitality" ? ["restaurant master composition"] : []),
+        `${themeFamily} design system`,
         industryFit.packLabel ? `${industryFit.packLabel} fit ${industryFit.score}/100` : `${archetypeId.replace(/-/g, " ")} composition`,
         ...(industryFit.missingSections.length ? [`could add: ${industryFit.missingSections.slice(0, 3).join(", ")}`] : []),
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",
@@ -146,8 +161,9 @@ function mutateRecipe(recipe: DirectionRecipe, pass: number): DirectionRecipe {
   return { ...recipe, palette, variants };
 }
 
-function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>, imageStrategy: ReturnType<typeof imageStrategyAt>): Site {
+function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>, imageStrategy: ReturnType<typeof imageStrategyAt>, themeFamily: ThemeFamily): Site {
   const next = structuredClone(site);
+  next.theme.family = themeFamily;
   next.theme.brand.typography = { ...next.theme.brand.typography, display: typography.display, body: typography.body, ui: typography.ui };
   next.theme.brand.density = rhythm.density;
   next.theme.brand.shape = rhythm.shape;
@@ -187,6 +203,14 @@ function composeDirection(site: Site, recipe: DirectionRecipe, typography: Retur
     }
   }
   return next;
+}
+
+function themeFamilyForCandidate(archetypeId: string, baseTheme: ThemeFamily, candidateIndex: number): ThemeFamily {
+  const compatible = ARCHETYPE_THEME_FAMILIES[archetypeId] ?? ARCHETYPE_THEME_FAMILIES["local-service"]!;
+  const ordered = compatible.includes(baseTheme)
+    ? [baseTheme, ...compatible.filter((theme) => theme !== baseTheme)]
+    : [...compatible];
+  return ordered[candidateIndex % ordered.length]!;
 }
 
 function imagePropsForFamily(family: SectionFamily, strategy: ReturnType<typeof imageStrategyAt>) {

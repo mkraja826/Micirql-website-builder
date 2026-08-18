@@ -6,9 +6,15 @@ import {
   generateGuardedSiteContent,
   textProviderConfigFromEnvironment,
   type ModelProfile,
+  type PlannerModel,
   type TextProviderUsage,
 } from "@micirql/ai";
 import type { GroundingFacts } from "@micirql/design-engine";
+import {
+  CLOUDFLARE_CONTENT_MODEL,
+  CLOUDFLARE_CONTENT_PROFILE_ID,
+  createWorkersAiJsonPlannerModel,
+} from "../../cloudflare-workers-ai-text";
 import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseHeaders } from "../drafts/supabase-store";
 
 export type GuardedContentGenerationRequest = {
@@ -16,6 +22,13 @@ export type GuardedContentGenerationRequest = {
   siteId: string;
   expectedRevision: number;
   facts?: Partial<GroundingFacts>;
+};
+
+type ContentUsage = { inputTokens: number; outputTokens: number; costMicrousd: number };
+
+type ContentAttempt = {
+  planner: PlannerModel;
+  profile: ModelProfile;
 };
 
 export async function runGuardedContentGeneration(request: NextRequest, input: GuardedContentGenerationRequest) {
@@ -32,62 +45,121 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     throw error;
   }
 
-  const providerConfig = textProviderConfigFromEnvironment(process.env);
-  if (!providerConfig) {
-    const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number };
-    error.status = 503;
-    throw error;
-  }
+  const attempts: ContentAttempt[] = [];
+  const usageByProfile = new Map<string, ContentUsage>();
+  let recordedUsage: ContentUsage | undefined;
 
-  const provider = providerName(providerConfig.endpoint);
-  let recordedUsage: { inputTokens: number; outputTokens: number; costMicrousd: number } | undefined;
-  const model = createOpenAiCompatibleJsonPlannerModel({
-    ...providerConfig,
+  const workersPlanner = createWorkersAiJsonPlannerModel({
+    maxOutputTokens: 8_000,
     onUsage: async (usage) => {
       recordedUsage = await recordContentUsage(request, {
         workspaceId: input.workspaceId,
         siteId: input.siteId,
-        profileId: providerConfig.id,
-        provider,
-        model: providerConfig.model,
+        profileId: CLOUDFLARE_CONTENT_PROFILE_ID,
+        provider: "cloudflare-workers-ai",
+        model: CLOUDFLARE_CONTENT_MODEL,
         usage,
       });
+      usageByProfile.set(CLOUDFLARE_CONTENT_PROFILE_ID, recordedUsage);
     },
   });
+  if (workersPlanner) {
+    attempts.push({
+      planner: workersPlanner,
+      profile: {
+        id: CLOUDFLARE_CONTENT_PROFILE_ID,
+        provider: "cloudflare-workers-ai",
+        model: CLOUDFLARE_CONTENT_MODEL,
+        capabilities: ["content-generation"],
+        enabled: true,
+        qualityScore: 86,
+        latencyClass: "low",
+        costClass: "low",
+        maxOutputTokens: 8_000,
+      },
+    });
+  }
 
-  const profile: ModelProfile = {
-    id: providerConfig.id,
-    provider,
-    model: providerConfig.model,
-    capabilities: ["content-generation"],
-    enabled: true,
-    qualityScore: 90,
-    latencyClass: "low",
-    costClass: "medium",
-    ...(providerConfig.maxOutputTokens ? { maxOutputTokens: providerConfig.maxOutputTokens } : {}),
-  };
+  const providerConfig = textProviderConfigFromEnvironment(process.env);
+  if (providerConfig) {
+    const provider = providerName(providerConfig.endpoint);
+    const planner = createOpenAiCompatibleJsonPlannerModel({
+      ...providerConfig,
+      onUsage: async (usage) => {
+        recordedUsage = await recordContentUsage(request, {
+          workspaceId: input.workspaceId,
+          siteId: input.siteId,
+          profileId: providerConfig.id,
+          provider,
+          model: providerConfig.model,
+          usage,
+        });
+        usageByProfile.set(providerConfig.id, recordedUsage);
+      },
+    });
+    attempts.push({
+      planner,
+      profile: {
+        id: providerConfig.id,
+        provider,
+        model: providerConfig.model,
+        capabilities: ["content-generation"],
+        enabled: true,
+        qualityScore: 90,
+        latencyClass: "low",
+        costClass: "medium",
+        ...(providerConfig.maxOutputTokens ? { maxOutputTokens: providerConfig.maxOutputTokens } : {}),
+      },
+    });
+  }
+
+  if (!attempts.length) {
+    const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number };
+    error.status = 503;
+    throw error;
+  }
 
   const facts = normalizeFacts(input.facts, {
     name: current.snapshot.name,
     subtype: current.snapshot.subtype,
     seoBlueprint: current.snapshot.seoBlueprint,
   });
-  const generated = await generateGuardedSiteContent({
-    site: current.snapshot,
-    facts,
-    profiles: [profile],
-    executors: createModelExecutorRegistry([createJsonContentExecutor(model)]),
-  });
+
+  let generated: Awaited<ReturnType<typeof generateGuardedSiteContent>> | undefined;
+  let selectedProfile: ModelProfile | undefined;
+  let lastError: unknown;
+
+  for (const attempt of attempts) {
+    try {
+      generated = await generateGuardedSiteContent({
+        site: current.snapshot,
+        facts,
+        profiles: [attempt.profile],
+        executors: createModelExecutorRegistry([createJsonContentExecutor(attempt.planner)]),
+      });
+      selectedProfile = attempt.profile;
+      break;
+    } catch (error) {
+      lastError = error;
+      console.error(`MiCirql content provider ${attempt.profile.provider}/${attempt.profile.model} failed.`, error);
+    }
+  }
+
+  if (!generated || !selectedProfile) {
+    throw lastError instanceof Error ? lastError : new Error("Content generation failed for every configured provider.");
+  }
 
   const saved = await saveSupabaseDraft(request, {
     snapshot: generated.site,
     expectedRevision: current.revision,
   });
+  const selectedUsage = usageByProfile.get(selectedProfile.id);
 
   return {
     draft: saved,
     model: { id: generated.model.id, provider: generated.model.provider, model: generated.model.model },
-    ...(recordedUsage ? { usage: recordedUsage } : {}),
+    ...(selectedUsage ? { usage: selectedUsage } : {}),
+    fallbackUsed: attempts[0]?.profile.id !== selectedProfile.id,
     audit: {
       appliedFields: generated.appliedFields,
       structureIntact: generated.structureIntact,

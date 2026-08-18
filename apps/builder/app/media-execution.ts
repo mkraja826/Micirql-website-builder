@@ -2,7 +2,7 @@ import type { SectionFamily } from "@micirql/sections";
 import type { VisualMediaPlan, SectionVisualDecision } from "./visual-media-intelligence";
 
 export type MediaSource="customer"|"library"|"licensed"|"generated"|"none";
-export type MediaAsset={id:string;url:string;source:Exclude<MediaSource,"none">;tags:string[];alt?:string;aspect?:string;verified?:boolean};
+export type MediaAsset={id:string;name?:string;url:string;source:Exclude<MediaSource,"none">;tags:string[];alt?:string;aspect?:string;verified?:boolean};
 export type MediaExecutionInput={plan:VisualMediaPlan;customerAssets?:MediaAsset[];libraryAssets?:MediaAsset[];licensedAssets?:MediaAsset[];allowGeneration?:boolean};
 export type MediaRequest={family:SectionFamily;pagePath?:string;source:MediaSource;asset?:MediaAsset;generationPrompt?:string;alt:string;reason:string};
 export type MediaExecutionPlan={requests:MediaRequest[];generationCount:number;rules:string[]};

@@ -14,6 +14,7 @@ export default defineConfig({
     "page-architecture-intelligence.spec.ts",
     "exact-asset-placement.spec.ts",
     "native-lead-pipeline.spec.ts",
+    "native-leads-inbox.spec.ts",
     "dental-blueprint-application.spec.ts",
     "dental-planner-contract.spec.ts",
     "dental-media-execution.spec.ts",

@@ -82,13 +82,9 @@ function overlapScore(requested: readonly string[] | undefined, supported: reado
   return Math.min(weight, matches.length * Math.max(1, Math.floor(weight / 2)));
 }
 
-/**
- * Deterministic ranking layer for the AI selector. AI classifies intent; this function
- * chooses from certified layouts instead of asking the model to invent a site structure.
- */
-export function rankWebsiteLayouts(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelectionInput): RankedLayout[] {
+function rank(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelectionInput, statuses: readonly LayoutStatus[]): RankedLayout[] {
   return layouts
-    .filter((layout) => layout.status === "certified" && layout.industry === input.industry)
+    .filter((layout) => statuses.includes(layout.status) && layout.industry === input.industry)
     .map((layout) => {
       const reasons: string[] = [];
       let score = 20;
@@ -99,9 +95,26 @@ export function rankWebsiteLayouts(layouts: readonly WebsiteLayoutBlueprint[], i
       score += overlapScore(input.goals, layout.fit.goals, 20, reasons, "goal");
       score += overlapScore(input.priorities, layout.fit.priorities, 20, reasons, "priority");
       score += overlapScore(input.styleTags, layout.styleTags, 10, reasons, "style");
+      if (layout.status === "certified") reasons.push("certified layout");
+      else reasons.push("draft candidate - not eligible for production generation");
       return { layout, score: Math.min(100, score), reasons };
     })
     .sort((a, b) => b.score - a.score || a.layout.id.localeCompare(b.layout.id));
+}
+
+/**
+ * Production ranking layer. Only certified layouts can be selected for users.
+ */
+export function rankWebsiteLayouts(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelectionInput): RankedLayout[] {
+  return rank(layouts, input, ["certified"]);
+}
+
+/**
+ * Internal design-studio ranking. Drafts may be evaluated and visually tested,
+ * but this result must never be treated as production certification.
+ */
+export function rankWebsiteLayoutCandidates(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelectionInput): RankedLayout[] {
+  return rank(layouts, input, ["certified", "draft"]);
 }
 
 export function validateWebsiteLayoutBlueprint(layout: WebsiteLayoutBlueprint): string[] {

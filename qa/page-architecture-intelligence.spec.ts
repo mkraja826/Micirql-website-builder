@@ -23,6 +23,18 @@ test("healthcare architecture includes trust and objection handling", () => {
   expect(planner).toContain('healthcare ? "/results" : "/gallery"');
 });
 
+test("secondary pages use purpose-specific section recipes", () => {
+  expect(planner).toContain("const PAGE_RECIPES");
+  expect(planner).toContain('about: ["navbar", "hero", "about", "features", "team", "testimonials", "cta", "footer"]');
+  expect(planner).toContain('"service-detail": ["navbar", "hero", "about", "features", "process", "testimonials", "cta", "contact", "footer"]');
+  expect(planner).toContain('team: ["navbar", "hero", "team", "about", "testimonials", "cta", "footer"]');
+  expect(planner).toContain('gallery: ["navbar", "hero", "gallery", "testimonials", "about", "cta", "footer"]');
+  expect(planner).toContain('faq: ["navbar", "hero", "features", "process", "cta", "contact", "footer"]');
+  expect(planner).toContain('contact: ["navbar", "hero", "contact", "cta", "footer"]');
+  expect(planner).toContain("pagePurpose: purpose");
+  expect(planner).toContain("pageRole: role");
+});
+
 test("architecture runs after base onboarding and before review", () => {
   expect(gate).toContain('fetch("/api/onboarding/architect"');
   expect(route).toContain("planPageArchitecture");

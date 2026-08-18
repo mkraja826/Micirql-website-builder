@@ -1,0 +1,308 @@
+/* Dental 15 — Smile Campaign
+ * Bold cosmetic consultation layout with high-contrast blocks, outcome-led
+ * imagery and a direct proof-to-consultation flow.
+ */
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"]{
+  --mi-content-lg:80rem;
+  --mi-section-space:clamp(4.4rem,7.8vw,7.2rem);
+  --mi-campaign-ink:#24213a;
+  --mi-campaign-lilac:color-mix(in srgb,var(--mi-color-primary) 18%,#eee7ff);
+  --mi-campaign-aqua:color-mix(in srgb,var(--mi-color-accent) 18%,#e7faf7);
+  --mi-campaign-pop:color-mix(in srgb,var(--mi-color-primary) 72%,#7654d9);
+  --mi-campaign-line:color-mix(in srgb,var(--mi-color-primary) 19%,var(--mi-color-border));
+}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar--classic{
+  position:relative;
+  z-index:9;
+  border-bottom:1px solid var(--mi-campaign-line);
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-nav-row{min-height:4.8rem}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-brand{font-weight:950;letter-spacing:-.045em}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-links a{font-size:.84rem;font-weight:760}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-btn--primary{
+  border-radius:999px;
+  box-shadow:0 .7rem 1.7rem color-mix(in srgb,var(--mi-color-primary) 17%,transparent);
+}
+
+/* Desktop hero behaves like a campaign poster made from two color blocks. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial{
+  position:relative;
+  overflow:hidden;
+  padding-block:0;
+  background:var(--mi-campaign-aqua);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial>.mi-container{
+  width:min(100%,var(--mi-content-lg));
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__editorial-grid{
+  grid-template-columns:4.5rem minmax(0,.9fr) minmax(25rem,1.1fr);
+  gap:0;
+  align-items:stretch;
+  min-height:clamp(39rem,68vw,48rem);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__index{
+  display:grid;
+  place-items:center;
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  background:var(--mi-campaign-ink);
+  color:#fff;
+  font-size:.78rem;
+  font-weight:900;
+  letter-spacing:.18em;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__copy{
+  align-content:center;
+  max-width:none;
+  padding:clamp(2.5rem,5vw,5rem);
+  background:var(--mi-campaign-lilac);
+  color:var(--mi-campaign-ink);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-type--eyebrow{
+  width:max-content;
+  padding:.46rem .7rem;
+  border-radius:999px;
+  background:var(--mi-color-surface);
+  color:var(--mi-color-primary);
+  letter-spacing:.14em;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-type--display{
+  max-width:9.5ch;
+  font-size:clamp(3.7rem,6.5vw,7rem);
+  line-height:.9;
+  letter-spacing:-.06em;
+  color:var(--mi-campaign-ink);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-type--body{
+  max-width:34rem;
+  font-size:clamp(1.02rem,1.3vw,1.16rem);
+  line-height:1.65;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media{
+  margin:0;
+  border-radius:0;
+  box-shadow:none;
+  min-width:0;
+  background:var(--mi-campaign-pop);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media img{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  aspect-ratio:auto;
+  object-fit:cover;
+  object-position:center 40%;
+}
+
+/* Outcome gallery is the visual proof block; captions remain explicit. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-section--mosaic{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-section--mosaic .mi-section__heading{max-width:48rem}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic{grid-auto-rows:7rem;gap:.7rem}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:1.2rem;
+  transform:none;
+  background:var(--mi-campaign-lilac);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:first-child{
+  grid-column:span 7;
+  grid-row:span 4;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(2),
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(3){grid-column:span 5;grid-row:span 2}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(4){grid-column:span 5;grid-row:span 3}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(5){grid-column:span 7;grid-row:span 3}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-card figcaption{
+  position:static;
+  inset:auto;
+  padding:.82rem .15rem 0;
+  background:transparent;
+  color:var(--mi-campaign-ink);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-card figcaption span{color:var(--mi-color-text-muted);opacity:1}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services--spotlight{
+  background:var(--mi-campaign-aqua);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services--spotlight .mi-content-heading{max-width:46rem}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight{gap:.8rem}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item{
+  min-height:12.5rem;
+  border:0;
+  border-radius:1.15rem;
+  background:var(--mi-color-surface);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:span 2;
+  background:var(--mi-campaign-pop);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child p{color:rgba(255,255,255,.78)}
+
+/* Strong proof-to-CTA transition. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote{
+  background:var(--mi-campaign-ink);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote .mi-section__heading,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote .mi-section__heading p{color:inherit}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote blockquote p{
+  max-width:16ch;
+  font-size:clamp(2.2rem,5vw,4.9rem);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote cite{color:color-mix(in srgb,var(--mi-color-accent) 72%,white)}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured{background:var(--mi-campaign-lilac)}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead{
+  padding:1rem;
+  border:0;
+  border-radius:1.2rem;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{aspect-ratio:4/5;border-radius:.95rem}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split{background:var(--mi-color-surface)}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-cta-split{
+  padding:clamp(1.8rem,4vw,3.4rem);
+  border-radius:1.4rem;
+  background:linear-gradient(135deg,var(--mi-campaign-pop),var(--mi-color-primary));
+  color:#fff;
+  box-shadow:0 1.6rem 4rem color-mix(in srgb,var(--mi-color-primary) 18%,transparent);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-btn--primary{background:#fff;color:var(--mi-color-primary)}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-struct--split{background:var(--mi-campaign-aqua)}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form{
+  border:0;
+  border-radius:1.15rem;
+  box-shadow:0 1.1rem 2.8rem color-mix(in srgb,var(--mi-campaign-ink) 8%,transparent);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-footer--contact{background:var(--mi-campaign-ink);color:#fff}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-footer--contact a,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-footer--contact p,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-footer--contact small{color:rgba(255,255,255,.76)}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"]{--mi-section-space:clamp(3rem,12vw,4.5rem)}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-nav-row{min-height:4.2rem}
+
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial>.mi-container{width:100%}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__index{display:none}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__copy{
+    order:1;
+    padding:2.6rem .85rem 2rem;
+    gap:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-type--display{
+    max-width:10.5ch;
+    font-size:clamp(2.75rem,12.5vw,4rem)!important;
+    line-height:.93!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__actions,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:.65rem;
+    width:100%;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__action,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media{
+    order:2;
+    width:100%;
+    min-height:0;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media img{
+    aspect-ratio:4/3;
+    min-height:0;
+    max-height:none;
+  }
+
+  /* Color blocks become normal stacked sections, never side-by-side. */
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-auto-rows:auto;
+    gap:1.15rem;
+    overflow:visible;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:first-child,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    margin:0;
+    transform:none!important;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card img,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-placeholder{
+    width:100%;
+    height:auto;
+    aspect-ratio:4/3;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-card figcaption{
+    position:static!important;
+    inset:auto!important;
+    padding:.72rem 0 0;
+    background:transparent!important;
+    color:var(--mi-campaign-ink)!important;
+  }
+
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight{grid-template-columns:1fr;gap:.75rem}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child{
+    grid-column:auto;
+    min-height:0;
+    padding:1.05rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote blockquote p{font-size:clamp(1.8rem,9vw,3rem)}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead{padding:.8rem}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{aspect-ratio:4/5}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form input,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form textarea,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form select{font-size:16px}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] *{min-width:0}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] img,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] video,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] iframe{max-width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] *{scroll-behavior:auto!important;transition:none!important}
+}

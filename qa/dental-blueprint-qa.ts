@@ -74,6 +74,7 @@ async function installCaptureStyles(page: Page) {
 async function captureWebsiteEvidence(page: Page, target: Locator, filePath: string) {
   await page.evaluate((captureClass) => document.documentElement.classList.add(captureClass), CAPTURE_CLASS);
   try {
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     await target.screenshot({ path: filePath });
   } finally {
     await page.evaluate((captureClass) => document.documentElement.classList.remove(captureClass), CAPTURE_CLASS);
@@ -153,7 +154,17 @@ export async function runDentalBlueprintCertification(args: {
         return rect.width > 0 && (rect.left < rootRect.left - 1 || rect.right > rootRect.right + 1);
       };
       const isEditorControl = (node: Element) => Boolean(node.closest("[data-mi-canvas-action], .mi-editor-insert-zone, .mi-editor-canvas-toolbar"));
-      const websiteControls = [...root.querySelectorAll("a,button,input,textarea,select")].filter((node) => !isEditorControl(node));
+      const isIntentionallyHiddenControl = (node: Element) => {
+        if (node.matches("input[type='hidden'], .mi-form-honeypot, [hidden], [aria-hidden='true']")) return true;
+        const closedDetails = node.closest("details:not([open])");
+        if (closedDetails) {
+          const summary = closedDetails.querySelector(":scope > summary");
+          if (!summary || !summary.contains(node)) return true;
+        }
+        const style = getComputedStyle(node);
+        return style.display === "none" || style.visibility === "hidden" || Number.parseFloat(style.opacity || "1") === 0;
+      };
+      const websiteControls = [...root.querySelectorAll("a,button,input,textarea,select")].filter((node) => !isEditorControl(node) && !isIntentionallyHiddenControl(node));
       const overflowingControlNodes = websiteControls.filter(outside);
       return {
         cssViewportWidth: window.innerWidth,

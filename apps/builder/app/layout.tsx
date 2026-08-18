@@ -21,6 +21,7 @@ import "./actionable-checklist.css";
 import "./editor-layout-guard.css";
 import "./editor-premium-responsive.css";
 import "./editor-mode-polish.css";
+import "./editor-adaptive-breakpoints.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",

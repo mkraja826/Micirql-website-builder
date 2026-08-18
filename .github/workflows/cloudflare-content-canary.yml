@@ -5,10 +5,12 @@ on:
     branches: [fix/onboarding-use-guarded-content]
     paths:
       - '.github/workflows/cloudflare-content-canary.yml'
+      - 'apps/builder/app/api/internal/cloudflare-content-canary/**'
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/cloudflare-content-canary.yml'
+      - 'apps/builder/app/api/internal/cloudflare-content-canary/**'
   workflow_dispatch:
 
 permissions:
@@ -17,46 +19,66 @@ permissions:
 jobs:
   canary:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      MODEL: '@cf/meta/llama-3.1-8b-instruct-fp8'
+      NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
+      MICIRQL_DRAFT_STORE: supabase
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Verify Cloudflare credentials
         shell: bash
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
 
-      - name: Generate grounded Dental website copy
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build Builder Worker
+        working-directory: apps/builder
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Start remote Worker preview with AI binding
+        working-directory: apps/builder
         shell: bash
         run: |
-          cat > /tmp/request.json <<'JSON'
-          {
-            "messages": [
-              {
-                "role": "system",
-                "content": "You write concise production website copy. Return JSON only. Do not invent awards, ratings, years of experience, guarantees, statistics, credentials, prices, doctor names or medical outcomes."
-              },
-              {
-                "role": "user",
-                "content": "Business: Nova Dental Studio. Location: Hyderabad. Services: dental implants, crowns, root canal treatment. Goal: build trust and book consultations. Produce exactly this JSON shape: {\"hero\":{\"h1\":\"\",\"p\":\"\",\"cta\":\"\"},\"services\":{\"h2\":\"\",\"h3\":\"\",\"p\":\"\"}}. H1 <= 12 words, H2/H3 <= 10 words, paragraph fields <= 35 words, CTA 2-4 words."
-              }
-            ],
-            "temperature": 0.2,
-            "max_tokens": 500,
-            "response_format": {"type":"json_object"}
-          }
-          JSON
+          pnpm exec wrangler dev --remote --port 8787 > /tmp/wrangler-content-canary.log 2>&1 &
+          echo $! > /tmp/wrangler-content-canary.pid
+          for attempt in $(seq 1 60); do
+            if curl --silent --output /dev/null http://127.0.0.1:8787/; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/wrangler-content-canary.log
+          exit 1
 
+      - name: Generate grounded Dental website copy through Worker binding
+        shell: bash
+        run: |
           curl --fail-with-body --silent --show-error \
-            -X POST \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data-binary @/tmp/request.json \
-            > /tmp/cloudflare-response.json
+            http://127.0.0.1:8787/api/internal/cloudflare-content-canary \
+            > /tmp/cloudflare-response.json || {
+              echo '--- Wrangler log ---'
+              cat /tmp/wrangler-content-canary.log
+              exit 1
+            }
+          cat /tmp/cloudflare-response.json
 
       - name: Validate structured copy
         shell: bash
@@ -64,14 +86,8 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const payload = JSON.parse(fs.readFileSync('/tmp/cloudflare-response.json', 'utf8'));
-          if (!payload.success) throw new Error(`Cloudflare Workers AI request failed: ${JSON.stringify(payload.errors || [])}`);
-          let raw = payload?.result?.response;
-          if (typeof raw !== 'string') raw = JSON.stringify(raw ?? '');
-          raw = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-          const start = raw.indexOf('{');
-          const end = raw.lastIndexOf('}');
-          if (start < 0 || end <= start) throw new Error(`No JSON object returned: ${raw.slice(0, 500)}`);
-          const content = JSON.parse(raw.slice(start, end + 1));
+          if (!payload.ok) throw new Error(`Worker binding inference failed: ${JSON.stringify(payload)}`);
+          const content = payload.result;
           const required = [
             ['hero.h1', content?.hero?.h1],
             ['hero.p', content?.hero?.p],
@@ -99,14 +115,26 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo '## Cloudflare Workers AI content canary' >> "$GITHUB_STEP_SUMMARY"
+          echo '## Cloudflare Workers AI binding canary' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
           if [[ -f /tmp/content.json ]]; then
-            echo '**PASS** — Workers AI returned valid schema-shaped Dental copy.' >> "$GITHUB_STEP_SUMMARY"
+            echo '**PASS** — remote Worker AI binding returned valid schema-shaped Dental copy.' >> "$GITHUB_STEP_SUMMARY"
             echo '' >> "$GITHUB_STEP_SUMMARY"
             echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat /tmp/content.json >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '**FAIL** — no validated content payload was produced.' >> "$GITHUB_STEP_SUMMARY"
+            if [[ -f /tmp/wrangler-content-canary.log ]]; then
+              echo '' >> "$GITHUB_STEP_SUMMARY"
+              echo 'Wrangler remote preview did not produce a passing AI response.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+      - name: Stop remote preview
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f /tmp/wrangler-content-canary.pid ]]; then
+            kill "$(cat /tmp/wrangler-content-canary.pid)" 2>/dev/null || true
           fi

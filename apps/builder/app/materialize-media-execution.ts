@@ -4,12 +4,6 @@ import type { MediaAsset, MediaExecutionPlan, MediaRequest } from "./media-execu
 
 export type MediaMaterializationResult={execution:MediaExecutionPlan;generated:number;warnings:string[]};
 
-/**
- * Converts `source: generated` media requests into persisted MiCirql assets by
- * calling the existing authenticated image-generation route. The returned
- * execution plan can then be passed to applyMediaExecution without introducing
- * a second renderer contract.
- */
 export async function materializeGeneratedMedia(input:{
  request:Request;
  site:Site;
@@ -48,9 +42,9 @@ export async function materializeGeneratedMedia(input:{
 
 type Assignment={request:MediaRequest;pagePath:string;sectionId:string};
 function assignSections(site:Site,requests:MediaRequest[]):Assignment[]{
- const queues=new Map<SectionFamily,Array<{pagePath:string;sectionId:string}>>();
- for(const page of site.pages){for(const section of page.sections){const family=familyFromId(section.component.componentId);if(!family)continue;const queue=queues.get(family)??[];queue.push({pagePath:page.path,sectionId:section.id});queues.set(family,queue);}}
- return requests.map((request,index)=>{const target=queues.get(request.family)?.shift();return{request,pagePath:target?.pagePath??"/",sectionId:target?.sectionId??`${request.family}-${index}`};});
+ const queues=new Map<string,Array<{pagePath:string;sectionId:string}>>();
+ for(const page of site.pages){for(const section of page.sections){const family=familyFromId(section.component.componentId);if(!family)continue;const keys=[`${page.path}|${family}`,`*|${family}`];for(const key of keys){const queue=queues.get(key)??[];queue.push({pagePath:page.path,sectionId:section.id});queues.set(key,queue);}}}
+ return requests.map((request,index)=>{const key=`${request.pagePath??"*"}|${request.family}`;const target=queues.get(key)?.shift()??queues.get(`*|${request.family}`)?.shift();return{request,pagePath:target?.pagePath??request.pagePath??"/",sectionId:target?.sectionId??`${request.family}-${index}`};});
 }
 function familyFromId(componentId:string):SectionFamily|undefined{const normalized=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>normalized===`${f}.placeholder`||normalized.startsWith(`${f}.`));if(legacy)return legacy;const upper=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>upper.includes(`-${FAMILY_CODES[f]}-`));}
 function aspectFromAsset(ratio?:number,orientation?:string){if(typeof ratio==="number"&&Number.isFinite(ratio)){if(ratio>1.9)return"wide";if(ratio>1.42)return"3:2";if(ratio>1.15)return"4:3";if(ratio<.82)return"portrait";return"1:1";}if(orientation==="portrait")return"portrait";if(orientation==="panoramic")return"wide";if(orientation==="landscape")return"3:2";return undefined;}

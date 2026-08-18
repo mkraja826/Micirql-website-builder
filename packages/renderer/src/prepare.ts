@@ -59,17 +59,18 @@ export async function preparePage(args: {
   }
 
   if (issues.length > 0) return { ok: false, issues };
+  const safe = premiumPalette(site.theme.brand.colors);
   const theme = resolveTheme({
     family: site.theme.family,
     modifiers: site.theme.modifiers,
     colors: {
-      primary: site.theme.brand.colors.primary, primaryContrast: contrastFor(site.theme.brand.colors.primary),
-      secondary: site.theme.brand.colors.secondary, secondaryContrast: contrastFor(site.theme.brand.colors.secondary),
-      accent: site.theme.brand.colors.accent, accentContrast: contrastFor(site.theme.brand.colors.accent),
-      surface: site.theme.brand.colors.surface, surfaceElevated: site.theme.brand.colors.background,
-      text: site.theme.brand.colors.textPrimary, textMuted: site.theme.brand.colors.textSecondary,
-      border: site.theme.brand.colors.border, danger: site.theme.brand.colors.error,
-      success: site.theme.brand.colors.success, warning: site.theme.brand.colors.warning,
+      primary: safe.primary, primaryContrast: contrastFor(safe.primary),
+      secondary: safe.secondary, secondaryContrast: contrastFor(safe.secondary),
+      accent: safe.accent, accentContrast: contrastFor(safe.accent),
+      surface: safe.surface, surfaceElevated: safe.background,
+      text: safe.textPrimary, textMuted: safe.textSecondary,
+      border: safe.border, danger: safe.error,
+      success: safe.success, warning: safe.warning,
     },
     typography: { display: site.theme.brand.typography.display, body: site.theme.brand.typography.body },
     density: site.theme.brand.density, shape: site.theme.brand.shape,
@@ -127,4 +128,82 @@ function isShellBrandComponent(componentId:string) {
   return normalized.startsWith("navbar.") || normalized.startsWith("footer.") || upper.includes("-NAV-") || upper.includes("-FOOT-");
 }
 function normalizePath(value: string): string { const clean = value.split("?")[0]?.split("#")[0] ?? "/"; if (!clean.startsWith("/")) return `/${clean}`; return clean.length > 1 ? clean.replace(/\/+$/, "") : clean; }
-function contrastFor(color: string): string { const hex = color.trim().replace(/^#/, ""); if (!/^[0-9a-fA-F]{6}$/.test(hex)) return "#ffffff"; const r = Number.parseInt(hex.slice(0,2),16), g = Number.parseInt(hex.slice(2,4),16), b = Number.parseInt(hex.slice(4,6),16); return (0.2126*r+0.7152*g+0.0722*b)/255 > .55 ? "#111111" : "#ffffff"; }
+
+type BrandColors = Site["theme"]["brand"]["colors"];
+
+function premiumPalette(colors: BrandColors): BrandColors {
+  const surface = safeHex(colors.surface, "#ffffff");
+  const background = safeHex(colors.background, surface);
+  const preferredText = safeHex(colors.textPrimary, "#111827");
+  const textPrimary = ensureContrast(preferredText, surface, 7, bestText(surface));
+  const preferredMuted = safeHex(colors.textSecondary, mixHex(textPrimary, surface, .38));
+  const textSecondary = ensureContrast(preferredMuted, surface, 4.5, mixHex(textPrimary, surface, .18));
+  const preferredBorder = safeHex(colors.border, mixHex(textPrimary, surface, .84));
+  const border = contrastRatio(preferredBorder, surface) >= 1.35 ? preferredBorder : mixHex(textPrimary, surface, .82);
+
+  return {
+    primary: safeHex(colors.primary, "#111827"),
+    secondary: safeHex(colors.secondary, "#f3f4f6"),
+    accent: safeHex(colors.accent, "#6d28d9"),
+    background,
+    surface,
+    textPrimary,
+    textSecondary,
+    border,
+    success: safeHex(colors.success, "#15803d"),
+    warning: safeHex(colors.warning, "#a16207"),
+    error: safeHex(colors.error, "#b91c1c"),
+  };
+}
+
+function contrastFor(color: string): string {
+  const bg = safeHex(color, "#000000");
+  const black = "#111111";
+  const white = "#ffffff";
+  return contrastRatio(black, bg) >= contrastRatio(white, bg) ? black : white;
+}
+
+function ensureContrast(foreground: string, background: string, target: number, fallback: string): string {
+  if (contrastRatio(foreground, background) >= target) return foreground;
+  if (contrastRatio(fallback, background) >= target) return fallback;
+  const candidate = bestText(background);
+  return contrastRatio(candidate, background) >= target ? candidate : fallback;
+}
+
+function bestText(background: string): string {
+  return contrastRatio("#111111", background) >= contrastRatio("#ffffff", background) ? "#111111" : "#ffffff";
+}
+
+function contrastRatio(a: string, b: string): number {
+  const l1 = relativeLuminance(a), l2 = relativeLuminance(b);
+  const hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+  return (hi + .05) / (lo + .05);
+}
+
+function relativeLuminance(color: string): number {
+  const { r, g, b } = hexRgb(safeHex(color, "#000000"));
+  const linear = (value: number) => {
+    const c = value / 255;
+    return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+  };
+  return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
+}
+
+function safeHex(value: string, fallback: string): string {
+  const raw = value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(raw)) return raw.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(raw)) return `#${raw.slice(1).split("").map((c) => `${c}${c}`).join("")}`.toLowerCase();
+  return fallback;
+}
+
+function hexRgb(hex: string) {
+  const value = safeHex(hex, "#000000").slice(1);
+  return { r: Number.parseInt(value.slice(0,2),16), g: Number.parseInt(value.slice(2,4),16), b: Number.parseInt(value.slice(4,6),16) };
+}
+
+function mixHex(foreground: string, background: string, backgroundWeight: number): string {
+  const a = hexRgb(foreground), b = hexRgb(background);
+  const t = Math.max(0, Math.min(1, backgroundWeight));
+  const channel = (x:number,y:number) => Math.round(x*(1-t)+y*t).toString(16).padStart(2,"0");
+  return `#${channel(a.r,b.r)}${channel(a.g,b.g)}${channel(a.b,b.b)}`;
+}

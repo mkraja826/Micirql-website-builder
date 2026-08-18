@@ -13,14 +13,36 @@ try {
   console.log("No certification report found; writing empty visual review queue.");
 }
 
+const requiredViewports = [
+  { label: "mobile-360", width: 360, height: 800 },
+  { label: "mobile-390", width: 390, height: 844 },
+  { label: "mobile-430", width: 430, height: 932 },
+  { label: "tablet-768", width: 768, height: 1024 },
+  { label: "desktop-1440", width: 1440, height: 900 },
+];
+
+const hardRejects = [
+  "horizontal-overflow",
+  "content-overlap",
+  "fixed-or-sticky-control-covering-content",
+  "clipped-heading-or-cta",
+  "unreadable-contrast",
+  "broken-grid-collapse",
+  "inconsistent-button-system",
+  "bad-image-crop-or-stretch",
+  "desktop-only-mobile-composition",
+  "placeholder-looking-primary-section",
+];
+
 const rubric = {
-  visualHierarchy: { weight: 20, description: "Clear focal point, heading hierarchy and scan path." },
-  spacingRhythm: { weight: 15, description: "Balanced whitespace, section breathing room and consistent spacing rhythm." },
-  typography: { weight: 15, description: "Premium scale, readable measure, controlled wrapping and strong hierarchy." },
-  composition: { weight: 20, description: "Strong layout balance, image/content relationship and visual rhythm." },
-  brandFlexibility: { weight: 10, description: "Works across multiple logo-derived palettes without losing quality." },
-  mobilePolish: { weight: 10, description: "Feels intentionally designed on 320–430px, not merely stacked." },
-  premiumFinish: { weight: 10, description: "Details, alignment, states and overall finish feel agency-grade." },
+  visualHierarchy: { weight: 15, description: "Immediate focal point, deliberate heading hierarchy, and a clear scan path." },
+  typography: { weight: 15, description: "Premium font pairing, scale, line-height, measure, wrapping, and role-specific typography." },
+  spacingGeometry: { weight: 15, description: "Consistent gutters, section rhythm, grid alignment, card padding, dimensions, and proportion." },
+  composition: { weight: 15, description: "Art-directed balance, varied section rhythm, strong media/content relationship, and narrative flow." },
+  colorContrast: { weight: 10, description: "Deliberate palette hierarchy, AA-readable text, restrained accents, and coherent surfaces." },
+  imageryArtDirection: { weight: 10, description: "Relevant media, controlled crops, purposeful ratios, no repetition, and authentic visual treatment." },
+  mobilePolish: { weight: 15, description: "360–430px layouts feel intentionally designed, touch-safe, readable, and free of collisions or overflow." },
+  premiumFinish: { weight: 5, description: "Borders, radii, shadows, states, alignment, and micro-interactions feel agency-grade rather than template-default." },
 };
 
 const queue = (report.entries ?? [])
@@ -29,19 +51,14 @@ const queue = (report.entries ?? [])
     designId: entry.designId,
     version: entry.version,
     status: "awaiting-review",
-    minimumScore: 80,
-    requiredDesktopPreview: 1280,
-    requiredMobilePreview: 390,
+    minimumScore: 90,
+    minimumCategoryScore: 8,
+    requiredViewports,
+    hardRejects,
     rubric,
-    scores: {
-      visualHierarchy: null,
-      spacingRhythm: null,
-      typography: null,
-      composition: null,
-      brandFlexibility: null,
-      mobilePolish: null,
-      premiumFinish: null,
-    },
+    scores: Object.fromEntries(Object.keys(rubric).map((key) => [key, null])),
+    viewportApprovals: Object.fromEntries(requiredViewports.map((viewport) => [viewport.label, null])),
+    hardRejectFindings: [],
     weightedScore: null,
     decision: null,
     notes: [],
@@ -52,6 +69,10 @@ const manifest = {
   runId: report.runId,
   generatedAt: new Date().toISOString(),
   total: queue.length,
+  promotionThreshold: 90,
+  minimumCategoryScore: 8,
+  requiredViewports,
+  hardRejects,
   rubric,
   queue,
 };
@@ -62,10 +83,16 @@ await writeFile(
   [
     "# MiCirql Premium Visual Review",
     "",
-    "Only components that passed machine QA appear here.",
+    "Only machine-passing components enter this queue. Passing machine QA does not make a design premium.",
     "",
     "## Promotion rule",
-    "A component requires a weighted visual score of at least 80/100, protocol score >= 90, and approved 390px + 1280px previews before production promotion.",
+    "A design requires >= 90/100 weighted visual score, every rubric category >= 8/10, protocol score >= 90, approval at all required viewports, and zero hard-reject findings.",
+    "",
+    "## Required viewport evidence",
+    ...requiredViewports.map((viewport) => `- ${viewport.label}: ${viewport.width}x${viewport.height}`),
+    "",
+    "## Automatic rejection conditions",
+    ...hardRejects.map((item) => `- ${item}`),
     "",
     "## Rubric",
     ...Object.entries(rubric).map(([key, item]) => `- ${key} (${item.weight}%): ${item.description}`),
@@ -77,4 +104,4 @@ await writeFile(
   "utf8",
 );
 
-console.log(`Visual review queue: ${queue.length} machine-passing components.`);
+console.log(`Premium visual review queue: ${queue.length} machine-passing components; promotion requires 90/100 and all five viewport approvals.`);

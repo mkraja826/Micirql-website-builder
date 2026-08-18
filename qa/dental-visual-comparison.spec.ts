@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import { sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { composeWebsite } from "../apps/builder/app/composition-intelligence";
@@ -65,12 +65,19 @@ function contentFor(family: SectionFamily, name: string, services: string[]): Re
 
 function title(value: string) { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()); }
 
-async function installRoutes(page: Parameters<typeof test>[0] extends never ? never : any, site: Site, profile: OnboardingProfile) {
+async function selectViewport(page: Page, viewport: "mobile" | "tablet" | "desktop") {
+  const control = page.locator(".viewport-switcher button").filter({ hasText: new RegExp(`^${viewport}$`, "i") });
+  await expect(control).toHaveCount(1);
+  await control.evaluate((element) => (element as HTMLButtonElement).click());
+  await expect(page.locator(`.site-preview.viewport-${viewport}`)).toBeVisible();
+}
+
+async function installRoutes(page: Page, site: Site, profile: OnboardingProfile) {
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
-  await page.route("**/api/projects**", async (route: any) => route.fulfill({ json: { projects: [project] } }));
-  await page.route("**/api/onboarding**", async (route: any) => route.fulfill({ json: { completed: true, profile } }));
-  await page.route("**/api/drafts**", async (route: any) => route.fulfill({ json: { draft: { workspaceId: site.workspaceId, siteId: site.siteId, revision: 4, snapshot: site, updatedAt: now, updatedBy: "visual-qa" } } }));
-  await page.route("**/api/credits**", async (route: any) => route.fulfill({ json: { balance: 100 } }));
+  await page.route("**/api/projects**", async (route) => route.fulfill({ json: { projects: [project] } }));
+  await page.route("**/api/onboarding**", async (route) => route.fulfill({ json: { completed: true, profile } }));
+  await page.route("**/api/drafts**", async (route) => route.fulfill({ json: { draft: { workspaceId: site.workspaceId, siteId: site.siteId, revision: 4, snapshot: site, updatedAt: now, updatedBy: "visual-qa" } } }));
+  await page.route("**/api/credits**", async (route) => route.fulfill({ json: { balance: 100 } }));
 }
 
 test("capture desktop and mobile evidence for ten Dental compositions", async ({ page }) => {
@@ -90,11 +97,11 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
     await expect(preview).toBeVisible();
     await expect(preview.locator("[data-mi-section-id]")).toHaveCount(site.pages[0]!.sections.length);
 
+    await selectViewport(page, "desktop");
     const desktopMetrics = await preview.evaluate((element) => ({ width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }));
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-desktop.png`) });
 
-    await page.getByRole("button", { name: "mobile", exact: true }).click();
-    await expect(page.locator(".site-preview.viewport-mobile")).toBeVisible();
+    await selectViewport(page, "mobile");
     const mobileMetrics = await preview.evaluate((element) => ({ width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }));
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-mobile.png`) });
 

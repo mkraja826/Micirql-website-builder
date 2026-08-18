@@ -1,0 +1,456 @@
+/* Dental 14 — City Clinic
+ * Contemporary urban clinic layout balancing location convenience, expertise
+ * and modern care. Mobile reduces the desktop grid into a simple card flow.
+ */
+
+[data-mi-layout-blueprint="dental-14-city-clinic"]{
+  --mi-content-lg:80rem;
+  --mi-section-space:clamp(4.35rem,7.5vw,6.9rem);
+  --mi-city-ink:#18333b;
+  --mi-city-concrete:color-mix(in srgb,var(--mi-color-surface) 90%,#eef1ef);
+  --mi-city-sage:color-mix(in srgb,var(--mi-color-accent) 14%,#eaf1ea);
+  --mi-city-grid:color-mix(in srgb,var(--mi-color-primary) 11%,transparent);
+  --mi-city-line:color-mix(in srgb,var(--mi-color-primary) 19%,var(--mi-color-border));
+}
+
+[data-mi-layout-blueprint="dental-14-city-clinic"] section,
+[data-mi-layout-blueprint="dental-14-city-clinic"] footer{
+  scroll-margin-top:6.25rem;
+}
+
+/* A compact floating shell that can remain visible without masking anchors. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-navbar--floating{
+  position:sticky;
+  top:0;
+  z-index:30;
+  padding:.65rem 0;
+  background:color-mix(in srgb,var(--mi-color-background) 82%,transparent);
+  backdrop-filter:blur(18px);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-nav-float{
+  margin:0;
+  min-height:4.45rem;
+  padding:.7rem .8rem .7rem 1.05rem;
+  border:1px solid var(--mi-city-line);
+  border-radius:1rem;
+  background:color-mix(in srgb,var(--mi-color-surface) 94%,transparent);
+  box-shadow:0 .65rem 2rem color-mix(in srgb,var(--mi-city-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-brand{
+  font-weight:900;
+  letter-spacing:-.035em;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-links a{
+  font-size:.83rem;
+  font-weight:720;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-btn--primary{
+  border-radius:.7rem;
+  box-shadow:none;
+}
+
+/* Location-led desktop split. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.3rem,7vw,6.8rem);
+  padding-bottom:clamp(4.5rem,7.5vw,7rem);
+  background:
+    linear-gradient(var(--mi-city-grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mi-city-grid) 1px,transparent 1px),
+    linear-gradient(135deg,var(--mi-color-surface),var(--mi-city-concrete));
+  background-size:3.4rem 3.4rem,3.4rem 3.4rem,auto;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first::after{
+  content:"";
+  position:absolute;
+  right:-8rem;
+  top:-8rem;
+  width:24rem;
+  height:24rem;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--mi-color-accent) 16%,transparent);
+  filter:blur(1px);
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__split{
+  grid-template-columns:minmax(0,.88fr) minmax(24rem,1.12fr);
+  gap:clamp(2rem,5vw,5.2rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__copy{
+  order:1;
+  max-width:42rem;
+  gap:1.05rem;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-type--eyebrow{
+  display:inline-flex;
+  width:max-content;
+  padding:.42rem .66rem;
+  border:1px solid var(--mi-city-line);
+  border-radius:999px;
+  background:var(--mi-color-surface);
+  color:var(--mi-color-primary);
+  letter-spacing:.12em;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-type--display{
+  max-width:10.5ch;
+  font-size:clamp(3.2rem,5.7vw,5.9rem);
+  line-height:.94;
+  letter-spacing:-.052em;
+  color:var(--mi-city-ink);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-type--body{
+  max-width:37rem;
+  font-size:clamp(1.02rem,1.3vw,1.14rem);
+  line-height:1.68;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media{
+  order:2;
+  position:relative;
+  margin:0;
+  overflow:hidden;
+  border:1px solid var(--mi-city-line);
+  border-radius:1.1rem;
+  background:var(--mi-color-surface);
+  box-shadow:0 1.6rem 4rem color-mix(in srgb,var(--mi-city-ink) 10%,transparent);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media::after{
+  content:"City access · clinic location";
+  position:absolute;
+  left:.85rem;
+  bottom:.85rem;
+  padding:.48rem .62rem;
+  border-radius:.55rem;
+  background:rgba(24,51,59,.84);
+  color:#fff;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+  backdrop-filter:blur(8px);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media img{
+  width:100%;
+  aspect-ratio:4/3;
+  min-height:31rem;
+  object-fit:cover;
+  object-position:center 48%;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__actions{
+  margin-top:.35rem;
+}
+
+/* Modern compact card system. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services--spotlight{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services--spotlight .mi-content-heading{
+  max-width:47rem;
+  margin-inline:0;
+  text-align:left;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.8rem;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:13rem;
+  padding:1.2rem;
+  border:1px solid var(--mi-city-line);
+  border-radius:.9rem;
+  background:var(--mi-city-concrete);
+  color:var(--mi-city-ink);
+  box-shadow:none;
+  align-content:space-between;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:nth-child(3n+2){
+  background:var(--mi-city-sage);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:first-child p{
+  color:var(--mi-color-text-muted);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-service-index{
+  color:var(--mi-color-primary);
+  font-size:.74rem;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-service-item h3{
+  font-size:clamp(1.35rem,2vw,1.9rem);
+  line-height:1.04;
+}
+
+/* Technology becomes the dense dark information block. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split{
+  background:var(--mi-city-ink);
+  color:#f4faf9;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-section__heading p{
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-features-split{
+  grid-template-columns:minmax(15rem,.68fr) minmax(0,1.32fr);
+  gap:clamp(2rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:2.7rem minmax(0,1fr);
+  padding:1.15rem 0;
+  border-color:rgba(255,255,255,.14);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-feature-item--list h3,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-feature-item--list p{
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-feature-index{
+  color:color-mix(in srgb,var(--mi-color-accent) 78%,white);
+}
+
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured{
+  background:var(--mi-city-sage);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-featured{
+  grid-template-columns:minmax(0,1.35fr) minmax(17rem,.65fr);
+  gap:clamp(1.5rem,4vw,4rem);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead{
+  padding:1rem;
+  border:1px solid var(--mi-city-line);
+  border-radius:1rem;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  aspect-ratio:4/5;
+  border-radius:.72rem;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--compact{
+  padding:.95rem 0;
+}
+
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-proof--quote{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-proof--quote blockquote{
+  max-width:60rem;
+  padding-left:clamp(1.1rem,3vw,2rem);
+  border-left:4px solid var(--mi-color-primary);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-proof--quote blockquote p{
+  font-size:clamp(1.75rem,4vw,3.4rem);
+  color:var(--mi-city-ink);
+}
+
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-cta-split{
+  padding:clamp(1.6rem,4vw,3rem);
+  border:1px solid var(--mi-city-line);
+  border-radius:1rem;
+  background:linear-gradient(135deg,var(--mi-city-ink),color-mix(in srgb,var(--mi-city-ink) 84%,var(--mi-color-primary)));
+  color:#f6fbfb;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading p{
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:#fff;
+  color:var(--mi-city-ink);
+}
+
+/* Contact carries the urban/location visual language without pretending to be a map. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-struct--split{
+  background:
+    linear-gradient(var(--mi-city-grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--mi-city-grid) 1px,transparent 1px),
+    var(--mi-city-concrete);
+  background-size:2.7rem 2.7rem,2.7rem 2.7rem,auto;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-struct--split .mi-contact-split{
+  grid-template-columns:minmax(15rem,.72fr) minmax(0,1.28fr);
+  gap:clamp(2rem,5vw,5rem);
+  align-items:start;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form{
+  padding:clamp(1.15rem,2.5vw,1.75rem);
+  border:1px solid var(--mi-city-line);
+  border-radius:1rem;
+  background:var(--mi-color-surface);
+  box-shadow:0 1.1rem 3rem color-mix(in srgb,var(--mi-city-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form input,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form textarea,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form select{
+  border-radius:.6rem;
+}
+
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-footer--contact{
+  background:var(--mi-city-ink);
+  color:#f4faf9;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-footer--contact a,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-footer--contact p,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-footer--contact small{
+  color:rgba(244,250,249,.75);
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-14-city-clinic"]{
+    --mi-section-space:clamp(3rem,11vw,4.3rem);
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] section,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] footer{
+    scroll-margin-top:5.3rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-container{
+    width:min(100% - 1.5rem,var(--mi-content-lg));
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-shell-navbar--floating{
+    padding:.45rem 0;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-nav-float{
+    min-height:4rem;
+    padding:.58rem .65rem .58rem .8rem;
+    border-radius:.85rem;
+  }
+
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first{
+    padding-top:2.8rem;
+    padding-bottom:3.6rem;
+    background-size:2.5rem 2.5rem,2.5rem 2.5rem,auto;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first::after{display:none}
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__split{
+    display:flex;
+    flex-direction:column;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__copy{
+    order:1;
+    width:100%;
+    max-width:none;
+    gap:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.5rem,11.2vw,3.65rem)!important;
+    line-height:.96!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__actions,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__action,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media{
+    order:2;
+    width:100%;
+    margin:0;
+    border-radius:.9rem;
+    box-shadow:none;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media img{
+    aspect-ratio:4/3;
+    min-height:0;
+    max-height:none;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media::after{
+    left:.65rem;
+    bottom:.65rem;
+    max-width:calc(100% - 1.3rem);
+    font-size:.65rem;
+  }
+
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:first-child{
+    grid-column:auto;
+    min-height:0;
+    padding:1rem;
+    border-radius:.8rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-service-item h3{
+    font-size:1.35rem;
+  }
+
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-features-split,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-cta-split,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-features--split .mi-feature-item--list{
+    grid-template-columns:2.2rem minmax(0,1fr);
+    padding:.95rem 0;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead{
+    padding:.8rem;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    aspect-ratio:4/5;
+    width:100%;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.55rem,8vw,2.35rem);
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-cta-split{
+    padding:1.2rem;
+    border-radius:.85rem;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-struct--split{
+    background-size:2.2rem 2.2rem,2.2rem 2.2rem,auto;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form{
+    padding:1rem;
+    border-radius:.85rem;
+    box-shadow:none;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form input,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form textarea,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form select{
+    min-width:0;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+    font-size:16px;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] img,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] video,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] iframe{
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] *,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] *::before,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] *::after{
+    min-width:0;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-mi-layout-blueprint="dental-14-city-clinic"] *{
+    scroll-behavior:auto!important;
+  }
+}

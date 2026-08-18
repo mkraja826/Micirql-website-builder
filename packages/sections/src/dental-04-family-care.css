@@ -1,0 +1,353 @@
+/* Dental 04 — Family Care
+ * Warm, booking-led family dentistry with friendly cards and a deliberately
+ * simple mobile flow. Scoped to this curated blueprint only.
+ */
+
+[data-mi-layout-blueprint="dental-04-family-care"]{
+  --mi-content-lg:78rem;
+  --mi-section-space:clamp(4.25rem,8vw,7rem);
+  --mi-family-sky:color-mix(in srgb,var(--mi-color-primary) 12%,#eaf7fb);
+  --mi-family-mint:color-mix(in srgb,var(--mi-color-accent) 13%,#edf9f3);
+  --mi-family-warm:color-mix(in srgb,var(--mi-color-surface) 90%,#fff8ed);
+  --mi-family-ink:color-mix(in srgb,var(--mi-color-text) 92%,#17333a);
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-navbar--classic{
+  position:relative;
+  z-index:5;
+  border-bottom:1px solid color-mix(in srgb,var(--mi-color-border) 68%,transparent);
+  background:color-mix(in srgb,var(--mi-color-surface) 97%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-nav-row{min-height:5rem}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-brand{font-weight:850;letter-spacing:-.02em}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-btn--primary{
+  border-radius:999px;
+  box-shadow:0 .55rem 1.5rem color-mix(in srgb,var(--mi-color-primary) 15%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4rem,7vw,6.6rem);
+  padding-bottom:clamp(4.5rem,8vw,7.2rem);
+  background:
+    radial-gradient(circle at 88% 12%,var(--mi-family-sky),transparent 27rem),
+    radial-gradient(circle at 12% 88%,var(--mi-family-mint),transparent 22rem),
+    var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__split{
+  grid-template-columns:minmax(0,1fr) minmax(22rem,.94fr);
+  gap:clamp(2rem,5vw,5rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__copy{
+  order:1;
+  max-width:42rem;
+  gap:1.15rem;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media{
+  order:2;
+  border-radius:clamp(1.5rem,3vw,2.6rem);
+  box-shadow:0 2rem 4.7rem color-mix(in srgb,var(--mi-family-ink) 12%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media img{
+  aspect-ratio:4/5;
+  min-height:34rem;
+  object-position:center 28%;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-type--eyebrow{
+  color:var(--mi-color-primary);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-type--display{
+  max-width:11ch;
+  font-size:clamp(3.3rem,5.7vw,5.8rem);
+  line-height:.94;
+  letter-spacing:-.05em;
+  color:var(--mi-family-ink);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-type--body{
+  max-width:37rem;
+  font-size:clamp(1.02rem,1.35vw,1.17rem);
+  line-height:1.7;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__actions{
+  width:min(100%,36rem);
+  padding:.65rem;
+  border:1px solid color-mix(in srgb,var(--mi-color-border) 72%,transparent);
+  border-radius:1.35rem;
+  background:color-mix(in srgb,var(--mi-color-surface) 92%,transparent);
+  box-shadow:0 .9rem 2.5rem color-mix(in srgb,var(--mi-family-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action{
+  flex:1 1 12rem;
+  min-height:52px;
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics{
+  padding-block:clamp(2.4rem,4vw,3.5rem);
+  background:var(--mi-family-warm);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics .mi-content-heading{max-width:34rem}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof-metrics{margin-top:1.5rem}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof-metrics article{
+  padding:1rem 1rem 1.1rem;
+  border:0;
+  border-radius:1.2rem;
+  background:var(--mi-color-surface);
+  box-shadow:0 .55rem 1.7rem color-mix(in srgb,var(--mi-family-ink) 5%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof-metrics article>span{opacity:.7}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services--spotlight{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services--spotlight .mi-content-heading{
+  max-width:48rem;
+  text-align:left;
+  margin-inline:0;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1rem;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight .mi-service-item{
+  min-height:14rem;
+  align-content:start;
+  border:1px solid color-mix(in srgb,var(--mi-color-border) 76%,transparent);
+  border-radius:1.35rem;
+  background:var(--mi-color-surface);
+  box-shadow:0 .7rem 2rem color-mix(in srgb,var(--mi-family-ink) 5%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  background:var(--mi-family-sky);
+  color:var(--mi-family-ink);
+  border-color:transparent;
+  padding:var(--mi-space-lg);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight .mi-service-item:nth-child(2),
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight .mi-service-item:nth-child(5){background:var(--mi-family-mint)}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-services-spotlight .mi-service-item h3{
+  font-size:clamp(1.25rem,2vw,1.7rem);
+  line-height:1.08;
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-process--timeline{
+  background:color-mix(in srgb,var(--mi-family-sky) 55%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-process--timeline .mi-process-timeline{gap:1rem}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-process--timeline .mi-process-node{
+  border-radius:1.3rem;
+  border-color:color-mix(in srgb,var(--mi-color-border) 72%,transparent);
+  background:var(--mi-color-surface);
+  box-shadow:0 .65rem 1.8rem color-mix(in srgb,var(--mi-family-ink) 5%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-featured{gap:clamp(1.4rem,3vw,2.5rem)}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead{
+  padding:clamp(1.1rem,2vw,1.5rem);
+  border-radius:1.6rem;
+  background:var(--mi-family-warm);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{border-radius:1.25rem}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote{
+  padding-block:clamp(4.5rem,8vw,7rem);
+  background:var(--mi-family-mint);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote blockquote{
+  padding:clamp(1.35rem,3vw,2rem);
+  border-radius:1.5rem;
+  background:var(--mi-color-surface);
+  box-shadow:0 1rem 2.7rem color-mix(in srgb,var(--mi-family-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote blockquote p{
+  font-size:clamp(1.65rem,3.3vw,3rem);
+  line-height:1.12;
+}
+
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split{
+  padding-block:clamp(3.5rem,6vw,5.6rem);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-cta-split{
+  border:0;
+  border-radius:1.75rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  box-shadow:0 1.7rem 4rem color-mix(in srgb,var(--mi-color-primary) 20%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:#fff;
+  color:var(--mi-color-primary);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-contact-struct--split{
+  background:var(--mi-family-warm);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-contact-struct--split .mi-contact-split{gap:clamp(2rem,5vw,4rem)}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-contact-form{
+  border-radius:1.5rem;
+  box-shadow:0 1rem 2.7rem color-mix(in srgb,var(--mi-family-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-footer--contact{
+  background:var(--mi-family-ink);
+  color:#f5fbfb;
+}
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-footer--contact a,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-footer--contact p,
+[data-mi-layout-blueprint="dental-04-family-care"] .mi-shell-footer--contact small{color:rgba(245,251,251,.76)}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-04-family-care"]{
+    --mi-section-space:clamp(3rem,12vw,4.35rem);
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-nav-row{min-height:4.25rem}
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first{
+    padding-top:2.6rem;
+    padding-bottom:3.6rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__split{
+    display:flex;
+    flex-direction:column;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__copy{
+    order:1;
+    width:100%;
+    max-width:none;
+    gap:.95rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media{
+    order:2;
+    width:100%;
+    margin:0;
+    border-radius:1.15rem;
+    box-shadow:0 1rem 2.6rem color-mix(in srgb,var(--mi-family-ink) 10%,transparent);
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media img{
+    width:100%;
+    min-height:0;
+    aspect-ratio:4/3;
+    object-position:center 26%;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.55rem,12vw,3.7rem)!important;
+    line-height:.95!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    padding:.5rem;
+    gap:.55rem;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics .mi-proof-metrics article{
+    min-width:0;
+    padding:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics .mi-proof-metrics strong{
+    font-size:clamp(1.05rem,5.2vw,1.35rem);
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-services--spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-services--spotlight .mi-service-item:first-child{
+    min-height:0;
+    grid-column:auto;
+    padding:1.05rem;
+    border-radius:1rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-process--timeline .mi-process-timeline{
+    grid-template-columns:1fr;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-process--timeline .mi-process-node{
+    min-width:0;
+    padding:1.05rem;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead{
+    padding:1rem;
+    border-radius:1.1rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/3;
+    max-height:25rem;
+    object-fit:cover;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-team--featured .mi-team-card--compact{
+    grid-template-columns:3.6rem minmax(0,1fr);
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote{
+    padding-block:3.4rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote .mi-proof-quote{
+    grid-template-columns:1fr;
+    gap:1.1rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote blockquote{
+    padding:1.1rem;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.45rem,7vw,2.25rem);
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-conv-cta--split .mi-cta-split{
+    grid-template-columns:1fr;
+    gap:1rem;
+    padding:1.25rem;
+    border-radius:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.25rem;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] img,
+  [data-mi-layout-blueprint="dental-04-family-care"] video,
+  [data-mi-layout-blueprint="dental-04-family-care"] iframe{max-width:100%}
+  [data-mi-layout-blueprint="dental-04-family-care"] *{min-width:0}
+  [data-mi-layout-blueprint="dental-04-family-care"] h1,
+  [data-mi-layout-blueprint="dental-04-family-care"] h2,
+  [data-mi-layout-blueprint="dental-04-family-care"] h3,
+  [data-mi-layout-blueprint="dental-04-family-care"] p,
+  [data-mi-layout-blueprint="dental-04-family-care"] a{overflow-wrap:anywhere}
+}
+
+@media(max-width:22.5rem){
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-container{width:min(100% - 1.1rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-proof--metrics .mi-proof-metrics{grid-template-columns:1fr}
+}

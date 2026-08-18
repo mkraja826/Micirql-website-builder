@@ -4,6 +4,8 @@ import path from "node:path";
 
 const root = process.cwd();
 const planner = fs.readFileSync(path.join(root, "apps/builder/app/page-architecture-intelligence.ts"), "utf8");
+const mediaPlanner = fs.readFileSync(path.join(root, "apps/builder/app/page-media-intelligence.ts"), "utf8");
+const mediaExecution = fs.readFileSync(path.join(root, "apps/builder/app/media-execution.ts"), "utf8");
 const gate = fs.readFileSync(path.join(root, "apps/builder/app/onboarding-gate.tsx"), "utf8");
 const route = fs.readFileSync(path.join(root, "apps/builder/app/api/onboarding/architect/route.ts"), "utf8");
 
@@ -35,9 +37,23 @@ test("secondary pages use purpose-specific section recipes", () => {
   expect(planner).toContain("pageRole: role");
 });
 
-test("architecture runs after base onboarding and before review", () => {
+test("page-specific media protects doctors results and low-value pages", () => {
+  expect(mediaPlanner).toContain('role==="team"');
+  expect(mediaPlanner).toContain("Verified portraits of the real doctors or team members");
+  expect(mediaPlanner).toContain('role==="gallery"');
+  expect(mediaPlanner).toContain("never synthesize before-and-after outcomes");
+  expect(mediaPlanner).toContain('role==="contact"||role==="faq"');
+  expect(mediaPlanner).toContain("no generated image needed");
+  expect(mediaPlanner).toContain('role==="service-detail"&&family==="hero"');
+  expect(mediaExecution).toContain("pagePath?:string");
+});
+
+test("architecture runs page media and content enrichment before review", () => {
   expect(gate).toContain('fetch("/api/onboarding/architect"');
   expect(route).toContain("planPageArchitecture");
   expect(route).toContain("applyPageArchitecture");
+  expect(route).toContain("planPageMedia");
+  expect(route).toContain("materializeGeneratedMedia");
+  expect(route).toContain("applyMediaExecution");
   expect(route).toContain("runGuardedContentGeneration");
 });

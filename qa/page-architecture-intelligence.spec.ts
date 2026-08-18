@@ -37,6 +37,15 @@ test("secondary pages use purpose-specific section recipes", () => {
   expect(planner).toContain("pageRole: role");
 });
 
+test("page roles also receive distinct component variant profiles", () => {
+  expect(planner).toContain("const PAGE_VARIANTS");
+  expect(planner).toContain('"service-detail": { hero: 4');
+  expect(planner).toContain("team: { hero: 5, team: 4");
+  expect(planner).toContain("gallery: { hero: 2, gallery: 4");
+  expect(planner).toContain("contact: { hero: 5, contact: 4");
+  expect(planner).toContain("sectionDesignId(themeFamily, family, variant)");
+});
+
 test("page-specific media protects doctors results and low-value pages", () => {
   expect(mediaPlanner).toContain('role==="team"');
   expect(mediaPlanner).toContain("Verified portraits of the real doctors or team members");

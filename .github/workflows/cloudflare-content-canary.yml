@@ -1,0 +1,108 @@
+name: Cloudflare Content Canary
+
+on:
+  push:
+    branches: [fix/onboarding-use-guarded-content]
+    paths:
+      - '.github/workflows/cloudflare-content-canary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      MODEL: '@cf/meta/llama-3.1-8b-instruct-fp8'
+    steps:
+      - name: Verify Cloudflare credentials
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+
+      - name: Generate grounded Dental website copy
+        shell: bash
+        run: |
+          cat > /tmp/request.json <<'JSON'
+          {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You write concise production website copy. Return JSON only. Do not invent awards, ratings, years of experience, guarantees, statistics, credentials, prices, doctor names or medical outcomes."
+              },
+              {
+                "role": "user",
+                "content": "Business: Nova Dental Studio. Location: Hyderabad. Services: dental implants, crowns, root canal treatment. Goal: build trust and book consultations. Produce exactly this JSON shape: {\"hero\":{\"h1\":\"\",\"p\":\"\",\"cta\":\"\"},\"services\":{\"h2\":\"\",\"h3\":\"\",\"p\":\"\"}}. H1 <= 12 words, H2/H3 <= 10 words, paragraph fields <= 35 words, CTA 2-4 words."
+              }
+            ],
+            "temperature": 0.2,
+            "max_tokens": 500,
+            "response_format": {"type":"json_object"}
+          }
+          JSON
+
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/${MODEL}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/request.json \
+            > /tmp/cloudflare-response.json
+
+      - name: Validate structured copy
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/cloudflare-response.json', 'utf8'));
+          if (!payload.success) throw new Error(`Cloudflare Workers AI request failed: ${JSON.stringify(payload.errors || [])}`);
+          let raw = payload?.result?.response;
+          if (typeof raw !== 'string') raw = JSON.stringify(raw ?? '');
+          raw = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+          const start = raw.indexOf('{');
+          const end = raw.lastIndexOf('}');
+          if (start < 0 || end <= start) throw new Error(`No JSON object returned: ${raw.slice(0, 500)}`);
+          const content = JSON.parse(raw.slice(start, end + 1));
+          const required = [
+            ['hero.h1', content?.hero?.h1],
+            ['hero.p', content?.hero?.p],
+            ['hero.cta', content?.hero?.cta],
+            ['services.h2', content?.services?.h2],
+            ['services.h3', content?.services?.h3],
+            ['services.p', content?.services?.p],
+          ];
+          for (const [field, value] of required) {
+            if (typeof value !== 'string' || !value.trim()) throw new Error(`${field} is missing`);
+          }
+          const words = (value) => value.trim().split(/\s+/).filter(Boolean).length;
+          if (words(content.hero.h1) > 12) throw new Error(`hero.h1 too long: ${content.hero.h1}`);
+          if (words(content.services.h2) > 10 || words(content.services.h3) > 10) throw new Error('section heading too long');
+          if (words(content.hero.p) > 35 || words(content.services.p) > 35) throw new Error('paragraph too long');
+          if (words(content.hero.cta) < 2 || words(content.hero.cta) > 4) throw new Error(`CTA length invalid: ${content.hero.cta}`);
+          const joined = JSON.stringify(content).toLowerCase();
+          const forbidden = [/award[- ]winning/, /\b\d+\+?\s+years?\b/, /\b100%\b/, /guaranteed/, /#1/, /best in hyderabad/];
+          for (const pattern of forbidden) if (pattern.test(joined)) throw new Error(`unsupported claim detected: ${pattern}`);
+          fs.writeFileSync('/tmp/content.json', JSON.stringify(content, null, 2));
+          console.log(JSON.stringify(content, null, 2));
+          NODE
+
+      - name: Add canary summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## Cloudflare Workers AI content canary' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f /tmp/content.json ]]; then
+            echo '**PASS** — Workers AI returned valid schema-shaped Dental copy.' >> "$GITHUB_STEP_SUMMARY"
+            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/content.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '**FAIL** — no validated content payload was produced.' >> "$GITHUB_STEP_SUMMARY"
+          fi

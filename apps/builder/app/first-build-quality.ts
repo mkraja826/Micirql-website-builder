@@ -32,6 +32,8 @@ const OFFERING = new Set(["services", "features", "about", "pricing"]);
 const TRUST = new Set(["testimonials", "team", "about", "process", "gallery"]);
 const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 const TEXT_KEYS = ["body", "description", "summary", "intro", "copy", "text"];
+const GENERIC_HEADINGS = new Set(["home", "about", "services", "features", "process", "testimonials", "gallery", "team", "contact"]);
+const GENERIC_PRIMARY_CTAS = new Set(["get started", "learn more", "next", "continue"]);
 
 export function evaluateFirstBuildQuality(site: Site): FirstBuildQualityResult {
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
@@ -75,6 +77,17 @@ export function evaluateFirstBuildQuality(site: Site): FirstBuildQualityResult {
   const shallowSections = contentSections.filter((section) => sectionIsShallow(section.props));
   for (const section of shallowSections) {
     issues.push({ code: "SHALLOW_SECTION", message: "This section has a heading but not enough supporting copy or item detail.", severity: "blocker", sectionId: section.id });
+  }
+
+  for (const section of contentSections) {
+    const heading = firstString(section.props, ["heading", "title"]);
+    if (heading && isScaffoldHeading(heading)) {
+      issues.push({ code: "SCAFFOLD_COPY", message: `Generated heading still looks like scaffold copy: ${heading}`, severity: "blocker", sectionId: section.id });
+    }
+    const primaryLabel = primaryCtaLabel(section.props);
+    if (primaryLabel && GENERIC_PRIMARY_CTAS.has(primaryLabel.toLowerCase())) {
+      issues.push({ code: "GENERIC_PRIMARY_CTA", message: `Primary CTA is too generic for a premium first build: ${primaryLabel}`, severity: "warning", sectionId: section.id });
+    }
   }
 
   const componentCounts = new Map<string, number>();
@@ -121,6 +134,28 @@ function sectionIsShallow(props: Record<string, unknown>): boolean {
     if (detailed >= Math.min(2, items.length)) return false;
   }
   return true;
+}
+
+function isScaffoldHeading(value: string): boolean {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, " ").replace(/[?.!]+$/, "");
+  if (GENERIC_HEADINGS.has(normalized)) return true;
+  if (/^(ready to discuss|a clear overview of|what matters about|explore) (home|services|treatments|contact|doctor|cases)$/.test(normalized)) return true;
+  if (/all dental related treatments/.test(normalized)) return true;
+  return excessiveCaps(value);
+}
+
+function excessiveCaps(value: string): boolean {
+  const letters = [...value].filter((char) => /[a-z]/i.test(char));
+  if (letters.length < 20 || value.trim().split(/\s+/).length < 4) return false;
+  const upper = letters.filter((char) => char === char.toUpperCase()).length;
+  return upper / letters.length >= 0.78;
+}
+
+function primaryCtaLabel(props: Record<string, unknown>): string {
+  const action = props.primaryAction;
+  if (!action || typeof action !== "object" || Array.isArray(action)) return "";
+  const label = (action as Record<string, unknown>).label;
+  return typeof label === "string" ? label.trim() : "";
 }
 
 function collectCtaLabels(value: unknown, labels: Set<string>) {

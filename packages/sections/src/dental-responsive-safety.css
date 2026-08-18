@@ -5,6 +5,13 @@
  * primitive reaches an unsafe breakpoint.
  */
 
+/* Typography primitives set their own foreground color, so inheriting white from
+ * an immersive hero's copy wrapper is not enough. Keep generated image-led hero
+ * headlines and body copy readable against the dark overlay. */
+.mi-hero--immersive .mi-hero__copy .mi-type{
+  color:#fff;
+}
+
 /* Dense desktop navigation is not safe at tablet widths. Keep the desktop
  * presentation above 1024px and use the existing mobile drawer through tablet.
  */

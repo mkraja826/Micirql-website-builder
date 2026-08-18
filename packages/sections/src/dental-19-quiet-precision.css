@@ -1,0 +1,549 @@
+/* Dental 19 — Quiet Precision
+ * Extremely restrained, typography-led dental layout. Visual hierarchy comes
+ * from spacing, type and selected photography rather than decorative chrome.
+ */
+
+[data-mi-layout-blueprint="dental-19-minimal-white"]{
+  --mi-content-lg:78rem;
+  --mi-section-space:clamp(5rem,9vw,8.8rem);
+  --mi-quiet-ink:#1f2d31;
+  --mi-quiet-muted:color-mix(in srgb,var(--mi-color-text-muted) 92%,#6d787b);
+  --mi-quiet-line:color-mix(in srgb,var(--mi-color-border) 86%,#d9dddc);
+  --mi-quiet-wash:color-mix(in srgb,var(--mi-color-surface) 96%,#faf9f5);
+}
+
+[data-mi-layout-blueprint="dental-19-minimal-white"] section,
+[data-mi-layout-blueprint="dental-19-minimal-white"] footer{scroll-margin-top:5.5rem}
+
+/* Minimal shell. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-shell-navbar--minimal{
+  position:sticky;
+  top:0;
+  z-index:40;
+  border-bottom:1px solid var(--mi-quiet-line);
+  background:color-mix(in srgb,var(--mi-color-surface) 97%,transparent);
+  backdrop-filter:blur(14px);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-nav-row{min-height:4.9rem}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-shell-brand{
+  font-weight:820;
+  letter-spacing:-.035em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-nav-minimal-copy{
+  max-width:36ch;
+  color:var(--mi-quiet-muted);
+  font-size:.78rem;
+  line-height:1.45;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-btn--primary{
+  border-radius:0;
+  box-shadow:none;
+}
+
+/* Editorial hero with almost no ornament. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial{
+  padding-top:clamp(5.5rem,10vw,9rem);
+  padding-bottom:clamp(5.5rem,10vw,9rem);
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__editorial-grid{
+  grid-template-columns:5rem minmax(0,1.05fr) minmax(24rem,.95fr);
+  gap:clamp(1.7rem,4vw,4.6rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__index{
+  align-self:start;
+  padding-top:.35rem;
+  font-size:clamp(2.6rem,5vw,5rem);
+  font-weight:500;
+  line-height:.9;
+  letter-spacing:-.05em;
+  color:color-mix(in srgb,var(--mi-color-primary) 22%,transparent);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy{
+  max-width:45rem;
+  gap:1.25rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--eyebrow{
+  color:var(--mi-color-primary);
+  letter-spacing:.14em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--display{
+  max-width:10ch;
+  font-size:clamp(4rem,7.2vw,7.8rem);
+  line-height:.88;
+  letter-spacing:-.065em;
+  color:var(--mi-quiet-ink);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--body{
+  max-width:35rem;
+  font-size:clamp(1.02rem,1.3vw,1.16rem);
+  line-height:1.72;
+  color:var(--mi-quiet-muted);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-section__actions{
+  margin-top:.6rem;
+  gap:.75rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-section__action{
+  min-height:49px;
+  padding:.82rem 1.25rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-section__action--secondary{
+  border-radius:0;
+  border-color:var(--mi-quiet-line);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media{
+  margin:0;
+  border-radius:0;
+  box-shadow:none;
+  background:var(--mi-quiet-wash);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media img{
+  width:100%;
+  aspect-ratio:4/5;
+  min-height:38rem;
+  object-fit:cover;
+  object-position:center 42%;
+}
+
+/* Treatments are typography and rules, not cards. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services--spotlight{
+  border-top:1px solid var(--mi-quiet-line);
+  background:var(--mi-quiet-wash);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services--spotlight .mi-content-heading{
+  max-width:48rem;
+  margin-bottom:clamp(2.5rem,5vw,4.8rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services--spotlight .mi-content-heading h2{
+  max-width:15ch;
+  font-size:clamp(2.8rem,5vw,5.2rem);
+  line-height:.96;
+  letter-spacing:-.05em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 clamp(2rem,5vw,5rem);
+  border-top:1px solid var(--mi-quiet-line);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.45rem 0 2rem;
+  border:0;
+  border-bottom:1px solid var(--mi-quiet-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-quiet-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item h3{
+  font-size:clamp(1.35rem,2vw,1.85rem);
+  line-height:1.08;
+  letter-spacing:-.025em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item p{
+  max-width:34rem;
+  color:var(--mi-quiet-muted);
+  line-height:1.65;
+}
+
+/* Clinician portrait carries the only major visual weight after the hero. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team--featured{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team--featured .mi-section__heading{
+  max-width:46rem;
+  margin-bottom:clamp(2.6rem,5vw,4.7rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team--featured .mi-section__heading h2{
+  max-width:13ch;
+  font-size:clamp(2.8rem,4.8vw,5rem);
+  line-height:.96;
+  letter-spacing:-.05em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured{
+  grid-template-columns:minmax(23rem,.9fr) minmax(0,1.1fr);
+  gap:clamp(2.7rem,6vw,6.5rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead{
+  display:grid;
+  gap:1.25rem;
+  padding:0;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead img{
+  width:100%;
+  aspect-ratio:4/5;
+  object-fit:cover;
+  object-position:center 28%;
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead h3{
+  font-size:clamp(1.8rem,3vw,3.1rem);
+  letter-spacing:-.04em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead p{max-width:35rem;color:var(--mi-quiet-muted)}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured__grid{
+  display:grid;
+  gap:0;
+  border-top:1px solid var(--mi-quiet-line);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact{
+  display:grid;
+  grid-template-columns:minmax(9rem,.38fr) minmax(0,1fr);
+  gap:1.4rem;
+  padding:1.5rem 0;
+  border-bottom:1px solid var(--mi-quiet-line);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact .mi-team-avatar{display:none}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact h3{
+  font-size:1rem;
+  font-weight:780;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact p{color:var(--mi-quiet-muted);line-height:1.65}
+
+/* Selected photography: uniform, uncrowded and captioned below. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-section--mosaic{
+  border-top:1px solid var(--mi-quiet-line);
+  background:var(--mi-quiet-wash);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-section--mosaic .mi-section__heading{
+  max-width:46rem;
+  margin-bottom:clamp(2.8rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(2.5rem,5vw,5.5rem) clamp(1.2rem,3vw,2.5rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card--large,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card--small{
+  grid-column:auto;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card img{
+  width:100%;
+  aspect-ratio:4/3;
+  object-fit:cover;
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card:nth-child(3n+1) img{aspect-ratio:4/5}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card figcaption{
+  position:static;
+  display:grid;
+  gap:.32rem;
+  padding:.9rem 0 0;
+  background:transparent;
+  color:var(--mi-quiet-ink);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card figcaption strong{
+  font-size:.98rem;
+  font-weight:780;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card figcaption span{
+  max-width:38rem;
+  color:var(--mi-quiet-muted);
+  line-height:1.55;
+}
+
+/* Single review, treated as editorial copy rather than a testimonial card. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof--quote{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote{
+  max-width:66rem;
+  margin-inline:auto;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote .mi-content-heading{
+  max-width:35rem;
+  margin-bottom:2.3rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote{
+  margin:0;
+  padding:2.3rem 0 0;
+  border:0;
+  border-top:1px solid var(--mi-quiet-line);
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote p{
+  max-width:25ch;
+  margin:0;
+  font-size:clamp(2.2rem,4.2vw,4.4rem);
+  line-height:1.03;
+  letter-spacing:-.045em;
+  color:var(--mi-quiet-ink);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote cite{
+  display:block;
+  margin-top:1.4rem;
+  color:var(--mi-quiet-muted);
+  font-size:.84rem;
+  font-style:normal;
+}
+
+/* Conversion is quiet, explicit and structurally separate. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split{
+  border-top:1px solid var(--mi-quiet-line);
+  border-bottom:1px solid var(--mi-quiet-line);
+  background:var(--mi-quiet-ink);
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-cta-split{
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:2rem;
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-heading{
+  max-width:48rem;
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-heading h2{
+  font-size:clamp(2.6rem,4.7vw,5rem);
+  line-height:.96;
+  letter-spacing:-.05em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-btn--primary{
+  min-height:50px;
+  background:#fff;
+  color:var(--mi-quiet-ink);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-btn--secondary{
+  border-radius:0;
+  border-color:rgba(255,255,255,.4);
+  color:#fff;
+}
+
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-struct--split{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split{
+  grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);
+  gap:clamp(2.8rem,7vw,7rem);
+  align-items:start;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split .mi-conv-heading h2{
+  max-width:12ch;
+  font-size:clamp(2.6rem,4.4vw,4.7rem);
+  line-height:.98;
+  letter-spacing:-.048em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split form{
+  padding-top:.25rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split input,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split textarea,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split select{
+  border:0;
+  border-bottom:1px solid var(--mi-quiet-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split button{
+  min-height:50px;
+  border-radius:0;
+}
+
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-shell-footer--compact{
+  padding-block:2.2rem;
+  border-top:1px solid var(--mi-quiet-line);
+  background:var(--mi-quiet-wash);
+  color:var(--mi-quiet-ink);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-footer-compact{
+  gap:1.1rem 2rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-footer-compact a{color:inherit}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-footer-compact small{color:var(--mi-quiet-muted)}
+
+/* Explicit safety: the quiet layout never relies on horizontal movement. */
+[data-mi-layout-blueprint="dental-19-minimal-white"],
+[data-mi-layout-blueprint="dental-19-minimal-white"] section,
+[data-mi-layout-blueprint="dental-19-minimal-white"] header,
+[data-mi-layout-blueprint="dental-19-minimal-white"] footer,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-container,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__editorial-grid,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic,
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split{min-width:0;max-width:100%}
+[data-mi-layout-blueprint="dental-19-minimal-white"] img{max-width:100%}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"]{
+    --mi-section-space:clamp(3.9rem,15vw,5.8rem);
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-container{
+    padding-left:max(18px,env(safe-area-inset-left));
+    padding-right:max(18px,env(safe-area-inset-right));
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-shell-navbar--minimal{
+    position:sticky;
+    top:0;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-nav-row{min-height:4.3rem}
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial{
+    padding-top:4.2rem;
+    padding-bottom:4.8rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__editorial-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:1.6rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__index{
+    order:1;
+    font-size:2rem;
+    line-height:1;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy{
+    order:2;
+    max-width:none;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.9rem,13vw,4.15rem);
+    line-height:.94;
+    letter-spacing:-.055em;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--body{
+    font-size:1rem;
+    line-height:1.65;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-section__actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-section__action{
+    width:100%;
+    min-height:50px;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media{
+    order:3;
+    width:100%;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media img{
+    min-height:0;
+    aspect-ratio:4/5;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services--spotlight .mi-content-heading h2,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team--featured .mi-section__heading h2,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split .mi-conv-heading h2,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-heading h2{
+    font-size:clamp(2.35rem,10vw,3.35rem);
+    line-height:.98;
+    overflow-wrap:anywhere;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight{
+    grid-template-columns:minmax(0,1fr);
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item:first-child{
+    padding:1.25rem 0 1.45rem;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured{
+    grid-template-columns:minmax(0,1fr);
+    gap:2.2rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead img{
+    aspect-ratio:4/5;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact{
+    grid-template-columns:minmax(0,1fr);
+    gap:.45rem;
+    padding:1.25rem 0;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:2.6rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card--large,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card--small{
+    grid-column:auto;
+    width:100%;
+    margin:0;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card img,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card:nth-child(3n+1) img{
+    width:100%;
+    aspect-ratio:4/3;
+    border-radius:0;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card figcaption{
+    position:static;
+    inset:auto;
+    transform:none;
+    padding:.8rem 0 0;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote p{
+    max-width:none;
+    font-size:clamp(2rem,9vw,3rem);
+    overflow-wrap:anywhere;
+  }
+
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:2rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-actions,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-actions .mi-conv-btn{
+    width:100%;
+    min-height:50px;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split input,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split textarea,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split select{
+    min-width:0;
+    font-size:16px;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-footer-compact{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+
+@media(max-width:23.5rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-container{
+    padding-left:18px;
+    padding-right:18px;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy .mi-type--display{
+    font-size:clamp(2.55rem,12.5vw,3.35rem);
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__index{font-size:1.7rem}
+}

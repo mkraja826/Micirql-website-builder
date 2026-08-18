@@ -6,7 +6,7 @@ import type { GenerationQualityProfile } from "./generation-quality-intelligence
 export type VisualRole="none"|"hero-photo"|"people"|"product-ui"|"portfolio"|"place"|"process"|"illustration"|"abstract"|"texture";
 export type VisualProminence="supporting"|"balanced"|"dominant";
 export type VisualAspect="1:1"|"4:3"|"3:2"|"16:9"|"portrait"|"wide";
-export type SectionVisualDecision={family:SectionFamily;role:VisualRole;prominence:VisualProminence;aspect:VisualAspect;subject:string;avoid:string[];preferredTags?:string[]};
+export type SectionVisualDecision={family:SectionFamily;pagePath?:string;role:VisualRole;prominence:VisualProminence;aspect:VisualAspect;subject:string;avoid:string[];preferredTags?:string[]};
 export type VisualMediaPlan={style:"photographic"|"editorial"|"product"|"illustrative"|"mixed";sections:SectionVisualDecision[];rules:string[]};
 
 const PHOTO_IDS=new Set(["medical-clinic","dental-clinic","premium-implant-clinic","physiotherapy","dermatology","fitness","yoga-spa","veterinary","salon-beauty","hotel-resort","bakery-catering","events-wedding","travel-tourism","restaurant","real-estate","construction","fashion-brand","jewellery","furniture-interiors","beauty-brand","photographer","artist"]);

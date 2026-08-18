@@ -30,11 +30,13 @@ export function normalizeLayoutSubindustry(value: string | undefined): string | 
 }
 
 function normalizeInput(input: LayoutSelectionInput): LayoutSelectionInput {
-  return {
-    ...input,
+  const { subindustryId: rawSubindustryId, ...rest } = input;
+  const subindustryId = normalizeLayoutSubindustry(rawSubindustryId);
+  const normalized = {
+    ...rest,
     industry: normalizeLayoutIndustry(input.industry),
-    subindustryId: normalizeLayoutSubindustry(input.subindustryId),
   };
+  return subindustryId ? { ...normalized, subindustryId } : normalized;
 }
 
 export function layoutsForIndustry(industry: string, options: { includeDrafts?: boolean } = {}): WebsiteLayoutBlueprint[] {

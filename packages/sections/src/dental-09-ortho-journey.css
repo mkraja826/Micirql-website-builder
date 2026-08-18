@@ -1,0 +1,294 @@
+/* Dental 09 — Ortho Journey
+ * Friendly orthodontic blueprint focused on treatment choice, scanning and a
+ * clear journey from consultation to active treatment. Mobile is step-first.
+ */
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"]{
+  --mi-content-lg:79rem;
+  --mi-section-space:clamp(4.4rem,8vw,7.2rem);
+  --mi-ortho-ink:#17343b;
+  --mi-ortho-sky:color-mix(in srgb,var(--mi-color-primary) 11%,#edf9fc);
+  --mi-ortho-mint:color-mix(in srgb,var(--mi-color-accent) 12%,#eefaf4);
+  --mi-ortho-line:color-mix(in srgb,var(--mi-color-primary) 18%,var(--mi-color-border));
+  --mi-ortho-soft:color-mix(in srgb,var(--mi-color-surface) 88%,#f7fbff);
+}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-navbar--utility{
+  position:relative;
+  z-index:8;
+  border-bottom:1px solid var(--mi-ortho-line);
+  background:color-mix(in srgb,var(--mi-color-surface) 97%,transparent);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-nav-utility{
+  background:var(--mi-ortho-ink);
+  color:#f5fbfc;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-nav-utility a{color:#fff}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-nav-row{min-height:4.9rem}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-brand{font-weight:900;letter-spacing:-.025em}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-btn--primary{
+  border-radius:999px;
+  box-shadow:0 .6rem 1.55rem color-mix(in srgb,var(--mi-color-primary) 15%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.2rem,7.5vw,6.8rem);
+  padding-bottom:clamp(4.6rem,8vw,7.2rem);
+  background:
+    radial-gradient(circle at 16% 18%,var(--mi-ortho-mint),transparent 22rem),
+    radial-gradient(circle at 88% 72%,var(--mi-ortho-sky),transparent 26rem),
+    var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-hero__copy{
+  max-width:58rem;
+  margin-inline:auto;
+  gap:1rem;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--eyebrow{
+  display:inline-flex;
+  width:max-content;
+  margin-inline:auto;
+  padding:.45rem .72rem;
+  border:1px solid var(--mi-ortho-line);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:var(--mi-color-primary);
+  letter-spacing:.12em;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--display{
+  max-width:13ch;
+  margin-inline:auto;
+  font-size:clamp(3.25rem,5.9vw,6rem);
+  line-height:.94;
+  letter-spacing:-.05em;
+  color:var(--mi-ortho-ink);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--body{
+  max-width:42rem;
+  margin-inline:auto;
+  font-size:clamp(1.02rem,1.35vw,1.16rem);
+  line-height:1.65;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__actions{justify-content:center}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__media{
+  max-width:64rem;
+  margin:2rem auto 0;
+  border-radius:2rem;
+  box-shadow:0 1.8rem 4.5rem color-mix(in srgb,var(--mi-ortho-ink) 11%,transparent);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__media img{
+  aspect-ratio:16/8.5;
+  max-height:32rem;
+  object-position:center 40%;
+}
+
+/* Treatment choice reads like a friendly selector rather than a generic grid. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services--spotlight{
+  background:var(--mi-ortho-soft);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services--spotlight .mi-content-heading{max-width:48rem}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight{gap:.85rem}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item{
+  min-height:12rem;
+  padding:1.35rem;
+  border:1px solid var(--mi-ortho-line);
+  border-radius:1.15rem;
+  box-shadow:none;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:span 2;
+  min-height:15rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child p{color:color-mix(in srgb,var(--mi-color-primary-contrast) 78%,transparent)}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-timeline{
+  position:relative;
+  gap:1rem;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node{
+  min-width:0;
+  padding:1.35rem;
+  border:1px solid var(--mi-ortho-line);
+  border-radius:1.1rem;
+  background:linear-gradient(180deg,var(--mi-color-surface),var(--mi-ortho-sky));
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node>span{
+  display:inline-grid;
+  place-items:center;
+  width:2.2rem;
+  height:2.2rem;
+  border-radius:999px;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  font-weight:850;
+}
+
+/* Technology sits after the journey as reassurance, not as a gadget showcase. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split{
+  background:var(--mi-ortho-ink);
+  color:#f5fbfc;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-section__heading p{color:inherit}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-features-split{gap:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:2.2rem minmax(0,1fr);
+  border-color:rgba(255,255,255,.16);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-feature-item--list h3,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-feature-item--list p{color:inherit}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-feature-index{color:color-mix(in srgb,var(--mi-color-accent) 82%,white)}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured{
+  background:var(--mi-ortho-mint);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead{
+  padding:1rem;
+  border:1px solid var(--mi-ortho-line);
+  border-radius:1.3rem;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{border-radius:1rem}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote blockquote{
+  padding:clamp(1.35rem,3vw,2.25rem);
+  border-left:4px solid var(--mi-color-accent);
+  background:var(--mi-ortho-soft);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote blockquote p{font-size:clamp(1.7rem,3.7vw,3rem)}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-cta-split{
+  padding:clamp(1.6rem,4vw,3rem);
+  border-radius:1.5rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  box-shadow:0 1.5rem 3.7rem color-mix(in srgb,var(--mi-color-primary) 20%,transparent);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-btn--primary{background:#fff;color:var(--mi-color-primary)}
+
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-contact-struct--split{background:var(--mi-ortho-soft)}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-contact-form{
+  border-radius:1.25rem;
+  box-shadow:0 1rem 2.6rem color-mix(in srgb,var(--mi-ortho-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-footer--contact{
+  background:var(--mi-ortho-ink);
+  color:#f5fbfc;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-footer--contact a,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-footer--contact p,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-shell-footer--contact small{color:rgba(245,251,252,.76)}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-09-ortho-journey"]{--mi-section-space:clamp(3rem,12vw,4.4rem)}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-nav-utility{display:none}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-nav-row{min-height:4.2rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered{padding-top:2.7rem;padding-bottom:3.6rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-hero__copy{align-items:flex-start;text-align:left;margin:0;gap:.95rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--eyebrow{margin:0}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--display{
+    max-width:12ch;
+    margin:0;
+    font-size:clamp(2.5rem,11.5vw,3.65rem)!important;
+    line-height:.96!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--body{margin:0}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__actions,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__action,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__media{
+    width:100%;
+    margin:1.35rem 0 0;
+    border-radius:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-section__media img{
+    aspect-ratio:4/3;
+    max-height:none;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight{grid-template-columns:1fr;gap:.7rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child{
+    grid-column:auto;
+    min-height:0;
+    padding:1rem;
+    border-radius:1rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-timeline{
+    grid-template-columns:1fr;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node{
+    padding:1rem;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-features-split{
+    grid-template-columns:1fr;
+    gap:1.2rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-features--split .mi-feature-item--list{
+    grid-template-columns:2rem minmax(0,1fr);
+    padding-block:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead{grid-template-columns:1fr}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/3;
+    max-height:25rem;
+    object-fit:cover;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--compact{grid-template-columns:3.6rem minmax(0,1fr)}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote .mi-proof-quote{grid-template-columns:1fr;gap:1rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote blockquote{padding:1rem;border-left-width:3px}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote blockquote p{font-size:clamp(1.45rem,7vw,2.2rem)}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-cta-split{padding:1.2rem;border-radius:1.1rem}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] img,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] video,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] iframe{max-width:100%}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] *{min-width:0}
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-container{width:min(100% - 1.25rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-hero--centered .mi-type--display{font-size:clamp(2.25rem,11vw,3.1rem)!important}
+}

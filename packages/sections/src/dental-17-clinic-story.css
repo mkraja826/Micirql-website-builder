@@ -1,0 +1,506 @@
+/* Dental 17 — Clinic Story
+ * Cinematic, photography-led clinic narrative with human warmth and minimal
+ * chrome. Mobile turns the immersive composition into a safe vertical story.
+ */
+
+[data-mi-layout-blueprint="dental-17-photo-story"]{
+  --mi-content-lg:82rem;
+  --mi-section-space:clamp(4.8rem,8.5vw,8rem);
+  --mi-story-ink:#26342e;
+  --mi-story-ivory:color-mix(in srgb,var(--mi-color-surface) 94%,#fbf7ef);
+  --mi-story-sage:color-mix(in srgb,var(--mi-color-primary) 14%,#e9f0e7);
+  --mi-story-warm:color-mix(in srgb,var(--mi-color-accent) 10%,#f3ede3);
+  --mi-story-line:color-mix(in srgb,var(--mi-color-border) 78%,#cbd3ca);
+  --mi-story-muted:color-mix(in srgb,var(--mi-color-text-muted) 88%,#6d756f);
+}
+
+[data-mi-layout-blueprint="dental-17-photo-story"] section,
+[data-mi-layout-blueprint="dental-17-photo-story"] footer{scroll-margin-top:5.5rem}
+
+/* Floating desktop navigation becomes a calm standard sticky bar on mobile. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-navbar--floating{
+  position:absolute;
+  inset:1rem 0 auto;
+  z-index:40;
+  padding:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-nav-float{
+  min-height:4.6rem;
+  margin:0;
+  padding:.65rem .75rem .65rem 1.05rem;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:1.1rem;
+  background:rgba(31,43,37,.46);
+  color:#fff;
+  box-shadow:0 1rem 3rem rgba(17,25,21,.16);
+  backdrop-filter:blur(18px);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-brand{
+  color:inherit;
+  font-weight:850;
+  letter-spacing:-.025em;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-links a,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-dropdown>summary{color:inherit}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-links a:hover{color:#fff;opacity:.72}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-cta{
+  border-radius:.8rem;
+  background:#fff;
+  color:var(--mi-story-ink);
+  box-shadow:none;
+}
+
+/* Full-bleed opening: image is the story, but copy always has a readable panel. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive{
+  min-height:min(88svh,58rem);
+  background:var(--mi-story-ink);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive>.mi-section__media img{
+  opacity:.84;
+  filter:saturate(.88) contrast(.96);
+  object-position:center 44%;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:
+    linear-gradient(90deg,rgba(18,29,24,.68) 0%,rgba(18,29,24,.32) 48%,rgba(18,29,24,.08) 72%),
+    linear-gradient(180deg,rgba(17,25,21,.2) 0%,transparent 38%,rgba(17,25,21,.45) 100%);
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero__overlay{
+  position:relative;
+  z-index:2;
+  min-height:min(88svh,58rem);
+  align-items:end;
+  padding-top:clamp(9rem,18vw,13rem);
+  padding-bottom:clamp(4rem,7vw,6.5rem);
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-hero__copy{
+  max-width:45rem;
+  gap:1.05rem;
+  padding:clamp(1.25rem,2.6vw,2rem);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:1.2rem;
+  background:rgba(25,36,30,.43);
+  box-shadow:0 1.3rem 4rem rgba(8,14,11,.15);
+  backdrop-filter:blur(14px);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--eyebrow{
+  color:color-mix(in srgb,var(--mi-color-accent) 72%,white);
+  letter-spacing:.15em;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--display{
+  max-width:10.5ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(3.7rem,6.4vw,6.9rem);
+  font-weight:500;
+  line-height:.93;
+  letter-spacing:-.048em;
+  text-wrap:balance;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--body{
+  max-width:38rem;
+  color:rgba(255,255,255,.86);
+  font-size:clamp(1.02rem,1.25vw,1.15rem);
+  line-height:1.72;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-section__action{
+  min-height:48px;
+  border-radius:.75rem;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-section__action--primary{
+  background:#fff;
+  color:var(--mi-story-ink);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-section__action--secondary{
+  border-color:rgba(255,255,255,.46);
+}
+
+/* Gallery: cinematic image sequence with captions outside imagery. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-section--mosaic{
+  background:var(--mi-story-ivory);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-section--mosaic .mi-section__heading{
+  max-width:46rem;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-section--mosaic .mi-section__heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+  letter-spacing:-.035em;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic{
+  grid-auto-rows:7rem;
+  gap:clamp(.7rem,1.2vw,1rem);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:.85rem;
+  background:transparent;
+  transform:none;
+  overflow:visible;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(1){grid-column:span 8;grid-row:span 5}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(2){grid-column:span 4;grid-row:span 3;margin-top:3rem}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(3){grid-column:span 4;grid-row:span 3}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(4){grid-column:span 7;grid-row:span 4;margin-top:1.5rem}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(5){grid-column:span 5;grid-row:span 4}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card img,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-placeholder{
+  border-radius:.85rem;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card figcaption{
+  position:static;
+  padding:.75rem .1rem 0;
+  background:transparent;
+  color:var(--mi-story-ink);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card figcaption strong{
+  font-size:.93rem;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card figcaption span{
+  max-width:34rem;
+  color:var(--mi-story-muted);
+  opacity:1;
+  line-height:1.55;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card:hover img{transform:none}
+
+/* Human authority, with one strong portrait and little card chrome. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured{
+  background:var(--mi-story-sage);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-section__heading{
+  max-width:45rem;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-section__heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+  letter-spacing:-.03em;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-featured{
+  grid-template-columns:minmax(0,1.35fr) minmax(17rem,.65fr);
+  gap:clamp(2rem,5vw,5rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead{
+  grid-template-columns:minmax(18rem,.86fr) minmax(0,1.14fr);
+  gap:clamp(1.5rem,4vw,3.7rem);
+  align-items:end;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  aspect-ratio:4/5;
+  border-radius:.85rem;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead h3{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2rem,3.7vw,3.8rem);
+  font-weight:500;
+  line-height:.98;
+  letter-spacing:-.035em;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--compact{
+  grid-template-columns:1fr;
+  gap:.45rem;
+  padding:1.15rem 0;
+  border-bottom:1px solid var(--mi-story-line);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--compact img,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--compact .mi-team-avatar{display:none}
+
+/* Treatments are a quiet editorial index, not a tile wall. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services--spotlight{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services--spotlight .mi-content-heading{
+  max-width:46rem;
+  margin-inline:0;
+  text-align:left;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services--spotlight .mi-content-heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 clamp(1.5rem,4vw,4rem);
+  border-top:1px solid var(--mi-story-line);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.55rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-story-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-story-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight .mi-service-item:first-child p{color:var(--mi-story-muted)}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-service-item h3{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+  font-size:clamp(1.4rem,2.1vw,2rem);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-service-index{opacity:.55}
+
+/* Patient perspective gets one spacious editorial quote. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-proof--quote{
+  background:var(--mi-story-warm);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-proof--quote .mi-proof-quote{
+  grid-template-columns:minmax(12rem,.46fr) minmax(0,1.54fr);
+  gap:clamp(2rem,6vw,6rem);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-proof--quote blockquote p{
+  max-width:20ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2rem,4.8vw,4.8rem);
+  font-weight:500;
+  line-height:1.03;
+  letter-spacing:-.04em;
+}
+
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split{
+  background:var(--mi-story-ink);
+  color:#f6f2e9;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-cta-split{
+  grid-template-columns:minmax(0,1.3fr) auto;
+  gap:2rem;
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-heading h2{
+  max-width:15ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:#fff;
+  color:var(--mi-story-ink);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-conv-btn--secondary{
+  color:#fff;
+  border-color:rgba(255,255,255,.36);
+}
+
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-contact-struct--split{
+  background:var(--mi-story-ivory);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-contact-struct--split .mi-contact-split{
+  grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);
+  gap:clamp(2rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-contact-struct--split .mi-conv-heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form{
+  border:1px solid var(--mi-story-line);
+  border-radius:1rem;
+  background:var(--mi-color-surface);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form input,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form textarea,
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form select{
+  border-radius:.65rem;
+}
+
+/* Editorial footer closes the photo story with a large wordmark. */
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-footer--editorial{
+  background:#1d2924;
+  color:#f5f0e6;
+}
+[data-mi-layout-blueprint="dental-17-photo-story"] .mi-footer-wordmark{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4.2rem,12vw,10rem);
+  font-weight:500;
+  letter-spacing:-.055em;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-17-photo-story"]{
+    --mi-section-space:clamp(3.5rem,13vw,5rem);
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] *,
+  [data-mi-layout-blueprint="dental-17-photo-story"] *::before,
+  [data-mi-layout-blueprint="dental-17-photo-story"] *::after{min-width:0}
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-shell-navbar--floating{
+    position:sticky;
+    inset:auto;
+    top:0;
+    padding:.5rem;
+    background:color-mix(in srgb,var(--mi-story-ivory) 96%,transparent);
+    border-bottom:1px solid var(--mi-story-line);
+    backdrop-filter:blur(16px);
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-nav-float{
+    min-height:4.15rem;
+    padding:.45rem .55rem .45rem .8rem;
+    border:0;
+    border-radius:.8rem;
+    background:transparent;
+    color:var(--mi-story-ink);
+    box-shadow:none;
+    backdrop-filter:none;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-burger{
+    border-color:var(--mi-story-line);
+    background:var(--mi-color-surface);
+  }
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero__overlay{
+    min-height:min(70svh,43rem);
+    max-height:70svh;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive::after{
+    background:linear-gradient(180deg,rgba(16,28,22,.18) 0%,rgba(16,28,22,.3) 36%,rgba(16,28,22,.78) 100%);
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive>.mi-section__media img{
+    opacity:.88;
+    object-position:center 42%;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero__overlay{
+    align-items:end;
+    padding:clamp(4.5rem,18vw,6.2rem) 0 1rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-hero__copy{
+    width:100%;
+    max-width:100%;
+    padding:1rem;
+    gap:.75rem;
+    border-radius:.85rem;
+    background:rgba(18,30,24,.66);
+    backdrop-filter:blur(10px);
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--display{
+    max-width:12ch;
+    font-size:clamp(2.4rem,11vw,3.7rem);
+    line-height:.97;
+    overflow-wrap:anywhere;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--body{
+    font-size:.96rem;
+    line-height:1.58;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-section__actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-section__action{
+    width:100%;
+    min-height:50px;
+  }
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-auto-rows:auto;
+    gap:1.6rem;
+    margin-top:1.8rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    width:100%;
+    margin:0;
+    transform:none;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(odd) img,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(odd) .mi-gallery-placeholder{aspect-ratio:4/5;height:auto}
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(even) img,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-mosaic .mi-gallery-card:nth-child(even) .mi-gallery-placeholder{aspect-ratio:16/10;height:auto}
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card figcaption{position:static}
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/5;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-team--featured .mi-team-card--lead h3{
+    font-size:clamp(1.9rem,9vw,2.8rem);
+  }
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-services-spotlight .mi-service-item:first-child{
+    grid-column:auto;
+    min-height:0;
+    padding:1.2rem 0;
+  }
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-proof--quote .mi-proof-quote{
+    grid-template-columns:1fr;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.8rem,8.6vw,2.8rem);
+  }
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-conv-btn{
+    width:100%;
+    min-height:50px;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form input,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form textarea,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-functional-form select{font-size:16px}
+
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-footer-wordmark{
+    font-size:clamp(3rem,16vw,5rem);
+    line-height:.9;
+    overflow-wrap:anywhere;
+  }
+}
+
+@media(max-width:23.5rem){
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive,
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero__overlay{
+    min-height:min(68svh,39rem);
+    max-height:68svh;
+  }
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--display{font-size:clamp(2.15rem,10.5vw,3rem)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-gallery-card img{transition:none}
+}

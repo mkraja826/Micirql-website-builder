@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { industryPlannerContext } from "@micirql/design-engine";
 import { composeWebsite, type CompositionIntent } from "../apps/builder/app/composition-intelligence";
 import type { OnboardingProfile } from "../apps/builder/app/preset-ranking";
 
@@ -20,6 +21,9 @@ const scenarios: Array<{ id: string; expectedLayout: string; expectedIntent: Com
 function fingerprint(profile: OnboardingProfile) {
   const composition = composeWebsite(profile);
   const layout = composition.layoutCandidate;
+  const plannerContext = industryPlannerContext(profile.industry, profile.subindustry ?? undefined);
+  const plannerCandidates = plannerContext?.certifiedLayoutCandidates ?? [];
+  const plannerLayout = layout ? plannerCandidates.find((candidate) => candidate.id === layout.layout.id) : undefined;
   return {
     preset: composition.preset.id,
     intent: composition.intent,
@@ -28,6 +32,10 @@ function fingerprint(profile: OnboardingProfile) {
     layoutStatus: layout?.layout.status ?? "none",
     layoutScore: layout?.score ?? 0,
     layoutReasons: layout?.reasons ?? [],
+    layoutSectionIds: layout?.layout.sections.map((section) => section.id) ?? [],
+    plannerCandidateCount: plannerCandidates.length,
+    plannerLayoutStatus: plannerLayout?.status ?? "none",
+    plannerLayoutSectionIds: plannerLayout?.sections.map((section) => section.id) ?? [],
     sectionOrder: composition.sections.map((section) => section.family).join(">"),
     variants: composition.sections.map((section) => `${section.family}:${section.variant}`).join("|"),
     full: [composition.preset.id, composition.intent, composition.industryPack?.recipe.id ?? "none", layout?.layout.id ?? "none", composition.sections.map((section) => `${section.family}:${section.variant}`).join("|")].join("::"),
@@ -46,12 +54,13 @@ test("dental generation maintains meaningful composition and layout-selection di
   const uniqueLayouts = new Set(results.map((result) => result.layout)).size;
   const selectorMatches = results.filter((result) => result.layout === result.expectedLayout).length;
   const intentMatches = results.filter((result) => result.intent === result.expectedIntent).length;
+  const plannerContractMatches = results.filter((result) => JSON.stringify(result.plannerLayoutSectionIds) === JSON.stringify(result.layoutSectionIds)).length;
   const largestCluster = Math.max(...counts.values());
   const largestClusterShare = largestCluster / results.length;
 
   const summary = {
     generatedAt: new Date().toISOString(),
-    benchmark: "dental-composition-diversity-v3",
+    benchmark: "dental-composition-diversity-v4",
     samples: results.length,
     uniqueFull,
     uniqueRecipes,
@@ -60,6 +69,7 @@ test("dental generation maintains meaningful composition and layout-selection di
     uniqueLayouts,
     selectorMatches,
     intentMatches,
+    plannerContractMatches,
     largestCluster,
     largestClusterShare,
     results,
@@ -69,11 +79,13 @@ test("dental generation maintains meaningful composition and layout-selection di
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify(summary, null, 2), "utf8");
   await writeFile(path.join(outputDirectory, "summary.md"), [
-    "# MiCirql Dental Composition + Layout Selection",
+    "# MiCirql Dental Composition + Layout Planning",
     "",
     `- Samples: **${results.length}**`,
     `- Selector matches: **${selectorMatches}/${results.length}**`,
     `- Intent matches: **${intentMatches}/${results.length}**`,
+    `- Planner contract matches: **${plannerContractMatches}/${results.length}**`,
+    `- Certified planner candidates: **${results[0]?.plannerCandidateCount ?? 0}**`,
     `- Unique selected layouts: **${uniqueLayouts}**`,
     `- Unique full compositions: **${uniqueFull}**`,
     `- Unique industry recipes: **${uniqueRecipes}**`,
@@ -81,9 +93,9 @@ test("dental generation maintains meaningful composition and layout-selection di
     `- Unique variant patterns: **${uniqueVariantPatterns}**`,
     `- Largest identical cluster: **${largestCluster}/${results.length} (${Math.round(largestClusterShare * 100)}%)**`,
     "",
-    "| Scenario | Expected layout | Selected layout | Score | Expected intent | Intent | Recipe |",
+    "| Scenario | Expected layout | Selected layout | Score | Expected intent | Intent | Planner contract |",
     "| --- | --- | --- | ---: | --- | --- | --- |",
-    ...results.map((result) => `| ${result.id} | ${result.expectedLayout} | ${result.layout} | ${result.layoutScore} | ${result.expectedIntent} | ${result.intent} | ${result.recipe} |`),
+    ...results.map((result) => `| ${result.id} | ${result.expectedLayout} | ${result.layout} | ${result.layoutScore} | ${result.expectedIntent} | ${result.intent} | ${JSON.stringify(result.plannerLayoutSectionIds) === JSON.stringify(result.layoutSectionIds) ? "PASS" : "FAIL"} |`),
     "",
   ].join("\n"), "utf8");
 
@@ -92,10 +104,14 @@ test("dental generation maintains meaningful composition and layout-selection di
     expect(result.layoutScore, `${result.id} did not produce a strong enough layout match: ${JSON.stringify(result.layoutReasons)}`).toBeGreaterThanOrEqual(70);
     expect(result.layout, `${result.id} selected the wrong blueprint: ${JSON.stringify(result.layoutReasons)}`).toBe(result.expectedLayout);
     expect(result.intent, `${result.id} inferred the wrong narrative intent`).toBe(result.expectedIntent);
+    expect(result.plannerCandidateCount, `${result.id} did not receive the complete certified Dental planner library`).toBe(20);
+    expect(result.plannerLayoutStatus, `${result.id} planner context exposed a non-certified layout`).toBe("certified");
+    expect(result.plannerLayoutSectionIds, `${result.id} planner contract drifted from the selected blueprint`).toEqual(result.layoutSectionIds);
   }
 
   expect(selectorMatches, JSON.stringify(summary, null, 2)).toBe(results.length);
   expect(intentMatches, JSON.stringify(summary, null, 2)).toBe(results.length);
+  expect(plannerContractMatches, JSON.stringify(summary, null, 2)).toBe(results.length);
   expect(uniqueLayouts, "Specific Dental onboarding profiles should distribute across the curated library.").toBeGreaterThanOrEqual(8);
   expect(uniqueFull, JSON.stringify(summary, null, 2)).toBeGreaterThanOrEqual(8);
   expect(uniqueVariantPatterns, "Dental sites should not all use the same certified variant pattern.").toBeGreaterThanOrEqual(4);

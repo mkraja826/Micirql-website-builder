@@ -9,6 +9,7 @@ import "@micirql/sections/media-sections.css";
 import "@micirql/sections/palette-runtime.css";
 import "@micirql/sections/image-slots.css";
 import "@micirql/sections/premium-mobile.css";
+import "@micirql/sections/premium-output-system.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Preview",

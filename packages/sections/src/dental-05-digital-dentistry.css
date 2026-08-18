@@ -1,0 +1,388 @@
+/* Dental 05 — Digital Dentistry
+ * Technology-forward dental blueprint with a precise clinical UI language,
+ * structured workflow and deliberately calm responsive behavior.
+ */
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"]{
+  --mi-content-lg:80rem;
+  --mi-section-space:clamp(4.5rem,8vw,7.5rem);
+  --mi-digital-ink:#10282d;
+  --mi-digital-panel:color-mix(in srgb,var(--mi-color-primary) 7%,var(--mi-color-surface));
+  --mi-digital-line:color-mix(in srgb,var(--mi-color-primary) 18%,var(--mi-color-border));
+  --mi-digital-glow:color-mix(in srgb,var(--mi-color-accent) 20%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-navbar--classic{
+  position:relative;
+  z-index:5;
+  border-bottom:1px solid var(--mi-digital-line);
+  background:color-mix(in srgb,var(--mi-color-surface) 96%,transparent);
+  backdrop-filter:blur(18px);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-nav-row{min-height:4.9rem}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-brand{
+  font-weight:850;
+  letter-spacing:-.025em;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-links a{
+  font-size:.84rem;
+  letter-spacing:.035em;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-btn--primary{
+  border-radius:.7rem;
+  box-shadow:0 .65rem 1.8rem color-mix(in srgb,var(--mi-color-primary) 16%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered{
+  position:relative;
+  overflow:hidden;
+  text-align:left;
+  padding-top:clamp(4.6rem,8vw,7.3rem);
+  padding-bottom:clamp(4.8rem,8vw,7.4rem);
+  background:
+    linear-gradient(90deg,var(--mi-digital-line) 1px,transparent 1px),
+    linear-gradient(180deg,var(--mi-digital-line) 1px,transparent 1px),
+    radial-gradient(circle at 78% 18%,var(--mi-digital-glow),transparent 25rem),
+    linear-gradient(180deg,color-mix(in srgb,var(--mi-color-primary) 4%,var(--mi-color-surface)),var(--mi-color-surface));
+  background-size:4.5rem 4.5rem,4.5rem 4.5rem,auto,auto;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered>.mi-container{
+  display:grid;
+  grid-template-columns:minmax(0,.9fr) minmax(24rem,1.1fr);
+  gap:clamp(2.5rem,5vw,5.5rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-hero__copy{
+  margin:0;
+  max-width:42rem;
+  align-items:flex-start;
+  text-align:left;
+  gap:1.1rem;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:.55rem;
+  width:max-content;
+  padding:.45rem .65rem;
+  border:1px solid var(--mi-digital-line);
+  border-radius:.55rem;
+  background:color-mix(in srgb,var(--mi-color-surface) 86%,transparent);
+  color:var(--mi-color-primary);
+  letter-spacing:.14em;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--display{
+  max-width:10ch;
+  font-size:clamp(3.4rem,6vw,6.5rem);
+  line-height:.92;
+  letter-spacing:-.055em;
+  color:var(--mi-digital-ink);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--body{
+  max-width:36rem;
+  font-size:clamp(1.02rem,1.35vw,1.16rem);
+  line-height:1.7;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__actions{
+  justify-content:flex-start;
+  margin-top:.35rem;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media{
+  position:relative;
+  margin:0;
+  border:1px solid var(--mi-digital-line);
+  border-radius:1rem;
+  background:var(--mi-digital-panel);
+  box-shadow:0 2rem 5rem color-mix(in srgb,var(--mi-digital-ink) 12%,transparent);
+  overflow:hidden;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media::before{
+  content:"DIGITAL WORKFLOW";
+  position:absolute;
+  z-index:2;
+  top:.85rem;
+  left:.85rem;
+  padding:.42rem .58rem;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:.45rem;
+  background:rgba(5,24,29,.64);
+  color:#fff;
+  font:700 .68rem/1 system-ui,sans-serif;
+  letter-spacing:.12em;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media img{
+  aspect-ratio:4/3;
+  min-height:31rem;
+  object-position:center 34%;
+  filter:saturate(.9) contrast(1.02);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split{
+  background:var(--mi-digital-ink);
+  color:#effcfa;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-features-split{
+  grid-template-columns:minmax(16rem,.7fr) minmax(0,1.3fr);
+  gap:clamp(2.5rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-section__heading p{color:inherit}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-type--eyebrow{color:#72dcc6}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:3rem minmax(0,1fr);
+  gap:1rem;
+  padding:1.4rem 0;
+  border-color:rgba(239,252,250,.15);
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-index{
+  display:grid;
+  width:2.3rem;
+  height:2.3rem;
+  place-items:center;
+  border:1px solid rgba(114,220,198,.38);
+  border-radius:.55rem;
+  color:#72dcc6;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-item h3,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-item p{color:inherit}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-item p{opacity:.72}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight{
+  background:color-mix(in srgb,var(--mi-color-primary) 4%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-content-heading{
+  text-align:left;
+  margin-inline:0;
+  max-width:52rem;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-services-spotlight{
+  gap:.8rem;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item{
+  border-radius:.85rem;
+  border-color:var(--mi-digital-line);
+  background:var(--mi-color-surface);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item:first-child{
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  box-shadow:0 1.5rem 3.5rem color-mix(in srgb,var(--mi-color-primary) 18%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-timeline{
+  gap:.8rem;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node{
+  position:relative;
+  min-width:0;
+  border:1px solid var(--mi-digital-line);
+  border-radius:.85rem;
+  background:var(--mi-digital-panel);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node>span{
+  border-radius:.45rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured{
+  background:color-mix(in srgb,var(--mi-color-accent) 5%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead{
+  padding:1rem;
+  border:1px solid var(--mi-digital-line);
+  border-radius:1rem;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.75rem;
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof--quote{
+  background:var(--mi-color-surface);
+  border-top:1px solid var(--mi-digital-line);
+  border-bottom:1px solid var(--mi-digital-line);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof--quote blockquote p{
+  max-width:20ch;
+  color:var(--mi-digital-ink);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-cta-split{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:1rem;
+  background:var(--mi-digital-ink);
+  color:#effcfa;
+  box-shadow:0 1.8rem 4.2rem color-mix(in srgb,var(--mi-digital-ink) 18%,transparent);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:#72dcc6;
+  color:#10282d;
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-struct--split{
+  background:var(--mi-digital-panel);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-form{
+  border:1px solid var(--mi-digital-line);
+  border-radius:1rem;
+  box-shadow:0 1rem 2.5rem color-mix(in srgb,var(--mi-digital-ink) 7%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta{
+  background:var(--mi-digital-ink);
+  color:#effcfa;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta h2,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta strong{color:inherit}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta a,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta p,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta small{color:rgba(239,252,250,.72)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer--cta .mi-shell-cta{
+  background:#72dcc6;
+  color:#10282d;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"]{
+    --mi-section-space:clamp(3rem,12vw,4.4rem);
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-nav-row{min-height:4.2rem}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered{
+    padding-top:2.8rem;
+    padding-bottom:3.6rem;
+    background-size:3rem 3rem,3rem 3rem,auto,auto;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered>.mi-container{
+    display:flex;
+    flex-direction:column;
+    gap:1.45rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-hero__copy{
+    order:1;
+    width:100%;
+    max-width:none;
+    gap:.95rem;
+    text-align:left;
+    align-items:flex-start;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media{
+    order:2;
+    width:100%;
+    margin:0;
+    border-radius:.8rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media img{
+    width:100%;
+    min-height:0;
+    aspect-ratio:4/3;
+    object-position:center 34%;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media::before{
+    top:.65rem;
+    left:.65rem;
+    font-size:.62rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.55rem,12vw,3.65rem)!important;
+    line-height:.95!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__actions,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__action,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-features-split{
+    grid-template-columns:1fr;
+    gap:1.4rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-item--list{
+    grid-template-columns:2.5rem minmax(0,1fr);
+    gap:.8rem;
+    padding:1rem 0;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item:first-child{
+    min-height:0;
+    grid-column:auto;
+    padding:1.05rem;
+    border-radius:.75rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-timeline{
+    grid-template-columns:1fr;
+    gap:.65rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node{
+    min-width:0;
+    padding:1rem;
+    border-radius:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/3;
+    max-height:25rem;
+    object-fit:cover;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--compact{
+    grid-template-columns:3.6rem minmax(0,1fr);
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof--quote .mi-proof-quote,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.45rem,7vw,2.2rem);
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-cta-split{
+    padding:1.2rem;
+    border-radius:.8rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] img,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] video,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] iframe{max-width:100%}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] *{min-width:0}
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-container{width:min(100% - 1.25rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--eyebrow{width:auto;max-width:100%}
+}

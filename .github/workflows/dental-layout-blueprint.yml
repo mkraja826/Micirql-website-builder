@@ -84,29 +84,29 @@ jobs:
           const root = 'test-results';
           const expectedLayouts = 20;
           const expectedWidths = [360, 390, 430, 768, 1024, 1440];
+          const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
           const dirs = fs.existsSync(root)
-            ? fs.readdirSync(root).filter((name) => name.startsWith('dental-layout-blueprint-')).sort()
+            ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()
             : [];
           console.log('# Dental Blueprint QA');
           console.log('');
           console.log(`Playwright outcome: **${process.env.DENTAL_QA_OUTCOME || 'unknown'}**`);
-          console.log(`Reports produced: **${dirs.length}/${expectedLayouts}**`);
+          console.log(`Canonical reports produced: **${dirs.length}/${expectedLayouts}**`);
           console.log('');
           if (!dirs.length) {
-            console.log('No blueprint reports were produced.');
+            console.log('No canonical blueprint reports were produced.');
             process.exit(0);
           }
-          console.log('| Layout | Coverage | Viewports | Overflow-safe |');
-          console.log('| --- | ---: | ---: | --- |');
+          console.log('| Layout | Coverage | Metadata | Viewports | Overflow-safe |');
+          console.log('| --- | ---: | --- | ---: | --- |');
           for (const dir of dirs) {
-            const reportPath = path.join(root, dir, 'report.json');
-            if (!fs.existsSync(reportPath)) continue;
-            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const report = JSON.parse(fs.readFileSync(path.join(root, dir, 'report.json'), 'utf8'));
             const widths = report.results.map((item) => item.width);
             const widthComplete = expectedWidths.every((width) => widths.includes(width));
             const safe = report.results.length === expectedWidths.length && widthComplete && report.results.every((item) => item.passed);
             const coverage = report.coverage.complete && report.coverage.matched === report.coverage.expected;
-            console.log(`| ${report.layoutId} | ${report.coverage.matched}/${report.coverage.expected} | ${report.results.length}/${expectedWidths.length} | ${coverage && safe ? 'PASS' : 'FAIL'} |`);
+            const metadata = report.blueprintMetadataVerified === true;
+            console.log(`| ${report.layoutId} | ${report.coverage.matched}/${report.coverage.expected} | ${metadata ? 'PASS' : 'FAIL'} | ${report.results.length}/${expectedWidths.length} | ${coverage && metadata && safe ? 'PASS' : 'FAIL'} |`);
           }
           NODE
 
@@ -130,23 +130,22 @@ jobs:
           const expectedLayouts = 20;
           const expectedWidths = [360, 390, 430, 768, 1024, 1440];
           const root = 'test-results';
+          const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
           const dirs = fs.existsSync(root)
-            ? fs.readdirSync(root).filter((name) => name.startsWith('dental-layout-blueprint-')).sort()
+            ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()
             : [];
           const failures = [];
 
           if (process.env.DENTAL_QA_OUTCOME !== 'success') failures.push(`Playwright outcome was ${process.env.DENTAL_QA_OUTCOME || 'unknown'}`);
-          if (dirs.length !== expectedLayouts) failures.push(`Expected ${expectedLayouts} reports, found ${dirs.length}`);
+          if (dirs.length !== expectedLayouts) failures.push(`Expected ${expectedLayouts} canonical reports, found ${dirs.length}`);
 
           for (const dir of dirs) {
-            const reportPath = path.join(root, dir, 'report.json');
-            if (!fs.existsSync(reportPath)) {
-              failures.push(`${dir}: report.json missing`);
-              continue;
-            }
-            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const report = JSON.parse(fs.readFileSync(path.join(root, dir, 'report.json'), 'utf8'));
             if (!report.coverage?.complete || report.coverage?.matched !== report.coverage?.expected) {
               failures.push(`${report.layoutId}: incomplete section coverage ${report.coverage?.matched}/${report.coverage?.expected}`);
+            }
+            if (report.blueprintMetadataVerified !== true) {
+              failures.push(`${report.layoutId}: applied blueprint metadata was not verified`);
             }
             const widths = (report.results || []).map((item) => item.width);
             if (report.results?.length !== expectedWidths.length || expectedWidths.some((width) => !widths.includes(width))) {
@@ -162,5 +161,5 @@ jobs:
             process.exit(1);
           }
 
-          console.log(`Dental certification gate passed: ${expectedLayouts} layouts × ${expectedWidths.length} viewports.`);
+          console.log(`Dental certification gate passed: ${expectedLayouts} layouts × ${expectedWidths.length} viewports with blueprint metadata verified.`);
           NODE

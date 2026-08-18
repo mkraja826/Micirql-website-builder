@@ -49,17 +49,29 @@ export function selectGenomeDiverse<T>(
 
   for (const candidate of ranked) {
     if (selected.length >= limit) break;
-    const nearest = selected.length
-      ? Math.max(...selected.map((picked) => genomeSimilarity(candidate.genome, picked.genome)))
-      : 0;
+    const nearest = nearestSimilarity(candidate, selected);
     if (nearest <= maxSimilarity) selected.push(candidate);
   }
 
-  if (selected.length < limit) {
-    for (const candidate of ranked) {
-      if (selected.length >= limit) break;
-      if (!selected.includes(candidate)) selected.push(candidate);
+  // If the strict threshold cannot fill the requested set, keep maximizing distance
+  // from what is already selected instead of falling back to raw quality order.
+  const remaining = ranked.filter((candidate) => !selected.includes(candidate));
+  while (selected.length < limit && remaining.length) {
+    let bestIndex = 0;
+    let bestDistance = -Infinity;
+    let bestQuality = -Infinity;
+
+    for (let index = 0; index < remaining.length; index += 1) {
+      const candidate = remaining[index]!;
+      const distance = 1 - nearestSimilarity(candidate, selected);
+      if (distance > bestDistance || (distance === bestDistance && candidate.quality > bestQuality)) {
+        bestIndex = index;
+        bestDistance = distance;
+        bestQuality = candidate.quality;
+      }
     }
+
+    selected.push(remaining.splice(bestIndex, 1)[0]!);
   }
 
   return selected.map((candidate) => candidate.value);
@@ -79,4 +91,10 @@ export function genomeKey(genome: DesignGenome): string {
     genome.motion,
     genome.composition,
   ].join("|");
+}
+
+function nearestSimilarity<T>(candidate: GenomeCandidate<T>, selected: GenomeCandidate<T>[]): number {
+  return selected.length
+    ? Math.max(...selected.map((picked) => genomeSimilarity(candidate.genome, picked.genome)))
+    : 0;
 }

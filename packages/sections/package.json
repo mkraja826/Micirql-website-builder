@@ -13,7 +13,8 @@
     "./palette-runtime.css": "./src/palette-runtime.css",
     "./image-slots.css": "./src/image-slots.css",
     "./premium-mobile.css": "./src/premium-mobile.css",
-    "./dental-layout-blueprints.css": "./src/dental-layout-blueprints.css"
+    "./dental-layout-blueprints.css": "./src/dental-layout-blueprints.css",
+    "./dental-02-implant-atelier.css": "./src/dental-02-implant-atelier.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -1,0 +1,86 @@
+/* Shared responsive safety layer for curated Dental website blueprints.
+ *
+ * Dental layouts intentionally keep their own visual composition. This file only
+ * owns cross-layout containment rules where the shared shell or a reusable hero
+ * primitive reaches an unsafe breakpoint.
+ */
+
+/* Dense desktop navigation is not safe at tablet widths. Keep the desktop
+ * presentation above 1024px and use the existing mobile drawer through tablet.
+ */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-links,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-nav-groups,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-actions>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered>.mi-shell-links,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered__action>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-minimal-copy,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-navbar>.mi-container>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-row>.mi-shell-cta{
+    display:none!important;
+  }
+
+  [data-mi-layout-blueprint^="dental-"] .mi-mobile-nav{
+    display:block!important;
+    margin-left:auto;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-burger{
+    display:flex!important;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-mobile-drawer>.mi-shell-cta{
+    display:flex!important;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+}
+
+/* Complete Signature turns the generic split hero into a flex column on phone.
+ * The generic split primitive is center-aligned; without an explicit stretch the
+ * copy becomes intrinsic-width and is centered outside the narrow viewport.
+ */
+@media (max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__split{
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__copy{
+    width:100%!important;
+    max-width:100%!important;
+    align-self:stretch;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--eyebrow{
+    width:auto!important;
+    max-width:100%;
+    white-space:normal;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--display{
+    max-width:min(11ch,100%)!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--body,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__actions{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__action{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box!important;
+  }
+}
+
+/* Consultation Engine keeps conversion above the first media block at every
+ * supported phone width. The 430px viewport otherwise grows the vw-based title
+ * enough to push the primary action below the intended first-screen rhythm.
+ */
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-07-conversion-engine"] .mi-hero--centered .mi-type--display{
+    font-size:clamp(2.35rem,10.6vw,3.35rem)!important;
+  }
+}

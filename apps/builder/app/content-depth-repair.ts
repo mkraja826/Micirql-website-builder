@@ -144,11 +144,17 @@ function repairContext(site: Site): RepairContext {
 }
 
 function dentalFocus(subtype: string, textValue: string): string {
-  const value = `${subtype} ${textValue}`.toLowerCase();
-  if (/implant/.test(value)) return "Dental implant care";
-  if (/cosmetic|veneer|smile design/.test(value)) return "Cosmetic dentistry";
-  if (/orthodont|aligner|braces/.test(value)) return "Orthodontic care";
-  if (/endodont|root canal/.test(value)) return "Root canal and endodontic care";
+  const declared = subtype.trim().toLowerCase();
+  if (/implant/.test(declared)) return "Dental implant care";
+  if (/cosmetic|veneer|smile design/.test(declared)) return "Cosmetic dentistry";
+  if (/orthodont|aligner|braces/.test(declared)) return "Orthodontic care";
+  if (/endodont|root canal/.test(declared)) return "Root canal and endodontic care";
+  if (/dental|dentist|dentistry|general/.test(declared)) return "Dental care";
+  const fallback = textValue.toLowerCase();
+  if (/implant/.test(fallback)) return "Dental implant care";
+  if (/cosmetic|veneer|smile design/.test(fallback)) return "Cosmetic dentistry";
+  if (/orthodont|aligner|braces/.test(fallback)) return "Orthodontic care";
+  if (/endodont|root canal/.test(fallback)) return "Root canal and endodontic care";
   return "Dental care";
 }
 

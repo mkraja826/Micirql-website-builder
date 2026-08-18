@@ -152,27 +152,48 @@ export async function runDentalBlueprintCertification(args: {
         const rect = node.getBoundingClientRect();
         return rect.width > 0 && (rect.left < rootRect.left - 1 || rect.right > rootRect.right + 1);
       };
+      const isEditorControl = (node: Element) => Boolean(node.closest("[data-mi-canvas-action], .mi-editor-insert-zone, .mi-editor-canvas-toolbar"));
+      const websiteControls = [...root.querySelectorAll("a,button,input,textarea,select")].filter((node) => !isEditorControl(node));
+      const overflowingControlNodes = websiteControls.filter(outside);
       return {
         cssViewportWidth: window.innerWidth,
         clientWidth: root.clientWidth,
         scrollWidth: root.scrollWidth,
         overflowingSections: [...root.querySelectorAll("section,header,footer")].filter(outside).length,
-        overflowingControls: [...root.querySelectorAll("a,button,input,textarea,select")].filter(outside).length,
+        overflowingControls: overflowingControlNodes.length,
+        overflowingControlDetails: overflowingControlNodes.slice(0, 8).map((node) => ({
+          tag: node.tagName.toLowerCase(),
+          className: node.getAttribute("class") ?? "",
+          text: (node.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
+          ariaLabel: node.getAttribute("aria-label") ?? "",
+        })),
         clippedMedia: [...root.querySelectorAll("img,video,iframe")].filter(outside).length,
       };
     });
 
-    const passed = metrics.cssViewportWidth === width && metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
-    expect(metrics.cssViewportWidth, `${width}px CSS viewport mismatch`).toBe(width);
-    expect(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
-    expect(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
-    expect(metrics.overflowingControls, `${width}px control overflow`).toBe(0);
-    expect(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
+    let mobileCheckPassed = true;
+    let mobileCheckError: string | undefined;
+    if (width <= 430 && args.mobileCheck) {
+      try {
+        await args.mobileCheck({ page: args.page, root: document, width });
+      } catch (caught) {
+        mobileCheckPassed = false;
+        mobileCheckError = caught instanceof Error ? caught.message : String(caught);
+      }
+    }
 
-    if (width <= 430 && args.mobileCheck) await args.mobileCheck({ page: args.page, root: document, width });
+    const corePassed = metrics.cssViewportWidth === width && metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
+    const passed = corePassed && mobileCheckPassed;
+
+    expect.soft(metrics.cssViewportWidth, `${width}px CSS viewport mismatch`).toBe(width);
+    expect.soft(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
+    expect.soft(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
+    expect.soft(metrics.overflowingControls, `${width}px website control overflow: ${JSON.stringify(metrics.overflowingControlDetails)}`).toBe(0);
+    expect.soft(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
+    if (!mobileCheckPassed) expect.soft(mobileCheckPassed, `${width}px mobile composition check failed: ${mobileCheckError}`).toBeTruthy();
 
     await captureWebsiteEvidence(args.page, document, path.join(output, `${width}.png`));
-    results.push({ width, viewport, ...metrics, passed });
+    results.push({ width, viewport, ...metrics, mobileCheckPassed, ...(mobileCheckError ? { mobileCheckError } : {}), passed });
   }
 
   await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, blueprintCssScopeApplied: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");

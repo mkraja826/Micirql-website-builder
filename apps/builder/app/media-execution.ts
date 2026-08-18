@@ -41,8 +41,8 @@ function canGenerate(d:SectionVisualDecision){
  if(d.family!=="hero"||d.role!=="hero-photo")return false;
  const subject=d.subject.toLowerCase();
  const dental=/dental|dentist|dentistry|orthodont|endodont|implant|smile-design/.test(subject);
- const claimsRealBusiness=/verified|real clinic|real team|supplied by the business|supplied by the clinic|actual clinic/.test(subject);
- return dental&&!claimsRealBusiness;
+ const explicitlyGeneric=/generic|non-identifying|avoid identifiable|no synthetic|without dramatic/.test(subject);
+ return dental&&explicitlyGeneric;
 }
 function prompt(d:SectionVisualDecision){
  const tags=d.preferredTags?.length?` Preferred certified cues: ${d.preferredTags.join(", ")}.`:"";

@@ -1,4 +1,4 @@
-import { recommendLayoutCandidates, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
+import { recommendWebsiteLayouts, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
 import { resolvePremiumCertifiedVariant, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import { selectIndustryPack, type IndustryPackSelection } from "./industry-pack-intelligence";
@@ -29,7 +29,7 @@ export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
   ...(priorities.length?{priorities}:{}),
   ...(profile.style_tags?.length?{styleTags:profile.style_tags}:{}),
  };
- const layoutCandidate=recommendLayoutCandidates(layoutInput,1)[0]??null;
+ const layoutCandidate=recommendWebsiteLayouts(layoutInput,1)[0]??null;
  const available=preset.variants;
  const recipeFamilies=industryPack?industryPack.recipe.sections.map(recipeFamily).filter((f):f is SectionFamily=>Boolean(f&&available[f]!=null)):[];
  const base=recipeFamilies.length>=3?recipeFamilies:FLOWS[intent];
@@ -40,7 +40,7 @@ export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
  const ctaIndex=families.indexOf("cta");if(ctaIndex>=0&&families.includes("contact")&&ctaIndex!==families.length-2){families.splice(ctaIndex,1);families.splice(families.length-1,0,"cta");}
  const sections=families.slice(0,9).map((family,i)=>({family,variant:variantFor(profile,preset,intent,family),purpose:PURPOSE[family]||"Support the page narrative",priority:(i===0||family==="cta"||family==="contact"?"required":"recommended") as "required"|"recommended"}));
  const changed=sections.filter(section=>section.variant!==available[section.family]);
- return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[`Layout candidate ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100 (${layoutCandidate.layout.status}; applies only after certification and full section coverage)`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
+ return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[`Certified layout ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100; applies after full section coverage`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
 }
 
 function recipeFamily(value:string):SectionFamily|undefined{
@@ -56,16 +56,18 @@ function recipeFamily(value:string):SectionFamily|undefined{
 function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested);}
 function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance/.test(text))return 1;return preferred;}
 function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{
- const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),...(profile.services||[])].filter(Boolean).join(" ").toLowerCase();
+ const primaryText=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();
+ const serviceText=(profile.services||[]).filter(Boolean).join(" ").toLowerCase();
+ const text=`${primaryText} ${serviceText}`.trim();
  const isDental=DENTAL_IDS.has(id)||/dental|dentist|dentistry|orthodont|endodont|implant|smile design|root canal|tooth|oral care/.test(text);
  if(isDental){
   if(/emergency|urgent|tooth pain|broken tooth|same.?day|contact clinic|call clinic/.test(text))return"conversion";
-  if(/learn|education|educational|explain treatment|treatment process|how it works|endodont|root canal/.test(text))return"education";
-  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(text))return"showcase";
+  if(/learn|education|educational|explain treatment|treatment process|how it works/.test(primaryText))return"education";
+  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(primaryText))return"showcase";
  }
  if(/demo|trial|waitlist|download|product|platform|api/.test(text)||PRODUCT_IDS.has(id))return"product";
- if(/admission|enrol|learn|course|training/.test(text)||EDUCATION_IDS.has(id))return"education";
- if(/portfolio|gallery|showcase|projects|collection/.test(text)||SHOWCASE_IDS.has(id))return"showcase";
+ if(/admission|enrol|learn|course|training/.test(primaryText)||EDUCATION_IDS.has(id))return"education";
+ if(/portfolio|gallery|showcase|projects|collection/.test(primaryText)||SHOWCASE_IDS.has(id))return"showcase";
  if(/enterprise|institution|global|manufactur|infrastructure|group company/.test(text)||INSTITUTIONAL_IDS.has(id))return"institutional";
  if(/trust|credib|doctor|clinic|law|finance|insurance/.test(text)||TRUST_IDS.has(id))return"trust";
  return"conversion";

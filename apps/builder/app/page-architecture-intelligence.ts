@@ -1,4 +1,5 @@
 import { siteSchema, type Site } from "@micirql/schema";
+import { FAMILY_CODES, sectionDesignId, type SectionFamily as LibrarySectionFamily, type SectionVariant } from "@micirql/sections";
 
 export type PageArchitectureInput = {
   industry: string;
@@ -37,6 +38,17 @@ const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
   blog: ["navbar", "hero", "features", "services", "process", "cta", "footer"],
   faq: ["navbar", "hero", "features", "process", "cta", "contact", "footer"],
   contact: ["navbar", "hero", "contact", "cta", "footer"],
+};
+
+const PAGE_VARIANTS: Record<Exclude<PageRole, "home">, Partial<Record<SectionFamily, SectionVariant>>> = {
+  about: { hero: 3, about: 4, features: 2, team: 2, testimonials: 4, cta: 2 },
+  services: { hero: 2, services: 4, features: 3, process: 2, testimonials: 2, cta: 4 },
+  "service-detail": { hero: 4, about: 2, features: 4, process: 4, testimonials: 3, cta: 5, contact: 2 },
+  team: { hero: 5, team: 4, about: 3, testimonials: 2, cta: 3 },
+  gallery: { hero: 2, gallery: 4, testimonials: 5, about: 2, cta: 4 },
+  blog: { hero: 3, features: 5, services: 2, process: 3, cta: 2 },
+  faq: { hero: 4, features: 2, process: 5, cta: 3, contact: 4 },
+  contact: { hero: 5, contact: 4, cta: 2 },
 };
 
 export function planPageArchitecture(input: PageArchitectureInput): PageArchitecturePlan {
@@ -84,7 +96,7 @@ export function planPageArchitecture(input: PageArchitectureInput): PageArchitec
       "Sitemap derived from the brief instead of starter-page defaults.",
       services.length ? "Services are represented as a hub and, where useful, dedicated conversion/search pages." : "No unstated service pages were invented.",
       healthcare ? "Healthcare trust architecture includes team and FAQ pages by default." : "Industry-neutral trust architecture applied.",
-      "Each secondary page receives a purpose-specific section composition instead of inheriting the homepage skeleton.",
+      "Each secondary page receives a purpose-specific section composition and component-variant profile instead of inheriting the homepage design.",
     ],
   };
 }
@@ -108,7 +120,7 @@ export function applyPageArchitecture(site: Site, plan: PageArchitecturePlan): S
       ...(pagePlan.primaryKeyword ? { primaryKeyword: pagePlan.primaryKeyword } : {}),
     };
     if (pagePlan.role !== "home") {
-      base.sections = composePageSections(existing?.sections ?? [], home.sections, pagePlan.role, pagePlan.purpose);
+      base.sections = composePageSections(existing?.sections ?? [], home.sections, pagePlan.role, pagePlan.purpose, next.theme.family);
     }
     return base;
   });
@@ -124,7 +136,7 @@ export function applyPageArchitecture(site: Site, plan: PageArchitecturePlan): S
   return siteSchema.parse(next);
 }
 
-function composePageSections(existingSections: Site["pages"][number]["sections"], homeSections: Site["pages"][number]["sections"], role: Exclude<PageRole, "home">, purpose: string) {
+function composePageSections(existingSections: Site["pages"][number]["sections"], homeSections: Site["pages"][number]["sections"], role: Exclude<PageRole, "home">, purpose: string, themeFamily: Site["theme"]["family"]) {
   const pool = [...existingSections, ...homeSections];
   const byFamily = new Map<SectionFamily, Site["pages"][number]["sections"][number]>();
   for (const section of pool) {
@@ -132,10 +144,14 @@ function composePageSections(existingSections: Site["pages"][number]["sections"]
     if (family && !byFamily.has(family)) byFamily.set(family, section);
   }
   const selected = PAGE_RECIPES[role]
-    .map((family) => byFamily.get(family))
-    .filter((section): section is Site["pages"][number]["sections"][number] => Boolean(section))
-    .map((section) => {
+    .map((family) => ({ family, section: byFamily.get(family) }))
+    .filter((entry): entry is { family: SectionFamily; section: Site["pages"][number]["sections"][number] } => Boolean(entry.section))
+    .map(({ family, section }) => {
       const next = structuredClone(section);
+      const variant = PAGE_VARIANTS[role][family];
+      if (variant && isLibraryFamily(family)) {
+        next.component = { componentId: sectionDesignId(themeFamily, family, variant), version: next.component.version };
+      }
       next.props = { ...next.props, pagePurpose: purpose, pageRole: role };
       return next;
     });
@@ -143,6 +159,10 @@ function composePageSections(existingSections: Site["pages"][number]["sections"]
   const fallback = homeSections.map((section) => structuredClone(section));
   for (const section of fallback) section.props = { ...section.props, pagePurpose: purpose, pageRole: role };
   return fallback;
+}
+
+function isLibraryFamily(family: SectionFamily): family is LibrarySectionFamily {
+  return Object.prototype.hasOwnProperty.call(FAMILY_CODES, family);
 }
 
 function sectionFamily(componentId: string): SectionFamily | undefined {

@@ -184,9 +184,9 @@ export function FirstBuildReview({
           <strong>{direction.name}</strong>
           <small>{direction.reasons.slice(0, 2).join(" · ") || direction.description}</small>
         </div>
-        <button className={styles.previewButton} type="button" onClick={() => setActiveId(direction.id)} aria-label={`Preview ${direction.name}`}>
+        <div className={styles.previewButton} aria-label={`${direction.name} design preview`}>
           <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
-        </button>
+        </div>
         <div className={styles.utilityActions}>
           <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
           <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>

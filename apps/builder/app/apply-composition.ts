@@ -16,6 +16,26 @@ type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent"
 export function applyComposition(site: Site, composition: WebsiteComposition, quality?: GenerationQualityProfile): Site {
   const next = structuredClone(site);
   next.theme = mergeThemeKeepingBrand(next, composition, quality);
+  const candidate = composition.layoutCandidate;
+
+  // A complete certified full-site blueprint is more authoritative than the
+  // generic composition pass. Check coverage before generic family filtering or
+  // singleton de-duplication can discard a section the blueprint explicitly
+  // requires (for example separate trust and proof testimonial blocks).
+  if (candidate?.layout.status === "certified") {
+    const layoutReady = structuredClone(next);
+    for (const page of layoutReady.pages) {
+      if (!page.sections.length) continue;
+      page.sections = applyIndustryPresentation(page.sections, composition);
+    }
+    const preparedSite = siteSchema.parse(layoutReady);
+    const coverage = layoutCoverage(preparedSite, candidate.layout);
+    if (coverage.complete) {
+      const laidOutSite = applyWebsiteLayoutBlueprint(preparedSite, candidate.layout);
+      return applyPremiumCorrectivePass(laidOutSite).site;
+    }
+  }
+
   for (const page of next.pages) {
     if (!page.sections.length) continue;
     const buckets = new Map<SectionFamily, typeof page.sections>(), shellStart:typeof page.sections=[], shellEnd:typeof page.sections=[], unknown:typeof page.sections=[];
@@ -36,7 +56,6 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
   }
   const composedSite = siteSchema.parse(next);
   const correctedSite = applyPremiumCorrectivePass(composedSite).site;
-  const candidate = composition.layoutCandidate;
   if (candidate?.layout.status === "certified") {
     const coverage = layoutCoverage(correctedSite, candidate.layout);
     if (coverage.complete) return applyWebsiteLayoutBlueprint(correctedSite, candidate.layout);

@@ -2,8 +2,8 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:dental-visual-comparison|dental-top20-premium-gate)\.spec\.ts/,
-  timeout: 180_000,
+  testMatch: /(?:dental-visual-comparison|dental-top20-premium-gate|dental-top20-visual-evidence)\.spec\.ts/,
+  timeout: 240_000,
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

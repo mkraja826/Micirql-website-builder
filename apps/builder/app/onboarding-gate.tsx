@@ -55,28 +55,44 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
     setBuilding(true);
     setError("");
     try {
+      const structuredBrief = {
+        workspaceId: context.workspaceId,
+        siteId: context.siteId,
+        businessName: value.businessName,
+        industry: value.industry,
+        subindustry: value.subindustry,
+        location: value.location,
+        services: commaList(value.services),
+        goals: value.goals,
+        styleTags: value.styleTags,
+        requiredCapabilities: value.requiredCapabilities,
+        languages: commaList(value.languages),
+        notes: value.notes,
+        logoUrl: value.logoUrl,
+        brandColors: value.brandColors,
+      };
       const response = await fetch("/api/onboarding", {
         method: "POST",
         headers: { ...authHeaders, "content-type": "application/json" },
-        body: JSON.stringify({
-          workspaceId: context.workspaceId,
-          siteId: context.siteId,
-          businessName: value.businessName,
-          industry: value.industry,
-          subindustry: value.subindustry,
-          location: value.location,
-          services: commaList(value.services),
-          goals: value.goals,
-          styleTags: value.styleTags,
-          requiredCapabilities: value.requiredCapabilities,
-          languages: commaList(value.languages),
-          notes: value.notes,
-          logoUrl: value.logoUrl,
-          brandColors: value.brandColors,
-        }),
+        body: JSON.stringify(structuredBrief),
       });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
+
+      // The base build remains valid even if this enrichment pass fails. The
+      // architecture endpoint rewrites the sitemap from the brief and then runs
+      // grounded content generation over the resulting page set.
+      try {
+        const architectureResponse = await fetch("/api/onboarding/architect", {
+          method: "POST",
+          headers: { ...authHeaders, "content-type": "application/json" },
+          body: JSON.stringify(structuredBrief),
+        });
+        if (!architectureResponse.ok) console.error("MiCirql page architecture enrichment failed", await architectureResponse.text());
+      } catch (architectureError) {
+        console.error("MiCirql page architecture enrichment failed; keeping base build.", architectureError);
+      }
+
       const nextProfile = (payload.profile ?? null) as OnboardingProfile | null;
       setProfile(nextProfile);
       if (nextProfile) {

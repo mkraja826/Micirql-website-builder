@@ -24,6 +24,13 @@ function viewportFor(width: number) {
   return "desktop";
 }
 
+async function selectViewport(page: Page, viewport: "mobile" | "tablet" | "desktop") {
+  const control = page.locator(".viewport-switcher button").filter({ hasText: new RegExp(`^${viewport}$`, "i") });
+  await expect(control).toHaveCount(1);
+  await control.evaluate((element) => (element as HTMLButtonElement).click());
+  await expect(page.locator(`.site-preview.viewport-${viewport}`)).toBeVisible();
+}
+
 async function installRoutes(page: Page, site: Site, profile: Profile) {
   const now = new Date().toISOString();
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
@@ -58,7 +65,7 @@ export async function runDentalBlueprintCertification(args: {
 
   for (const width of DENTAL_BLUEPRINT_TARGETS) {
     const viewport = viewportFor(width);
-    await args.page.getByRole("button", { name: viewport, exact: true }).click();
+    await selectViewport(args.page, viewport);
     const sitePreview = args.page.locator(`.site-preview.viewport-${viewport}`);
     await expect(sitePreview).toBeVisible();
     await sitePreview.evaluate((element, targetWidth) => {

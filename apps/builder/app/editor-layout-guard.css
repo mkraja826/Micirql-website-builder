@@ -94,3 +94,40 @@
     padding-inline: 18px;
   }
 }
+
+/*
+ * Playwright visual-certification capture guard.
+ *
+ * The QA harness temporarily adds html.mi-qa-capture and hides editor chrome.
+ * Keep the actual preview ancestry visible with stronger specificity so an
+ * element screenshot composites against the preview's white/theme background
+ * instead of the editor's #0a0a0c canvas outside the current browser viewport.
+ * This selector is inert in the product because the class exists only in QA.
+ */
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 * {
+  visibility: visible !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-topbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .canvas-toolbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-rail,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-inspector,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mobile-editor-bar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mobile-editor-nav,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .viewport-switcher,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .draft-conflict,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 [data-mi-canvas-action],
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mi-editor-insert-zone,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mi-editor-canvas-toolbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .renderer-preview-warning {
+  display: none !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .site-preview {
+  background: var(--mi-background, #ffffff) !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .renderer-preview-document {
+  background: var(--mi-background, #ffffff) !important;
+}

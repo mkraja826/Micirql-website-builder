@@ -1,0 +1,400 @@
+/* Dental 13 — Implant Results
+ * Evidence-led implant blueprint built around transparent case presentation,
+ * technology/process authority and a disciplined mobile evidence flow.
+ */
+
+[data-mi-layout-blueprint="dental-13-implant-results"]{
+  --mi-content-lg:80rem;
+  --mi-section-space:clamp(4.5rem,8vw,7.3rem);
+  --mi-implant-ink:#112e2a;
+  --mi-implant-emerald:color-mix(in srgb,var(--mi-color-primary) 11%,#edf7f3);
+  --mi-implant-navy:color-mix(in srgb,var(--mi-color-secondary) 92%,#10282f);
+  --mi-implant-line:color-mix(in srgb,var(--mi-color-primary) 20%,var(--mi-color-border));
+  --mi-implant-soft:color-mix(in srgb,var(--mi-color-surface) 90%,#f6faf8);
+}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-navbar--classic{
+  position:relative;
+  z-index:8;
+  border-bottom:1px solid var(--mi-implant-line);
+  background:color-mix(in srgb,var(--mi-color-surface) 96%,transparent);
+  backdrop-filter:blur(16px);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-nav-row{min-height:4.9rem}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-brand{font-weight:900;letter-spacing:-.03em}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-btn--primary{
+  border-radius:.72rem;
+  box-shadow:0 .65rem 1.8rem color-mix(in srgb,var(--mi-color-primary) 16%,transparent);
+}
+
+/* Hero: evidence media first, then the decision copy. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.4rem,7.5vw,7rem);
+  padding-bottom:clamp(4.7rem,8vw,7.5rem);
+  background:
+    radial-gradient(circle at 12% 18%,color-mix(in srgb,var(--mi-color-accent) 16%,transparent),transparent 22rem),
+    linear-gradient(180deg,var(--mi-implant-soft),var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__split{
+  grid-template-columns:minmax(22rem,1.08fr) minmax(0,.92fr);
+  gap:clamp(2.4rem,5vw,5.3rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media{
+  order:1;
+  position:relative;
+  margin:0;
+  overflow:hidden;
+  border:1px solid var(--mi-implant-line);
+  border-radius:1.25rem;
+  box-shadow:0 1.7rem 4.2rem color-mix(in srgb,var(--mi-implant-ink) 12%,transparent);
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media::after{
+  content:"Clinical planning imagery";
+  position:absolute;
+  left:1rem;
+  bottom:1rem;
+  padding:.48rem .68rem;
+  border-radius:.55rem;
+  background:rgba(17,46,42,.82);
+  color:#fff;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  backdrop-filter:blur(8px);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media img{
+  aspect-ratio:4/3;
+  min-height:31rem;
+  object-position:center 42%;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__copy{
+  order:2;
+  max-width:43rem;
+  gap:1.05rem;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--eyebrow{
+  display:inline-flex;
+  width:max-content;
+  padding:.45rem .68rem;
+  border:1px solid var(--mi-implant-line);
+  border-radius:.55rem;
+  background:var(--mi-color-surface);
+  color:var(--mi-color-primary);
+  letter-spacing:.12em;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--display{
+  max-width:10.5ch;
+  font-size:clamp(3.35rem,5.8vw,6rem);
+  line-height:.93;
+  letter-spacing:-.052em;
+  color:var(--mi-implant-ink);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--body{
+  max-width:37rem;
+  font-size:clamp(1.02rem,1.35vw,1.16rem);
+  line-height:1.68;
+}
+
+/* Trust metrics are evidence framing, never fabricated success statistics. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics{
+  background:var(--mi-implant-navy);
+  color:#f4fbf8;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics>.mi-container{
+  display:grid;
+  grid-template-columns:minmax(13rem,.48fr) minmax(0,1.52fr);
+  gap:clamp(1.5rem,4vw,4rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-content-heading,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-content-heading h2,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-content-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{
+  margin-top:0;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:.75rem;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article{
+  min-width:0;
+  padding:1rem;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:.8rem;
+  background:rgba(255,255,255,.045);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article>span{color:color-mix(in srgb,var(--mi-color-accent) 78%,white)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics p{color:rgba(244,251,248,.72)}
+
+/* Evidence gallery: captions stay outside images and case pairs remain explicit. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-section--mosaic{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-section--mosaic .mi-section__heading{max-width:48rem}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic{
+  grid-auto-rows:7rem;
+  gap:clamp(.7rem,1.1vw,1rem);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:1rem;
+  background:var(--mi-implant-soft);
+  transform:none;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card:nth-child(1),
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card:nth-child(2){grid-column:span 6;grid-row:span 4}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card:nth-child(3){grid-column:span 7;grid-row:span 4}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card:nth-child(4){grid-column:span 5;grid-row:span 4}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card img{transition:none}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card:hover img{transform:none}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card figcaption{
+  position:static;
+  inset:auto;
+  padding:.9rem 0 0;
+  background:transparent;
+  color:var(--mi-implant-ink);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card figcaption strong{
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  padding:.35rem .5rem;
+  border:1px solid var(--mi-implant-line);
+  border-radius:.42rem;
+  background:var(--mi-color-surface);
+  font-size:.8rem;
+  letter-spacing:.04em;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card figcaption span{
+  color:var(--mi-color-text-muted);
+  opacity:1;
+  line-height:1.5;
+}
+
+/* Treatment choices are secondary to evidence and clinical assessment. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services--spotlight{background:var(--mi-implant-emerald)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services--spotlight .mi-content-heading{max-width:48rem}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight{gap:.85rem}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item{
+  min-height:11rem;
+  padding:1.25rem;
+  border:1px solid var(--mi-implant-line);
+  border-radius:1rem;
+  box-shadow:none;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child{
+  min-height:14rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child p{color:color-mix(in srgb,var(--mi-color-primary-contrast) 76%,transparent)}
+
+/* Technology and journey alternate dark/light authority. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split{
+  background:var(--mi-implant-navy);
+  color:#f4fbf8;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-section__heading p{color:inherit}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-features-split{gap:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:2.4rem minmax(0,1fr);
+  border-color:rgba(255,255,255,.16);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-feature-item--list h3,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-feature-item--list p{color:inherit}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-feature-index{color:color-mix(in srgb,var(--mi-color-accent) 82%,white)}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline{background:var(--mi-color-surface)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-timeline{gap:.85rem}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-node{
+  min-width:0;
+  padding:1.25rem;
+  border:1px solid var(--mi-implant-line);
+  border-radius:.95rem;
+  background:linear-gradient(180deg,var(--mi-color-surface),var(--mi-implant-soft));
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-node>span{
+  display:inline-grid;
+  place-items:center;
+  width:2.2rem;
+  height:2.2rem;
+  border-radius:999px;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  font-weight:850;
+}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured{background:var(--mi-implant-emerald)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead{
+  padding:1rem;
+  border:1px solid var(--mi-implant-line);
+  border-radius:1rem;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{border-radius:.8rem}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--quote{background:var(--mi-color-surface)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--quote blockquote{
+  padding:clamp(1.4rem,3vw,2.5rem);
+  border-left:4px solid var(--mi-color-primary);
+  background:var(--mi-implant-soft);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--quote blockquote p{font-size:clamp(1.7rem,3.6vw,3rem)}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-cta-split{
+  padding:clamp(1.6rem,4vw,3rem);
+  border-radius:1.2rem;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  box-shadow:0 1.5rem 3.8rem color-mix(in srgb,var(--mi-color-primary) 20%,transparent);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-btn--primary{background:#fff;color:var(--mi-color-primary)}
+
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-struct--split{background:var(--mi-implant-soft)}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-form{
+  border-radius:1rem;
+  box-shadow:0 1rem 2.7rem color-mix(in srgb,var(--mi-implant-ink) 7%,transparent);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-footer--cta{
+  background:var(--mi-implant-navy);
+  color:#f4fbf8;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-footer--cta a,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-footer--cta p,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-shell-footer--cta small{color:rgba(244,251,248,.76)}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"]{--mi-section-space:clamp(3.1rem,12vw,4.5rem)}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-nav-row{min-height:4.25rem}
+
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first{padding-top:2.7rem;padding-bottom:3.7rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__split{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media{
+    order:2;
+    width:100%;
+    border-radius:.95rem;
+    box-shadow:none;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media::after{
+    position:static;
+    display:block;
+    width:100%;
+    box-sizing:border-box;
+    border-radius:0;
+    background:var(--mi-implant-navy);
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media img{
+    min-height:0;
+    aspect-ratio:4/3;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__copy{
+    order:1;
+    gap:.95rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.55rem,11.5vw,3.75rem)!important;
+    line-height:.96!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__actions,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__action,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics>.mi-container{grid-template-columns:1fr;gap:1.2rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.65rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article{padding:.9rem}
+
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-auto-rows:auto;
+    gap:1.15rem;
+    overflow:visible;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    margin:0;
+    transform:none!important;
+    overflow:visible;
+    border-radius:.85rem;
+    background:transparent;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card img,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-placeholder{
+    height:auto;
+    aspect-ratio:4/3;
+    border-radius:.85rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card figcaption{
+    position:static!important;
+    padding:.7rem 0 0;
+    background:transparent!important;
+  }
+
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight{grid-template-columns:1fr;gap:.7rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child{
+    grid-column:auto;
+    min-height:0;
+    padding:1rem;
+    border-radius:.85rem;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-features-split{grid-template-columns:1fr;gap:1.4rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-features--split .mi-feature-item--list{grid-template-columns:2.25rem minmax(0,1fr);padding:1rem 0}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-timeline{grid-template-columns:1fr;gap:.7rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-node{padding:1rem;border-radius:.85rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead{grid-template-columns:1fr}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead{padding:.8rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{aspect-ratio:4/5}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-cta-split{grid-template-columns:1fr;padding:1.25rem;border-radius:1rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-struct--split .mi-contact-split{grid-template-columns:1fr;gap:1.35rem}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-form input,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-form textarea,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-contact-form select{font-size:16px}
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{grid-template-columns:1fr}
+}
+
+@media(prefers-reduced-motion:reduce){
+  [data-mi-layout-blueprint="dental-13-implant-results"] *{scroll-behavior:auto!important}
+}

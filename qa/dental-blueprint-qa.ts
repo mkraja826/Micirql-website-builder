@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import type { Site } from "@micirql/schema";
 import { findWebsiteLayout } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
@@ -16,7 +16,7 @@ type Profile = {
   services: string[];
 };
 
-type MobileCheck = (args: { page: Page; root: ReturnType<Page["locator"]>; width: number }) => Promise<void>;
+type MobileCheck = (args: { page: Page; root: Locator; width: number }) => Promise<void>;
 
 function viewportFor(width: number) {
   if (width <= 430) return "mobile";

@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import { sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { composeWebsite } from "../apps/builder/app/composition-intelligence";
@@ -8,6 +8,33 @@ import type { OnboardingProfile } from "../apps/builder/app/preset-ranking";
 
 const now = new Date().toISOString();
 const VISUAL_WIDTHS = { desktop: 1440, mobile: 390 } as const;
+const CAPTURE_CLASS = "mi-qa-capture";
+const CAPTURE_STYLES = `
+html.${CAPTURE_CLASS} body *:not(.site-preview):not(.site-preview *) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+html.${CAPTURE_CLASS} .site-preview,
+html.${CAPTURE_CLASS} .site-preview * {
+  visibility: visible !important;
+}
+html.${CAPTURE_CLASS} .site-preview {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  margin: 0 !important;
+}
+html.${CAPTURE_CLASS} [data-mi-canvas-action],
+html.${CAPTURE_CLASS} .mi-editor-insert-zone,
+html.${CAPTURE_CLASS} .mi-editor-canvas-toolbar,
+html.${CAPTURE_CLASS} .renderer-preview-warning {
+  display: none !important;
+}
+html.${CAPTURE_CLASS} .mi-editor-section {
+  outline: none !important;
+  box-shadow: none !important;
+}
+`;
+
 const scenarios: Array<{ id: string; name: string; profile: OnboardingProfile }> = [
   { id: "general", name: "Harbor Dental Care", profile: { industry: "dental clinic", subindustry: "general dentistry", goals: ["book appointments", "build trust"], style_tags: ["clean", "professional"], required_capabilities: ["booking", "contact"], services: ["checkups", "root canal", "crowns"] } },
   { id: "implants", name: "Apex Implant Centre", profile: { industry: "dental clinic", subindustry: "implant dentistry", goals: ["book implant consultations", "build credibility"], style_tags: ["premium", "elegant"], required_capabilities: ["booking", "before after gallery"], services: ["dental implants", "full arch implants", "implant crowns"] } },
@@ -92,6 +119,19 @@ async function activateCssViewport(page: Page, width: number) {
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 }
 
+async function installCaptureStyles(page: Page) {
+  await page.addStyleTag({ content: CAPTURE_STYLES });
+}
+
+async function captureWebsiteEvidence(page: Page, target: Locator, filePath: string) {
+  await page.evaluate((captureClass) => document.documentElement.classList.add(captureClass), CAPTURE_CLASS);
+  try {
+    await target.screenshot({ path: filePath });
+  } finally {
+    await page.evaluate((captureClass) => document.documentElement.classList.remove(captureClass), CAPTURE_CLASS);
+  }
+}
+
 async function installRoutes(page: Page, site: Site, profile: OnboardingProfile) {
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
   await page.route("**/api/projects**", async (route) => route.fulfill({ json: { projects: [project] } }));
@@ -114,6 +154,7 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
     await page.goto("/");
     await page.getByRole("button", { name: "Open editor" }).first().click();
     await expect(page.getByText(scenario.name).first()).toBeVisible();
+    await installCaptureStyles(page);
     const preview = page.locator(".renderer-preview-document");
     await expect(preview).toBeVisible();
     await expect(preview.locator("[data-mi-section-id]")).toHaveCount(site.pages[0]!.sections.length);
@@ -121,13 +162,13 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
     const desktopFrameWidth = await forcePreviewWidth(page, "desktop", VISUAL_WIDTHS.desktop);
     await activateCssViewport(page, VISUAL_WIDTHS.desktop);
     const desktopMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, cssViewportWidth: window.innerWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.desktop, frameWidth: desktopFrameWidth });
-    await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-desktop.png`) });
+    await captureWebsiteEvidence(page, preview, path.join(outputDirectory, `${scenario.id}-desktop.png`));
 
     await page.setViewportSize({ width: 1800, height: 1100 });
     const mobileFrameWidth = await forcePreviewWidth(page, "mobile", VISUAL_WIDTHS.mobile);
     await activateCssViewport(page, VISUAL_WIDTHS.mobile);
     const mobileMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, cssViewportWidth: window.innerWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.mobile, frameWidth: mobileFrameWidth });
-    await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-mobile.png`) });
+    await captureWebsiteEvidence(page, preview, path.join(outputDirectory, `${scenario.id}-mobile.png`));
 
     const composition = composeWebsite(scenario.profile);
     const passed = desktopMetrics.textLength > 300 && mobileMetrics.textLength > 300 && desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && Math.abs(desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && Math.abs(mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && desktopMetrics.scrollWidth <= desktopMetrics.width + 2 && mobileMetrics.scrollWidth <= mobileMetrics.width + 2;
@@ -135,8 +176,8 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
   }
 
   const passed = results.filter((result) => result.passed).length;
-  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v4", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, results };
+  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v5", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, screenshotsIsolatedFromEditorChrome: true, results };
   await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify(summary, null, 2), "utf8");
-  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- CSS viewport + outer preview widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
+  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- CSS viewport + outer preview widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Clean website-only screenshots: **yes**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
   expect(passed, JSON.stringify(summary, null, 2)).toBe(results.length);
 });

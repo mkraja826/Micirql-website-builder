@@ -27,3 +27,13 @@ test("context interpretation preserves the existing structured generation contra
     expect(interpreter).toContain(field);
   }
 });
+
+test("user supplied factual claims are locked before content generation", () => {
+  expect(interpreter).toContain("LockedBriefFacts");
+  expect(interpreter).toContain("LOCKED FACTS");
+  expect(interpreter).toContain("never invent missing values");
+  for (const field of ["addresses", "phoneNumbers", "emails", "urls", "people", "credentials", "prices", "openingHours", "claims"]) {
+    expect(interpreter).toContain(field);
+  }
+  expect(interpreter).toContain("Do not create fictional names, contact details, addresses, credentials, prices, hours, awards, statistics, guarantees, reviews or factual claims");
+});

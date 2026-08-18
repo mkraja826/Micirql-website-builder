@@ -7,6 +7,33 @@ import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app
 
 export const DENTAL_BLUEPRINT_TARGETS = [360, 390, 430, 768, 1024, 1440] as const;
 
+const CAPTURE_CLASS = "mi-qa-capture";
+const CAPTURE_STYLES = `
+html.${CAPTURE_CLASS} body *:not(.site-preview):not(.site-preview *) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+html.${CAPTURE_CLASS} .site-preview,
+html.${CAPTURE_CLASS} .site-preview * {
+  visibility: visible !important;
+}
+html.${CAPTURE_CLASS} .site-preview {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  margin: 0 !important;
+}
+html.${CAPTURE_CLASS} [data-mi-canvas-action],
+html.${CAPTURE_CLASS} .mi-editor-insert-zone,
+html.${CAPTURE_CLASS} .mi-editor-canvas-toolbar,
+html.${CAPTURE_CLASS} .renderer-preview-warning {
+  display: none !important;
+}
+html.${CAPTURE_CLASS} .mi-editor-section {
+  outline: none !important;
+  box-shadow: none !important;
+}
+`;
+
 type Profile = {
   industry: string;
   subindustry: string;
@@ -37,6 +64,19 @@ async function activateCssViewport(page: Page, width: number) {
   await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 }
 
+async function installCaptureStyles(page: Page) {
+  await page.addStyleTag({ content: CAPTURE_STYLES });
+}
+
+async function captureWebsiteEvidence(page: Page, target: Locator, filePath: string) {
+  await page.evaluate((captureClass) => document.documentElement.classList.add(captureClass), CAPTURE_CLASS);
+  try {
+    await target.screenshot({ path: filePath });
+  } finally {
+    await page.evaluate((captureClass) => document.documentElement.classList.remove(captureClass), CAPTURE_CLASS);
+  }
+}
+
 async function installRoutes(page: Page, site: Site, profile: Profile) {
   const now = new Date().toISOString();
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
@@ -65,6 +105,7 @@ export async function runDentalBlueprintCertification(args: {
   await args.page.setViewportSize({ width: 1800, height: 1100 });
   await args.page.goto("/");
   await args.page.getByRole("button", { name: "Open editor" }).first().click();
+  await installCaptureStyles(args.page);
 
   const output = path.join(process.cwd(), "test-results", args.outputName);
   await mkdir(output, { recursive: true });
@@ -113,9 +154,9 @@ export async function runDentalBlueprintCertification(args: {
 
     if (width <= 430 && args.mobileCheck) await args.mobileCheck({ page: args.page, root, width });
 
-    await document.screenshot({ path: path.join(output, `${width}.png`) });
+    await captureWebsiteEvidence(args.page, document, path.join(output, `${width}.png`));
     results.push({ width, viewport, ...metrics, passed });
   }
 
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, results }, null, 2), "utf8");
+  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, screenshotsIsolatedFromEditorChrome: true, results }, null, 2), "utf8");
 }

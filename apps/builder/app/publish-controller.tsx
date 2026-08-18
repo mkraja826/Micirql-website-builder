@@ -26,6 +26,14 @@ export function PublishController({ site, disabled, ensureSaved }: {
   const blockers = readiness.checks.filter((check) => check.blocking && !check.ok);
   const destination = site.domains.find((domain) => domain.primary) ?? site.domains[0];
 
+  function openReview() {
+    // Never carry an old success/error popover into the final-review surface.
+    // Preview & publish should open one clean full-screen review, not a second popup below the button.
+    if (state === "success" || state === "error") setState("idle");
+    setIssues([]);
+    setReviewOpen(true);
+  }
+
   async function publish() {
     if (disabled || state === "publishing") return;
     setIssues([]);
@@ -77,7 +85,7 @@ export function PublishController({ site, disabled, ensureSaved }: {
   }
 
   return <div className="publish-controller">
-    <button className="publish-button" type="button" disabled={state === "publishing" || state === "rolling-back"} onClick={() => setReviewOpen(true)}>{state === "publishing" ? "Publishing…" : state === "rolling-back" ? "Rolling back…" : "Preview & publish"}</button>
+    <button className="publish-button" type="button" disabled={state === "publishing" || state === "rolling-back"} onClick={openReview}>{state === "publishing" ? "Publishing…" : state === "rolling-back" ? "Rolling back…" : "Preview & publish"}</button>
 
     {reviewOpen ? <div className="publish-review" role="dialog" aria-modal="true" aria-label="Preview and publish website">
       <header className="publish-review-topbar">
@@ -96,13 +104,15 @@ export function PublishController({ site, disabled, ensureSaved }: {
           <div className={`publish-review-status ${readiness.ready ? "is-ready" : "is-blocked"}`}><span>{readiness.ready ? "Ready to launch" : `${blockers.length} blocker${blockers.length === 1 ? "" : "s"}`}</span><strong>{readiness.ready ? "Everything required is complete." : "Finish these items before publishing."}</strong></div>
           <div className="publish-review-destination"><span>Goes live at</span><strong>{destination?.hostname ?? "MiCirql hosted URL"}</strong><small>{destination ? (destination.status === "active" && destination.sslStatus === "active" ? "Domain and SSL are active." : "Domain connection is still being completed.") : "You can connect a custom domain later."}</small></div>
           {blockers.length ? <div className="publish-review-blockers"><span>Launch blockers</span>{blockers.map((check) => <div key={check.id}><b>!</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}</div> : <div className="publish-review-passed"><span>Launch checks</span>{readiness.checks.filter((check) => check.blocking).map((check) => <div key={check.id}><b>✓</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}</div>}
+          {state === "error" && issues.length ? <div className="publish-review-error" role="alert"><strong>Could not publish</strong>{issues.map((issue, index) => <span key={`${issue.code ?? "issue"}-${index}`}>{issue.pagePath ? `${issue.pagePath}: ` : ""}{issue.message}</span>)}</div> : null}
+          {state === "success" && current ? <div className="publish-review-success" role="status"><strong>Website published</strong><span>Version {current.versionId}</span>{current.liveUrl ? <a href={current.liveUrl} target="_blank" rel="noreferrer">Open live website</a> : null}</div> : null}
           <div className="publish-review-actions"><button type="button" className="publish-review-secondary" onClick={() => setReviewOpen(false)}>Back to editor</button><button type="button" className="publish-review-primary" disabled={disabled || !readiness.ready || state === "publishing"} onClick={() => void publish()}>{state === "publishing" ? "Publishing…" : "Publish website"}</button></div>
           {!readiness.ready ? <small className="publish-review-hint">Return to the editor and open Publish to fix the blockers shown above.</small> : null}
         </aside>
       </div>
     </div> : null}
 
-    {state === "success" && current ? <div className="publish-popover is-success"><strong>Website published</strong><span>Version {current.versionId}</span>{current.liveUrl ? <a href={current.liveUrl} target="_blank" rel="noreferrer">Open live website</a> : null}{previousVersionId ? <button type="button" onClick={() => void rollback()}>Rollback previous version</button> : null}</div> : null}
-    {state === "error" && issues.length ? <div className="publish-popover is-error"><strong>Could not publish</strong>{issues.map((issue, index) => <span key={`${issue.code ?? "issue"}-${index}`}>{issue.pagePath ? `${issue.pagePath}: ` : ""}{issue.message}</span>)}</div> : null}
+    {!reviewOpen && state === "success" && current ? <div className="publish-popover is-success"><strong>Website published</strong><span>Version {current.versionId}</span>{current.liveUrl ? <a href={current.liveUrl} target="_blank" rel="noreferrer">Open live website</a> : null}{previousVersionId ? <button type="button" onClick={() => void rollback()}>Rollback previous version</button> : null}</div> : null}
+    {!reviewOpen && state === "error" && issues.length ? <div className="publish-popover is-error"><strong>Could not publish</strong>{issues.map((issue, index) => <span key={`${issue.code ?? "issue"}-${index}`}>{issue.pagePath ? `${issue.pagePath}: ` : ""}{issue.message}</span>)}</div> : null}
   </div>;
 }

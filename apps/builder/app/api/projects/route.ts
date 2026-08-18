@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     const siteIds = sites.map(s=>s.id);
     const hosts = siteIds.length ? await getJson<Array<{site_id:string;hostname:string;status:string;ssl_status:string;is_primary:boolean}>>(`${url}/rest/v1/site_hostnames?site_id=in.(${siteIds.join(",")})&select=site_id,hostname,status,ssl_status,is_primary`, headers) : [];
     const drafts = siteIds.length ? await getJson<Array<{site_id:string;revision:number;updated_at:string}>>(`${url}/rest/v1/workspace_drafts?site_id=in.(${siteIds.join(",")})&select=site_id,revision,updated_at`, headers) : [];
-    return NextResponse.json({projects:sites.map(site=>({ ...site, draft:drafts.find(d=>d.site_id===site.id)??null, hostname:hosts.find(h=>h.site_id===site.id&&h.is_primary)??hosts.find(h=>h.site_id===site.id)??null }))});
+    const leadCounts = siteIds.length ? await loadNewLeadCounts(url, siteIds) : new Map<string,number>();
+    return NextResponse.json({projects:sites.map(site=>({ ...site, new_lead_count:leadCounts.get(site.id)??0, draft:drafts.find(d=>d.site_id===site.id)??null, hostname:hosts.find(h=>h.site_id===site.id&&h.is_primary)??hosts.find(h=>h.site_id===site.id)??null }))});
   } catch (e) { return fail(e); }
 }
 
@@ -62,6 +63,14 @@ export async function DELETE(request: NextRequest) {
     if(!rows.length) throw new Error("Project was not deleted. Owner or admin access is required.");
     return NextResponse.json({ok:true});
   } catch(e){ return fail(e); }
+}
+
+async function loadNewLeadCounts(url:string, siteIds:string[]) {
+  const key=process.env.MICIRQL_SUPABASE_SECRET_KEY??process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;
+  if(!key)return new Map<string,number>();
+  const query=new URLSearchParams({site_id:`in.(${siteIds.join(",")})`,status:"eq.new",select:"site_id"});
+  const rows=await getJson<Array<{site_id:string}>>(`${url}/rest/v1/site_leads?${query}`,{apikey:key,authorization:`Bearer ${key}`});
+  const counts=new Map<string,number>(); for(const row of rows)counts.set(row.site_id,(counts.get(row.site_id)??0)+1); return counts;
 }
 
 async function ensureWorkspace(url:string, headers:Record<string,string>) {

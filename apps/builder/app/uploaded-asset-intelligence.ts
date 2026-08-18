@@ -27,7 +27,7 @@ export async function classifyUploadedBusinessAsset(dataUrl: string, fileName: s
     }) as any;
     const parsed = parsePayload(raw);
     const category = allowedCategory(parsed.category) ? parsed.category : fallback.category;
-    const tags = unique(["upload", "user-owned", "verified-customer-asset", category, ...stringList(parsed.tags)]).slice(0, 16);
+    const tags = unique(["upload", "user-owned", "verified-customer-asset", category, ...filenameTags(fileName), ...stringList(parsed.tags)]).slice(0, 24);
     const sectionFamilies = stringList(parsed.sectionFamilies).filter(allowedFamily).slice(0, 5);
     return {
       category,
@@ -66,9 +66,21 @@ function deterministic(fileName: string): Classification {
     : /product|pack|item|menu/.test(name) ? "product"
     : /service|treatment|implant|aligner|procedure/.test(name) ? "service"
     : "general";
-  return { category, alt: readableName(fileName), tags: ["upload", "user-owned", "verified-customer-asset", category], sectionFamilies: familiesFor(category), source: "deterministic-fallback" };
+  return { category, alt: readableName(fileName), tags: unique(["upload", "user-owned", "verified-customer-asset", category, ...filenameTags(fileName)]), sectionFamilies: familiesFor(category), source: "deterministic-fallback" };
 }
 
+function filenameTags(fileName: string) {
+  const stem = fileName.replace(/\.[^.]+$/, "").toLowerCase();
+  const tokens = stem.split(/[^a-z0-9]+/).filter((token) => token.length >= 2 && !["img","image","photo","pic","jpeg","jpg","png","webp"].includes(token));
+  const tags = [`filename:${slug(stem)}`, ...tokens.map((token) => `label:${token}`)];
+  const caseMatch = stem.match(/(?:case|result|patient)[-_ ]?([a-z0-9]+)/i);
+  if (caseMatch?.[1]) tags.push(`case:${caseMatch[1].toLowerCase()}`);
+  if (/(^|[-_ ])before($|[-_ ])/i.test(stem)) tags.push("stage:before");
+  if (/(^|[-_ ])after($|[-_ ])/i.test(stem)) tags.push("stage:after");
+  return tags;
+}
+
+function slug(value: string) { return value.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80); }
 function familiesFor(category: Classification["category"]): string[] {
   if (category === "team") return ["team", "about"];
   if (category === "results") return ["gallery"];

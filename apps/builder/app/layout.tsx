@@ -25,6 +25,7 @@ import "@micirql/sections/dental-13-implant-results.css";
 import "@micirql/sections/dental-14-city-clinic.css";
 import "@micirql/sections/dental-15-smile-campaign.css";
 import "@micirql/sections/dental-16-multi-specialty-hub.css";
+import "@micirql/sections/dental-17-clinic-story.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

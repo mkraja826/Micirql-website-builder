@@ -12,7 +12,8 @@
     "./media-sections.css": "./src/media-sections.css",
     "./palette-runtime.css": "./src/palette-runtime.css",
     "./image-slots.css": "./src/image-slots.css",
-    "./premium-mobile.css": "./src/premium-mobile.css"
+    "./premium-mobile.css": "./src/premium-mobile.css",
+    "./dental-layout-blueprints.css": "./src/dental-layout-blueprints.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

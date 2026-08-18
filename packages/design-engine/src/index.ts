@@ -4,6 +4,7 @@ export * from "./core-structural-blueprints";
 export * from "./content-structural-blueprints";
 export * from "./website-layout-blueprints";
 export * from "./dental-layout-blueprints";
+export * from "./layout-library";
 export * from "./palette-strategies";
 export * from "./brand-palette-intelligence";
 export * from "./brand-intelligence";

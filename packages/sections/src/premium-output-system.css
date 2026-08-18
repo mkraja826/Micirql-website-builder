@@ -41,6 +41,27 @@
 [data-mi-brand-button-style="outline-accent"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){background:transparent!important;color:var(--mi-color-accent)!important;border-color:color-mix(in srgb,var(--mi-color-accent) 55%,transparent)!important;box-shadow:none}
 [data-mi-brand-button-style="high-contrast"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta,.mi-section__form button){box-shadow:0 10px 28px rgb(15 23 42 / .14)}
 
+/* Whole-page composition rhythm: sections should read as one art-directed story. */
+[data-mi-site] :is(.mi-section--hero,.mi-hero--immersive)+:is(.mi-section,.mi-services,.mi-about,.mi-proof){padding-top:clamp(4.75rem,9vw,8rem)}
+[data-mi-site] :is(.mi-services,.mi-about,.mi-proof,.mi-process,.mi-team,.mi-gallery)+:is(.mi-services,.mi-about,.mi-proof,.mi-process,.mi-team,.mi-gallery){border-top:1px solid color-mix(in srgb,var(--mi-color-border) 42%,transparent)}
+[data-mi-site] :is(.mi-services,.mi-about,.mi-proof,.mi-process,.mi-team,.mi-gallery):nth-of-type(even)>.mi-container{position:relative}
+[data-mi-site] .mi-services--spotlight .mi-content-heading,[data-mi-site] .mi-about--center .mi-content-heading,[data-mi-site] .mi-proof--quote .mi-content-heading{max-width:42rem}
+[data-mi-site] .mi-services--editorial .mi-content-heading,[data-mi-site] .mi-about--editorial .mi-content-heading,[data-mi-site] .mi-proof--dark .mi-content-heading{max-width:34rem}
+[data-mi-site] :is(.mi-team,.mi-gallery) .mi-content-heading{max-width:38rem}
+[data-mi-site] :is(.mi-team,.mi-gallery) .mi-content-heading p{max-width:52ch}
+[data-mi-site] :is(.mi-proof--quote,.mi-about--statement){isolation:isolate}
+[data-mi-site] :is(.mi-proof--quote,.mi-about--statement) .mi-container{position:relative;z-index:1}
+[data-mi-site] :is(.mi-cta--accent,.mi-conv-cta){margin-top:0}
+[data-mi-site] :is(.mi-cta--accent,.mi-conv-cta)+.mi-contact,[data-mi-site] :is(.mi-cta--accent,.mi-conv-cta)+.mi-section--contact{padding-top:clamp(4rem,7vw,6.5rem)}
+[data-mi-site] :is(.mi-contact,.mi-section--contact)+.mi-section--footer{padding-top:clamp(2.75rem,5vw,4rem)}
+[data-mi-site] .mi-section--footer{margin-top:0}
+
+/* Tone-specific page choreography. */
+[data-mi-site][data-mi-brand-tone="premium"] :is(.mi-services,.mi-about,.mi-proof,.mi-team,.mi-gallery){border-top-color:color-mix(in srgb,var(--mi-color-border) 28%,transparent)}
+[data-mi-site][data-mi-brand-tone="premium"] :is(.mi-services--editorial,.mi-about--editorial,.mi-proof--quote)>.mi-container{max-width:80rem}
+[data-mi-site][data-mi-brand-tone="editorial"] :is(.mi-services--editorial,.mi-about--editorial,.mi-proof--quote)>.mi-container{max-width:84rem}
+[data-mi-site][data-mi-brand-tone="clinical"] :is(.mi-services,.mi-about,.mi-proof,.mi-process)+:is(.mi-services,.mi-about,.mi-proof,.mi-process){border-top-color:color-mix(in srgb,var(--mi-color-border) 64%,transparent)}
+
 @media (hover:hover) and (pointer:fine){
   [data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button):not(:disabled):hover{transform:translateY(-1px);box-shadow:0 10px 28px rgb(0 0 0 / .1)}
   [data-mi-site] :is(.mi-section__card,.mi-service-item,.mi-feature-card,.mi-team-card,.mi-gallery-card,.mi-process-card,.mi-contact-card):hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--mi-color-border) 92%,var(--mi-color-text) 8%);box-shadow:var(--mi-shadow-card-hover)}
@@ -59,6 +80,8 @@
   [data-mi-site] :is(.mi-section__grid,.mi-hero__split,.mi-services-grid,.mi-team-grid,.mi-gallery-grid,.mi-proof-metrics,.mi-process-grid,.mi-contact-split){min-width:0;max-width:100%}
   [data-mi-site] :is(.mi-section__media,.mi-service-item img,.mi-team-card img,.mi-gallery-card img){max-width:100%}
   [data-mi-site] :is(.mi-section__card,.mi-service-item,.mi-feature-card,.mi-team-card,.mi-gallery-card,.mi-process-card,.mi-contact-card):hover{transform:none!important;box-shadow:none!important}
+  [data-mi-site] :is(.mi-services,.mi-about,.mi-proof,.mi-process,.mi-team,.mi-gallery)+:is(.mi-services,.mi-about,.mi-proof,.mi-process,.mi-team,.mi-gallery){border-top-color:color-mix(in srgb,var(--mi-color-border) 36%,transparent)}
+  [data-mi-site] :is(.mi-services--editorial,.mi-about--editorial,.mi-proof--quote)>.mi-container{max-width:100%}
 }
 @media (max-width:27rem){[data-mi-site] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}[data-mi-site] :is(.mi-type--display,.mi-hero__copy h1){font-size:clamp(2.25rem,10.8vw,3.4rem)!important}}
 @media (prefers-reduced-motion:reduce){[data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-section__card,.mi-service-item,.mi-feature-card,.mi-team-card,.mi-gallery-card,.mi-process-card,.mi-contact-card){transition:none!important}}

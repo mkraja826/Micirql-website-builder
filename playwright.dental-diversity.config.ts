@@ -5,6 +5,7 @@ export default defineConfig({
   testMatch: [
     "dental-diversity-benchmark.spec.ts",
     "design-diversity-fingerprint.spec.ts",
+    "design-theme-family-diversity.spec.ts",
     "design-genome-diversity.spec.ts",
     "review-direction-certification.spec.ts",
     "dental-blueprint-application.spec.ts",

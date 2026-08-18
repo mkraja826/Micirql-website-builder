@@ -1,0 +1,288 @@
+/* MiCirql curated Dental layout blueprints.
+ * Layout-specific rules are intentionally scoped by data-mi-layout-blueprint so
+ * improvements stay isolated and can be certified independently.
+ */
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"]{
+  --mi-content-lg:78rem;
+  --mi-section-space:clamp(4.25rem,8vw,7.5rem);
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-navbar{
+  border-bottom-color:color-mix(in srgb,var(--mi-color-border) 72%,transparent);
+  background:color-mix(in srgb,var(--mi-color-surface) 96%,transparent);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-nav-row{
+  min-height:5rem;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-links{
+  gap:1.35rem;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-btn--primary{
+  box-shadow:0 .55rem 1.6rem color-mix(in srgb,var(--mi-color-primary) 18%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.5rem,8vw,7.75rem);
+  padding-bottom:clamp(4.5rem,8vw,7rem);
+  background:
+    radial-gradient(circle at 88% 14%,color-mix(in srgb,var(--mi-color-primary) 9%,transparent),transparent 27rem),
+    linear-gradient(180deg,color-mix(in srgb,var(--mi-color-primary) 4%,var(--mi-color-surface)),var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__split{
+  gap:clamp(2rem,5vw,5rem);
+  align-items:center;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__copy{
+  max-width:40rem;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-type--display{
+  max-width:12ch;
+  font-size:clamp(3rem,5.7vw,5.6rem);
+  line-height:.93;
+  letter-spacing:-.052em;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-type--body{
+  max-width:36rem;
+  font-size:clamp(1.02rem,1.45vw,1.18rem);
+  line-height:1.7;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media{
+  position:relative;
+  min-width:0;
+  border-radius:clamp(1.1rem,2vw,1.75rem);
+  box-shadow:0 2rem 5rem color-mix(in srgb,var(--mi-color-text) 13%,transparent);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border:1px solid color-mix(in srgb,#fff 48%,transparent);
+  border-radius:inherit;
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media img{
+  aspect-ratio:4/5;
+  min-height:32rem;
+  object-position:center 24%;
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics{
+  padding-block:clamp(2.1rem,4vw,3.2rem);
+  background:var(--mi-color-secondary);
+  color:var(--mi-color-secondary-contrast);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-section__heading{
+  max-width:34rem;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics{
+  margin-top:clamp(1.4rem,3vw,2.2rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics article{
+  border-top-color:color-mix(in srgb,currentColor 18%,transparent);
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-content-heading{
+  max-width:48rem;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-services-spotlight{
+  gap:clamp(.85rem,1.5vw,1.2rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-service-item{
+  min-width:0;
+  padding:clamp(1.2rem,2vw,1.65rem);
+  border-color:color-mix(in srgb,var(--mi-color-border) 78%,transparent);
+  box-shadow:0 .8rem 2.2rem color-mix(in srgb,var(--mi-color-text) 6%,transparent);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-service-item:first-child{
+  grid-column:auto;
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured{
+  background:color-mix(in srgb,var(--mi-color-primary) 5%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-featured{
+  gap:clamp(1.4rem,3vw,2.5rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead{
+  gap:clamp(1.5rem,3vw,2.5rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:clamp(1rem,2vw,1.5rem);
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-features--split .mi-features-split{
+  gap:clamp(2rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:2.25rem minmax(0,1fr);
+  gap:1rem;
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split{
+  padding-block:clamp(3.4rem,6vw,5.8rem);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-cta-split{
+  border:0;
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+  box-shadow:0 1.8rem 4.5rem color-mix(in srgb,var(--mi-color-primary) 22%,transparent);
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-conv-heading p{
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-conv-btn--primary{
+  background:var(--mi-color-primary-contrast);
+  color:var(--mi-color-primary);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-conv-btn--secondary{
+  border-color:color-mix(in srgb,var(--mi-color-primary-contrast) 46%,transparent);
+  color:var(--mi-color-primary-contrast);
+}
+
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-contact-struct--split{
+  background:color-mix(in srgb,var(--mi-color-primary) 4%,var(--mi-color-surface));
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-contact-struct--split .mi-contact-split{
+  gap:clamp(2rem,5vw,4.5rem);
+}
+
+@media(min-width:48rem){
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__copy{order:1}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media{order:2}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__split{grid-template-columns:minmax(0,.92fr) minmax(22rem,1.08fr)}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics>.mi-container{display:grid;grid-template-columns:minmax(14rem,.55fr) minmax(0,1.45fr);gap:clamp(2rem,5vw,5rem);align-items:end}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics{margin-top:0}
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-01-clinical-authority"]{
+    --mi-section-space:clamp(3.1rem,13vw,4.5rem);
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-container{
+    width:min(100% - 2rem,var(--mi-content-lg));
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-navbar{
+    top:0;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-nav-row{
+    min-height:4.25rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero{
+    padding-top:clamp(2.75rem,10vw,4rem);
+    padding-bottom:clamp(3.25rem,12vw,4.75rem);
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__split{
+    display:flex;
+    flex-direction:column;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__copy{
+    order:1;
+    width:100%;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media{
+    order:2;
+    width:100%;
+    margin:0;
+    border-radius:1rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media img{
+    width:100%;
+    min-height:0;
+    max-height:none;
+    aspect-ratio:4/3;
+    object-position:center 24%;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.55rem,12.5vw,3.8rem);
+    line-height:.95;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__actions,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.65rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__action,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-btn{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.6rem 1rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics article{
+    min-width:0;
+    padding-block:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services--spotlight .mi-service-item{
+    min-height:0;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/5;
+    max-height:30rem;
+    object-fit:cover;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-team--featured .mi-team-card--compact{
+    grid-template-columns:4rem minmax(0,1fr);
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-features--split .mi-features-split{
+    grid-template-columns:1fr;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-features--split .mi-feature-item--list{
+    grid-template-columns:2rem minmax(0,1fr);
+    min-width:0;
+    padding-block:1rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-cta-split{
+    padding:1.35rem;
+    border-radius:1rem;
+    gap:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] img,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] video,
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] iframe{
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] *{
+    min-width:0;
+  }
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-type--display{font-size:clamp(2.35rem,12vw,3.25rem)}
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof--metrics .mi-proof-metrics{grid-template-columns:1fr}
+}

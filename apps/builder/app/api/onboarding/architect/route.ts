@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applyPageArchitecture, planPageArchitecture } from "../../../page-architecture-intelligence";
+import { planPageMedia } from "../../../page-media-intelligence";
+import { executeMediaPlan } from "../../../media-execution";
+import { materializeGeneratedMedia } from "../../../materialize-media-execution";
+import { applyMediaExecution } from "../../../apply-media-execution";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
+import { loadMediaPools } from "../media-assets";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +40,33 @@ export async function POST(request: NextRequest) {
       requiredCapabilities: list(body.requiredCapabilities),
       notes: facts.notes,
     });
-    const architecturalSite = applyPageArchitecture(draft.snapshot, plan);
+    let architecturalSite = applyPageArchitecture(draft.snapshot, plan);
+
+    let mediaExecution = null;
+    let mediaWarning: string | null = null;
+    let generatedMediaCount = 0;
+    try {
+      const mediaPlan = planPageMedia(architecturalSite, industry);
+      const pools = await loadMediaPools(workspaceId);
+      mediaExecution = executeMediaPlan({ plan: mediaPlan, ...pools, allowGeneration: true });
+      const materialized = await materializeGeneratedMedia({
+        request,
+        site: architecturalSite,
+        execution: mediaExecution,
+        workspaceId,
+        siteId,
+        domain: industry,
+        maxGenerated: 1,
+      });
+      mediaExecution = materialized.execution;
+      generatedMediaCount = materialized.generated;
+      if (materialized.warnings.length) mediaWarning = materialized.warnings.join(" ");
+      architecturalSite = applyMediaExecution(architecturalSite, mediaExecution);
+    } catch (error) {
+      mediaWarning = error instanceof Error ? error.message : "Page-specific media enrichment failed.";
+      console.error("MiCirql page media enrichment failed; keeping architecture without extra media.", error);
+    }
+
     const saved = await saveSupabaseDraft(request, { snapshot: architecturalSite, expectedRevision: draft.revision });
 
     let content = null;
@@ -52,7 +83,7 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql architecture content pass failed; keeping architectural draft.", error);
     }
 
-    return NextResponse.json({ ok: true, architecture: plan, content, contentWarning });
+    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, content, contentWarning });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed." }, { status: 500 });
   }

@@ -9,6 +9,7 @@ export default defineConfig({
     "design-genome-diversity.spec.ts",
     "review-direction-certification.spec.ts",
     "review-direction-theme-diversity.spec.ts",
+    "healthcare-story-flow-diversity.spec.ts",
     "dental-blueprint-application.spec.ts",
     "dental-planner-contract.spec.ts",
     "dental-media-execution.spec.ts",

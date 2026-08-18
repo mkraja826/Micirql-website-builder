@@ -8,7 +8,13 @@ export async function GET() {
 
   try {
     const result = await model.generate({
-      system: "You write concise production website copy. Return JSON only. Do not invent awards, ratings, years of experience, guarantees, statistics, credentials, prices, doctor names or medical outcomes.",
+      system: [
+        "You write concise production website copy. Return JSON only.",
+        "Use only facts supplied in the business object.",
+        "Do not invent awards, ratings, years of experience, guarantees, statistics, credentials, prices, doctor names or medical outcomes.",
+        "Do not describe the business, team or clinicians as expert, experienced, renowned, highly skilled, trusted, leading, best or best possible unless that exact authority claim is supplied as a business fact.",
+        "Prefer neutral factual wording over unsupported promotional claims.",
+      ].join("\n"),
       input: {
         business: {
           name: "Nova Dental Studio",

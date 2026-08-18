@@ -6,12 +6,13 @@ on:
     paths:
       - "apps/builder/app/apply-layout-blueprint.ts"
       - "apps/builder/app/renderer-preview.tsx"
+      - "apps/builder/app/layout.tsx"
       - "packages/design-engine/src/website-layout-blueprints.ts"
       - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/design-engine/src/layout-library.ts"
       - "packages/renderer/**"
       - "packages/sections/**"
-      - "qa/dental-layout-blueprint.spec.ts"
+      - "qa/dental-layout-blueprint*.spec.ts"
       - "playwright.dental-blueprint.config.ts"
       - "package.json"
       - ".github/workflows/dental-layout-blueprint.yml"
@@ -20,20 +21,21 @@ on:
     paths:
       - "apps/builder/app/apply-layout-blueprint.ts"
       - "apps/builder/app/renderer-preview.tsx"
+      - "apps/builder/app/layout.tsx"
       - "packages/design-engine/src/website-layout-blueprints.ts"
       - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/design-engine/src/layout-library.ts"
       - "packages/renderer/**"
       - "packages/sections/**"
-      - "qa/dental-layout-blueprint.spec.ts"
+      - "qa/dental-layout-blueprint*.spec.ts"
       - "playwright.dental-blueprint.config.ts"
       - "package.json"
       - ".github/workflows/dental-layout-blueprint.yml"
 
 jobs:
-  certify-blueprint:
+  certify-blueprints:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,35 +63,41 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify Dental 01 at six viewport widths
+      - name: Certify curated Dental blueprints at six viewport widths
         run: pnpm qa:dental-blueprint
 
       - name: Add certification summary
         if: always()
         shell: bash
         run: |
-          REPORT="test-results/dental-layout-blueprint-01/report.json"
-          if [ -f "$REPORT" ]; then
-            node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
           const fs = require('fs');
-          const report = JSON.parse(fs.readFileSync('test-results/dental-layout-blueprint-01/report.json', 'utf8'));
-          console.log('# Dental 01 Blueprint QA');
+          const path = require('path');
+          const root = 'test-results';
+          const dirs = fs.existsSync(root)
+            ? fs.readdirSync(root).filter((name) => name.startsWith('dental-layout-blueprint-')).sort()
+            : [];
+          console.log('# Dental Blueprint QA');
           console.log('');
-          console.log(`- Layout: **${report.layoutId}**`);
-          console.log(`- Coverage: **${report.coverage.matched}/${report.coverage.expected}**`);
-          console.log(`- Viewports checked: **${report.results.length}**`);
-          console.log(`- Overflow-safe: **${report.results.every((item) => item.passed) ? 'yes' : 'no'}**`);
-          console.log('');
-          console.log('| Width | Mode | Scroll width | Client width | Pass |');
-          console.log('| ---: | --- | ---: | ---: | --- |');
-          for (const item of report.results) console.log(`| ${item.width}px | ${item.viewport} | ${item.scrollWidth} | ${item.clientWidth} | ${item.passed ? 'PASS' : 'FAIL'} |`);
+          if (!dirs.length) {
+            console.log('No blueprint reports were produced.');
+            process.exit(0);
+          }
+          console.log('| Layout | Coverage | Viewports | Overflow-safe |');
+          console.log('| --- | ---: | ---: | --- |');
+          for (const dir of dirs) {
+            const reportPath = path.join(root, dir, 'report.json');
+            if (!fs.existsSync(reportPath)) continue;
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const safe = report.results.every((item) => item.passed);
+            console.log(`| ${report.layoutId} | ${report.coverage.matched}/${report.coverage.expected} | ${report.results.length} | ${safe ? 'PASS' : 'FAIL'} |`);
+          }
           NODE
-          fi
 
-      - name: Upload Dental 01 viewport evidence
+      - name: Upload Dental blueprint viewport evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: micirql-dental-layout-blueprint-01
-          path: test-results/dental-layout-blueprint-01
+          name: micirql-dental-layout-blueprints
+          path: test-results/dental-layout-blueprint-*
           retention-days: 30

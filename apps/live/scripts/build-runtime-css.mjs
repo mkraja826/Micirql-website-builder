@@ -16,6 +16,7 @@ const sources = [
   "packages/sections/src/media-sections.css",
   "packages/sections/src/palette-runtime.css",
   "packages/sections/src/image-slots.css",
+  "packages/sections/src/dental-layout-blueprints.css",
 ];
 
 const chunks = [];

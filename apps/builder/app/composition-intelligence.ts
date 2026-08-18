@@ -1,3 +1,4 @@
+import { recommendLayoutCandidates, type RankedLayout } from "@micirql/design-engine";
 import { resolvePremiumCertifiedVariant, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import { selectIndustryPack, type IndustryPackSelection } from "./industry-pack-intelligence";
@@ -5,7 +6,7 @@ import { rankPresets, type OnboardingProfile } from "./preset-ranking";
 
 export type CompositionIntent="conversion"|"trust"|"showcase"|"education"|"product"|"institutional";
 export type CompositionSection={family:SectionFamily;variant:SectionVariant;purpose:string;priority:"required"|"recommended"};
-export type WebsiteComposition={preset:IndustryDesignPreset;intent:CompositionIntent;sections:CompositionSection[];reasoning:string[];industryPack:IndustryPackSelection|null};
+export type WebsiteComposition={preset:IndustryDesignPreset;intent:CompositionIntent;sections:CompositionSection[];reasoning:string[];industryPack:IndustryPackSelection|null;layoutCandidate:RankedLayout|null};
 
 const PURPOSE:Partial<Record<SectionFamily,string>>={hero:"Communicate the primary promise and next action",about:"Establish identity, story and credibility",services:"Explain the core offer",features:"Show differentiators, outcomes or capabilities",process:"Reduce uncertainty by explaining how it works",team:"Build human and leadership trust",gallery:"Provide visual evidence and proof",testimonials:"Add social proof",cta:"Create a focused conversion moment",contact:"Make the final action easy"};
 const FLOWS:Record<CompositionIntent,SectionFamily[]>={conversion:["hero","services","features","process","testimonials","cta","contact"],trust:["hero","about","services","team","features","testimonials","cta","contact"],showcase:["hero","about","gallery","services","testimonials","cta","contact"],education:["hero","features","services","process","team","testimonials","cta","contact"],product:["hero","features","services","process","gallery","testimonials","cta","contact"],institutional:["hero","about","features","services","team","gallery","cta","contact"]};
@@ -20,6 +21,7 @@ const INTENT_VARIANTS:Record<CompositionIntent,Partial<Record<SectionFamily,Sect
 export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
  const ranked=rankPresets(profile),top=ranked[0];if(!top)throw new Error("No design presets are available for composition.");
  const preset=top.preset,intent=inferIntent(profile,preset.id),industryPack=selectIndustryPack({industry:profile.industry,subindustry:profile.subindustry,goals:profile.goals,services:profile.required_capabilities});
+ const layoutCandidate=recommendLayoutCandidates({industry:profile.industry,subindustryId:profile.subindustry??undefined,goals:profile.goals,priorities:[...(profile.services??[]),...(profile.required_capabilities??[])],styleTags:profile.style_tags},1)[0]??null;
  const available=preset.variants;
  const recipeFamilies=industryPack?industryPack.recipe.sections.map(recipeFamily).filter((f):f is SectionFamily=>Boolean(f&&available[f]!=null)):[];
  const base=recipeFamilies.length>=3?recipeFamilies:FLOWS[intent];
@@ -30,7 +32,7 @@ export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
  const ctaIndex=families.indexOf("cta");if(ctaIndex>=0&&families.includes("contact")&&ctaIndex!==families.length-2){families.splice(ctaIndex,1);families.splice(families.length-1,0,"cta");}
  const sections=families.slice(0,9).map((family,i)=>({family,variant:variantFor(profile,preset,intent,family),purpose:PURPOSE[family]||"Support the page narrative",priority:(i===0||family==="cta"||family==="contact"?"required":"recommended") as "required"|"recommended"}));
  const changed=sections.filter(section=>section.variant!==available[section.family]);
- return{preset,intent,sections,industryPack,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(industryPack?industryPack.reasons:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
+ return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[`Layout candidate ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100 (${layoutCandidate.layout.status}; applies only after certification and full section coverage)`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
 }
 
 function recipeFamily(value:string):SectionFamily|undefined{

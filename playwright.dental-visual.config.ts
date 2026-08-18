@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /dental-visual-comparison\.spec\.ts/,
+  testMatch: /(?:dental-visual-comparison|dental-top20-premium-gate)\.spec\.ts/,
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,

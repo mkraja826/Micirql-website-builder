@@ -1,4 +1,4 @@
-name: Dental Visual Comparison
+name: Dental Premium Visual Gate
 
 on:
   workflow_dispatch:
@@ -9,8 +9,10 @@ on:
       - "apps/builder/app/preset-ranking.ts"
       - "apps/builder/app/renderer-preview.tsx"
       - "apps/builder/app/editor-layout-guard.css"
+      - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/sections/**"
       - "qa/dental-visual-comparison.spec.ts"
+      - "qa/dental-top20-premium-gate.spec.ts"
       - "playwright.dental-visual.config.ts"
       - "package.json"
       - ".github/workflows/dental-visual-comparison.yml"
@@ -22,14 +24,16 @@ on:
       - "apps/builder/app/preset-ranking.ts"
       - "apps/builder/app/renderer-preview.tsx"
       - "apps/builder/app/editor-layout-guard.css"
+      - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/sections/**"
       - "qa/dental-visual-comparison.spec.ts"
+      - "qa/dental-top20-premium-gate.spec.ts"
       - "playwright.dental-visual.config.ts"
       - "package.json"
       - ".github/workflows/dental-visual-comparison.yml"
 
 jobs:
-  visual-comparison:
+  premium-visual-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -50,7 +54,7 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Capture 10-site Dental visual comparison
+      - name: Run Dental Top-20 contract and visual comparison
         run: pnpm qa:dental-visual
 
       - name: Add visual benchmark summary
@@ -64,6 +68,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: micirql-dental-visual-comparison
-          path: test-results/dental-visual-comparison
+          name: micirql-dental-premium-visual-gate
+          path: |
+            test-results/dental-visual-comparison
+            test-results/visual-review
           retention-days: 30

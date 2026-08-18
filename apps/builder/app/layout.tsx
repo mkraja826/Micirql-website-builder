@@ -22,6 +22,7 @@ import "@micirql/sections/dental-10-immediate-care.css";
 import "@micirql/sections/dental-11-dental-journal.css";
 import "@micirql/sections/dental-12-calm-dentistry.css";
 import "@micirql/sections/dental-13-implant-results.css";
+import "@micirql/sections/dental-14-city-clinic.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

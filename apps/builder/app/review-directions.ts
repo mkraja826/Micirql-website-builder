@@ -78,6 +78,15 @@ const ARCHETYPE_THEME_FAMILIES: Record<string, readonly ThemeFamily[]> = {
   "local-service": ["corporate", "minimalist", "organic", "editorial", "luxury"],
 };
 
+const HEALTHCARE_STORY_FLOWS: readonly SectionFamily[][] = [
+  ["navbar", "hero", "testimonials", "team", "services", "about", "features", "process", "gallery", "cta", "contact", "footer"],
+  ["navbar", "hero", "services", "process", "testimonials", "team", "about", "gallery", "features", "cta", "contact", "footer"],
+  ["navbar", "hero", "team", "about", "services", "testimonials", "process", "gallery", "features", "cta", "contact", "footer"],
+  ["navbar", "hero", "gallery", "testimonials", "services", "team", "process", "about", "features", "cta", "contact", "footer"],
+  ["navbar", "hero", "features", "services", "testimonials", "team", "process", "gallery", "about", "cta", "contact", "footer"],
+  ["navbar", "hero", "about", "team", "services", "process", "gallery", "testimonials", "features", "cta", "contact", "footer"],
+] as const;
+
 export function buildReviewDirections(site: Site, profile: OnboardingProfile, count = 20, preferenceProfile?: DesignPreferenceProfile): ReviewDirection[] {
   const industry = clean(profile.industry) || clean(profile.subindustry) || "your business";
   const archetypeId = resolveArchetype(profile);
@@ -90,7 +99,8 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
     const recipeIndex = candidateIndex % recipePool.length;
     const pass = Math.floor(candidateIndex / recipePool.length);
     const baseRecipe = recipePool[recipeIndex]!;
-    const recipe = pass === 0 ? baseRecipe : mutateRecipe(baseRecipe, pass);
+    const mutatedRecipe = pass === 0 ? baseRecipe : mutateRecipe(baseRecipe, pass);
+    const recipe = applyStoryFlow(mutatedRecipe, archetypeId, candidateIndex);
     const themeFamily = themeFamilyForCandidate(archetypeId, site.theme.family, candidateIndex);
     const typography = typographySystemAt(candidateIndex + pass);
     const rhythm = rhythmSystemAt(candidateIndex + Math.floor(candidateIndex / 5) + pass);
@@ -120,6 +130,7 @@ export function buildReviewDirections(site: Site, profile: OnboardingProfile, co
         `built for ${industry}`,
         ...(archetypeId === "hospitality" ? ["restaurant master composition"] : []),
         `${themeFamily} design system`,
+        ...(archetypeId === "healthcare-clinic" ? [`healthcare story flow ${(candidateIndex % HEALTHCARE_STORY_FLOWS.length) + 1}`] : []),
         industryFit.packLabel ? `${industryFit.packLabel} fit ${industryFit.score}/100` : `${archetypeId.replace(/-/g, " ")} composition`,
         ...(industryFit.missingSections.length ? [`could add: ${industryFit.missingSections.slice(0, 3).join(", ")}`] : []),
         palette ? `${palette.name} color strategy` : "logo-derived color strategy",
@@ -159,6 +170,12 @@ function mutateRecipe(recipe: DirectionRecipe, pass: number): DirectionRecipe {
   const paletteIndex = PALETTE_STRATEGIES.findIndex((candidate) => candidate.id === recipe.palette);
   const palette = PALETTE_STRATEGIES[(Math.max(0, paletteIndex) + pass) % PALETTE_STRATEGIES.length]?.id ?? recipe.palette;
   return { ...recipe, palette, variants };
+}
+
+function applyStoryFlow(recipe: DirectionRecipe, archetypeId: string, candidateIndex: number): DirectionRecipe {
+  if (archetypeId !== "healthcare-clinic") return recipe;
+  const sequence = HEALTHCARE_STORY_FLOWS[candidateIndex % HEALTHCARE_STORY_FLOWS.length]!;
+  return { ...recipe, sequence: [...sequence] };
 }
 
 function composeDirection(site: Site, recipe: DirectionRecipe, typography: ReturnType<typeof typographySystemAt>, rhythm: ReturnType<typeof rhythmSystemAt>, imageStrategy: ReturnType<typeof imageStrategyAt>, themeFamily: ThemeFamily): Site {

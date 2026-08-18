@@ -1,0 +1,435 @@
+/* Dental 11 — Dental Journal
+ * Architecture-inspired editorial clinic layout with large photography, sparse
+ * copy and strict responsive resets for all decorative offsets.
+ */
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"]{
+  --mi-content-lg:82rem;
+  --mi-section-space:clamp(5rem,9vw,8.5rem);
+  --mi-journal-ink:#27231e;
+  --mi-journal-paper:color-mix(in srgb,var(--mi-color-surface) 92%,#f4efe5);
+  --mi-journal-sage:color-mix(in srgb,var(--mi-color-accent) 18%,#e8eee3);
+  --mi-journal-line:color-mix(in srgb,var(--mi-color-border) 74%,#bcb4a7);
+  --mi-journal-muted:color-mix(in srgb,var(--mi-color-text-muted) 86%,#726c62);
+}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-navbar--minimal{
+  position:relative;
+  z-index:8;
+  border-bottom:1px solid var(--mi-journal-line);
+  background:var(--mi-journal-paper);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-navbar--minimal .mi-nav-row{min-height:5.25rem}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-navbar--minimal .mi-shell-brand{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:1.12rem;
+  letter-spacing:.015em;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-nav-minimal-copy{
+  font-size:.82rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.66;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-cta,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-section__action--primary,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-btn--primary{border-radius:0}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial{
+  position:relative;
+  overflow:hidden;
+  padding-top:clamp(4.5rem,8vw,7.5rem);
+  padding-bottom:clamp(5rem,9vw,8.5rem);
+  background:var(--mi-journal-paper);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__editorial-grid{
+  grid-template-columns:minmax(4.5rem,.18fr) minmax(0,.92fr) minmax(24rem,1.18fr);
+  gap:clamp(1.5rem,3.5vw,4rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__index{
+  align-self:start;
+  padding-top:.35rem;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(5rem,10vw,10rem);
+  font-weight:400;
+  line-height:.72;
+  letter-spacing:-.08em;
+  color:color-mix(in srgb,var(--mi-color-primary) 16%,transparent);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__copy{
+  max-width:41rem;
+  gap:1.25rem;
+  padding-bottom:clamp(0rem,3vw,2.5rem);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-type--eyebrow{
+  color:var(--mi-color-primary);
+  letter-spacing:.17em;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-type--display{
+  max-width:9.5ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4rem,6.7vw,7.1rem);
+  font-weight:500;
+  line-height:.91;
+  letter-spacing:-.05em;
+  color:var(--mi-journal-ink);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-type--body{
+  max-width:35rem;
+  color:var(--mi-journal-muted);
+  font-size:clamp(1.02rem,1.3vw,1.16rem);
+  line-height:1.72;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media{
+  margin:0;
+  border-radius:0;
+  box-shadow:none;
+  transform:translateY(clamp(0rem,2vw,2rem));
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media img{
+  aspect-ratio:4/5;
+  min-height:39rem;
+  object-position:center 42%;
+}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-section--mosaic{
+  position:relative;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-section--mosaic::before{
+  content:"02";
+  position:absolute;
+  top:clamp(1.5rem,4vw,3rem);
+  right:clamp(1rem,4vw,4rem);
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4rem,9vw,8rem);
+  line-height:1;
+  color:color-mix(in srgb,var(--mi-color-primary) 10%,transparent);
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-section--mosaic .mi-section__heading{max-width:44rem}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic{
+  grid-auto-rows:6.8rem;
+  gap:clamp(.7rem,1.2vw,1.05rem);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:0;
+  background:var(--mi-journal-paper);
+  transform:none;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(1){grid-column:span 7;grid-row:span 5}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(2){grid-column:span 5;grid-row:span 3;margin-top:2.5rem}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(3){grid-column:8/span 5;grid-row:span 3}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(4){grid-column:span 5;grid-row:span 4;margin-top:1rem}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(5){grid-column:span 7;grid-row:span 4}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-card img{transition:none}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-card:hover img{transform:none}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-card figcaption{
+  position:static;
+  inset:auto;
+  padding:.9rem 0 0;
+  background:transparent;
+  color:var(--mi-journal-ink);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-card figcaption span{
+  color:var(--mi-journal-muted);
+  opacity:1;
+}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured{
+  position:relative;
+  background:var(--mi-journal-sage);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured::before{
+  content:"03";
+  position:absolute;
+  top:clamp(1.5rem,4vw,3rem);
+  left:clamp(1rem,4vw,4rem);
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4rem,8vw,7.5rem);
+  color:color-mix(in srgb,var(--mi-color-primary) 10%,transparent);
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-section__heading{margin-left:auto;max-width:45rem}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-featured{
+  grid-template-columns:minmax(0,1.45fr) minmax(17rem,.55fr);
+  gap:clamp(2rem,5vw,5rem);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead{
+  grid-template-columns:minmax(0,1.25fr) minmax(15rem,.75fr);
+  gap:clamp(1.5rem,4vw,3.5rem);
+  padding:0;
+  background:transparent;
+  border:0;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  aspect-ratio:4/5;
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--compact{
+  grid-template-columns:1fr;
+  gap:.55rem;
+  padding:1.1rem 0;
+  border-bottom:1px solid var(--mi-journal-line);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--compact img,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--compact .mi-team-avatar{display:none}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services--spotlight{
+  background:var(--mi-journal-paper);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services--spotlight .mi-content-heading{
+  text-align:left;
+  margin-inline:0;
+  max-width:48rem;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight{
+  gap:0;
+  border-top:1px solid var(--mi-journal-line);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.4rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-journal-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-journal-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item:first-child h3{font-size:clamp(1.35rem,2.3vw,2rem)}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item:first-child p{color:var(--mi-journal-muted)}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-service-item h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split{
+  background:var(--mi-journal-ink);
+  color:#f6f2e9;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-section__heading p{color:inherit}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-features-split{
+  grid-template-columns:minmax(15rem,.7fr) minmax(0,1.3fr);
+  gap:clamp(2rem,6vw,6rem);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-feature-item--list{
+  grid-template-columns:3rem minmax(0,1fr);
+  padding:1.35rem 0;
+  border-color:rgba(255,255,255,.17);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-feature-item--list h3,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-feature-item--list p{color:inherit}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-feature-index{
+  color:color-mix(in srgb,var(--mi-color-accent) 78%,white);
+}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-proof--quote{
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-proof--quote blockquote p{
+  max-width:17ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2rem,4.5vw,4.2rem);
+  font-weight:500;
+  line-height:1.06;
+}
+
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-cta--split .mi-cta-split{
+  padding:clamp(1.8rem,4.5vw,3.5rem);
+  border-top:1px solid var(--mi-journal-line);
+  border-bottom:1px solid var(--mi-journal-line);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-struct--split{background:var(--mi-journal-paper)}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-struct--split .mi-contact-split{gap:clamp(2rem,6vw,5rem)}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-form{
+  border-radius:0;
+  border:1px solid var(--mi-journal-line);
+  box-shadow:none;
+  background:var(--mi-color-surface);
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-footer--editorial{
+  background:var(--mi-journal-ink);
+  color:#f6f2e9;
+}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-footer--editorial a,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-footer--editorial p,
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-footer--editorial small{color:rgba(246,242,233,.72)}
+[data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-footer-wordmark{
+  font-family:Georgia,"Times New Roman",serif;
+  letter-spacing:-.045em;
+}
+
+@media(min-width:48rem) and (max-width:70rem){
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__editorial-grid{
+    grid-template-columns:minmax(0,.9fr) minmax(20rem,1.1fr);
+    gap:2rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__index{
+    grid-column:1/-1;
+    font-size:5rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media img{min-height:32rem}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-auto-rows:auto;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    margin:0;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(odd) img{aspect-ratio:4/5;height:auto}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(even) img{aspect-ratio:4/3;height:auto}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-featured{grid-template-columns:1fr}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-features-split{grid-template-columns:1fr}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-struct--split .mi-contact-split{grid-template-columns:1fr}
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"]{--mi-section-space:clamp(3.2rem,13vw,4.6rem)}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-container{width:min(100% - 1.5rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-shell-navbar--minimal .mi-nav-row{min-height:4.25rem}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-nav-minimal-copy{display:none}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial{padding-top:2.9rem;padding-bottom:3.9rem}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:flex;
+    flex-direction:column;
+    gap:1.25rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__index{
+    order:0;
+    width:auto;
+    max-width:100%;
+    padding:0;
+    font-size:3.6rem;
+    line-height:.8;
+    letter-spacing:-.06em;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__copy{
+    order:1;
+    width:100%;
+    max-width:none;
+    padding:0;
+    gap:.95rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.65rem,12vw,3.9rem)!important;
+    line-height:.95!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media{
+    order:2;
+    width:100%;
+    margin:0;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media img{
+    width:100%;
+    min-height:0;
+    aspect-ratio:4/3;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-section__actions,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    width:100%;
+    gap:.6rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-section__action,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-form button{
+    width:100%;
+    max-width:100%;
+    min-height:50px;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-section--mosaic::before,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured::before{
+    font-size:3.25rem;
+    top:1rem;
+    right:.75rem;
+    left:auto;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-auto-rows:auto;
+    gap:1.4rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    grid-column:auto;
+    grid-row:auto;
+    margin:0!important;
+    transform:none!important;
+    overflow:visible;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(odd) img{
+    width:100%;
+    height:auto;
+    aspect-ratio:4/5;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-mosaic .mi-gallery-card:nth-child(even) img{
+    width:100%;
+    height:auto;
+    aspect-ratio:4/3;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-gallery-card figcaption{
+    position:static;
+    padding:.7rem 0 0;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-section__heading{margin:0;max-width:none}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    aspect-ratio:4/5;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight{
+    grid-template-columns:1fr;
+    border-top:1px solid var(--mi-journal-line);
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-services-spotlight .mi-service-item:first-child{
+    padding:1.05rem 0;
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-features-split{
+    grid-template-columns:1fr;
+    gap:1.2rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-features--split .mi-feature-item--list{
+    grid-template-columns:2.25rem minmax(0,1fr);
+    padding:1rem 0;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-proof--quote{
+    padding-block:3.8rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-proof--quote .mi-proof-quote{
+    grid-template-columns:1fr;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-proof--quote blockquote p{
+    font-size:clamp(1.7rem,8vw,2.7rem);
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-contact-struct--split .mi-contact-split{
+    grid-template-columns:1fr;
+    gap:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-conv-cta--split .mi-cta-split{padding:1.35rem 0}
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] img,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] video,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] iframe{max-width:100%}
+}

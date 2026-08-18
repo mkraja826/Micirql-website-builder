@@ -92,6 +92,7 @@ function normalizeStyles(values: readonly string[] | undefined, context: string)
   if (/calm|wellness|natural|warm/.test(text)) result.push("calm", "wellness", "warm");
   if (/emergency|urgent/.test(text)) result.push("urgent", "direct", "reassuring");
   if (/bold|campaign/.test(text)) result.push("bold", "campaign");
+  if (/educational|education|learn|explain/.test(text)) result.push("evidence");
 
   return unique(result);
 }

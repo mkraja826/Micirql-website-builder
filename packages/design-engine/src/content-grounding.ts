@@ -25,9 +25,16 @@ export type GroundingReport = {
   grounded: boolean;
 };
 
-const RISK_PATTERNS: Array<{ re: RegExp; reason: string }> = [
+type RiskPattern = {
+  re: RegExp;
+  reason: string;
+  allowIfFactContainsMatch?: boolean;
+};
+
+const RISK_PATTERNS: RiskPattern[] = [
   { re: /\b\d+\+?\s+(?:years?|clients?|patients?|projects?|locations?|awards?|cases?|customers?)\b/i, reason: "unsupplied numeric proof" },
   { re: /\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|no\.?\s*1|#1|best in|leading|top[- ]rated)\b/i, reason: "unsupplied credential or ranking" },
+  { re: /\b(?:expert|experienced|renowned|highly skilled|trusted|best possible)\b/i, reason: "unsupplied expertise or trust claim", allowIfFactContainsMatch: true },
   { re: /\b(?:guaranteed|100%|zero risk|risk[- ]free|permanent results?|instant results?)\b/i, reason: "unsupported guarantee" },
   { re: /(?:₹|\$|€|£)\s?\d|\b\d+[,.]?\d*\s*(?:INR|USD|AUD|GBP|EUR)\b/i, reason: "unsupplied price" },
   { re: /\b\d(?:\.\d)?\s*\/\s*5\b|\b\d{2,3}%\b/i, reason: "unsupplied rating or percentage" },
@@ -85,7 +92,12 @@ function sanitizeRecord(record: Record<string, unknown>, pageId: string, section
 
 function risky(value: string, factText: string): string | null {
   for (const pattern of RISK_PATTERNS) {
-    if (!pattern.re.test(value)) continue;
+    const match = pattern.re.exec(value);
+    if (!match) continue;
+    if (pattern.allowIfFactContainsMatch) {
+      const matchedClaim = normalize(match[0]);
+      if (matchedClaim && factText.includes(matchedClaim)) continue;
+    }
     const normalized = normalize(value);
     if (normalized && factText.includes(normalized)) continue;
     return pattern.reason;
@@ -100,7 +112,7 @@ function safeReplacement(field: string, family: string, original: string): strin
     if (family === "testimonials") return "Customer feedback";
     if (family === "team") return "Meet the team";
     if (family === "services") return "Our services";
-    return original.replace(/\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|no\.?\s*1|#1|best in|leading|top[- ]rated|guaranteed|100%)\b/gi, "").replace(/\s{2,}/g, " ").trim() || "Learn more";
+    return original.replace(/\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|no\.?\s*1|#1|best in|leading|top[- ]rated|expert|experienced|renowned|highly skilled|trusted|best possible|guaranteed|100%)\b/gi, "").replace(/\s{2,}/g, " ").trim() || "Learn more";
   }
   return SAFE_REPLACEMENTS[family] ?? SAFE_REPLACEMENTS.content ?? "Add verified business information here.";
 }

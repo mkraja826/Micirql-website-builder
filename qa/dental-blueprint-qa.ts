@@ -9,6 +9,16 @@ export const DENTAL_BLUEPRINT_TARGETS = [360, 390, 430, 768, 1024, 1440] as cons
 
 const CAPTURE_CLASS = "mi-qa-capture";
 const CAPTURE_STYLES = `
+[data-mi-canvas-action],
+.mi-editor-insert-zone,
+.mi-editor-canvas-toolbar,
+.renderer-preview-warning {
+  display: none !important;
+}
+.renderer-preview-document .mi-editor-section {
+  outline: none !important;
+  box-shadow: none !important;
+}
 html.${CAPTURE_CLASS} body *:not(.site-preview):not(.site-preview *) {
   visibility: hidden !important;
   pointer-events: none !important;
@@ -24,16 +34,6 @@ html.${CAPTURE_CLASS} .site-preview {
 }
 html.${CAPTURE_CLASS} .renderer-preview-document {
   background: var(--mi-background, #ffffff) !important;
-}
-html.${CAPTURE_CLASS} [data-mi-canvas-action],
-html.${CAPTURE_CLASS} .mi-editor-insert-zone,
-html.${CAPTURE_CLASS} .mi-editor-canvas-toolbar,
-html.${CAPTURE_CLASS} .renderer-preview-warning {
-  display: none !important;
-}
-html.${CAPTURE_CLASS} .mi-editor-section {
-  outline: none !important;
-  box-shadow: none !important;
 }
 `;
 

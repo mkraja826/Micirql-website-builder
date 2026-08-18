@@ -12,6 +12,7 @@ import "@micirql/sections/premium-mobile.css";
 import "@micirql/sections/dental-layout-blueprints.css";
 import "@micirql/sections/dental-02-implant-atelier.css";
 import "@micirql/sections/dental-03-smile-studio.css";
+import "@micirql/sections/dental-04-family-care.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

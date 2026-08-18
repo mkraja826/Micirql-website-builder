@@ -18,6 +18,7 @@ const sources = [
   "packages/sections/src/image-slots.css",
   "packages/sections/src/premium-mobile.css",
   "packages/sections/src/dental-layout-blueprints.css",
+  "packages/sections/src/dental-02-implant-atelier.css",
 ];
 
 const chunks = [];

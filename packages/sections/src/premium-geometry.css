@@ -1,0 +1,54 @@
+/* Premium geometry layer: shared dimensional rhythm for generated websites. */
+:root{
+  --mi-nav-height:4.75rem;
+  --mi-section-gap:clamp(1.25rem,2.5vw,2rem);
+  --mi-grid-gap:clamp(1rem,2vw,1.5rem);
+  --mi-card-pad:clamp(1.1rem,2.2vw,1.6rem);
+  --mi-hero-pad-top:clamp(5rem,11vw,9rem);
+  --mi-hero-pad-bottom:clamp(4rem,8vw,7rem);
+  --mi-media-radius:var(--mi-radius-card);
+  --mi-button-pad-inline:1.2rem;
+}
+[data-mi-brand-density="compact"]{--mi-section-gap:clamp(1rem,1.7vw,1.35rem);--mi-grid-gap:clamp(.85rem,1.5vw,1.15rem);--mi-card-pad:clamp(.95rem,1.7vw,1.25rem)}
+[data-mi-brand-density="spacious"]{--mi-section-gap:clamp(1.5rem,3vw,2.4rem);--mi-grid-gap:clamp(1.2rem,2.4vw,1.9rem);--mi-card-pad:clamp(1.3rem,2.8vw,2rem)}
+
+[data-mi-layout-blueprint^="dental-"]{overflow-x:clip}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section,.mi-shell-navbar,.mi-shell-footer){box-sizing:border-box}
+[data-mi-layout-blueprint^="dental-"] .mi-section>.mi-container,
+[data-mi-layout-blueprint^="dental-"] .mi-shell-navbar>.mi-container,
+[data-mi-layout-blueprint^="dental-"] .mi-shell-footer>.mi-container{min-width:0}
+[data-mi-layout-blueprint^="dental-"] .mi-section{padding-block:var(--mi-section-space)}
+[data-mi-layout-blueprint^="dental-"] .mi-section--hero{padding-top:var(--mi-hero-pad-top);padding-bottom:var(--mi-hero-pad-bottom)}
+[data-mi-layout-blueprint^="dental-"] .mi-shell-navbar{min-height:var(--mi-nav-height)}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-nav-row,.mi-nav-centered,.mi-navbar){min-height:var(--mi-nav-height)}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__layout,.mi-hero__split,.mi-standard--split,.mi-contact__panel,.mi-contact-split,.mi-features-split,.mi-team-featured,.mi-cta-split){gap:var(--mi-section-gap)}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__grid,.mi-services-grid,.mi-proof-card-grid,.mi-proof-wall,.mi-proof-metrics,.mi-team-grid,.mi-gallery-grid,.mi-process-grid,.mi-features-grid){gap:var(--mi-grid-gap)}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__card,.mi-service-item,.mi-proof-card-grid blockquote,.mi-proof-wall blockquote,.mi-proof-metrics article,.mi-process-card,.mi-feature-card,.mi-team-card,.mi-gallery-card,.mi-contact-card){min-width:0;box-sizing:border-box}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__media,.mi-service-item img,.mi-team-card img,.mi-gallery-card img){max-width:100%}
+[data-mi-layout-blueprint^="dental-"] .mi-section__media{border-radius:var(--mi-media-radius)}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__action,.mi-shell-cta,.mi-conv-btn,.mi-section__form button){min-height:48px;padding-inline:var(--mi-button-pad-inline);box-sizing:border-box;white-space:normal;text-align:center;line-height:1.15}
+[data-mi-layout-blueprint^="dental-"] :is(.mi-section__form input,.mi-section__form select,.mi-section__form textarea){box-sizing:border-box;min-width:0}
+[data-mi-layout-blueprint^="dental-"] .mi-section__heading{margin-bottom:clamp(1.5rem,3vw,2.5rem)}
+[data-mi-layout-blueprint^="dental-"] .mi-section__heading:has(+ :is(.mi-section__layout,.mi-section__grid,.mi-services-grid,.mi-team-grid,.mi-proof-metrics,.mi-gallery-grid)){margin-bottom:clamp(1.75rem,3.5vw,3rem)}
+
+@media (min-width:75rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-container{width:min(100% - 6rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint^="dental-"] .mi-hero__split{gap:clamp(3rem,5vw,5rem)}
+}
+@media (max-width:64rem){
+  [data-mi-layout-blueprint^="dental-"]{--mi-nav-height:4.5rem}
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__layout,.mi-hero__split,.mi-standard--split,.mi-contact__panel,.mi-contact-split,.mi-features-split,.mi-team-featured){gap:clamp(1.5rem,4vw,2.5rem)}
+}
+@media (max-width:47.99rem){
+  [data-mi-layout-blueprint^="dental-"]{--mi-nav-height:4.25rem;--mi-hero-pad-top:clamp(3.75rem,13vw,5.5rem);--mi-hero-pad-bottom:clamp(3rem,10vw,4.5rem);--mi-grid-gap:1rem;--mi-button-pad-inline:1rem}
+  [data-mi-layout-blueprint^="dental-"] .mi-section{padding-block:clamp(3.5rem,13vw,5rem)}
+  [data-mi-layout-blueprint^="dental-"] .mi-section--hero{padding-top:var(--mi-hero-pad-top);padding-bottom:var(--mi-hero-pad-bottom)}
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__grid,.mi-services-grid,.mi-proof-card-grid,.mi-proof-wall,.mi-proof-metrics,.mi-team-grid,.mi-gallery-grid,.mi-process-grid,.mi-features-grid){grid-template-columns:minmax(0,1fr)!important}
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__actions,.mi-conv-actions){width:100%;align-items:stretch}
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__action,.mi-conv-btn){max-width:100%}
+  [data-mi-layout-blueprint^="dental-"] .mi-section__media img{max-height:min(68vh,34rem);object-fit:cover}
+}
+@media (max-width:30rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-container{width:min(100% - 2rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta){min-height:46px}
+}

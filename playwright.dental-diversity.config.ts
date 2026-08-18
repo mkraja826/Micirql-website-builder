@@ -6,6 +6,7 @@ export default defineConfig({
     "dental-diversity-benchmark.spec.ts",
     "dental-blueprint-application.spec.ts",
     "dental-planner-contract.spec.ts",
+    "dental-media-execution.spec.ts",
   ],
   timeout: 30_000,
   fullyParallel: false,

@@ -24,6 +24,8 @@ export type GuardedContentGenerationRequest = {
   facts?: Partial<GroundingFacts>;
 };
 
+type ContentUsage = { inputTokens: number; outputTokens: number; costMicrousd: number };
+
 type ContentAttempt = {
   planner: PlannerModel;
   profile: ModelProfile;
@@ -44,12 +46,13 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   }
 
   const attempts: ContentAttempt[] = [];
-  const usageByProfile = new Map<string, { inputTokens: number; outputTokens: number; costMicrousd: number }>();
+  const usageByProfile = new Map<string, ContentUsage>();
+  let recordedUsage: ContentUsage | undefined;
 
   const workersPlanner = createWorkersAiJsonPlannerModel({
     maxOutputTokens: 8_000,
     onUsage: async (usage) => {
-      const recorded = await recordContentUsage(request, {
+      recordedUsage = await recordContentUsage(request, {
         workspaceId: input.workspaceId,
         siteId: input.siteId,
         profileId: CLOUDFLARE_CONTENT_PROFILE_ID,
@@ -57,7 +60,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
         model: CLOUDFLARE_CONTENT_MODEL,
         usage,
       });
-      usageByProfile.set(CLOUDFLARE_CONTENT_PROFILE_ID, recorded);
+      usageByProfile.set(CLOUDFLARE_CONTENT_PROFILE_ID, recordedUsage);
     },
   });
   if (workersPlanner) {
@@ -83,7 +86,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     const planner = createOpenAiCompatibleJsonPlannerModel({
       ...providerConfig,
       onUsage: async (usage) => {
-        const recorded = await recordContentUsage(request, {
+        recordedUsage = await recordContentUsage(request, {
           workspaceId: input.workspaceId,
           siteId: input.siteId,
           profileId: providerConfig.id,
@@ -91,7 +94,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
           model: providerConfig.model,
           usage,
         });
-        usageByProfile.set(providerConfig.id, recorded);
+        usageByProfile.set(providerConfig.id, recordedUsage);
       },
     });
     attempts.push({
@@ -150,12 +153,12 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     snapshot: generated.site,
     expectedRevision: current.revision,
   });
-  const recordedUsage = usageByProfile.get(selectedProfile.id);
+  const selectedUsage = usageByProfile.get(selectedProfile.id);
 
   return {
     draft: saved,
     model: { id: generated.model.id, provider: generated.model.provider, model: generated.model.model },
-    ...(recordedUsage ? { usage: recordedUsage } : {}),
+    ...(selectedUsage ? { usage: selectedUsage } : {}),
     fallbackUsed: attempts[0]?.profile.id !== selectedProfile.id,
     audit: {
       appliedFields: generated.appliedFields,

@@ -6,6 +6,8 @@ const root = process.cwd();
 const onboarding = fs.readFileSync(path.join(root, "apps/builder/app/guided-onboarding.tsx"), "utf8");
 const interpreter = fs.readFileSync(path.join(root, "apps/builder/app/onboarding-brief-intelligence.ts"), "utf8");
 const route = fs.readFileSync(path.join(root, "apps/builder/app/api/onboarding/interpret/route.ts"), "utf8");
+const assetUpload = fs.readFileSync(path.join(root, "apps/builder/app/api/assets/upload/route.ts"), "utf8");
+const assetVision = fs.readFileSync(path.join(root, "apps/builder/app/uploaded-asset-intelligence.ts"), "utf8");
 
 test("onboarding is context-first instead of selector-first", () => {
   expect(onboarding).toContain("Describe the website you want.");
@@ -23,17 +25,32 @@ test("context interpretation uses Workers AI with a deterministic fallback", () 
 });
 
 test("context interpretation preserves the existing structured generation contract", () => {
-  for (const field of ["businessName", "industry", "subindustry", "location", "services", "goals", "styleTags", "requiredCapabilities", "languages", "notes"]) {
-    expect(interpreter).toContain(field);
-  }
+  for (const field of ["businessName", "industry", "subindustry", "location", "services", "goals", "styleTags", "requiredCapabilities", "languages", "notes"]) expect(interpreter).toContain(field);
 });
 
 test("user supplied factual claims are locked before content generation", () => {
   expect(interpreter).toContain("LockedBriefFacts");
   expect(interpreter).toContain("LOCKED FACTS");
   expect(interpreter).toContain("never invent missing values");
-  for (const field of ["addresses", "phoneNumbers", "emails", "urls", "people", "credentials", "prices", "openingHours", "claims"]) {
-    expect(interpreter).toContain(field);
-  }
+  for (const field of ["addresses", "phoneNumbers", "emails", "urls", "people", "credentials", "prices", "openingHours", "claims"]) expect(interpreter).toContain(field);
   expect(interpreter).toContain("Do not create fictional names, contact details, addresses, credentials, prices, hours, awards, statistics, guarantees, reviews or factual claims");
+});
+
+test("onboarding accepts a batch of business photos and persists them before generation", () => {
+  expect(onboarding).toContain("Business photos");
+  expect(onboarding).toContain("multiple");
+  expect(onboarding).toContain("uploadBusinessAssets");
+  expect(onboarding).toContain('fetch("/api/assets/upload"');
+  expect(onboarding).toContain("slice(0, 12)");
+});
+
+test("uploaded business media is vision classified with safe fallbacks", () => {
+  expect(assetUpload).toContain("classifyUploadedBusinessAsset");
+  expect(assetUpload).toContain("classification.sectionFamilies");
+  expect(assetUpload).toContain("classification.tags");
+  expect(assetVision).toContain('@cf/meta/llama-3.2-11b-vision-instruct');
+  expect(assetVision).toContain('source: "cloudflare-workers-ai-vision"');
+  expect(assetVision).toContain('source: "deterministic-fallback"');
+  for (const category of ["team", "results", "clinic", "service", "certificate", "product", "general"]) expect(assetVision).toContain(category);
+  expect(assetVision).toContain("Do not identify a real person or infer credentials, medical outcomes, ownership, awards, or facts not visually evident");
 });

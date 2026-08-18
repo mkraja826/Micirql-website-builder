@@ -62,3 +62,21 @@ test("generation permission does not fabricate a real-world business location he
   const execution = executeMediaPlan({ plan, allowGeneration: true });
   expect(execution.requests[0]?.source).toBe("none");
 });
+
+test("first-build generation does not silently expand to non-Dental abstract media", () => {
+  const plan: VisualMediaPlan = {
+    style: "mixed",
+    rules: [],
+    sections: [{
+      family: "hero",
+      role: "abstract",
+      prominence: "dominant",
+      aspect: "wide",
+      subject: "A distinctive abstract consulting visual supporting the primary promise",
+      avoid: ["unrelated decorative imagery"],
+    }],
+  };
+  const execution = executeMediaPlan({ plan, allowGeneration: true });
+  expect(execution.requests[0]?.source).toBe("none");
+  expect(execution.generationCount).toBe(0);
+});

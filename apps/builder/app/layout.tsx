@@ -30,6 +30,7 @@ import "@micirql/sections/dental-18-proof-first.css";
 import "@micirql/sections/dental-19-quiet-precision.css";
 import "@micirql/sections/dental-20-complete-signature.css";
 import "@micirql/sections/dental-responsive-safety.css";
+import "@micirql/sections/premium-output-system.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

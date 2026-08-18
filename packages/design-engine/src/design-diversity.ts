@@ -96,7 +96,7 @@ export function selectDiverseDesigns<T extends { designScore: DesignScore }>(can
 }
 
 export function designSimilarity(a: DesignFingerprint, b: DesignFingerprint): number {
-  const structural = tokenSetSimilarity(a.structure, b.structure);
+  const structural = orderedTokenSimilarity(a.structure, b.structure);
   const palette = a.palette === b.palette ? 1 : 0;
   const typography = a.typography === b.typography ? 1 : 0;
   const density = a.density === b.density ? 1 : 0;
@@ -147,6 +147,18 @@ function familyAndVariant(componentId: string): string | undefined {
 function variantFromId(componentId: string): number {
   const match = componentId.match(/(?:-|\.)(\d{1,3})$/);
   return match ? Math.max(1, Number(match[1]) || 1) : 1;
+}
+
+function orderedTokenSimilarity(a: string, b: string): number {
+  if (a === b) return 1;
+  const left = a.split("|").filter(Boolean);
+  const right = b.split("|").filter(Boolean);
+  if (!left.length && !right.length) return 1;
+  const setSimilarity = tokenSetSimilarity(a, b);
+  const longest = Math.max(left.length, right.length, 1);
+  const positionalMatches = Array.from({ length: longest }, (_, index) => left[index] === right[index] && left[index] != null).filter(Boolean).length;
+  const positionalSimilarity = positionalMatches / longest;
+  return setSimilarity * 0.65 + positionalSimilarity * 0.35;
 }
 
 function tokenSetSimilarity(a: string, b: string): number {

@@ -1,0 +1,142 @@
+/* Shared responsive safety layer for curated Dental website blueprints.
+ *
+ * Dental layouts intentionally keep their own visual composition. This file only
+ * owns cross-layout containment rules where the shared shell or a reusable hero
+ * primitive reaches an unsafe breakpoint.
+ */
+
+/* Typography primitives set their own foreground color, so inheriting white from
+ * an immersive hero's copy wrapper is not enough. Keep generated image-led hero
+ * headlines and body copy readable against the dark overlay. */
+.mi-hero--immersive .mi-hero__copy .mi-type{
+  color:#fff;
+}
+
+/* Dense desktop navigation is not safe at tablet widths. Keep the desktop
+ * presentation above 1024px and use the existing mobile drawer through tablet.
+ */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-links,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-nav-groups,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-actions>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered>.mi-shell-links,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered__action>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-minimal-copy,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-navbar>.mi-container>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-row>.mi-shell-cta{
+    display:none!important;
+  }
+
+  [data-mi-layout-blueprint^="dental-"] .mi-mobile-nav{
+    display:block!important;
+    margin-left:auto;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-burger{
+    display:flex!important;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-mobile-drawer>.mi-shell-cta{
+    display:flex!important;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+}
+
+/* Immediate Care keeps four reassurance cards on desktop, but at the exact
+ * 768px certification boundary the four-column matrix leaves the last card
+ * wider than the available content box. Use a deliberate 2x2 tablet matrix.
+ */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics>.mi-container{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.25rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-content-heading{
+    max-width:38rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics strong,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics p{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
+/* Implant Results is intentionally evidence-dense. Its four metric cards are
+ * excellent on desktop but become cramped through the tablet range, causing
+ * text to escape the content box at both 768px and 1024px. Preserve the same
+ * evidence hierarchy with a spacious 2x2 matrix until the full desktop width.
+ */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics>.mi-container{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-content-heading{
+    max-width:42rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:.8rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics strong,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics p{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
+/* Complete Signature turns the generic split hero into a flex column on phone.
+ * The generic split primitive is center-aligned; without an explicit stretch the
+ * copy becomes intrinsic-width and is centered outside the narrow viewport.
+ */
+@media (max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__split{
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__copy{
+    width:100%!important;
+    max-width:100%!important;
+    align-self:stretch;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--eyebrow{
+    width:auto!important;
+    max-width:100%;
+    white-space:normal;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--display{
+    max-width:min(11ch,100%)!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-type--body,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__actions{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__action{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box!important;
+  }
+}
+
+/* Consultation Engine keeps conversion above the first media block at every
+ * supported phone width. The 430px viewport otherwise grows the vw-based title
+ * enough to push the primary action below the intended first-screen rhythm.
+ */
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-07-conversion-engine"] .mi-hero--centered .mi-type--display{
+    font-size:clamp(2.35rem,10.6vw,3.35rem)!important;
+  }
+}

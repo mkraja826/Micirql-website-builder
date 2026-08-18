@@ -95,22 +95,17 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
 
   if (profile && reviewSessionActive) {
     return <OnboardingProfileProvider profile={profile}>
-      <>
-        <div style={{ display: ready ? "none" : "block" }}>
-          <FirstBuildReview
-            session={session}
-            workspaceId={context.workspaceId}
-            siteId={context.siteId}
-            profile={profile}
-            onComplete={() => setReady(true)}
-          />
-        </div>
-        {ready ? <div className="mi-review-editor-session">
-          <style>{`.mi-review-editor-session .editor-back-button{display:none!important}`}</style>
-          <button style={backStyle} onClick={() => setReady(false)}>← Designs</button>
-          <WorkspaceClient session={session} workspaceId={context.workspaceId} siteId={context.siteId} />
-        </div> : null}
-      </>
+      {ready ? <div className="mi-review-editor-session">
+        <style>{`.mi-review-editor-session .editor-back-button{display:none!important}`}</style>
+        <button style={backStyle} onClick={() => setReady(false)}>← Designs</button>
+        <WorkspaceClient session={session} workspaceId={context.workspaceId} siteId={context.siteId} />
+      </div> : <FirstBuildReview
+        session={session}
+        workspaceId={context.workspaceId}
+        siteId={context.siteId}
+        profile={profile}
+        onComplete={() => setReady(true)}
+      />}
     </OnboardingProfileProvider>;
   }
 

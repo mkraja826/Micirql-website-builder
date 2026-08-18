@@ -94,3 +94,84 @@
     padding-inline: 18px;
   }
 }
+
+/*
+ * Playwright visual-certification capture guard.
+ *
+ * The QA harness temporarily adds html.mi-qa-capture while taking an element
+ * screenshot. The normal editor intentionally clips the canvas to the current
+ * editor viewport, which makes the off-screen part of a tall element screenshot
+ * composite against the editor's #0a0a0c background. During capture only,
+ * expand the preview ancestry to its natural content height and remove editor
+ * chrome. These selectors are inert in the product because the class exists
+ * only in QA.
+ */
+html.mi-qa-capture,
+html.mi-qa-capture body {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 * {
+  visibility: visible !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-main {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-canvas,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .canvas-stage {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-canvas {
+  background: transparent !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-topbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .canvas-toolbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-rail,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .workspace-inspector,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mobile-editor-bar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mobile-editor-nav,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .viewport-switcher,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .draft-conflict,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 [data-mi-canvas-action],
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mi-editor-insert-zone,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .mi-editor-canvas-toolbar,
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .renderer-preview-warning {
+  display: none !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .site-preview {
+  min-height: 0 !important;
+  margin: 0 !important;
+  background: var(--mi-background, #ffffff) !important;
+  box-shadow: none !important;
+}
+
+html.mi-qa-capture body .workspace-shell.workspace-shell.editor-v2 .renderer-preview-document {
+  min-height: 0 !important;
+  background: var(--mi-background, #ffffff) !important;
+}

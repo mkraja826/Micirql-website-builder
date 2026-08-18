@@ -3,6 +3,13 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./qa",
   testMatch: /dental-layout-blueprint(?:-\d+)?\.spec\.ts/,
+  // The first three legacy specs pre-date the shared exact-viewport harness.
+  // Their coverage now lives in dental-layout-blueprint-00.spec.ts so all 20
+  // layouts are certified through the same viewport and evidence pipeline.
+  testIgnore: [
+    /dental-layout-blueprint\.spec\.ts/,
+    /dental-layout-blueprint-0[23]\.spec\.ts/,
+  ],
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,

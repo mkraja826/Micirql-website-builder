@@ -7,11 +7,13 @@ on:
       - "apps/builder/app/apply-layout-blueprint.ts"
       - "apps/builder/app/renderer-preview.tsx"
       - "apps/builder/app/layout.tsx"
+      - "apps/builder/app/editor-layout-guard.css"
       - "packages/design-engine/src/website-layout-blueprints.ts"
       - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/design-engine/src/layout-library.ts"
       - "packages/renderer/**"
       - "packages/sections/**"
+      - "qa/dental-blueprint-qa.ts"
       - "qa/dental-layout-blueprint*.spec.ts"
       - "playwright.dental-blueprint.config.ts"
       - "package.json"
@@ -22,11 +24,13 @@ on:
       - "apps/builder/app/apply-layout-blueprint.ts"
       - "apps/builder/app/renderer-preview.tsx"
       - "apps/builder/app/layout.tsx"
+      - "apps/builder/app/editor-layout-guard.css"
       - "packages/design-engine/src/website-layout-blueprints.ts"
       - "packages/design-engine/src/dental-layout-blueprints.ts"
       - "packages/design-engine/src/layout-library.ts"
       - "packages/renderer/**"
       - "packages/sections/**"
+      - "qa/dental-blueprint-qa.ts"
       - "qa/dental-layout-blueprint*.spec.ts"
       - "playwright.dental-blueprint.config.ts"
       - "package.json"
@@ -35,7 +39,7 @@ on:
 jobs:
   certify-blueprints:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,33 +68,45 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Certify curated Dental blueprints at six viewport widths
+        id: dental_qa
+        continue-on-error: true
         run: pnpm qa:dental-blueprint
 
       - name: Add certification summary
         if: always()
         shell: bash
+        env:
+          DENTAL_QA_OUTCOME: ${{ steps.dental_qa.outcome }}
         run: |
           node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
           const fs = require('fs');
           const path = require('path');
           const root = 'test-results';
+          const expectedLayouts = 20;
+          const expectedWidths = [360, 390, 430, 768, 1024, 1440];
+          const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
           const dirs = fs.existsSync(root)
-            ? fs.readdirSync(root).filter((name) => name.startsWith('dental-layout-blueprint-')).sort()
+            ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()
             : [];
           console.log('# Dental Blueprint QA');
           console.log('');
+          console.log(`Playwright outcome: **${process.env.DENTAL_QA_OUTCOME || 'unknown'}**`);
+          console.log(`Canonical reports produced: **${dirs.length}/${expectedLayouts}**`);
+          console.log('');
           if (!dirs.length) {
-            console.log('No blueprint reports were produced.');
+            console.log('No canonical blueprint reports were produced.');
             process.exit(0);
           }
-          console.log('| Layout | Coverage | Viewports | Overflow-safe |');
-          console.log('| --- | ---: | ---: | --- |');
+          console.log('| Layout | Coverage | Metadata | Viewports | Overflow-safe |');
+          console.log('| --- | ---: | --- | ---: | --- |');
           for (const dir of dirs) {
-            const reportPath = path.join(root, dir, 'report.json');
-            if (!fs.existsSync(reportPath)) continue;
-            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-            const safe = report.results.every((item) => item.passed);
-            console.log(`| ${report.layoutId} | ${report.coverage.matched}/${report.coverage.expected} | ${report.results.length} | ${safe ? 'PASS' : 'FAIL'} |`);
+            const report = JSON.parse(fs.readFileSync(path.join(root, dir, 'report.json'), 'utf8'));
+            const widths = report.results.map((item) => item.width);
+            const widthComplete = expectedWidths.every((width) => widths.includes(width));
+            const safe = report.results.length === expectedWidths.length && widthComplete && report.results.every((item) => item.passed);
+            const coverage = report.coverage.complete && report.coverage.matched === report.coverage.expected;
+            const metadata = report.blueprintMetadataVerified === true;
+            console.log(`| ${report.layoutId} | ${report.coverage.matched}/${report.coverage.expected} | ${metadata ? 'PASS' : 'FAIL'} | ${report.results.length}/${expectedWidths.length} | ${coverage && metadata && safe ? 'PASS' : 'FAIL'} |`);
           }
           NODE
 
@@ -101,3 +117,49 @@ jobs:
           name: micirql-dental-layout-blueprints
           path: test-results/dental-layout-blueprint-*
           retention-days: 30
+
+      - name: Enforce complete 20-layout certification gate
+        if: always()
+        shell: bash
+        env:
+          DENTAL_QA_OUTCOME: ${{ steps.dental_qa.outcome }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const expectedLayouts = 20;
+          const expectedWidths = [360, 390, 430, 768, 1024, 1440];
+          const root = 'test-results';
+          const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
+          const dirs = fs.existsSync(root)
+            ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()
+            : [];
+          const failures = [];
+
+          if (process.env.DENTAL_QA_OUTCOME !== 'success') failures.push(`Playwright outcome was ${process.env.DENTAL_QA_OUTCOME || 'unknown'}`);
+          if (dirs.length !== expectedLayouts) failures.push(`Expected ${expectedLayouts} canonical reports, found ${dirs.length}`);
+
+          for (const dir of dirs) {
+            const report = JSON.parse(fs.readFileSync(path.join(root, dir, 'report.json'), 'utf8'));
+            if (!report.coverage?.complete || report.coverage?.matched !== report.coverage?.expected) {
+              failures.push(`${report.layoutId}: incomplete section coverage ${report.coverage?.matched}/${report.coverage?.expected}`);
+            }
+            if (report.blueprintMetadataVerified !== true) {
+              failures.push(`${report.layoutId}: applied blueprint metadata was not verified`);
+            }
+            const widths = (report.results || []).map((item) => item.width);
+            if (report.results?.length !== expectedWidths.length || expectedWidths.some((width) => !widths.includes(width))) {
+              failures.push(`${report.layoutId}: incomplete viewport evidence [${widths.join(', ')}]`);
+            }
+            const unsafe = (report.results || []).filter((item) => !item.passed).map((item) => item.width);
+            if (unsafe.length) failures.push(`${report.layoutId}: overflow/containment failure at ${unsafe.join(', ')}px`);
+          }
+
+          if (failures.length) {
+            console.error('Dental certification gate FAILED');
+            for (const failure of failures) console.error(`- ${failure}`);
+            process.exit(1);
+          }
+
+          console.log(`Dental certification gate passed: ${expectedLayouts} layouts × ${expectedWidths.length} viewports with blueprint metadata verified.`);
+          NODE

@@ -1,4 +1,4 @@
-import { recommendLayoutCandidates, type RankedLayout } from "@micirql/design-engine";
+import { recommendLayoutCandidates, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
 import { resolvePremiumCertifiedVariant, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import { selectIndustryPack, type IndustryPackSelection } from "./industry-pack-intelligence";
@@ -21,7 +21,15 @@ const INTENT_VARIANTS:Record<CompositionIntent,Partial<Record<SectionFamily,Sect
 export function composeWebsite(profile:OnboardingProfile):WebsiteComposition{
  const ranked=rankPresets(profile),top=ranked[0];if(!top)throw new Error("No design presets are available for composition.");
  const preset=top.preset,intent=inferIntent(profile,preset.id),industryPack=selectIndustryPack({industry:profile.industry,subindustry:profile.subindustry,goals:profile.goals,services:profile.required_capabilities});
- const layoutCandidate=recommendLayoutCandidates({industry:profile.industry,subindustryId:profile.subindustry??undefined,goals:profile.goals,priorities:[...(profile.services??[]),...(profile.required_capabilities??[])],styleTags:profile.style_tags},1)[0]??null;
+ const priorities=[...(profile.services??[]),...(profile.required_capabilities??[])];
+ const layoutInput:LayoutSelectionInput={
+  industry:profile.industry?.trim()||preset.id,
+  ...(profile.subindustry?.trim()?{subindustryId:profile.subindustry.trim()}:{}),
+  ...(profile.goals?.length?{goals:profile.goals}:{}),
+  ...(priorities.length?{priorities}:{}),
+  ...(profile.style_tags?.length?{styleTags:profile.style_tags}:{}),
+ };
+ const layoutCandidate=recommendLayoutCandidates(layoutInput,1)[0]??null;
  const available=preset.variants;
  const recipeFamilies=industryPack?industryPack.recipe.sections.map(recipeFamily).filter((f):f is SectionFamily=>Boolean(f&&available[f]!=null)):[];
  const base=recipeFamilies.length>=3?recipeFamilies:FLOWS[intent];

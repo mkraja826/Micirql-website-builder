@@ -1,15 +1,10 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
-import { findWebsiteLayout } from "@micirql/design-engine";
 import { sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { INDUSTRY_DESIGN_PRESETS } from "../apps/builder/app/industry-design-preset-data";
-import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
+import { runDentalBlueprintCertification } from "./dental-blueprint-qa";
 
 const LAYOUT_ID = "dental-02-implant-luxury";
-const TARGETS = [360, 390, 430, 768, 1024, 1440] as const;
-const now = new Date().toISOString();
 
 function section(id: string, family: SectionFamily, variant: 1 | 2 | 3 | 4 | 5, theme: Site["theme"]["family"], props: Record<string, unknown>) {
   return { id, component: { componentId: sectionDesignId(theme, family, variant), version: "1.0.0" }, props, bindings: {}, hidden: false };
@@ -119,86 +114,31 @@ function sourceSite(): Site {
   });
 }
 
-async function installRoutes(page: any, site: Site) {
-  const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
-  await page.route("**/api/projects**", async (route: any) => route.fulfill({ json: { projects: [project] } }));
-  await page.route("**/api/onboarding**", async (route: any) => route.fulfill({ json: { completed: true, profile: { industry: "dental clinic", subindustry: "implant dentistry", goals: ["implant consultation", "high-value treatment lead"], style_tags: ["implant", "luxury", "editorial", "premium"], required_capabilities: ["booking", "contact", "treatment process"], services: ["single-tooth implants", "implant-supported bridges", "full-arch rehabilitation"] } } }));
-  await page.route("**/api/drafts**", async (route: any) => route.fulfill({ json: { draft: { workspaceId: site.workspaceId, siteId: site.siteId, revision: 4, snapshot: site, updatedAt: now, updatedBy: "blueprint-qa" } } }));
-  await page.route("**/api/credits**", async (route: any) => route.fulfill({ json: { balance: 100 } }));
-}
-
-function viewportFor(width: number) {
-  if (width <= 430) return "mobile";
-  if (width <= 1024) return "tablet";
-  return "desktop";
-}
-
 test("Dental 02 Implant Atelier passes curated responsive safety gates", async ({ page }) => {
-  const layout = findWebsiteLayout(LAYOUT_ID);
-  if (!layout) throw new Error(`${LAYOUT_ID} is missing from the layout library.`);
-  const source = sourceSite();
-  const coverage = layoutCoverage(source, layout);
-  expect(coverage.complete, `Missing blueprint sections: ${coverage.missing.join(", ")}`).toBeTruthy();
-  const site = applyWebsiteLayoutBlueprint(source, layout);
-  await installRoutes(page, site);
-  await page.addInitScript(() => localStorage.setItem("micirql.supabase.session", JSON.stringify({ access_token: "blueprint-token", refresh_token: "blueprint-refresh", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer", user: { id: "blueprint-user", email: "blueprint@micirql.test" } })));
-  await page.goto("/");
-  await page.getByRole("button", { name: "Open editor" }).first().click();
-
-  const output = path.join(process.cwd(), "test-results", "dental-layout-blueprint-02");
-  await mkdir(output, { recursive: true });
-  const results: Array<Record<string, unknown>> = [];
-
-  for (const width of TARGETS) {
-    const viewport = viewportFor(width);
-    await page.getByRole("button", { name: viewport, exact: true }).click();
-    const sitePreview = page.locator(`.site-preview.viewport-${viewport}`);
-    await expect(sitePreview).toBeVisible();
-    await sitePreview.evaluate((element, targetWidth) => {
-      (element as HTMLElement).style.setProperty("width", `${targetWidth}px`, "important");
-      (element as HTMLElement).style.setProperty("max-width", `${targetWidth}px`, "important");
-    }, width);
-
-    const document = page.locator(".renderer-preview-document");
-    await expect(document.locator(`[data-mi-layout-blueprint="${LAYOUT_ID}"]`)).toHaveCount(1);
-    const metrics = await document.evaluate((element, targetWidth) => {
-      const root = element.querySelector("[data-mi-layout-blueprint]") as HTMLElement | null;
-      if (!root) return { clientWidth: 0, scrollWidth: 1, overflowingSections: 1, overflowingControls: 1, clippedMedia: 1, mobileHeroSeparated: false };
-      const rootRect = root.getBoundingClientRect();
-      const outside = (node: Element) => {
-        const rect = node.getBoundingClientRect();
-        return rect.width > 0 && (rect.left < rootRect.left - 1 || rect.right > rootRect.right + 1);
-      };
-      const hero = root.querySelector(".mi-hero--immersive") as HTMLElement | null;
-      const media = hero?.querySelector(":scope > .mi-section__media") as HTMLElement | null;
-      const overlay = hero?.querySelector(".mi-hero__overlay") as HTMLElement | null;
-      let mobileHeroSeparated = true;
-      if (targetWidth <= 430 && hero && media && overlay) {
+  await runDentalBlueprintCertification({
+    page,
+    layoutId: LAYOUT_ID,
+    site: sourceSite(),
+    outputName: "dental-layout-blueprint-02",
+    profile: {
+      industry: "dental clinic",
+      subindustry: "implant dentistry",
+      goals: ["implant consultation", "high-value treatment lead"],
+      style_tags: ["implant", "luxury", "editorial", "premium"],
+      required_capabilities: ["booking", "contact", "treatment process"],
+      services: ["single-tooth implants", "implant-supported bridges", "full-arch rehabilitation"],
+    },
+    mobileCheck: async ({ root, width }) => {
+      const separated = await root.evaluate((element) => {
+        const hero = element.querySelector(".mi-hero--immersive") as HTMLElement | null;
+        const media = hero?.querySelector(":scope > .mi-section__media") as HTMLElement | null;
+        const overlay = hero?.querySelector(".mi-hero__overlay") as HTMLElement | null;
+        if (!hero || !media || !overlay) return false;
         const mediaRect = media.getBoundingClientRect();
         const overlayRect = overlay.getBoundingClientRect();
-        const mediaPosition = getComputedStyle(media).position;
-        const overlayPosition = getComputedStyle(overlay).position;
-        mobileHeroSeparated = mediaPosition === "relative" && overlayPosition === "relative" && overlayRect.top >= mediaRect.bottom - 2;
-      }
-      return {
-        clientWidth: root.clientWidth,
-        scrollWidth: root.scrollWidth,
-        overflowingSections: [...root.querySelectorAll("section,header,footer")].filter(outside).length,
-        overflowingControls: [...root.querySelectorAll("a,button,input,textarea,select")].filter(outside).length,
-        clippedMedia: [...root.querySelectorAll("img,video,iframe")].filter(outside).length,
-        mobileHeroSeparated,
-      };
-    }, width);
-
-    const passed = metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0 && metrics.mobileHeroSeparated;
-    expect(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
-    expect(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
-    expect(metrics.overflowingControls, `${width}px control overflow`).toBe(0);
-    expect(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
-    expect(metrics.mobileHeroSeparated, `${width}px mobile hero must use image and copy as separate normal-flow regions`).toBeTruthy();
-    await document.screenshot({ path: path.join(output, `${width}.png`) });
-    results.push({ width, viewport, ...metrics, passed });
-  }
-
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: LAYOUT_ID, targets: TARGETS, coverage, results }, null, 2), "utf8");
+        return getComputedStyle(media).position === "relative" && getComputedStyle(overlay).position === "relative" && overlayRect.top >= mediaRect.bottom - 2;
+      });
+      expect(separated, `${width}px mobile hero must use image and copy as separate normal-flow regions`).toBeTruthy();
+    },
+  });
 });

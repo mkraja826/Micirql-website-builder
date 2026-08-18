@@ -1,10 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { DENTAL_LAYOUT_BLUEPRINTS } from "@micirql/design-engine";
+import { DENTAL_LAYOUT_BLUEPRINTS, type WebsiteLayoutBlueprint } from "@micirql/design-engine";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import { sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { composeWebsite } from "../apps/builder/app/composition-intelligence";
+import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
 import type { OnboardingProfile } from "../apps/builder/app/preset-ranking";
 
 const now = new Date().toISOString();
@@ -35,14 +36,14 @@ const baseProfile: OnboardingProfile = {
   services: ["dental implants", "cosmetic dentistry", "root canal treatment"],
 };
 
-function buildSite(layoutId: string): Site {
-  const name = layoutId.replace(/^dental-\d+-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function buildSite(layout: WebsiteLayoutBlueprint): Site {
+  const name = layout.id.replace(/^dental-\d+-/, "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const composition = composeWebsite(baseProfile, {
-    selectedLayoutId: layoutId,
+    selectedLayoutId: layout.id,
     selectedLayoutScore: 100,
-    selectedLayoutReasons: ["Top-20 direct visual evidence"],
+    selectedLayoutReasons: ["Top-20 direct production-path visual evidence"],
   });
-  expect(composition.layoutCandidate?.layout.id).toBe(layoutId);
+  expect(composition.layoutCandidate?.layout.id).toBe(layout.id);
   const services = baseProfile.services ?? ["Dental care"];
   const sections = [
     makeSection("global-navbar", "navbar", 1, composition.preset.theme.family, {
@@ -59,9 +60,10 @@ function buildSite(layoutId: string): Site {
       items: [{ title: "Services" }, { title: "Contact" }],
     }),
   ];
-  return siteSchema.parse({
+
+  const base = siteSchema.parse({
     schemaVersion: SCHEMA_VERSION,
-    siteId: `visual-${layoutId}`,
+    siteId: `visual-${layout.id}`,
     workspaceId: "visual-dental-top20",
     name,
     domain: "clinic",
@@ -81,6 +83,12 @@ function buildSite(layoutId: string): Site {
     pages: [{ id: "home", path: "/", name: "Home", sections, seo: { title: `${name} | Dental Care`, description: `Explore ${name}.`, canonicalPath: "/", indexable: true, structuredDataTypes: ["Dentist"] } }],
     navigation: [{ label: "Home", href: "/" }], integrations: [], domains: [],
   });
+
+  const coverage = layoutCoverage(base, layout);
+  expect(coverage.complete, `${layout.id} fixture does not cover the complete certified blueprint: ${coverage.missing.join(", ")}`).toBe(true);
+  const productionApplied = applyWebsiteLayoutBlueprint(base, layout);
+  expect(productionApplied.pages[0]?.sections.every((section) => section.props.layoutBlueprintId === layout.id)).toBe(true);
+  return productionApplied;
 }
 
 function makeSection(id: string, family: SectionFamily, variant: 1|2|3|4|5, theme: Site["theme"]["family"], props: Record<string, unknown>) {
@@ -105,6 +113,25 @@ function contentFor(family: SectionFamily, name: string, services: string[]): Re
 }
 
 function title(value: string) { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()); }
+
+function fingerprint(site: Site) {
+  const brand = site.theme.brand;
+  const home = site.pages.find((page) => page.path === "/") ?? site.pages[0]!;
+  return {
+    themeFamily: site.theme.family,
+    density: brand.density,
+    shape: brand.shape,
+    motion: brand.motion,
+    display: brand.typography.display,
+    body: brand.typography.body,
+    tone: brand.intelligence?.tone ?? null,
+    typographyMood: brand.intelligence?.typographyMood ?? null,
+    buttonStyle: brand.intelligence?.buttonStyle ?? null,
+    imageryStyle: brand.intelligence?.imageryStyle ?? null,
+    sectionComponents: home.sections.map((section) => section.component.componentId),
+    sectionPatterns: home.sections.map((section) => section.props.layoutPattern ?? null),
+  };
+}
 
 async function installRoutes(page: Page, site: Site) {
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
@@ -148,16 +175,19 @@ async function metrics(preview: Locator) {
   });
 }
 
-test("capture all 20 certified Dental layouts across the premium viewport matrix", async ({ page }) => {
+test("capture all 20 certified Dental layouts through the production blueprint path", async ({ page }) => {
   const outputDirectory = path.join(process.cwd(), "test-results", "dental-top20-visual-evidence");
   await mkdir(outputDirectory, { recursive: true });
   const report: Array<Record<string, unknown>> = [];
+  const fingerprints: string[] = [];
   expect(DENTAL_LAYOUT_BLUEPRINTS).toHaveLength(20);
 
   for (const layout of DENTAL_LAYOUT_BLUEPRINTS) {
     await page.unrouteAll({ behavior: "wait" });
     await page.setViewportSize({ width: 1800, height: 1100 });
-    const site = buildSite(layout.id);
+    const site = buildSite(layout);
+    const designFingerprint = fingerprint(site);
+    fingerprints.push(JSON.stringify(designFingerprint));
     await installRoutes(page, site);
     await page.addInitScript(() => localStorage.setItem("micirql.supabase.session", JSON.stringify({ access_token: "visual-token", refresh_token: "visual-refresh", expires_in: 3600, expires_at: Math.floor(Date.now()/1000)+3600, token_type: "bearer", user: { id: "visual-user", email: "visual@micirql.test" } })));
     await page.goto("/");
@@ -179,17 +209,21 @@ test("capture all 20 certified Dental layouts across the premium viewport matrix
       await capture(page, frame, path.join(outputDirectory, `${layout.id}--${viewport.id}.png`));
       viewportResults[viewport.id] = measured;
     }
-    report.push({ layoutId: layout.id, layoutName: layout.name, viewports: viewportResults });
+    report.push({ layoutId: layout.id, layoutName: layout.name, fingerprint: designFingerprint, viewports: viewportResults });
   }
 
-  await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify({ generatedAt: new Date().toISOString(), layouts: report.length, viewports: VIEWPORTS, report }, null, 2), "utf8");
+  const uniqueFingerprints = new Set(fingerprints).size;
+  expect(uniqueFingerprints, "Top-20 production-path layouts collapsed into too few structural/visual fingerprints").toBeGreaterThanOrEqual(16);
+
+  await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify({ generatedAt: new Date().toISOString(), layouts: report.length, uniqueFingerprints, viewports: VIEWPORTS, report }, null, 2), "utf8");
   await writeFile(path.join(outputDirectory, "summary.md"), [
-    "# MiCirql Dental Top-20 Visual Evidence",
+    "# MiCirql Dental Top-20 Production-Path Visual Evidence",
     "",
     `- Layouts captured: **${report.length}/20**`,
+    `- Distinct production fingerprints: **${uniqueFingerprints}/20**`,
     `- Viewports per layout: **${VIEWPORTS.length}**`,
     `- Total screenshots: **${report.length * VIEWPORTS.length}**`,
-    "- Hard gates: no document overflow, no child escape, mobile interactive height >= 44px",
+    "- Hard gates: full certified blueprint coverage, production blueprint application, no document overflow, no child escape, mobile interactive height >= 44px",
     "",
     ...report.map((entry) => `- ${entry.layoutId}: PASS`),
     "",

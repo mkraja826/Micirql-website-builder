@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { applyPageArchitecture, planPageArchitecture } from "../../../page-architecture-intelligence";
 import { planPageMedia } from "../../../page-media-intelligence";
-import { executeMediaPlan } from "../../../media-execution";
+import { executeMediaPlan, type MediaAsset } from "../../../media-execution";
 import { materializeGeneratedMedia } from "../../../materialize-media-execution";
 import { applyMediaExecution } from "../../../apply-media-execution";
+import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
 import { loadMediaPools } from "../media-assets";
@@ -45,9 +46,11 @@ export async function POST(request: NextRequest) {
     let mediaExecution = null;
     let mediaWarning: string | null = null;
     let generatedMediaCount = 0;
+    let customerAssets: MediaAsset[] = [];
     try {
       const mediaPlan = planPageMedia(architecturalSite, industry);
       const pools = await loadMediaPools(workspaceId);
+      customerAssets = pools.customerAssets;
       mediaExecution = executeMediaPlan({ plan: mediaPlan, ...pools, allowGeneration: true });
       const materialized = await materializeGeneratedMedia({
         request,
@@ -83,7 +86,19 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql architecture content pass failed; keeping architectural draft.", error);
     }
 
-    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, content, contentWarning });
+    let exactPlacement = { placed: 0, pairedCases: 0, unmatched: [] as string[] };
+    try {
+      const current = await getSupabaseDraft(request, workspaceId, siteId);
+      if (current && customerAssets.length) {
+        const placed = applyExactAssetPlacement(current.snapshot, customerAssets);
+        exactPlacement = { placed: placed.placed, pairedCases: placed.pairedCases, unmatched: placed.unmatched };
+        if (placed.placed > 0) await saveSupabaseDraft(request, { snapshot: placed.site, expectedRevision: current.revision });
+      }
+    } catch (error) {
+      console.error("MiCirql exact asset placement failed; keeping page-level media placement.", error);
+    }
+
+    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, content, contentWarning });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed." }, { status: 500 });
   }

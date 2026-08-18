@@ -87,7 +87,7 @@ jobs:
           const fs = require('fs');
           const payload = JSON.parse(fs.readFileSync('/tmp/cloudflare-response.json', 'utf8'));
           if (!payload.ok) throw new Error(`Worker binding inference failed: ${JSON.stringify(payload)}`);
-          const content = payload.result;
+          const content = payload?.result?.output ?? payload?.result;
           const required = [
             ['hero.h1', content?.hero?.h1],
             ['hero.p', content?.hero?.p],
@@ -105,7 +105,21 @@ jobs:
           if (words(content.hero.p) > 35 || words(content.services.p) > 35) throw new Error('paragraph too long');
           if (words(content.hero.cta) < 2 || words(content.hero.cta) > 4) throw new Error(`CTA length invalid: ${content.hero.cta}`);
           const joined = JSON.stringify(content).toLowerCase();
-          const forbidden = [/award[- ]winning/, /\b\d+\+?\s+years?\b/, /\b100%\b/, /guaranteed/, /#1/, /best in hyderabad/];
+          const forbidden = [
+            /award[- ]winning/,
+            /\b\d+\+?\s+years?\b/,
+            /\b100%\b/,
+            /guaranteed/,
+            /#1/,
+            /best in hyderabad/,
+            /\bexpert\b/,
+            /\bexperienced\b/,
+            /\brenowned\b/,
+            /\bhighly skilled\b/,
+            /\btrusted\b/,
+            /\bleading\b/,
+            /\bbest possible\b/,
+          ];
           for (const pattern of forbidden) if (pattern.test(joined)) throw new Error(`unsupported claim detected: ${pattern}`);
           fs.writeFileSync('/tmp/content.json', JSON.stringify(content, null, 2));
           console.log(JSON.stringify(content, null, 2));

@@ -18,6 +18,9 @@ export function FunctionalContactForm(props: Props) {
     ? "Send your preferred treatment and time. The clinic will contact you to confirm the appointment."
     : "Submitting this form sends a request. Appointments, reservations and bookings are confirmed separately.";
   return <form id="enquiry" className="mi-contact-form mi-functional-form" action={props.formAction} method="post" data-mi-action-id={actionId}>
+    {props.formWorkspaceId ? <input type="hidden" name="workspaceId" value={String(props.formWorkspaceId)} /> : null}
+    {props.formSiteId ? <input type="hidden" name="siteId" value={String(props.formSiteId)} /> : null}
+    <input type="hidden" name="actionId" value={actionId} />
     {props.formSourcePage ? <input type="hidden" name="sourcePage" value={String(props.formSourcePage)} /> : null}
     <input type="text" name="website" tabIndex={-1} autoComplete="off" className="mi-form-honeypot" aria-hidden="true" />
     <div className="mi-functional-form__grid">

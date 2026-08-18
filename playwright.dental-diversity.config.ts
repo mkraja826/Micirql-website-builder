@@ -15,6 +15,7 @@ export default defineConfig({
     "exact-asset-placement.spec.ts",
     "native-lead-pipeline.spec.ts",
     "native-leads-inbox.spec.ts",
+    "lead-badges-and-notifications.spec.ts",
     "dental-blueprint-application.spec.ts",
     "dental-planner-contract.spec.ts",
     "dental-media-execution.spec.ts",

@@ -1,72 +1,104 @@
 import type { AssetRecord } from "@micirql/assets";
-import { imageExecutorFromEnvironment, imageProviderConfigFromEnvironment, type AiUsageRecord } from "@micirql/ai";
-import { generateWithWorkersAi, getWorkersAiBinding } from "../../../cloudflare-workers-ai-image";
+import { fetchPexelsImage, getPexelsApiKey } from "../../../pexels-stock-image";
 import { assertWorkspaceAccess, insertAsset, uploadAssetBinary } from "../supabase-assets";
-import { createSupabaseAiUsageStore, creditsForTask, grantTrialCredits, refundCredits, reserveCredits } from "../../credits/supabase-credit-runtime";
 
 export async function POST(request: Request) {
-  let reservation:{workspaceId:string;credits:number;operationKey:string}|null=null;
-  try{
-    const body = await request.json() as {workspaceId?:string;siteId?:string;sectionId?:string;pagePath?:string;family?:string;domain?:string;prompt?:string};
-    if (!body.workspaceId || !body.siteId || !body.sectionId || !body.pagePath || !body.prompt) return Response.json({ error: "Generation request is incomplete." }, { status: 400 });
-    await assertWorkspaceAccess(request,body.workspaceId);
+  try {
+    const body = await request.json() as {
+      workspaceId?: string;
+      siteId?: string;
+      sectionId?: string;
+      pagePath?: string;
+      family?: string;
+      domain?: string;
+      prompt?: string;
+    };
 
-    let externalProvider:ReturnType<typeof imageProviderConfigFromEnvironment>;
-    let externalExecutor:ReturnType<typeof imageExecutorFromEnvironment>;
-    try{
-      externalProvider=imageProviderConfigFromEnvironment(process.env);
-      externalExecutor=imageExecutorFromEnvironment(process.env);
-    }catch(error){
-      externalProvider=undefined;
-      externalExecutor=undefined;
-      console.warn("Configured external image provider is invalid; Workers AI fallback will be attempted.",error);
+    if (!body.workspaceId || !body.siteId || !body.sectionId || !body.pagePath || !body.prompt) {
+      return Response.json({ error: "Image request is incomplete." }, { status: 400 });
     }
-    const workersAiReady=Boolean(getWorkersAiBinding());
-    if((!externalProvider||!externalExecutor)&&!workersAiReady)return Response.json({error:"Image generation provider is not configured for the builder runtime yet.",code:"IMAGE_EXECUTOR_NOT_CONFIGURED",routedTask:"generate-image"},{status:503});
-
-    await grantTrialCredits(body.workspaceId);
-    const credits=creditsForTask("generate-image"),operationKey=`generate-image:${body.siteId}:${body.sectionId}:${crypto.randomUUID()}`;
-    await reserveCredits({workspaceId:body.workspaceId,credits,operationKey,description:"AI image generation",metadata:{siteId:body.siteId,sectionId:body.sectionId,pagePath:body.pagePath,family:body.family??null}});reservation={workspaceId:body.workspaceId,credits,operationKey};
-
-    const purpose=`${body.family??"website"} visual`,domain=body.domain??"general";
-    let bytes:Uint8Array,contentType="image/png",alt=purpose,tags=[domain,purpose,"ai-generated"].filter(Boolean),sizeValue:string,profileId:string,providerName:string,model:string,costMicrousd:number,sourceReference:string;
-
-    if(externalProvider&&externalExecutor){
-      const result=await externalExecutor.run({prompt:body.prompt,purpose,domain,...(body.family?{sectionFamily:body.family}:{})});
-      bytes=result.output.bytes;
-      contentType=result.output.contentType;
-      alt=result.output.alt??purpose;
-      tags=[...(result.output.tags??[]),"ai-generated"];
-      sizeValue=externalProvider.size;
-      profileId=externalProvider.id;
-      providerName=new URL(externalProvider.endpoint).hostname;
-      model=externalProvider.model;
-      costMicrousd=result.usage.costMicrousd;
-      sourceReference=`${providerName}:${model}`;
-    }else{
-      const result=await generateWithWorkersAi(body.prompt);
-      bytes=result.bytes;
-      contentType=result.contentType;
-      sizeValue=result.size;
-      profileId=result.profileId;
-      providerName="workers-ai.cloudflare.com";
-      model=result.model;
-      costMicrousd=result.costMicrousd;
-      sourceReference=`workers-ai:${model}`;
-      tags=[domain,purpose,"cloudflare-workers-ai","ai-generated"].filter(Boolean);
+    await assertWorkspaceAccess(request, body.workspaceId);
+    if (!getPexelsApiKey()) {
+      return Response.json(
+        {
+          error: "Pexels API is not configured for the builder runtime yet.",
+          code: "PEXELS_NOT_CONFIGURED",
+          routedTask: "stock-image",
+        },
+        { status: 503 },
+      );
     }
 
-    const id=`generated-${crypto.randomUUID()}`,stored=await uploadAssetBinary(body.workspaceId,id,bytes,contentType);
-    const size=parseProviderSize(sizeValue),ratio=size.width/size.height;
-    const orientation:AssetRecord["orientation"]=ratio>2?"panoramic":ratio>1.08?"landscape":ratio<.92?"portrait":"square";
-    const asset:AssetRecord={id,workspaceId:body.workspaceId,source:"ai-generated",kind:"image",name:`AI generated ${body.family??"website"} image`,alt,width:size.width,height:size.height,orientation,aspectRatio:ratio,focalPoint:{x:.5,y:.5},domains:[],subtypes:[],sectionFamilies:body.family?[body.family]:[],themes:[],tags,license:"generated",sourceReference,originalUrl:stored.url,variants:[],active:true,createdAt:new Date().toISOString()};
-    const persisted=await insertAsset(asset,stored.key);
-    const usage:AiUsageRecord={id:crypto.randomUUID(),workspaceId:body.workspaceId,siteId:body.siteId,task:"generate-image",profileId,provider:providerName,model,images:1,costMicrousd,createdAt:new Date().toISOString()};
-    await createSupabaseAiUsageStore().append(usage);reservation=null;
-    return Response.json({asset:persisted,creditsCharged:credits,usage:{images:usage.images,costMicrousd:usage.costMicrousd},provider:{profileId,model,provider:providerName}},{status:201});
-  }catch(error){
-    if(reservation){try{await refundCredits({workspaceId:reservation.workspaceId,credits:reservation.credits,operationKey:`refund:${reservation.operationKey}`,description:"Refund failed AI image generation",metadata:{reservation:reservation.operationKey}});}catch(refundError){console.error("MiCirql image credit refund failed",refundError);}}
-    const status=(error as Error&{status?:number}).status??500,message=error instanceof Error?error.message:"Image generation failed.";return Response.json({error:message,code:message==="INSUFFICIENT_CREDITS"?"INSUFFICIENT_CREDITS":undefined},{status});
+    const result = await fetchPexelsImage({
+      query: body.prompt,
+      ...(body.family ? { family: body.family } : {}),
+      ...(body.domain ? { domain: body.domain } : {}),
+    });
+
+    const id = `pexels-${result.photoId}-${crypto.randomUUID()}`;
+    const stored = await uploadAssetBinary(body.workspaceId, id, result.bytes, result.contentType);
+    const purpose = `${body.family ?? "website"} visual`;
+    const tags = [
+      body.domain ?? "general",
+      purpose,
+      "pexels",
+      "licensed-stock",
+      `photographer:${result.photographer}`,
+    ].filter(Boolean);
+
+    const asset: AssetRecord = {
+      id,
+      workspaceId: body.workspaceId,
+      source: "licensed-stock",
+      kind: "image",
+      name: `Pexels ${body.family ?? "website"} photo by ${result.photographer}`,
+      alt: result.alt,
+      width: result.width,
+      height: result.height,
+      orientation: result.orientation,
+      aspectRatio: result.aspectRatio,
+      focalPoint: { x: 0.5, y: body.family === "team" ? 0.34 : 0.5 },
+      domains: [],
+      subtypes: [],
+      sectionFamilies: body.family ? [body.family] : [],
+      themes: [],
+      tags,
+      license: "licensed",
+      sourceReference: `pexels:${result.photoId}|${result.photoUrl}|${result.photographer}|${result.photographerUrl}`,
+      originalUrl: stored.url,
+      variants: [],
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    const persisted = await insertAsset(asset, stored.key);
+    return Response.json(
+      {
+        asset: persisted,
+        creditsCharged: 0,
+        usage: { images: 1, costMicrousd: 0 },
+        provider: {
+          profileId: "pexels-stock",
+          model: null,
+          provider: "api.pexels.com",
+          photoId: result.photoId,
+          photoUrl: result.photoUrl,
+          photographer: result.photographer,
+          photographerUrl: result.photographerUrl,
+          query: result.query,
+        },
+        attribution: {
+          label: `Photo by ${result.photographer} on Pexels`,
+          photographer: result.photographer,
+          photographerUrl: result.photographerUrl,
+          photoUrl: result.photoUrl,
+        },
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    const status = (error as Error & { status?: number }).status ?? 500;
+    const message = error instanceof Error ? error.message : "Pexels image selection failed.";
+    return Response.json({ error: message, code: "PEXELS_IMAGE_FAILED" }, { status });
   }
 }
-function parseProviderSize(value:string){const match=/^(\d+)x(\d+)$/.exec(value);if(!match)throw new Error("Invalid image provider size.");const width=Number(match[1]),height=Number(match[2]);if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)throw new Error("Invalid image provider dimensions.");return{width,height};}

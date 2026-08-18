@@ -1,0 +1,139 @@
+name: Guarded Cloudflare Content Canary
+
+on:
+  push:
+    branches: [canary/guarded-cloudflare-content]
+    paths:
+      - '.github/workflows/guarded-cloudflare-content-canary.yml'
+      - 'apps/builder/app/api/internal/guarded-cloudflare-content-canary/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/guarded-cloudflare-content-canary.yml'
+      - 'apps/builder/app/api/internal/guarded-cloudflare-content-canary/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
+      MICIRQL_DRAFT_STORE: supabase
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Cloudflare credentials
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build Builder Worker
+        working-directory: apps/builder
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Start remote Worker preview
+        working-directory: apps/builder
+        shell: bash
+        run: |
+          pnpm exec wrangler dev --remote --port 8787 > /tmp/guarded-canary.log 2>&1 &
+          echo $! > /tmp/guarded-canary.pid
+          for attempt in $(seq 1 60); do
+            if curl --silent --output /dev/null http://127.0.0.1:8787/; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/guarded-canary.log
+          exit 1
+
+      - name: Run real guarded content pipeline with Workers AI
+        shell: bash
+        run: |
+          curl --fail-with-body --silent --show-error \
+            http://127.0.0.1:8787/api/internal/guarded-cloudflare-content-canary \
+            > /tmp/guarded-content-response.json || {
+              cat /tmp/guarded-content-response.json || true
+              echo '--- Wrangler log ---'
+              cat /tmp/guarded-canary.log
+              exit 1
+            }
+          cat /tmp/guarded-content-response.json
+
+      - name: Validate guarded output
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/guarded-content-response.json', 'utf8'));
+          if (!payload.ok) throw new Error(`Guarded pipeline failed: ${JSON.stringify(payload)}`);
+          if (payload.model?.provider !== 'cloudflare-workers-ai') throw new Error(`Wrong provider: ${JSON.stringify(payload.model)}`);
+          if (payload.audit?.structureIntact !== true) throw new Error('Content generation changed protected structure');
+          if (!Number.isInteger(payload.audit?.appliedFields) || payload.audit.appliedFields < 1) throw new Error(`No content fields were applied: ${payload.audit?.appliedFields}`);
+          const content = payload.content ?? {};
+          const serialized = JSON.stringify(content).toLowerCase();
+          const forbidden = [
+            /award[- ]winning/,
+            /\b\d+\+?\s+years?\b/,
+            /\b100%\b/,
+            /guaranteed/,
+            /#1/,
+            /best in hyderabad/,
+            /\bexpert\b/,
+            /\bexperienced\b/,
+            /\brenowned\b/,
+            /\bhighly skilled\b/,
+            /\btrusted\b/,
+            /\bleading\b/,
+            /\bbest possible\b/,
+          ];
+          for (const pattern of forbidden) if (pattern.test(serialized)) throw new Error(`Final guarded content contains unsupported claim: ${pattern}`);
+          const hero = content.hero ?? {};
+          const heading = hero.heading ?? hero.title;
+          const body = hero.body ?? hero.description;
+          const action = hero.primaryAction?.label ?? hero.ctaLabel;
+          if (typeof heading !== 'string' || !heading.trim()) throw new Error('Hero heading missing');
+          if (typeof body !== 'string' || !body.trim()) throw new Error('Hero paragraph missing');
+          if (typeof action !== 'string' || !action.trim()) throw new Error('Hero CTA missing');
+          fs.writeFileSync('/tmp/guarded-content.json', JSON.stringify(payload, null, 2));
+          console.log(`PASS provider=${payload.model.provider} model=${payload.model.model} appliedFields=${payload.audit.appliedFields} groundingCorrections=${payload.audit.groundingIssues?.length ?? 0}`);
+          NODE
+
+      - name: Add canary summary
+        if: always()
+        shell: bash
+        run: |
+          echo '## Guarded Cloudflare Workers AI content canary' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f /tmp/guarded-content.json ]]; then
+            echo '**PASS** — real MiCirql guarded content generation completed through the Workers AI binding.' >> "$GITHUB_STEP_SUMMARY"
+            node -e 'const p=require("/tmp/guarded-content.json"); console.log(`- Applied fields: **${p.audit.appliedFields}**\n- Grounding corrections: **${p.audit.groundingIssues.length}**\n- Structure intact: **${p.audit.structureIntact}**\n- Hero: **${p.content.hero.heading ?? p.content.hero.title ?? "n/a"}**`)' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '**FAIL** — the guarded content pipeline did not produce validated output.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Stop remote preview
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f /tmp/guarded-canary.pid ]]; then
+            kill "$(cat /tmp/guarded-canary.pid)" 2>/dev/null || true
+          fi

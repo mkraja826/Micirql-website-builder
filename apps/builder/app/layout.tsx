@@ -19,6 +19,7 @@ import "@micirql/sections/dental-07-consultation-engine.css";
 import "@micirql/sections/dental-08-boutique-cosmetic.css";
 import "@micirql/sections/dental-09-ortho-journey.css";
 import "@micirql/sections/dental-10-immediate-care.css";
+import "@micirql/sections/dental-11-dental-journal.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

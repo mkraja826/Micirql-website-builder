@@ -21,7 +21,8 @@ test("owner email notification delivery uses Resend only when configured",()=>{
  expect(publicLeads).toContain("MICIRQL_NOTIFICATION_FROM_EMAIL");
  expect(publicLeads).toContain('"provider-not-configured"');
  expect(publicLeads).toContain('provider:"resend"');
- expect(publicLeads).toContain('status,"occurred_at"');
+ expect(publicLeads).toContain("notification_delivery_log");
+ expect(publicLeads).toContain('return "sent"');
 });
 
 test("generic notification destinations remain queued for provider workers",()=>{

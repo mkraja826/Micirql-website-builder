@@ -82,7 +82,7 @@ function sanitizeRecord(record: Record<string, unknown>, pageId: string, section
     }
     if (Array.isArray(value)) {
       value.forEach((item, index) => {
-        if (item && typeof item === "object" && !Array.isArray(item)) sanitizeRecord(item as Record<string, unknown>, pageId, sectionId, family, factText, issues, `${field}[${index}]`);
+        if (item && typeof item === "object" && !Array.isArray(item)) sanitizeRecord(item as Record<string, unknown>, pageId, section.id, family, factText, issues, `${field}[${index}]`);
       });
       continue;
     }
@@ -95,8 +95,11 @@ function risky(value: string, factText: string): string | null {
     const match = pattern.re.exec(value);
     if (!match) continue;
     if (pattern.allowIfFactContainsMatch) {
-      const matchedClaim = normalize(match[0]);
-      if (matchedClaim && factText.includes(matchedClaim)) continue;
+      const globalFlags = pattern.re.flags.includes("g") ? pattern.re.flags : `${pattern.re.flags}g`;
+      const claims = [...value.matchAll(new RegExp(pattern.re.source, globalFlags))]
+        .map((item) => normalize(item[0] ?? ""))
+        .filter(Boolean);
+      if (claims.length > 0 && claims.every((claim) => factText.includes(claim))) continue;
     }
     const normalized = normalize(value);
     if (normalized && factText.includes(normalized)) continue;

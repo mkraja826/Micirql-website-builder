@@ -22,6 +22,15 @@ export function lockProjectBrief(input: LockedProjectBrief) {
   });
 }
 
+/**
+ * Planning AI can recommend structure and content direction, but it must not
+ * become the source of truth for the website palette. The curated industry
+ * pack / selected certified layout owns the first-build palette.
+ *
+ * The onboarding route treats `brandColors` as a direct theme override, so AI
+ * suggestions are deliberately kept diagnostic-only here. Explicit branding
+ * can be harmonized through a separate user-controlled path.
+ */
 export function mergeAiPlanningAdvice<T extends {
   industry?: unknown;
   subindustry?: unknown;
@@ -31,16 +40,30 @@ export function mergeAiPlanningAdvice<T extends {
   brandColors?: unknown;
 }>(brief: LockedProjectBrief, advice: T) {
   const locked = lockProjectBrief(brief);
-  const proposedColors = hexColors(advice.brandColors);
-  const brandPaletteAssessment = proposedColors.length
-    ? assessBrandPalette({ logoColors: proposedColors, industry: locked.industry })
-    : null;
+  const suggestedBrandColors = hexColors(advice.brandColors);
   return {
     ...advice,
     industry: locked.industry,
     subindustry: locked.subindustry,
-    brandColors: brandPaletteAssessment ? paletteForTheme(brandPaletteAssessment) : proposedColors,
-    brandPaletteAssessment,
+    brandColors: [] as string[],
+    brandPaletteAssessment: null as BrandPaletteAssessment | null,
+    suggestedBrandColors,
+    brandPaletteSource: "curated" as const,
+  };
+}
+
+/**
+ * Assess explicit user-controlled colors without allowing an unsafe palette to
+ * replace the curated design system. A decoupled result means the site should
+ * retain its curated palette while preserving the supplied brand asset itself.
+ */
+export function harmonizeExplicitBrandColors(value: unknown, industry: string) {
+  const colors = hexColors(value);
+  if (!colors.length) return { colors: [] as string[], assessment: null as BrandPaletteAssessment | null };
+  const assessment = assessBrandPalette({ logoColors: colors, industry: canonicalIndustry(industry) });
+  return {
+    colors: assessment.decision === "decouple" ? [] : paletteForTheme(assessment),
+    assessment,
   };
 }
 

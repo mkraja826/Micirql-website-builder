@@ -10,6 +10,7 @@ import "@micirql/sections/palette-runtime.css";
 import "@micirql/sections/image-slots.css";
 import "@micirql/sections/premium-mobile.css";
 import "@micirql/sections/dental-layout-blueprints.css";
+import "@micirql/sections/dental-02-implant-atelier.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

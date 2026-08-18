@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /dental-layout-blueprint\.spec\.ts/,
+  testMatch: /dental-layout-blueprint(?:-\d+)?\.spec\.ts/,
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,

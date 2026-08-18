@@ -2,6 +2,8 @@ export * from "./website-archetypes";
 export * from "./component-taxonomy";
 export * from "./core-structural-blueprints";
 export * from "./content-structural-blueprints";
+export * from "./website-layout-blueprints";
+export * from "./dental-layout-blueprints";
 export * from "./palette-strategies";
 export * from "./brand-palette-intelligence";
 export * from "./brand-intelligence";

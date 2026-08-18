@@ -45,6 +45,7 @@ import "./editor-premium-responsive.css";
 import "./editor-mode-polish.css";
 import "./editor-adaptive-breakpoints.css";
 import "./auth-signout-position.css";
+import "./mobile-layout-hardening.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",

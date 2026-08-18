@@ -11,6 +11,7 @@ import "@micirql/sections/image-slots.css";
 import "@micirql/sections/premium-mobile.css";
 import "@micirql/sections/dental-layout-blueprints.css";
 import "@micirql/sections/dental-02-implant-atelier.css";
+import "@micirql/sections/dental-03-smile-studio.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

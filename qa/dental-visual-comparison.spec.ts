@@ -39,7 +39,8 @@ function buildSite(id: string, name: string, profile: OnboardingProfile): Site {
     theme: composition.preset.theme,
     seoBlueprint: { primaryGoal: "Book dental appointments", targetLocations: ["Hyderabad"], priorityTopics: services, audiences: ["Dental patients"], languages: ["en"], localSeo: true, servicePages: true, locationPages: false, blog: false },
     pages: [{ id: "home", path: "/", name: "Home", sections, seo: { title: `${name} | Dental Care`, description: `Explore dental care at ${name} and request an appointment.`, canonicalPath: "/", indexable: true, structuredDataTypes: ["Dentist"] } }],
-    navigation: [{ label: "Home", href: "/" }], integrations: [], domains: [],
+    navigation: [{ label: "Home", href: "/" }],
+    integrations: [], domains: [],
   });
 }
 
@@ -85,6 +86,12 @@ async function forcePreviewWidth(page: Page, viewport: "mobile" | "desktop", wid
   return sitePreview.evaluate((element) => element.getBoundingClientRect().width);
 }
 
+async function activateCssViewport(page: Page, width: number) {
+  await page.setViewportSize({ width, height: 1100 });
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width);
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
 async function installRoutes(page: Page, site: Site, profile: OnboardingProfile) {
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
   await page.route("**/api/projects**", async (route) => route.fulfill({ json: { projects: [project] } }));
@@ -97,9 +104,9 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
   const outputDirectory = path.join(process.cwd(), "test-results", "dental-visual-comparison");
   await mkdir(outputDirectory, { recursive: true });
   const results: Array<Record<string, unknown>> = [];
-  await page.setViewportSize({ width: 1800, height: 1100 });
 
   for (const scenario of scenarios) {
+    await page.setViewportSize({ width: 1800, height: 1100 });
     await page.unrouteAll({ behavior: "wait" });
     const site = buildSite(scenario.id, scenario.name, scenario.profile);
     await installRoutes(page, site, scenario.profile);
@@ -112,21 +119,24 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
     await expect(preview.locator("[data-mi-section-id]")).toHaveCount(site.pages[0]!.sections.length);
 
     const desktopFrameWidth = await forcePreviewWidth(page, "desktop", VISUAL_WIDTHS.desktop);
-    const desktopMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.desktop, frameWidth: desktopFrameWidth });
+    await activateCssViewport(page, VISUAL_WIDTHS.desktop);
+    const desktopMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, cssViewportWidth: window.innerWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.desktop, frameWidth: desktopFrameWidth });
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-desktop.png`) });
 
+    await page.setViewportSize({ width: 1800, height: 1100 });
     const mobileFrameWidth = await forcePreviewWidth(page, "mobile", VISUAL_WIDTHS.mobile);
-    const mobileMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.mobile, frameWidth: mobileFrameWidth });
+    await activateCssViewport(page, VISUAL_WIDTHS.mobile);
+    const mobileMetrics = await preview.evaluate((element, values) => ({ targetWidth: values.targetWidth, cssViewportWidth: window.innerWidth, frameWidth: values.frameWidth, width: element.clientWidth, scrollWidth: element.scrollWidth, height: element.scrollHeight, textLength: element.textContent?.trim().length ?? 0 }), { targetWidth: VISUAL_WIDTHS.mobile, frameWidth: mobileFrameWidth });
     await preview.screenshot({ path: path.join(outputDirectory, `${scenario.id}-mobile.png`) });
 
     const composition = composeWebsite(scenario.profile);
-    const passed = desktopMetrics.textLength > 300 && mobileMetrics.textLength > 300 && Math.abs(desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && Math.abs(mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && desktopMetrics.scrollWidth <= desktopMetrics.width + 2 && mobileMetrics.scrollWidth <= mobileMetrics.width + 2;
+    const passed = desktopMetrics.textLength > 300 && mobileMetrics.textLength > 300 && desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && Math.abs(desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && Math.abs(mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && desktopMetrics.scrollWidth <= desktopMetrics.width + 2 && mobileMetrics.scrollWidth <= mobileMetrics.width + 2;
     results.push({ scenario: scenario.id, name: scenario.name, preset: composition.preset.id, intent: composition.intent, recipe: composition.industryPack?.recipe.id ?? "none", sectionPattern: composition.sections.map((section) => `${section.family}:${section.variant}`).join("|"), desktopMetrics, mobileMetrics, passed });
   }
 
   const passed = results.filter((result) => result.passed).length;
-  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v3", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, results };
+  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v4", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, results };
   await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify(summary, null, 2), "utf8");
-  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- Exact outer widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${Math.abs(result.desktopMetrics.frameWidth - VISUAL_WIDTHS.desktop) <= 0.5 && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${Math.abs(result.mobileMetrics.frameWidth - VISUAL_WIDTHS.mobile) <= 0.5 && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
+  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- CSS viewport + outer preview widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
   expect(passed, JSON.stringify(summary, null, 2)).toBe(results.length);
 });

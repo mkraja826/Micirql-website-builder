@@ -40,6 +40,55 @@
   }
 }
 
+/* Immediate Care keeps four reassurance cards on desktop, but at the exact
+ * 768px certification boundary the four-column matrix leaves the last card
+ * wider than the available content box. Use a deliberate 2x2 tablet matrix.
+ */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics>.mi-container{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.25rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-content-heading{
+    max-width:38rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics strong,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics p{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
+/* Implant Results is intentionally evidence-dense. Its four metric cards are
+ * excellent on desktop but become cramped through the tablet range, causing
+ * text to escape the content box at both 768px and 1024px. Preserve the same
+ * evidence hierarchy with a spacious 2x2 matrix until the full desktop width.
+ */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics>.mi-container{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-content-heading{
+    max-width:42rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:.8rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics strong,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics p{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
 /* Complete Signature turns the generic split hero into a flex column on phone.
  * The generic split primitive is center-aligned; without an explicit stretch the
  * copy becomes intrinsic-width and is centered outside the narrow viewport.

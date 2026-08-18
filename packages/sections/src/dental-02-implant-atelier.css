@@ -1,0 +1,345 @@
+/* Dental 02 — Implant Atelier
+ * Editorial implant-consultation blueprint. This file is isolated so the layout
+ * can evolve and be certified without destabilising other Dental designs.
+ */
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"]{
+  --mi-content-lg:80rem;
+  --mi-section-space:clamp(5rem,9vw,8.75rem);
+  --mi-atelier-ink:color-mix(in srgb,var(--mi-color-secondary) 86%,#071018);
+  --mi-atelier-ink-soft:color-mix(in srgb,var(--mi-color-secondary) 72%,#17212a);
+  --mi-atelier-ivory:color-mix(in srgb,var(--mi-color-surface) 88%,#f5efe4);
+  --mi-atelier-gold:color-mix(in srgb,var(--mi-color-accent) 72%,#c5a467);
+}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal{
+  position:relative;
+  z-index:5;
+  border:0;
+  background:var(--mi-atelier-ink);
+  color:#f8f4ed;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-nav-row{min-height:5.25rem}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-shell-brand,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-nav-minimal-copy{color:#f8f4ed}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-nav-minimal-copy{opacity:.68;letter-spacing:.02em}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-shell-cta{
+  border:1px solid color-mix(in srgb,var(--mi-atelier-gold) 70%,transparent);
+  background:transparent;
+  color:#fffaf1;
+  border-radius:0;
+  padding-inline:1.25rem;
+}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive{
+  min-height:min(86vh,61rem);
+  background:var(--mi-atelier-ink);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive>.mi-section__media img{
+  opacity:.72;
+  object-position:center 22%;
+  filter:saturate(.78) contrast(1.04);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive>.mi-section__media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(4,10,16,.9) 0%,rgba(4,10,16,.68) 37%,rgba(4,10,16,.18) 72%,rgba(4,10,16,.08) 100%);
+  pointer-events:none;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{
+  min-height:min(86vh,61rem);
+  align-items:center;
+  padding-block:clamp(7rem,13vw,11rem);
+  background:linear-gradient(180deg,rgba(4,10,16,.08),rgba(4,10,16,.22));
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__copy{
+  max-width:46rem;
+  gap:1.35rem;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--eyebrow{
+  color:var(--mi-atelier-gold);
+  letter-spacing:.18em;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--display{
+  max-width:10.5ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(4rem,7vw,7.25rem);
+  font-weight:500;
+  line-height:.9;
+  letter-spacing:-.052em;
+  color:#fffaf3;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--body{
+  max-width:37rem;
+  color:rgba(255,250,243,.8);
+  font-size:clamp(1.05rem,1.4vw,1.2rem);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-section__action{
+  border-radius:0;
+  min-height:52px;
+  padding-inline:1.4rem;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-section__action--primary{
+  background:var(--mi-atelier-gold);
+  color:#17130d;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-section__action--secondary{
+  border-color:rgba(255,250,243,.42);
+  color:#fffaf3;
+}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured{
+  background:var(--mi-atelier-ivory);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured>.mi-container>.mi-section__heading{
+  max-width:52rem;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-featured{
+  gap:clamp(2rem,5vw,5rem);
+  margin-top:clamp(2.5rem,5vw,4.5rem);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead{
+  gap:clamp(1.8rem,4vw,4rem);
+  align-items:end;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  aspect-ratio:4/5;
+  min-height:34rem;
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead h3{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(2rem,3.5vw,3.6rem);
+  font-weight:500;
+  line-height:1;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--compact{
+  grid-template-columns:1fr;
+  gap:.65rem;
+  padding-block:1.25rem;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--compact img,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--compact .mi-team-avatar{display:none}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight{
+  background:#fffdf8;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-content-heading{
+  margin-inline:0;
+  max-width:50rem;
+  text-align:left;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-content-heading h2,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote .mi-content-heading h2{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-services-spotlight{
+  margin-top:clamp(2.5rem,5vw,4rem);
+  border-top:1px solid color-mix(in srgb,var(--mi-color-border) 78%,transparent);
+  grid-template-columns:1fr;
+  gap:0;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  grid-template-columns:minmax(9rem,.35fr) minmax(0,1fr);
+  min-height:0;
+  padding:clamp(1.6rem,3vw,2.5rem) 0;
+  border:0;
+  border-bottom:1px solid color-mix(in srgb,var(--mi-color-border) 78%,transparent);
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  color:var(--mi-color-text);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item img{
+  width:100%;
+  aspect-ratio:4/3;
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item h3{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(1.65rem,3vw,2.75rem);
+  font-weight:500;
+  line-height:1;
+}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split{
+  background:var(--mi-atelier-ink);
+  color:#fffaf3;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-section__heading,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-section__heading h2,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-section__heading p,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-feature-item h3,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-feature-item p{color:inherit}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-features-split{gap:clamp(2.5rem,6vw,6rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-feature-item--list{
+  border-bottom-color:rgba(255,250,243,.16);
+  color:#fffaf3;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-feature-index{color:var(--mi-atelier-gold)}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline{
+  background:var(--mi-atelier-ivory);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-process-timeline{
+  margin-top:clamp(2.5rem,5vw,4rem);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-process-node>span{
+  border-color:var(--mi-atelier-gold);
+  color:color-mix(in srgb,var(--mi-atelier-gold) 72%,#4b3920);
+}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote{
+  background:#fffdf8;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote blockquote p{
+  max-width:20ch;
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+  color:var(--mi-atelier-ink);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote cite{color:color-mix(in srgb,var(--mi-atelier-ink) 62%,transparent)}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split{
+  background:var(--mi-atelier-ink);
+  color:#fffaf3;
+  padding-block:clamp(4rem,8vw,7rem);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-cta-split{
+  border:1px solid rgba(255,250,243,.16);
+  border-radius:0;
+  background:transparent;
+  padding:clamp(2rem,4vw,4rem);
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-heading h2{font-family:Georgia,"Times New Roman",serif;font-weight:500}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-btn{border-radius:0}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-btn--primary{background:var(--mi-atelier-gold);color:#17130d}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-conv-btn--secondary{border-color:rgba(255,250,243,.38);color:#fffaf3}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split{background:var(--mi-atelier-ivory)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split .mi-contact-split{gap:clamp(2.5rem,6vw,6rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split input,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split textarea,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split select,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split button{border-radius:0}
+
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial{
+  background:var(--mi-atelier-ink);
+  color:#fffaf3;
+  border-top:0;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial .mi-footer-wordmark{
+  font-family:Georgia,"Times New Roman",serif;
+  color:#fffaf3;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial a,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial p,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial small{color:rgba(255,250,243,.72)}
+
+@media(min-width:48rem){
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-featured{grid-template-columns:minmax(0,1.55fr) minmax(13rem,.45fr)}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead{grid-template-columns:minmax(0,1.18fr) minmax(18rem,.82fr)}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-features-split{grid-template-columns:minmax(15rem,.58fr) minmax(0,1.42fr)}
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-02-implant-luxury"]{
+    --mi-section-space:clamp(3.4rem,14vw,5rem);
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-container{width:min(100% - 1.75rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-nav-row{min-height:4.35rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-nav-minimal-copy{display:none}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar--minimal .mi-shell-cta{display:none}
+
+  /* Mobile is a separate composition: portrait first, then copy and actions in
+     normal flow. Nothing floats over the image. */
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:visible;
+    background:var(--mi-atelier-ink);
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive>.mi-section__media{
+    position:relative;
+    inset:auto;
+    order:1;
+    width:100%;
+    overflow:hidden;
+    border-radius:0;
+    background:#0a1117;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive>.mi-section__media::after{
+    background:linear-gradient(180deg,transparent 60%,rgba(5,10,15,.38));
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive>.mi-section__media img{
+    width:100%;
+    height:auto;
+    aspect-ratio:4/5;
+    opacity:.9;
+    object-position:center 18%;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{
+    position:relative;
+    order:2;
+    min-height:0;
+    padding:2rem 0 3.75rem;
+    align-items:stretch;
+    background:var(--mi-atelier-ink);
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__copy{max-width:none;width:100%;gap:1rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--display{
+    max-width:11ch;
+    font-size:clamp(2.75rem,13vw,4.1rem)!important;
+    line-height:.93!important;
+    letter-spacing:-.045em!important;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-section__actions,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-actions{display:grid;grid-template-columns:1fr;width:100%;gap:.7rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-section__action,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-btn{width:100%;max-width:100%;min-height:50px;box-sizing:border-box}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead{grid-template-columns:1fr;gap:1.4rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{width:100%;min-height:0;max-height:34rem;aspect-ratio:4/5}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--compact{grid-template-columns:1fr;padding-block:1rem}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-services-spotlight{grid-template-columns:1fr}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item:first-child{grid-template-columns:1fr;gap:.9rem;padding:1.35rem 0}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--spotlight .mi-service-item img{aspect-ratio:16/10}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-features-split{grid-template-columns:1fr;gap:1.5rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-features--split .mi-feature-item--list{grid-template-columns:2rem minmax(0,1fr);padding-block:1.1rem}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-process-timeline{display:grid;grid-template-columns:1fr;gap:0;border-left:1px solid color-mix(in srgb,var(--mi-atelier-gold) 45%,transparent);padding-left:1rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-process-node{display:grid;grid-template-columns:2.5rem minmax(0,1fr);column-gap:.8rem;row-gap:.25rem;padding:0 0 1.6rem;border:0;min-width:0}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-process--timeline .mi-process-node>span{grid-row:1/3;width:2.3rem;height:2.3rem;display:grid;place-items:center;margin-left:-2.2rem;background:var(--mi-atelier-ivory);border:1px solid var(--mi-atelier-gold);border-radius:999px}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote{padding-block:clamp(3.75rem,14vw,5.5rem)}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof--quote blockquote p{font-size:clamp(1.75rem,8.5vw,2.7rem);max-width:none}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--split .mi-cta-split{grid-template-columns:1fr;padding:1.35rem;gap:1.25rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-struct--split .mi-contact-split{grid-template-columns:1fr;gap:1.5rem}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial .mi-footer-wordmark{font-size:clamp(2.8rem,14vw,4.4rem);overflow-wrap:anywhere}
+
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] *{min-width:0}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] img,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] video,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] iframe{max-width:100%}
+}
+
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-container{width:min(100% - 1.25rem,var(--mi-content-lg))}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--display{font-size:clamp(2.5rem,12.5vw,3.55rem)!important}
+}

@@ -62,7 +62,7 @@ function makeLayout(input: {
     description: input.description,
     archetype: input.archetype,
     origin: "curated",
-    status: "draft",
+    status: "certified",
     version: 1,
     styleTags: input.tags,
     fit: { subindustryIds: input.subindustries, goals: input.goals, priorities: input.priorities },

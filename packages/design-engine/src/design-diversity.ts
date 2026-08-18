@@ -146,7 +146,7 @@ function familyAndVariant(componentId: string): string | undefined {
 
 function variantFromId(componentId: string): number {
   const match = componentId.match(/(?:-|\.)(\d{1,3})$/);
-  return match ? Math.max(1, Math.min(5, Number(match[1]) || 1)) : 1;
+  return match ? Math.max(1, Number(match[1]) || 1) : 1;
 }
 
 function tokenSetSimilarity(a: string, b: string): number {

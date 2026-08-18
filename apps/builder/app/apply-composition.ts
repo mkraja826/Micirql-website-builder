@@ -4,6 +4,7 @@ import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily, ty
 import type { WebsiteComposition } from "./composition-intelligence";
 import type { GenerationQualityProfile } from "./generation-quality-intelligence";
 import { applyPremiumCorrectivePass } from "./premium-corrective-pass";
+import { applyWebsiteLayoutBlueprint, layoutCoverage } from "./apply-layout-blueprint";
 
 const SINGLETON_FAMILIES = new Set<SectionFamily>(["hero", "services", "testimonials", "gallery", "team", "cta", "contact"]);
 const ITEM_CONTENT_FAMILIES = new Set<SectionFamily>(["services", "features", "process", "testimonials", "gallery", "team"]);
@@ -34,7 +35,13 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
     page.sections=applyIndustryPresentation(composed,composition);
   }
   const composedSite = siteSchema.parse(next);
-  return applyPremiumCorrectivePass(composedSite).site;
+  const correctedSite = applyPremiumCorrectivePass(composedSite).site;
+  const candidate = composition.layoutCandidate;
+  if (candidate?.layout.status === "certified") {
+    const coverage = layoutCoverage(correctedSite, candidate.layout);
+    if (coverage.complete) return applyWebsiteLayoutBlueprint(correctedSite, candidate.layout);
+  }
+  return correctedSite;
 }
 
 function applyIndustryPresentation(sections:SiteSection[],composition:WebsiteComposition):SiteSection[]{

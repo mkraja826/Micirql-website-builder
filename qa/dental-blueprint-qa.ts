@@ -31,6 +31,12 @@ async function selectViewport(page: Page, viewport: "mobile" | "tablet" | "deskt
   await expect(page.locator(`.site-preview.viewport-${viewport}`)).toBeVisible();
 }
 
+async function activateCssViewport(page: Page, width: number) {
+  await page.setViewportSize({ width, height: 1100 });
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(width);
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+}
+
 async function installRoutes(page: Page, site: Site, profile: Profile) {
   const now = new Date().toISOString();
   const project = { id: site.siteId, workspace_id: site.workspaceId, name: site.name, status: "draft", published_version_id: null, updated_at: now, draft: { revision: 4, updated_at: now }, hostname: null };
@@ -56,6 +62,7 @@ export async function runDentalBlueprintCertification(args: {
 
   await installRoutes(args.page, site, args.profile);
   await args.page.addInitScript(() => localStorage.setItem("micirql.supabase.session", JSON.stringify({ access_token: "blueprint-token", refresh_token: "blueprint-refresh", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer", user: { id: "blueprint-user", email: "blueprint@micirql.test" } })));
+  await args.page.setViewportSize({ width: 1800, height: 1100 });
   await args.page.goto("/");
   await args.page.getByRole("button", { name: "Open editor" }).first().click();
 
@@ -64,6 +71,7 @@ export async function runDentalBlueprintCertification(args: {
   const results: Array<Record<string, unknown>> = [];
 
   for (const width of DENTAL_BLUEPRINT_TARGETS) {
+    await args.page.setViewportSize({ width: 1800, height: 1100 });
     const viewport = viewportFor(width);
     await selectViewport(args.page, viewport);
     const sitePreview = args.page.locator(`.site-preview.viewport-${viewport}`);
@@ -72,19 +80,22 @@ export async function runDentalBlueprintCertification(args: {
       (element as HTMLElement).style.setProperty("width", `${targetWidth}px`, "important");
       (element as HTMLElement).style.setProperty("max-width", `${targetWidth}px`, "important");
     }, width);
+    await expect.poll(() => sitePreview.evaluate((element, targetWidth) => Math.abs(element.getBoundingClientRect().width - targetWidth), width)).toBeLessThanOrEqual(0.5);
+    await activateCssViewport(args.page, width);
 
     const document = args.page.locator(".renderer-preview-document");
     const root = document.locator(`[data-mi-layout-blueprint="${args.layoutId}"]`);
     await expect(root).toHaveCount(1);
     const metrics = await document.evaluate((element) => {
       const root = element.querySelector("[data-mi-layout-blueprint]") as HTMLElement | null;
-      if (!root) return { clientWidth: 0, scrollWidth: 1, overflowingSections: 1, overflowingControls: 1, clippedMedia: 1 };
+      if (!root) return { cssViewportWidth: window.innerWidth, clientWidth: 0, scrollWidth: 1, overflowingSections: 1, overflowingControls: 1, clippedMedia: 1 };
       const rootRect = root.getBoundingClientRect();
       const outside = (node: Element) => {
         const rect = node.getBoundingClientRect();
         return rect.width > 0 && (rect.left < rootRect.left - 1 || rect.right > rootRect.right + 1);
       };
       return {
+        cssViewportWidth: window.innerWidth,
         clientWidth: root.clientWidth,
         scrollWidth: root.scrollWidth,
         overflowingSections: [...root.querySelectorAll("section,header,footer")].filter(outside).length,
@@ -93,7 +104,8 @@ export async function runDentalBlueprintCertification(args: {
       };
     });
 
-    const passed = metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
+    const passed = metrics.cssViewportWidth === width && metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
+    expect(metrics.cssViewportWidth, `${width}px CSS viewport mismatch`).toBe(width);
     expect(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
     expect(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
     expect(metrics.overflowingControls, `${width}px control overflow`).toBe(0);

@@ -54,8 +54,8 @@ export type WebsiteLayoutBlueprint = {
   quality: {
     minimumDesktopScore: number;
     minimumMobileScore: number;
-    requiredViewports: number[];
-    hardRules: string[];
+    requiredViewports: readonly number[];
+    hardRules: readonly string[];
   };
 };
 

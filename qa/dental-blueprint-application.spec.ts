@@ -3,6 +3,8 @@ import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import { composeWebsite } from "../apps/builder/app/composition-intelligence";
 import { applyComposition } from "../apps/builder/app/apply-composition";
 import { layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
+import { inferGenerationQuality } from "../apps/builder/app/generation-quality-intelligence";
+import { planVisualMedia } from "../apps/builder/app/visual-media-intelligence";
 
 const profile = {
   industry: "dental clinic",
@@ -119,4 +121,35 @@ test("a selected certified Dental blueprint survives composition and is actually
     expect(section.props.layoutArchetype).toBe(candidate.layout.archetype);
   }
   expect(layoutCoverage(result, candidate.layout).complete).toBe(true);
+});
+
+test("the production planner layout remains the single source of truth through composition and media", () => {
+  // This profile naturally ranks Clinical Authority. Deliberately lock a different
+  // certified layout to prove downstream systems cannot silently reselect it.
+  const composition = composeWebsite(profile, {
+    selectedLayoutId: "dental-02-implant-luxury",
+    selectedLayoutScore: 94,
+    selectedLayoutReasons: ["production planner selection"],
+  });
+  const candidate = composition.layoutCandidate;
+  expect(candidate?.layout.id).toBe("dental-02-implant-luxury");
+  expect(candidate?.layout.status).toBe("certified");
+  expect(candidate?.reasons).toContain("planner-locked certified layout");
+  if (!candidate) throw new Error("Planner-locked Dental layout was not preserved.");
+
+  const expectedContentFamilies = candidate.layout.sections
+    .filter((section) => section.family !== "navbar" && section.family !== "footer")
+    .map((section) => section.family);
+  expect(composition.sections.map((section) => section.family)).toEqual(expectedContentFamilies);
+
+  const quality = inferGenerationQuality(profile, composition);
+  const mediaPlan = planVisualMedia(profile, composition, quality);
+  expect(mediaPlan.sections.map((section) => section.family)).toEqual(expectedContentFamilies);
+
+  const source = buildPlannerCompleteDentalSite();
+  expect(layoutCoverage(source, candidate.layout).complete).toBe(true);
+  const result = applyComposition(source, composition, quality);
+  const home = result.pages.find((page) => page.path === "/") ?? result.pages[0];
+  expect(home?.sections.map((section) => section.props.layoutBlueprintId)).toEqual(candidate.layout.sections.map(() => candidate.layout.id));
+  expect(home?.sections.map((section) => section.props.layoutSectionId)).toEqual(candidate.layout.sections.map((section) => section.id));
 });

@@ -5,6 +5,12 @@ import type { PreparedPage } from "./types";
 export function renderPreparedPage(prepared: PreparedPage): ReactNode {
   const style = prepared.themeStyle as CSSProperties;
   const intelligence = prepared.site.theme.brand.intelligence;
+  const layoutBlueprintId = prepared.sections
+    .map(({ props }) => typeof props.layoutBlueprintId === "string" ? props.layoutBlueprintId : undefined)
+    .find((value): value is string => Boolean(value));
+  const layoutArchetype = prepared.sections
+    .map(({ props }) => typeof props.layoutArchetype === "string" ? props.layoutArchetype : undefined)
+    .find((value): value is string => Boolean(value));
   return (
     <main
       data-mi-site={prepared.site.siteId}
@@ -16,6 +22,8 @@ export function renderPreparedPage(prepared: PreparedPage): ReactNode {
       data-mi-brand-tone={intelligence?.tone}
       data-mi-brand-button-style={intelligence?.buttonStyle}
       data-mi-brand-imagery-style={intelligence?.imageryStyle}
+      data-mi-layout-blueprint={layoutBlueprintId}
+      data-mi-layout-archetype={layoutArchetype}
       style={style}
     >
       {prepared.sections.map(({ section, component, props }) => (

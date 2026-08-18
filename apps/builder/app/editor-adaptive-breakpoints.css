@@ -1,0 +1,29 @@
+/* Adaptive shell behavior for small laptops, tablets and phones. */
+@media (min-width:900px) and (max-width:1199px){
+ .editor-v2 .workspace-main{grid-template-columns:68px minmax(0,1fr) 280px}
+ .editor-v2 .workspace-rail{padding:12px 7px 20px}
+ .editor-v2 .rail-heading,.editor-v2 .rail-group-label,.editor-v2 .workspace-rail button>span:last-child{display:none}
+ .editor-v2 .rail-group{gap:6px;margin-bottom:10px}
+ .editor-v2 .workspace-rail button{min-height:48px;display:grid;grid-template-columns:1fr;place-items:center;padding:5px}
+ .editor-v2 .rail-tool-icon{width:32px;height:32px;border-radius:9px;font-size:.8rem}
+ .editor-v2 .workspace-inspector{padding-inline:12px}
+ .editor-v2 .canvas-stage{padding:12px}
+}
+@media (min-width:1200px){
+ .editor-v2 .workspace-main{grid-template-columns:184px minmax(0,1fr) 314px}
+}
+@media (max-width:899px){
+ .editor-v2 .save-state{display:block!important;min-width:9px;width:9px;height:9px;margin:0 2px;padding:0;border-radius:999px;overflow:hidden;font-size:0;background:#777782}
+ .editor-v2 .save-state.saved{background:#5ec58a}.editor-v2 .save-state.saving{background:#a78bfa}.editor-v2 .save-state.unsaved{background:#e0aa61}.editor-v2 .save-state.error,.editor-v2 .save-state.conflict{background:#ef7777}
+ .editor-v2 .workspace-actions .publish-button{font-size:0;min-width:74px}
+ .editor-v2 .workspace-actions .publish-button::after{content:"Preview";font-size:.65rem;font-weight:800}
+}
+@media (max-width:390px){
+ .editor-v2 .workspace-topbar{gap:5px;padding-inline:7px}
+ .editor-v2 .editor-project-title{display:none}
+ .editor-v2 .workspace-actions .publish-button{min-width:70px;padding-inline:8px}
+ .editor-v2 .canvas-toolbar{padding-inline:7px;gap:6px}
+ .editor-v2 .canvas-context{max-width:34%}
+ .editor-v2 .viewport-switcher button{min-width:34px;padding-inline:5px;font-size:.58rem}
+ .editor-v2 .mobile-editor-bar{grid-template-columns:repeat(7,56px)}
+}

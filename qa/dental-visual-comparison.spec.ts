@@ -23,6 +23,9 @@ html.${CAPTURE_CLASS} .site-preview {
   z-index: 2147483647 !important;
   margin: 0 !important;
 }
+html.${CAPTURE_CLASS} .renderer-preview-document {
+  background: var(--mi-background, #ffffff) !important;
+}
 html.${CAPTURE_CLASS} [data-mi-canvas-action],
 html.${CAPTURE_CLASS} .mi-editor-insert-zone,
 html.${CAPTURE_CLASS} .mi-editor-canvas-toolbar,
@@ -176,8 +179,8 @@ test("capture desktop and mobile evidence for ten Dental compositions", async ({
   }
 
   const passed = results.filter((result) => result.passed).length;
-  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v5", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, screenshotsIsolatedFromEditorChrome: true, results };
+  const summary = { generatedAt: new Date().toISOString(), benchmark: "dental-visual-comparison-v6", widths: VISUAL_WIDTHS, samples: results.length, screenshots: results.length * 2, passed, passRate: passed / results.length, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results };
   await writeFile(path.join(outputDirectory, "report.json"), JSON.stringify(summary, null, 2), "utf8");
-  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- CSS viewport + outer preview widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Clean website-only screenshots: **yes**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
+  await writeFile(path.join(outputDirectory, "summary.md"), ["# MiCirql Dental Visual Comparison", "", `- Dental sites: **${results.length}**`, `- Screenshots: **${results.length * 2}**`, `- CSS viewport + outer preview widths: **${VISUAL_WIDTHS.desktop}px desktop / ${VISUAL_WIDTHS.mobile}px mobile**`, `- Clean website-only screenshots: **yes**`, `- Website background preserved in evidence: **yes**`, `- Render/overflow pass rate: **${Math.round((passed / results.length) * 100)}%** (${passed}/${results.length})`, "", "| Scenario | Intent | Preset | Desktop | Mobile |", "| --- | --- | --- | --- | --- |", ...results.map((result: any) => `| ${result.scenario} | ${result.intent} | ${result.preset} | ${result.desktopMetrics.cssViewportWidth === VISUAL_WIDTHS.desktop && result.desktopMetrics.scrollWidth <= result.desktopMetrics.width + 2 ? "PASS" : "OVERFLOW"} | ${result.mobileMetrics.cssViewportWidth === VISUAL_WIDTHS.mobile && result.mobileMetrics.scrollWidth <= result.mobileMetrics.width + 2 ? "PASS" : "OVERFLOW"} |`), ""].join("\n"), "utf8");
   expect(passed, JSON.stringify(summary, null, 2)).toBe(results.length);
 });

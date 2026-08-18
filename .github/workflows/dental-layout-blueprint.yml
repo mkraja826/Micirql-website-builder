@@ -1,0 +1,95 @@
+name: Dental Layout Blueprint Certification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/builder/app/apply-layout-blueprint.ts"
+      - "apps/builder/app/renderer-preview.tsx"
+      - "packages/design-engine/src/website-layout-blueprints.ts"
+      - "packages/design-engine/src/dental-layout-blueprints.ts"
+      - "packages/design-engine/src/layout-library.ts"
+      - "packages/renderer/**"
+      - "packages/sections/**"
+      - "qa/dental-layout-blueprint.spec.ts"
+      - "playwright.dental-blueprint.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-layout-blueprint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/builder/app/apply-layout-blueprint.ts"
+      - "apps/builder/app/renderer-preview.tsx"
+      - "packages/design-engine/src/website-layout-blueprints.ts"
+      - "packages/design-engine/src/dental-layout-blueprints.ts"
+      - "packages/design-engine/src/layout-library.ts"
+      - "packages/renderer/**"
+      - "packages/sections/**"
+      - "qa/dental-layout-blueprint.spec.ts"
+      - "playwright.dental-blueprint.config.ts"
+      - "package.json"
+      - ".github/workflows/dental-layout-blueprint.yml"
+
+jobs:
+  certify-blueprint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck blueprint layers
+        run: |
+          pnpm --filter @micirql/design-engine typecheck
+          pnpm --filter @micirql/sections typecheck
+          pnpm --filter @micirql/renderer typecheck
+          pnpm --filter @micirql/builder typecheck
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Certify Dental 01 at six viewport widths
+        run: pnpm qa:dental-blueprint
+
+      - name: Add certification summary
+        if: always()
+        shell: bash
+        run: |
+          REPORT="test-results/dental-layout-blueprint-01/report.json"
+          if [ -f "$REPORT" ]; then
+            node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('test-results/dental-layout-blueprint-01/report.json', 'utf8'));
+          console.log('# Dental 01 Blueprint QA');
+          console.log('');
+          console.log(`- Layout: **${report.layoutId}**`);
+          console.log(`- Coverage: **${report.coverage.matched}/${report.coverage.expected}**`);
+          console.log(`- Viewports checked: **${report.results.length}**`);
+          console.log(`- Overflow-safe: **${report.results.every((item) => item.passed) ? 'yes' : 'no'}**`);
+          console.log('');
+          console.log('| Width | Mode | Scroll width | Client width | Pass |');
+          console.log('| ---: | --- | ---: | ---: | --- |');
+          for (const item of report.results) console.log(`| ${item.width}px | ${item.viewport} | ${item.scrollWidth} | ${item.clientWidth} | ${item.passed ? 'PASS' : 'FAIL'} |`);
+          NODE
+          fi
+
+      - name: Upload Dental 01 viewport evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-dental-layout-blueprint-01
+          path: test-results/dental-layout-blueprint-01
+          retention-days: 30

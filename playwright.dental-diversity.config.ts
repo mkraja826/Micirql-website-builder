@@ -6,6 +6,7 @@ export default defineConfig({
     "dental-diversity-benchmark.spec.ts",
     "design-diversity-fingerprint.spec.ts",
     "design-genome-diversity.spec.ts",
+    "review-direction-certification.spec.ts",
     "dental-blueprint-application.spec.ts",
     "dental-planner-contract.spec.ts",
     "dental-media-execution.spec.ts",

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
-import { generatedMediaBudget } from "../apps/builder/app/materialize-media-execution";
+import type { MediaRequest } from "../apps/builder/app/media-execution";
+import { generatedMediaBudget, generatedMediaPriority, selectGeneratedMediaIndexes } from "../apps/builder/app/materialize-media-execution";
 
 function siteFor(layoutId:string):Site{
  return siteSchema.parse({
@@ -30,3 +31,30 @@ for(const [layoutId,budget] of Object.entries(expected)){
   expect(generatedMediaBudget(siteFor(layoutId))).toBe(budget);
  });
 }
+
+function request(family:MediaRequest["family"]):MediaRequest{
+ return {family,source:"generated",generationPrompt:`Generate ${family}`,alt:`${family} visual`,reason:"qa"};
+}
+
+const shuffled=[request("services"),request("process"),request("hero"),request("about"),request("gallery"),request("features")];
+
+test("Digital Dentistry spends its three media slots on hero, technology and process",()=>{
+ const target=siteFor("dental-05-digital-dentistry");
+ expect(generatedMediaPriority(target).slice(0,3)).toEqual(["hero","features","process"]);
+ const selected=selectGeneratedMediaIndexes(target,shuffled,3);
+ expect([...selected].map(index=>shuffled[index]!.family).sort()).toEqual(["features","hero","process"].sort());
+});
+
+test("Smile Studio spends its three media slots on hero, gallery and editorial support",()=>{
+ const target=siteFor("dental-03-smile-studio");
+ expect(generatedMediaPriority(target).slice(0,3)).toEqual(["hero","gallery","about"]);
+ const selected=selectGeneratedMediaIndexes(target,shuffled,3);
+ expect([...selected].map(index=>shuffled[index]!.family).sort()).toEqual(["about","gallery","hero"].sort());
+});
+
+test("priority selection keeps request execution order stable",()=>{
+ const target=siteFor("dental-02-implant-luxury");
+ const before=shuffled.map(item=>item.family);
+ selectGeneratedMediaIndexes(target,shuffled,2);
+ expect(shuffled.map(item=>item.family)).toEqual(before);
+});

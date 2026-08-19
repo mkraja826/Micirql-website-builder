@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel-analysis";
+import { rankPresets } from "./preset-ranking";
 import styles from "./guided-onboarding.module.css";
 
 export type GuidedOnboardingValue = {
@@ -35,6 +36,9 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
   const [localError, setLocalError] = useState("");
   const visibleError = localError || error || "";
   const interpretationReady = Boolean(interpreted && interpretedContext === value.context.trim());
+  const ranked = interpreted ? rankPresets({ business_name: interpreted.businessName, industry: interpreted.industry, subindustry: interpreted.subindustry, location: interpreted.location, goals: interpreted.goals, style_tags: interpreted.styleTags, required_capabilities: interpreted.requiredCapabilities, services: commaList(interpreted.services), notes: interpreted.notes }) : [];
+  const designMatch = ranked[0] ?? null;
+  const runnerUp = ranked[1] ?? null;
 
   function updateContext(context: string) {
     setValue((current) => ({ ...current, context }));
@@ -121,6 +125,11 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
 
         {interpretationReady && interpreted ? <section className={styles.interpretation} aria-label="What MiCirql understood">
           <div className={styles.interpretationHead}><div><div className={styles.eyebrow}>Brief interpretation</div><div className={styles.interpretationTitle}>What MiCirql understood</div><div className={styles.hint}>These signals will drive the design. If something is wrong, edit your brief and analyze it again.</div></div><span className={styles.readyBadge}>Ready to build</span></div>
+          {designMatch ? <div className={styles.designMatch}>
+            <div className={styles.designMatchTop}><div><div className={styles.interpretationLabel}>Recommended design direction</div><div className={styles.designMatchName}>{designMatch.preset.name}</div><div className={styles.designMatchDescription}>{designMatch.preset.description}</div></div><div className={styles.matchScore}>{presetMatchPercent(designMatch.score)}%<span>match</span></div></div>
+            <div className={styles.matchReasons}>{designMatch.reasons.slice(0, 4).map((reason) => <span key={reason}>✓ {reason}</span>)}</div>
+            {runnerUp && runnerUp.score > 0 ? <div className={styles.runnerUp}>Alternative: <strong>{runnerUp.preset.name}</strong> · {presetMatchPercent(runnerUp.score)}% match</div> : null}
+          </div> : null}
           <div className={styles.interpretationGrid}>
             <InterpretationCard label="Business" values={[interpreted.businessName, interpreted.industry, interpreted.subindustry, interpreted.location]} />
             <InterpretationCard label="Visual direction" values={interpreted.styleTags} />
@@ -136,7 +145,7 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       </div>
       {visibleError ? <div className={styles.error}>{visibleError}</div> : null}
       <div className={styles.actions}>
-        <span className={styles.hint}>{assetBusy ? "Classifying your business media…" : interpreting ? "Understanding your brief…" : building ? "Generating content, imagery and design directions…" : interpretationReady ? "Review the interpretation, then build when it looks right." : "Analyze the brief before generation."}</span>
+        <span className={styles.hint}>{assetBusy ? "Classifying your business media…" : interpreting ? "Understanding your brief…" : building ? "Generating content, imagery and design directions…" : interpretationReady ? "Review the interpretation and design match, then build when it looks right." : "Analyze the brief before generation."}</span>
         <div className={styles.actionButtons}>{interpretationReady ? <button type="button" className={styles.secondary} disabled={busy} onClick={() => { setInterpreted(null); setInterpretedContext(""); }}>Edit brief</button> : null}<button type="button" className={styles.primary} disabled={busy || value.context.trim().length < 20} onClick={() => void (interpretationReady ? buildWebsite() : interpretBrief())}>{building ? "Building your website…" : interpreting ? "Understanding brief…" : interpretationReady ? "Build my website" : "Analyze my brief"}</button></div>
       </div>
     </div>
@@ -148,6 +157,7 @@ function InterpretationCard({ label, values }: { label: string; values: string[]
   return <div className={styles.interpretationCard}><div className={styles.interpretationLabel}>{label}</div>{clean.length ? <div className={styles.chips}>{clean.map((item) => <span key={item} className={styles.chip}>{item}</span>)}</div> : <span className={styles.hint}>Not specified</span>}</div>;
 }
 
+function presetMatchPercent(score: number) { return Math.max(55, Math.min(98, Math.round(55 + score * 0.24))); }
 function asText(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function asList(value: unknown) { return Array.isArray(value) ? value.map(asText).filter(Boolean) : []; }
 function commaList(value: string) { return value.split(",").map((item) => item.trim()).filter(Boolean); }

@@ -21,6 +21,7 @@ export default defineConfig({
     "dental-media-execution.spec.ts",
     "site-visual-quality.spec.ts",
     "asset-perceptual-hash-contract.spec.ts",
+    "mobile-navigation-contract.spec.ts",
   ],
   timeout: 30_000,
   fullyParallel: false,

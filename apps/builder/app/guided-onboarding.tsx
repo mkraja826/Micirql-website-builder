@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel-analysis";
-import { rankPresets } from "./preset-ranking";
 import styles from "./guided-onboarding.module.css";
 
 export type GuidedOnboardingValue = {
@@ -22,12 +21,24 @@ export type GuidedOnboardingValue = {
   brandColors: string[];
 };
 
+type LayoutRecommendation = {
+  id: string;
+  name: string;
+  description: string;
+  score: number;
+  reasons: string[];
+  archetype?: string;
+  styleTags?: string[];
+};
+
 const initialValue: GuidedOnboardingValue = { context: "", businessName: "", industry: "", subindustry: "", location: "", services: "", goals: [], styleTags: [], requiredCapabilities: [], languages: "en", notes: "", logoUrl: null, brandColors: [] };
 
 export function GuidedOnboarding({ session, workspaceId, siteId, building, error, onBack, onSubmit }: { session: SupabaseSession; workspaceId: string; siteId: string; building: boolean; error?: string; onBack?: () => void; onSubmit(value: GuidedOnboardingValue): Promise<void> | void; }) {
   const [value, setValue] = useState<GuidedOnboardingValue>(initialValue);
   const [interpreted, setInterpreted] = useState<GuidedOnboardingValue | null>(null);
   const [interpretedContext, setInterpretedContext] = useState("");
+  const [designMatch, setDesignMatch] = useState<LayoutRecommendation | null>(null);
+  const [runnerUp, setRunnerUp] = useState<LayoutRecommendation | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoPreview, setLogoPreview] = useState("");
   const [assetBusy, setAssetBusy] = useState(false);
@@ -36,13 +47,14 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
   const [localError, setLocalError] = useState("");
   const visibleError = localError || error || "";
   const interpretationReady = Boolean(interpreted && interpretedContext === value.context.trim());
-  const ranked = interpreted ? rankPresets({ business_name: interpreted.businessName, industry: interpreted.industry, subindustry: interpreted.subindustry, location: interpreted.location, goals: interpreted.goals, style_tags: interpreted.styleTags, required_capabilities: interpreted.requiredCapabilities, services: commaList(interpreted.services), notes: interpreted.notes }) : [];
-  const designMatch = ranked[0] ?? null;
-  const runnerUp = ranked[1] ?? null;
 
   function updateContext(context: string) {
     setValue((current) => ({ ...current, context }));
-    if (context.trim() !== interpretedContext) setInterpreted(null);
+    if (context.trim() !== interpretedContext) {
+      setInterpreted(null);
+      setDesignMatch(null);
+      setRunnerUp(null);
+    }
   }
 
   async function selectLogo(file?: File) {
@@ -105,6 +117,8 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       setValue(next);
       setInterpreted(next);
       setInterpretedContext(context);
+      setDesignMatch(asLayoutRecommendation(payload.layoutRecommendation));
+      setRunnerUp(asLayoutRecommendation(payload.layoutAlternative));
     } catch (caught) { setLocalError(caught instanceof Error ? caught.message : "MiCirql could not understand the brief."); } finally { setInterpreting(false); }
   }
 
@@ -126,9 +140,9 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
         {interpretationReady && interpreted ? <section className={styles.interpretation} aria-label="What MiCirql understood">
           <div className={styles.interpretationHead}><div><div className={styles.eyebrow}>Brief interpretation</div><div className={styles.interpretationTitle}>What MiCirql understood</div><div className={styles.hint}>These signals will drive the design. If something is wrong, edit your brief and analyze it again.</div></div><span className={styles.readyBadge}>Ready to build</span></div>
           {designMatch ? <div className={styles.designMatch}>
-            <div className={styles.designMatchTop}><div><div className={styles.interpretationLabel}>Recommended design direction</div><div className={styles.designMatchName}>{designMatch.preset.name}</div><div className={styles.designMatchDescription}>{designMatch.preset.description}</div></div><div className={styles.matchScore}>{presetMatchPercent(designMatch.score)}%<span>match</span></div></div>
+            <div className={styles.designMatchTop}><div><div className={styles.interpretationLabel}>Recommended certified layout</div><div className={styles.designMatchName}>{designMatch.name}</div><div className={styles.designMatchDescription}>{designMatch.description}</div></div><div className={styles.matchScore}>{layoutMatchPercent(designMatch.score)}%<span>match</span></div></div>
             <div className={styles.matchReasons}>{designMatch.reasons.slice(0, 4).map((reason) => <span key={reason}>✓ {reason}</span>)}</div>
-            {runnerUp && runnerUp.score > 0 ? <div className={styles.runnerUp}>Alternative: <strong>{runnerUp.preset.name}</strong> · {presetMatchPercent(runnerUp.score)}% match</div> : null}
+            {runnerUp && runnerUp.score > 0 ? <div className={styles.runnerUp}>Alternative certified layout: <strong>{runnerUp.name}</strong> · {layoutMatchPercent(runnerUp.score)}% match</div> : null}
           </div> : null}
           <div className={styles.interpretationGrid}>
             <InterpretationCard label="Business" values={[interpreted.businessName, interpreted.industry, interpreted.subindustry, interpreted.location]} />
@@ -145,8 +159,8 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       </div>
       {visibleError ? <div className={styles.error}>{visibleError}</div> : null}
       <div className={styles.actions}>
-        <span className={styles.hint}>{assetBusy ? "Classifying your business media…" : interpreting ? "Understanding your brief…" : building ? "Generating content, imagery and design directions…" : interpretationReady ? "Review the interpretation and design match, then build when it looks right." : "Analyze the brief before generation."}</span>
-        <div className={styles.actionButtons}>{interpretationReady ? <button type="button" className={styles.secondary} disabled={busy} onClick={() => { setInterpreted(null); setInterpretedContext(""); }}>Edit brief</button> : null}<button type="button" className={styles.primary} disabled={busy || value.context.trim().length < 20} onClick={() => void (interpretationReady ? buildWebsite() : interpretBrief())}>{building ? "Building your website…" : interpreting ? "Understanding brief…" : interpretationReady ? "Build my website" : "Analyze my brief"}</button></div>
+        <span className={styles.hint}>{assetBusy ? "Classifying your business media…" : interpreting ? "Understanding your brief…" : building ? "Generating content, imagery and design directions…" : interpretationReady ? "Review the interpretation and certified layout match, then build when it looks right." : "Analyze the brief before generation."}</span>
+        <div className={styles.actionButtons}>{interpretationReady ? <button type="button" className={styles.secondary} disabled={busy} onClick={() => { setInterpreted(null); setInterpretedContext(""); setDesignMatch(null); setRunnerUp(null); }}>Edit brief</button> : null}<button type="button" className={styles.primary} disabled={busy || value.context.trim().length < 20} onClick={() => void (interpretationReady ? buildWebsite() : interpretBrief())}>{building ? "Building your website…" : interpreting ? "Understanding brief…" : interpretationReady ? "Build my website" : "Analyze my brief"}</button></div>
       </div>
     </div>
   </section></main>;
@@ -157,7 +171,15 @@ function InterpretationCard({ label, values }: { label: string; values: string[]
   return <div className={styles.interpretationCard}><div className={styles.interpretationLabel}>{label}</div>{clean.length ? <div className={styles.chips}>{clean.map((item) => <span key={item} className={styles.chip}>{item}</span>)}</div> : <span className={styles.hint}>Not specified</span>}</div>;
 }
 
-function presetMatchPercent(score: number) { return Math.max(55, Math.min(98, Math.round(55 + score * 0.24))); }
+function layoutMatchPercent(score: number) { return Math.max(55, Math.min(99, Math.round(score))); }
+function asLayoutRecommendation(value: unknown): LayoutRecommendation | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const item = value as Record<string, unknown>;
+  const id = asText(item.id), name = asText(item.name), description = asText(item.description);
+  const score = Number(item.score);
+  if (!id || !name || !Number.isFinite(score)) return null;
+  return { id, name, description, score, reasons: asList(item.reasons), archetype: asText(item.archetype) || undefined, styleTags: asList(item.styleTags) };
+}
 function asText(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function asList(value: unknown) { return Array.isArray(value) ? value.map(asText).filter(Boolean) : []; }
 function commaList(value: string) { return value.split(",").map((item) => item.trim()).filter(Boolean); }

@@ -1,0 +1,108 @@
+/* Dental 15 — premium refinement
+ * Preserve the bold cosmetic campaign identity while reducing promotional
+ * card language and giving outcomes, treatments and clinician authority a
+ * calmer editorial hierarchy.
+ */
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic{
+  gap:clamp(.85rem,1.5vw,1.25rem);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:.35rem;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-card figcaption{
+  padding:.7rem 0 0;
+  border-top:1px solid var(--mi-campaign-line);
+  margin-top:.55rem;
+}
+
+/* Treatment choices read as a campaign index rather than another card grid. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight{
+  gap:0;
+  border-top:1px solid var(--mi-campaign-line);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.45rem .25rem;
+  border:0;
+  border-bottom:1px solid var(--mi-campaign-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-campaign-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child p{
+  color:var(--mi-color-text-muted);
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item h3{
+  font-size:clamp(1.35rem,2.15vw,2rem);
+  letter-spacing:-.025em;
+}
+
+/* Keep the campaign quote dramatic, but remove unnecessary visual noise. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote blockquote{
+  max-width:72rem;
+  margin-inline:auto;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-proof--quote blockquote p{
+  max-width:18ch;
+  text-wrap:balance;
+}
+
+/* Clinician authority should feel editorial, not like a profile card. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.35rem;
+}
+
+/* Final conversion stays bold but becomes a full-width campaign band. */
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split{
+  background:linear-gradient(135deg,var(--mi-campaign-pop),var(--mi-color-primary));
+  color:#fff;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+[data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-form{
+  border:1px solid var(--mi-campaign-line);
+  border-radius:.65rem;
+  box-shadow:none;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic{gap:1.35rem}
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card:nth-child(n){
+    border-radius:.25rem;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item:first-child{
+    width:100%;
+    padding:1.2rem 0;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-conv-cta--split .mi-cta-split{
+    width:100%;
+  }
+}

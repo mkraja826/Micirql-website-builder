@@ -39,7 +39,9 @@ export function persistedPageTypographyRepairCss(site: Site, path = "/"): string
 }
 
 function typographyRepairCss(operations: string[]) {
-  const root = "[data-mi-page-typography-repair='1']";
+  // The same persisted CSS must work inside the builder preview document and on
+  // the published HTML body without relying on editor-only wrapper attributes.
+  const root = ":where(body,.renderer-preview-document)";
   const rules: string[] = [];
   if (operations.includes("constrain-section-heading-measure")) rules.push(`${root} .mi-content-heading .mi-type--h2{max-width:20ch;line-height:1.04;text-wrap:balance}`);
   if (operations.includes("constrain-card-title-measure")) rules.push(`${root} .mi-type--h3,${root} .mi-service-item h3{max-width:26ch;line-height:1.12;text-wrap:balance}`);

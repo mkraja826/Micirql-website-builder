@@ -13,6 +13,8 @@ import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
+import { evaluatePageTypographyQuality } from "./page-typography-quality";
+import { repairPageTypography } from "./page-typography-repair";
 import { repairWebsiteInvariants } from "./invariant-repair";
 import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
@@ -20,6 +22,7 @@ import type { ReviewDirection } from "./review-directions";
 const REVIEW_LIMIT = 8;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_PAGE_RHYTHM_SCORE = 78;
+const MIN_PAGE_TYPOGRAPHY_SCORE = 82;
 
 export function isDentalReviewProfile(profile: OnboardingProfile): boolean {
   return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${clean(profile.industry)} ${clean(profile.subindustry)}`);
@@ -58,9 +61,6 @@ export function buildCertifiedDentalReviewDirections(
     let pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
     let pageRhythmRepairOperations: string[] = [];
 
-    // One bounded whole-page composition repair. The repair is deterministic and
-    // cannot rewrite content, remove sections, replace the certified family, or
-    // change functionality. A second failure is final for this candidate.
     if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) {
       const rhythmRepair = repairPageRhythm(candidateSite, pageRhythmQuality.issues);
       if (rhythmRepair.repaired) {
@@ -73,11 +73,29 @@ export function buildCertifiedDentalReviewDirections(
 
     if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) continue;
 
+    let pageTypographyQuality = evaluatePageTypographyQuality(candidateSite);
+    let pageTypographyErrors = pageTypographyQuality.issues.filter((issue) => issue.severity === "error" && !issue.repairable);
+    let pageTypographyRepairOperations: string[] = [];
+
+    // Exactly one bounded presentation-only typography repair. It cannot rewrite
+    // copy, change font families or replace certified section variants.
+    if (pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE || pageTypographyQuality.issues.some((issue) => issue.severity === "error")) {
+      const typographyRepair = repairPageTypography(candidateSite, pageTypographyQuality.issues);
+      if (typographyRepair.repaired) {
+        candidateSite = typographyRepair.site;
+        pageTypographyRepairOperations = typographyRepair.operations;
+        pageTypographyQuality = evaluatePageTypographyQuality(candidateSite);
+        pageTypographyErrors = pageTypographyQuality.issues.filter((issue) => issue.severity === "error" && !issue.repairable);
+      }
+    }
+
+    if (pageTypographyErrors.length || pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
+
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
     const baseScore = scoreDesign({
       site: candidateSite,
       readinessScore: repaired.readiness.score,
-      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score),
+      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score, pageTypographyQuality.score),
       archetypeFitScore: industryFit.score,
     });
     const fitBonus = blueprintFitBonus(
@@ -104,8 +122,10 @@ export function buildCertifiedDentalReviewDirections(
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
+        ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
         `dental content ${dentalContentQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
+        `page typography ${pageTypographyQuality.score}/100`,
         `design quality ${designScore.total}/100`,
       ],
       site: candidateSite,

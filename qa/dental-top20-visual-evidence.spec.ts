@@ -161,8 +161,8 @@ async function capture(page: Page, target: Locator, filePath: string) {
   finally { await page.evaluate((captureClass) => document.documentElement.classList.remove(captureClass), CAPTURE_CLASS); }
 }
 
-async function metrics(preview: Locator) {
-  return preview.evaluate((element) => {
+async function metrics(preview: Locator, viewportHeight: number) {
+  return preview.evaluate((element, targetViewportHeight) => {
     const root = element as HTMLElement;
     const rect = root.getBoundingClientRect();
     const all = [...root.querySelectorAll<HTMLElement>("*")];
@@ -170,9 +170,59 @@ async function metrics(preview: Locator) {
       const r = node.getBoundingClientRect();
       return r.width > 0 && (r.left < rect.left - 1 || r.right > rect.right + 1);
     }).slice(0, 20).map((node) => ({ tag: node.tagName, cls: node.className, text: node.textContent?.trim().slice(0,80) ?? "" }));
+
     const tooSmallActions = all.filter((node) => /^(A|BUTTON)$/.test(node.tagName)).map((node) => node.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0 && r.height < 44).length;
-    return { scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, overflowCount: overflowers.length, overflowers, tooSmallActions };
-  });
+
+    const textSelector = "h1,h2,h3,h4,h5,h6,p,li,blockquote,label,a,button,span";
+    const clippedText = [...root.querySelectorAll<HTMLElement>(textSelector)].filter((node) => {
+      const style = getComputedStyle(node);
+      const r = node.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0 || !node.textContent?.trim()) return false;
+      const clipsX = ["hidden", "clip"].includes(style.overflowX) && node.scrollWidth > node.clientWidth + 1;
+      const clipsY = ["hidden", "clip"].includes(style.overflowY) && node.scrollHeight > node.clientHeight + 1;
+      return clipsX || clipsY;
+    }).slice(0, 20).map((node) => ({ tag: node.tagName, cls: node.className, text: node.textContent?.trim().slice(0,100) ?? "", clientWidth: node.clientWidth, scrollWidth: node.scrollWidth, clientHeight: node.clientHeight, scrollHeight: node.scrollHeight }));
+
+    const distortedImages = [...root.querySelectorAll<HTMLImageElement>("img")].filter((img) => {
+      const r = img.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0 || !img.naturalWidth || !img.naturalHeight) return false;
+      const style = getComputedStyle(img);
+      if (style.objectFit && style.objectFit !== "fill") return false;
+      const naturalRatio = img.naturalWidth / img.naturalHeight;
+      const renderedRatio = r.width / r.height;
+      return Math.abs(renderedRatio / naturalRatio - 1) > 0.08;
+    }).slice(0, 20).map((img) => ({ cls: img.className, src: img.currentSrc || img.src, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight, renderedWidth: Math.round(img.getBoundingClientRect().width), renderedHeight: Math.round(img.getBoundingClientRect().height) }));
+
+    const oversizedSections = [...root.querySelectorAll<HTMLElement>("section")].filter((section) => {
+      const r = section.getBoundingClientRect();
+      return targetViewportHeight > 0 && r.height > targetViewportHeight * 4.25;
+    }).slice(0, 20).map((section) => ({ cls: section.className, height: Math.round(section.getBoundingClientRect().height), viewportHeight: targetViewportHeight }));
+
+    const malformedControls = [...root.querySelectorAll<HTMLElement>(".mi-section__action,.mi-conv-btn,.mi-contact-form button,.mi-contact-form input,.mi-contact-form textarea,.mi-contact-form select")].filter((node) => {
+      const r = node.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      const parent = node.parentElement?.getBoundingClientRect();
+      const tooNarrow = /^(A|BUTTON)$/.test(node.tagName) && r.width < 44;
+      const widerThanParent = !!parent && r.width > parent.width + 2;
+      return tooNarrow || widerThanParent;
+    }).slice(0, 20).map((node) => ({ tag: node.tagName, cls: node.className, width: Math.round(node.getBoundingClientRect().width), height: Math.round(node.getBoundingClientRect().height) }));
+
+    return {
+      scrollWidth: root.scrollWidth,
+      clientWidth: root.clientWidth,
+      overflowCount: overflowers.length,
+      overflowers,
+      tooSmallActions,
+      clippedTextCount: clippedText.length,
+      clippedText,
+      distortedImageCount: distortedImages.length,
+      distortedImages,
+      oversizedSectionCount: oversizedSections.length,
+      oversizedSections,
+      malformedControlCount: malformedControls.length,
+      malformedControls,
+    };
+  }, viewportHeight);
 }
 
 test("capture all 20 certified Dental layouts through the production blueprint path", async ({ page }) => {
@@ -202,10 +252,16 @@ test("capture all 20 certified Dental layouts through the production blueprint p
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       const frame = await selectViewport(page, viewport.mode, viewport.width);
       await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-      const measured = await metrics(preview);
+      const measured = await metrics(preview, viewport.height);
       expect(measured.scrollWidth, `${layout.id} overflowed at ${viewport.width}px`).toBeLessThanOrEqual(measured.clientWidth + 1);
       expect(measured.overflowCount, `${layout.id} has children escaping the preview at ${viewport.width}px: ${JSON.stringify(measured.overflowers)}`).toBe(0);
-      if (viewport.width <= 430) expect(measured.tooSmallActions, `${layout.id} has touch targets under 44px at ${viewport.width}px`).toBe(0);
+      expect(measured.clippedTextCount, `${layout.id} has clipped text at ${viewport.width}px: ${JSON.stringify(measured.clippedText)}`).toBe(0);
+      expect(measured.distortedImageCount, `${layout.id} has distorted images at ${viewport.width}px: ${JSON.stringify(measured.distortedImages)}`).toBe(0);
+      expect(measured.malformedControlCount, `${layout.id} has malformed CTA/form controls at ${viewport.width}px: ${JSON.stringify(measured.malformedControls)}`).toBe(0);
+      if (viewport.width <= 430) {
+        expect(measured.tooSmallActions, `${layout.id} has touch targets under 44px at ${viewport.width}px`).toBe(0);
+        expect(measured.oversizedSectionCount, `${layout.id} has an abnormally tall mobile section at ${viewport.width}px: ${JSON.stringify(measured.oversizedSections)}`).toBe(0);
+      }
       await capture(page, frame, path.join(outputDirectory, `${layout.id}--${viewport.id}.png`));
       viewportResults[viewport.id] = measured;
     }
@@ -223,7 +279,7 @@ test("capture all 20 certified Dental layouts through the production blueprint p
     `- Distinct production fingerprints: **${uniqueFingerprints}/20**`,
     `- Viewports per layout: **${VIEWPORTS.length}**`,
     `- Total screenshots: **${report.length * VIEWPORTS.length}**`,
-    "- Hard gates: full certified blueprint coverage, production blueprint application, no document overflow, no child escape, mobile interactive height >= 44px",
+    "- Hard gates: full certified blueprint coverage, production blueprint application, no document overflow, no child escape, no clipped text, no stretched images, sane CTA/form geometry, mobile interactive height >= 44px, no abnormally tall mobile sections",
     "",
     ...report.map((entry) => `- ${entry.layoutId}: PASS`),
     "",

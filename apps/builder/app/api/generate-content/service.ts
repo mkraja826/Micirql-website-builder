@@ -16,7 +16,7 @@ import {
   createWorkersAiJsonPlannerModel,
 } from "../../cloudflare-workers-ai-text";
 import { runGenerationRecovery } from "../../generation-recovery";
-import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseServiceHeaders } from "../drafts/supabase-store";
+import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseTrustedHeaders } from "../drafts/supabase-store";
 
 export type GuardedContentGenerationRequest = {
   workspaceId: string;
@@ -43,7 +43,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   const workersPlanner = createWorkersAiJsonPlannerModel({
     maxOutputTokens: 8_000,
     onUsage: async (usage) => {
-      recordedUsage = await recordContentUsage({ workspaceId: input.workspaceId, siteId: input.siteId, profileId: CLOUDFLARE_CONTENT_PROFILE_ID, provider: "cloudflare-workers-ai", model: CLOUDFLARE_CONTENT_MODEL, usage });
+      recordedUsage = await recordContentUsage(request, { workspaceId: input.workspaceId, siteId: input.siteId, profileId: CLOUDFLARE_CONTENT_PROFILE_ID, provider: "cloudflare-workers-ai", model: CLOUDFLARE_CONTENT_MODEL, usage });
       usageByProfile.set(CLOUDFLARE_CONTENT_PROFILE_ID, recordedUsage);
     },
   });
@@ -55,7 +55,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     const planner = createOpenAiCompatibleJsonPlannerModel({
       ...providerConfig,
       onUsage: async (usage) => {
-        recordedUsage = await recordContentUsage({ workspaceId: input.workspaceId, siteId: input.siteId, profileId: providerConfig.id, provider, model: providerConfig.model, usage });
+        recordedUsage = await recordContentUsage(request, { workspaceId: input.workspaceId, siteId: input.siteId, profileId: providerConfig.id, provider, model: providerConfig.model, usage });
         usageByProfile.set(providerConfig.id, recordedUsage);
       },
     });
@@ -82,9 +82,6 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
     },
   );
 
-  // Persist exactly once, and only after a provider has produced a schema-valid,
-  // grounded, structure-safe candidate that passed the content-quality threshold.
-  // Every failed, malformed or low-quality candidate leaves the current draft intact.
   const generated = recovery.result;
   const selectedProfile = recovery.selectedProfile.profile;
   const saved = await saveSupabaseDraft(request, { snapshot: generated.site, expectedRevision: current.revision });
@@ -105,10 +102,10 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   };
 }
 
-async function recordContentUsage(input: { workspaceId: string; siteId: string; profileId: string; provider: string; model: string; usage: TextProviderUsage }) {
+async function recordContentUsage(request: NextRequest, input: { workspaceId: string; siteId: string; profileId: string; provider: string; model: string; usage: TextProviderUsage }) {
   const cfg = supabaseConfig();
   const response = await fetch(`${cfg.url}/rest/v1/rpc/record_ai_usage`, {
-    method: "POST", headers: supabaseServiceHeaders(),
+    method: "POST", headers: supabaseTrustedHeaders(request),
     body: JSON.stringify({ p_workspace_id: input.workspaceId, p_site_id: input.siteId, p_build_id: null, p_task: "generate-content", p_profile_id: input.profileId, p_provider: input.provider, p_model: input.model, p_input_tokens: input.usage.inputTokens, p_output_tokens: input.usage.outputTokens, p_images: 0, p_component_generations: 0 }), cache: "no-store",
   });
   if (!response.ok) { const detail = await response.text(); throw new Error(`AI usage metering failed (${response.status}): ${detail.slice(0, 240)}`); }
@@ -141,11 +138,6 @@ function normalizeFacts(value: Partial<GroundingFacts> | undefined, site: { name
   };
 }
 
-/**
- * The context-first onboarding interpreter records explicit user facts in a locked,
- * labelled block inside notes. Hydrate those labels back into structured grounding
- * buckets so initial website generation and later regenerations use the same facts.
- */
 function lockedFactsFromNotes(notes: string | null): Pick<GroundingFacts, "people" | "credentials" | "proofClaims" | "prices"> {
   if (!notes) return { people: [], credentials: [], proofClaims: [], prices: [] };
   return {

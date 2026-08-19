@@ -9,6 +9,7 @@ import { materializeGeneratedMedia } from "../../materialize-media-execution";
 import { applyMediaExecution } from "../../apply-media-execution";
 import { applyComposition } from "../../apply-composition";
 import { applyPremiumQualityCorrection } from "../../premium-quality-correction";
+import { applyFinalGenerationCorrection, type FinalGenerationCorrection } from "../../final-generation-correction";
 import { evaluateFinalGenerationAcceptance, type FinalGenerationAcceptance } from "../../final-generation-acceptance";
 import { lockProjectBrief, mergeAiPlanningAdvice } from "../../project-brief-guard";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
@@ -57,7 +58,7 @@ export async function POST(request:NextRequest){
   const quality=inferGenerationQuality(recommendationProfile,composition),visualMediaPlan=planVisualMedia(recommendationProfile,composition,quality);
   let mediaExecution=null,imageWarning:string|null=null;let generatedMediaCount=0;const mediaMaterializationWarnings:string[]=[];
   try{const pools=await loadMediaPools(lockedBrief.workspaceId);mediaExecution=executeMediaPlan({plan:visualMediaPlan,...pools,allowGeneration:true});}catch(error){imageWarning=error instanceof Error?error.message:"Media execution planning failed.";console.error("MiCirql media execution failed; continuing without resolved media.",error);}
-  let initialPreset:{id:string;name:string;reasons:string[]}|null=null,initialComposition:{intent:string;sections:Array<{family:string;variant:number;purpose:string;priority:string}>;reasoning:string[]}|null=null,presetWarning:string|null=null,socialCardWarning:string|null=null;let premiumQuality:ReturnType<typeof applyPremiumQualityCorrection>|null=null;let finalAcceptance:FinalGenerationAcceptance|null=null;
+  let initialPreset:{id:string;name:string;reasons:string[]}|null=null,initialComposition:{intent:string;sections:Array<{family:string;variant:number;purpose:string;priority:string}>;reasoning:string[]}|null=null,presetWarning:string|null=null,socialCardWarning:string|null=null;let premiumQuality:ReturnType<typeof applyPremiumQualityCorrection>|null=null;let finalAcceptance:FinalGenerationAcceptance|null=null;let finalCorrection:FinalGenerationCorrection|null=null;
   try{
     const current=await getSupabaseDraft(request,lockedBrief.workspaceId,lockedBrief.siteId);if(!current)throw new Error("Generated draft could not be loaded for composition application.");
     let nextSnapshot=applyComposition(current.snapshot,composition,quality);
@@ -66,6 +67,12 @@ export async function POST(request:NextRequest){
     const[primary,accent,secondary,surface,border]=advice.brandColors;if(primary||accent||secondary||surface||border){nextSnapshot.theme.brand.colors={...nextSnapshot.theme.brand.colors,...(primary?{primary}:{}),...(accent?{accent}:{}),...(secondary?{secondary,textPrimary:secondary}:{}),...(surface?{surface}:{}),...(border?{border}:{})};nextSnapshot=siteSchema.parse(nextSnapshot);}
     premiumQuality=applyPremiumQualityCorrection(nextSnapshot);nextSnapshot=premiumQuality.site;
     finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot);
+    if(!finalAcceptance.ready){
+      finalCorrection=applyFinalGenerationCorrection(nextSnapshot);
+      nextSnapshot=finalCorrection.site;
+      premiumQuality=applyPremiumQualityCorrection(nextSnapshot);nextSnapshot=premiumQuality.site;
+      finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot);
+    }
     if(!finalAcceptance.ready)throw premiumGenerationError(finalAcceptance);
     try{const socialCard=await generateAndUploadSocialCard({site:nextSnapshot,supabaseUrl:url,supabaseKey:key,authorization});nextSnapshot.theme.brand.socialImageAssetId=socialCard.url;nextSnapshot.theme.brand.socialImageStrategy="generated-card";nextSnapshot=siteSchema.parse(nextSnapshot);}catch(error){socialCardWarning=error instanceof Error?error.message:"Social share card could not be generated.";console.error("MiCirql social share card generation failed; using brand fallback.",error);if(nextSnapshot.theme.brand.logoAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.logoAssetId;nextSnapshot.theme.brand.socialImageStrategy="logo-fallback";}else if(nextSnapshot.theme.brand.faviconAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.faviconAssetId;nextSnapshot.theme.brand.socialImageStrategy="favicon-fallback";}}
     await saveSupabaseDraft(request,{snapshot:nextSnapshot,expectedRevision:current.revision});initialPreset={id:composition.preset.id,name:composition.preset.name,reasons:composition.reasoning};initialComposition={intent:composition.intent,sections:composition.sections,reasoning:composition.reasoning};
@@ -76,7 +83,7 @@ export async function POST(request:NextRequest){
   const savedProfiles=await profileResponse.json() as unknown[];
   const creditBalance=await getCreditBalance(workspaceId);
   reservation=null;
-  return NextResponse.json({ok:true,planId:plan.plan_id,build,blueprint:plan.blueprint,selectedLayout:plan.selected_layout??null,industryContext,planningSource:advice.source,planningProvider:advice.provider??null,planningModel:advice.model??null,planningUsage:advice.usage??null,planningWarning:advice.warning??null,brandPalette:advice.brandColors,content,contentWarning,contentIntegrity,contentGrounding,images,imageWarning,visualMediaPlan,mediaExecution,initialPreset,initialComposition,generationQuality:quality,premiumQuality:premiumQuality?{premiumReady:premiumQuality.final.premiumReady,initialScore:premiumQuality.initial.score,finalScore:premiumQuality.final.score,attemptedCorrection:premiumQuality.attempted,appliedCorrection:premiumQuality.applied,blockers:premiumQuality.final.blockers,warnings:premiumQuality.final.warnings,metrics:premiumQuality.final.metrics}:null,finalAcceptance,presetWarning,socialCardWarning,creditsCharged:websiteCredits,creditBalance,profile:savedProfiles[0]??profile});
+  return NextResponse.json({ok:true,planId:plan.plan_id,build,blueprint:plan.blueprint,selectedLayout:plan.selected_layout??null,industryContext,planningSource:advice.source,planningProvider:advice.provider??null,planningModel:advice.model??null,planningUsage:advice.usage??null,planningWarning:advice.warning??null,brandPalette:advice.brandColors,content,contentWarning,contentIntegrity,contentGrounding,images,imageWarning,visualMediaPlan,mediaExecution,initialPreset,initialComposition,generationQuality:quality,premiumQuality:premiumQuality?{premiumReady:premiumQuality.final.premiumReady,initialScore:premiumQuality.initial.score,finalScore:premiumQuality.final.score,attemptedCorrection:premiumQuality.attempted,appliedCorrection:premiumQuality.applied,blockers:premiumQuality.final.blockers,warnings:premiumQuality.final.warnings,metrics:premiumQuality.final.metrics}:null,finalAcceptance,finalCorrection:finalCorrection?{attempted:finalCorrection.attempted,applied:finalCorrection.applied,repairs:finalCorrection.repairs,initialScore:finalCorrection.initial.score,finalScore:finalCorrection.final.score}:null,presetWarning,socialCardWarning,creditsCharged:websiteCredits,creditBalance,profile:savedProfiles[0]??profile});
  }catch(error){
   if(reservation){try{await refundCredits({workspaceId:reservation.workspaceId,credits:reservation.credits,operationKey:`refund:${reservation.operationKey}`,description:"Refund failed AI website generation",metadata:{reservation:reservation.operationKey}});}catch(refundError){console.error("MiCirql website credit refund failed",refundError);}}
   return errorResponse(error);

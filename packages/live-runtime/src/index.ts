@@ -1,5 +1,6 @@
 import { preparePage, type FunctionBindingResolver, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
 import { siteSchema, type Site } from "@micirql/schema";
+import { liveResponsiveCompositionRepair, type LiveResponsiveCompositionRepair } from "./responsive-composition-repair";
 
 export type PublishedSiteRecord = {
   siteId: string;
@@ -78,7 +79,8 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   };
   const firstScreenRepair = liveFirstScreenRepair(site, path);
   const typographyRepair = livePageTypographyRepair(site, path);
-  const document = pageDocument(prepared.value.seo, content, brandMeta, firstScreenRepair, typographyRepair);
+  const compositionRepair = liveResponsiveCompositionRepair(site, path);
+  const document = pageDocument(prepared.value.seo, content, brandMeta, firstScreenRepair, typographyRepair, compositionRepair);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
@@ -156,6 +158,7 @@ function pageDocument(
   brand: { favicon?: string; socialImage?: string; siteName: string },
   firstScreenRepair: LiveFirstScreenRepair = { css: "", enabled: false, mobile: "", tablet: "", desktop: "" },
   typographyRepair: LivePageTypographyRepair = { css: "", enabled: false },
+  compositionRepair: LiveResponsiveCompositionRepair = { css: "", enabled: false, mobile: "", tablet: "", desktop: "" },
 ) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
   const icon = brand.favicon ? `<link rel="icon" href="${escapeAttr(brand.favicon)}"><link rel="apple-touch-icon" href="${escapeAttr(brand.favicon)}">` : "";
@@ -163,9 +166,10 @@ function pageDocument(
   const social = `<meta property="og:type" content="website"><meta property="og:site_name" content="${escapeAttr(brand.siteName)}"><meta property="og:title" content="${escapeAttr(seo.title)}"><meta property="og:description" content="${escapeAttr(seo.description)}"><meta property="og:url" content="${escapeAttr(seo.canonical)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeAttr(seo.title)}"><meta name="twitter:description" content="${escapeAttr(seo.description)}">${socialImage}`;
   const repairStyle = firstScreenRepair.enabled ? `<style data-mi-persisted-first-screen-repair>${firstScreenRepair.css}</style>` : "";
   const typographyStyle = typographyRepair.enabled ? `<style data-mi-persisted-page-typography-repair>${typographyRepair.css}</style>` : "";
+  const compositionStyle = compositionRepair.enabled ? `<style data-mi-persisted-responsive-composition-repair>${compositionRepair.css}</style>` : "";
   const repairAttribute = firstScreenRepair.enabled ? ' data-mi-first-screen-repair="1"' : "";
   const typographyAttribute = typographyRepair.enabled ? ' data-mi-page-typography-repair="1"' : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}${typographyStyle}</head><body${repairAttribute}${typographyAttribute}>${body}${formFeedbackScript()}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}${typographyStyle}${compositionStyle}</head><body${repairAttribute}${typographyAttribute}>${body}${formFeedbackScript()}</body></html>`;
 }
 
 function formFeedbackScript() {
@@ -202,3 +206,4 @@ function escapeScriptJson(value: string) { return value.replace(/</g, "\\u003c")
 
 export * from "./sql-store";
 export * from "./cloudflare";
+export * from "./responsive-composition-repair";

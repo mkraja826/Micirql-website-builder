@@ -33,6 +33,7 @@ import "@micirql/sections/dental-responsive-safety.css";
 import "@micirql/sections/premium-output-system.css";
 import "@micirql/sections/premium-geometry.css";
 import "@micirql/sections/dental-07-premium-refinement.css";
+import "@micirql/sections/dental-18-proof-first-refinement.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

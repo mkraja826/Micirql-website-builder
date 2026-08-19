@@ -9,7 +9,7 @@ test("dental review withholds raw directions until runtime render certification 
   expect(review).toContain("certifiedDentalPool");
   expect(review).toContain("const pool = dentalReview ? (certifiedDentalPool ?? []) : rawPool");
   expect(review).toContain(".filter((result) => result.passed)");
-  expect(review).toContain("site: direction.site");
+  expect(review).toContain("...result.direction");
   expect(review).toContain("snapshot: direction.site");
 
   expect(certifier).toContain("width: 390");

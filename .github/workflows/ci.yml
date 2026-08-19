@@ -39,6 +39,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Verify provider retry policy
+        run: pnpm qa:provider-retry
+
       - name: Verify AI metering contract
         run: node qa/ai-metering-contract.mjs
 

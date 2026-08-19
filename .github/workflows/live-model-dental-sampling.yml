@@ -58,18 +58,32 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Provider and media preflight
+        id: preflight
         shell: bash
         run: |
+          code="OK"
+          detail="Live text provider and Pexels prerequisites are configured."
+
           if [[ -z "$MICIRQL_TEXT_MODEL_API_KEY" && -z "$GEMINI_API_KEY" ]]; then
-            echo "::error::No live text-model secret is configured. Add MICIRQL_TEXT_MODEL_* or GEMINI_API_KEY before running this workflow."
-            exit 1
+            code="LIVE_PROVIDER_MISSING"
+            detail="No live text-model secret is configured. Add MICIRQL_TEXT_MODEL_* or GEMINI_API_KEY."
+          elif [[ -n "$MICIRQL_TEXT_MODEL_API_KEY" && ( -z "$MICIRQL_TEXT_MODEL_ENDPOINT" || -z "$MICIRQL_TEXT_MODEL" ) ]]; then
+            code="LIVE_PROVIDER_INCOMPLETE"
+            detail="MICIRQL_TEXT_MODEL_API_KEY is present but endpoint/model configuration is incomplete."
+          elif [[ -z "$PEXELS_API_KEY" ]]; then
+            code="PEXELS_KEY_MISSING"
+            detail="PEXELS_API_KEY is required for live generated-site visual QA."
           fi
-          if [[ -n "$MICIRQL_TEXT_MODEL_API_KEY" && ( -z "$MICIRQL_TEXT_MODEL_ENDPOINT" || -z "$MICIRQL_TEXT_MODEL" ) ]]; then
-            echo "::error::MICIRQL_TEXT_MODEL_API_KEY is present but endpoint/model secrets are incomplete."
-            exit 1
-          fi
-          if [[ -z "$PEXELS_API_KEY" ]]; then
-            echo "::error::PEXELS_API_KEY is required for live generated-site visual QA."
+
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "detail=$detail" >> "$GITHUB_OUTPUT"
+          echo "## Live Dental benchmark preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Code: **$code**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Detail: $detail" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Samples: **$MI_LIVE_SAMPLE_COUNT**" >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$code" != "OK" ]]; then
+            echo "::error title=$code::$detail"
             exit 1
           fi
 
@@ -83,16 +97,28 @@ jobs:
         if: always()
         shell: bash
         run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Live Dental benchmark diagnostics" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Preflight: **${{ steps.preflight.outputs.code || 'NOT_REACHED' }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: **${GITHUB_SHA}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Event: **${GITHUB_EVENT_NAME}**" >> "$GITHUB_STEP_SUMMARY"
+
+          found=0
           for report in \
             test-results/live-model-dental/summary.md \
             test-results/live-generated-dental-visual/summary.md \
             test-results/live-dental-media-materialization/summary.md \
             test-results/live-dental-customer-path/summary.md; do
             if [[ -f "$report" ]]; then
+              found=1
               echo "" >> "$GITHUB_STEP_SUMMARY"
               cat "$report" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
+          if [[ "$found" == "0" ]]; then
+            echo "- Evidence summaries: **NONE_PRODUCED**" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
           if [[ -f test-results/live-autonomous-composition/report.json ]]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"

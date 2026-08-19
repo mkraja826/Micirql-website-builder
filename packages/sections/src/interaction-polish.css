@@ -1,0 +1,132 @@
+/* Shared interaction polish for generated websites.
+ *
+ * This layer improves feedback and motion behavior without replacing each
+ * certified blueprint's visual language. It only animates compositor-safe or
+ * paint-only properties and keeps pointer hover out of touch-first devices.
+ */
+[data-mi-site]{
+  --mi-interaction-fast:140ms;
+  --mi-interaction-base:220ms;
+  --mi-interaction-slow:360ms;
+  --mi-interaction-ease:cubic-bezier(.2,.65,.3,1);
+  --mi-interaction-press-ease:cubic-bezier(.3,.7,.4,1);
+}
+
+[data-mi-site] :is(
+  .mi-section__action,
+  .mi-conv-btn,
+  .mi-shell-cta,
+  .mi-section__form button,
+  .mi-link--button,
+  .mi-burger,
+  .mi-mobile-drawer__head button
+){
+  transition:
+    transform var(--mi-interaction-fast) var(--mi-interaction-ease),
+    background-color var(--mi-interaction-base) var(--mi-interaction-ease),
+    border-color var(--mi-interaction-base) var(--mi-interaction-ease),
+    color var(--mi-interaction-base) var(--mi-interaction-ease),
+    box-shadow var(--mi-interaction-base) var(--mi-interaction-ease),
+    opacity var(--mi-interaction-base) var(--mi-interaction-ease);
+  -webkit-tap-highlight-color:transparent;
+}
+
+[data-mi-site] :is(.mi-shell-links a,.mi-footer-links a,.mi-footer-groups a,.mi-mobile-drawer nav a,.mi-shell-dropdown__panel a){
+  transition:
+    color var(--mi-interaction-base) var(--mi-interaction-ease),
+    background-color var(--mi-interaction-base) var(--mi-interaction-ease),
+    opacity var(--mi-interaction-base) var(--mi-interaction-ease);
+}
+
+[data-mi-site] :is(.mi-section__form input,.mi-section__form select,.mi-section__form textarea,input,select,textarea){
+  transition:
+    border-color var(--mi-interaction-base) var(--mi-interaction-ease),
+    box-shadow var(--mi-interaction-base) var(--mi-interaction-ease),
+    background-color var(--mi-interaction-base) var(--mi-interaction-ease);
+}
+
+[data-mi-site] :is(.mi-shell-dropdown>summary,details>summary){cursor:pointer}
+[data-mi-site] .mi-shell-dropdown>summary{
+  transition:color var(--mi-interaction-base) var(--mi-interaction-ease),opacity var(--mi-interaction-base) var(--mi-interaction-ease);
+}
+[data-mi-site] .mi-shell-dropdown[open]>summary{color:var(--mi-color-primary)}
+
+@media (hover:hover) and (pointer:fine){
+  [data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-link--button):hover{
+    transform:translateY(-1px);
+  }
+  [data-mi-site] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta,.mi-section__form button):hover{
+    box-shadow:0 .5rem 1.25rem color-mix(in srgb,var(--mi-color-primary) 18%,transparent);
+  }
+  [data-mi-site] :is(.mi-section__action--secondary,.mi-conv-btn--secondary,.mi-link--button):hover{
+    border-color:color-mix(in srgb,var(--mi-color-primary) 42%,var(--mi-color-border));
+    background-color:color-mix(in srgb,var(--mi-color-primary) 5%,transparent);
+  }
+  [data-mi-site] :is(.mi-shell-links a,.mi-footer-links a,.mi-footer-groups a,.mi-mobile-drawer nav a):hover{
+    opacity:1;
+  }
+  [data-mi-site] :is(.mi-feature-item,.mi-section__card,.mi-team-card)[role="button"]:hover,
+  [data-mi-site] a:is(.mi-feature-item,.mi-section__card,.mi-team-card):hover{
+    transform:translateY(-2px);
+  }
+}
+
+[data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-link--button,.mi-burger,.mi-mobile-drawer__head button):active{
+  transform:translateY(0) scale(.985);
+  transition-timing-function:var(--mi-interaction-press-ease);
+}
+
+[data-mi-site] :is(.mi-section__form input,.mi-section__form select,.mi-section__form textarea,input,select,textarea):focus-visible{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--mi-color-accent) 20%,transparent);
+}
+
+[data-mi-site] :is(.mi-feature-item,.mi-section__card,.mi-team-card)[role="button"],
+[data-mi-site] a:is(.mi-feature-item,.mi-section__card,.mi-team-card){
+  transition:
+    transform var(--mi-interaction-base) var(--mi-interaction-ease),
+    box-shadow var(--mi-interaction-base) var(--mi-interaction-ease),
+    border-color var(--mi-interaction-base) var(--mi-interaction-ease);
+}
+
+@keyframes mi-mobile-drawer-enter{
+  from{opacity:0;transform:translateY(-.35rem)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+[data-mi-site] .mi-mobile-nav[open] .mi-mobile-drawer{
+  animation:mi-mobile-drawer-enter var(--mi-interaction-base) var(--mi-interaction-ease) both;
+}
+
+/* Never add a global reveal/scroll animation here. Generated pages should feel
+ * responsive to user intent, not animated simply because content exists. */
+@media (prefers-reduced-motion:reduce){
+  [data-mi-site]{
+    --mi-interaction-fast:.01ms;
+    --mi-interaction-base:.01ms;
+    --mi-interaction-slow:.01ms;
+  }
+  [data-mi-site] :is(
+    .mi-section__action,
+    .mi-conv-btn,
+    .mi-shell-cta,
+    .mi-section__form button,
+    .mi-link--button,
+    .mi-burger,
+    .mi-mobile-drawer__head button,
+    .mi-shell-links a,
+    .mi-footer-links a,
+    .mi-footer-groups a,
+    .mi-mobile-drawer nav a,
+    .mi-shell-dropdown__panel a,
+    .mi-feature-item,
+    .mi-section__card,
+    .mi-team-card
+  ){
+    transition:none!important;
+  }
+  [data-mi-site] .mi-mobile-nav[open] .mi-mobile-drawer{animation:none!important}
+  [data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-link--button):hover,
+  [data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-link--button):active{
+    transform:none!important;
+  }
+}

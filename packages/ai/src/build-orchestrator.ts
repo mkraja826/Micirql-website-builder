@@ -11,6 +11,7 @@ import {
 import { runPlannerAdapter, type PlannerModel } from "./planner-adapter";
 import { evaluateCodeGeneration } from "./codegen-policy";
 import { selectSiteComponents } from "./selection-orchestrator";
+import { runBuildWithWatchdog, type BuildWatchdogIssue } from "./build-watchdog";
 import type { AiDecisionOutput } from "./types";
 
 export type BuildContext = {
@@ -104,6 +105,42 @@ export type AiBuildResult =
       issues: string[];
       plan?: SitePlan;
     };
+
+export type WatchdogAiBuildResult =
+  | AiBuildResult
+  | {
+      ok: false;
+      stage: "watchdog";
+      code: "BUILD_WATCHDOG_RECOVERED" | "BUILD_WATCHDOG_FAILED";
+      issues: string[];
+      watchdogIssues: BuildWatchdogIssue[];
+      recovered: boolean;
+      fallbackSite?: Site;
+      elapsedMs: number;
+    };
+
+export async function orchestrateAiBuildWithWatchdog(input: AiBuildOrchestratorInput & { timeoutMs?: number; lastKnownGood?: Site }): Promise<WatchdogAiBuildResult> {
+  const watched = await runBuildWithWatchdog({
+    timeoutMs: input.timeoutMs,
+    lastKnownGood: input.lastKnownGood,
+    execute: async () => {
+      const result = await orchestrateAiBuild(input);
+      if (!result.ok) throw new Error(`${result.code}: ${result.issues.join(" | ")}`);
+      return result;
+    },
+  });
+  if (watched.ok) return watched.value;
+  return {
+    ok: false,
+    stage: "watchdog",
+    code: watched.recovered ? "BUILD_WATCHDOG_RECOVERED" : "BUILD_WATCHDOG_FAILED",
+    issues: watched.issues.map((issue) => issue.message),
+    watchdogIssues: watched.issues,
+    recovered: watched.recovered,
+    ...(watched.fallbackSite ? { fallbackSite: watched.fallbackSite } : {}),
+    elapsedMs: watched.elapsedMs,
+  };
+}
 
 export async function orchestrateAiBuild(input: AiBuildOrchestratorInput): Promise<AiBuildResult> {
   const transformed = transformDiscoveryToPlanning({

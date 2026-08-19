@@ -65,6 +65,7 @@ export type LayoutSelectionInput = {
   goals?: string[];
   priorities?: string[];
   styleTags?: string[];
+  context?: string;
 };
 
 export type RankedLayout = {

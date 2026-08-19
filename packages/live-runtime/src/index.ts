@@ -76,7 +76,8 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
     ...(favicon ? { favicon } : {}),
     ...(socialImage ? { socialImage } : {}),
   };
-  const document = pageDocument(prepared.value.seo, content, brandMeta);
+  const firstScreenRepair = liveFirstScreenRepair(site, path);
+  const document = pageDocument(prepared.value.seo, content, brandMeta, firstScreenRepair);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
@@ -111,16 +112,44 @@ function socialImageFor(site: Site) {
   return site.theme.brand.faviconAssetId;
 }
 
+type LiveFirstScreenRepair = { css: string; enabled: boolean };
+
+function liveFirstScreenRepair(site: Site, path: string): LiveFirstScreenRepair {
+  const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
+  const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+  const raw = hero?.props?.renderedFirstScreenRepairs;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { css: "", enabled: false };
+  const repairs = raw as Record<string, unknown>;
+  const cssFor = (viewport: "mobile" | "tablet" | "desktop") => {
+    const entry = repairs[viewport];
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return "";
+    const css = (entry as Record<string, unknown>).css;
+    return typeof css === "string" ? css.trim() : "";
+  };
+  const mobile = cssFor("mobile");
+  const tablet = cssFor("tablet");
+  const desktop = cssFor("desktop");
+  const blocks = [
+    mobile ? `@media (max-width:430px){${mobile}}` : "",
+    tablet ? `@media (min-width:431px) and (max-width:1024px){${tablet}}` : "",
+    desktop ? `@media (min-width:1025px){${desktop}}` : "",
+  ].filter(Boolean);
+  return { css: blocks.join("\n"), enabled: blocks.length > 0 };
+}
+
 function pageDocument(
   seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] },
   body: string,
   brand: { favicon?: string; socialImage?: string; siteName: string },
+  firstScreenRepair: LiveFirstScreenRepair = { css: "", enabled: false },
 ) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
   const icon = brand.favicon ? `<link rel="icon" href="${escapeAttr(brand.favicon)}"><link rel="apple-touch-icon" href="${escapeAttr(brand.favicon)}">` : "";
   const socialImage = brand.socialImage ? `<meta property="og:image" content="${escapeAttr(brand.socialImage)}"><meta property="og:image:alt" content="${escapeAttr(`${brand.siteName} preview`)}"><meta name="twitter:image" content="${escapeAttr(brand.socialImage)}">` : "";
   const social = `<meta property="og:type" content="website"><meta property="og:site_name" content="${escapeAttr(brand.siteName)}"><meta property="og:title" content="${escapeAttr(seo.title)}"><meta property="og:description" content="${escapeAttr(seo.description)}"><meta property="og:url" content="${escapeAttr(seo.canonical)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeAttr(seo.title)}"><meta name="twitter:description" content="${escapeAttr(seo.description)}">${socialImage}`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}</head><body>${body}${formFeedbackScript()}</body></html>`;
+  const repairStyle = firstScreenRepair.enabled ? `<style data-mi-persisted-first-screen-repair>${firstScreenRepair.css}</style>` : "";
+  const repairAttribute = firstScreenRepair.enabled ? ' data-mi-first-screen-repair="1"' : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}</head><body${repairAttribute}>${body}${formFeedbackScript()}</body></html>`;
 }
 
 function formFeedbackScript() {

@@ -1,4 +1,4 @@
-import { findWebsiteLayout, normalizeLayoutIndustry, recommendWebsiteLayouts, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
+import { findWebsiteLayout, isProductionLayoutCertified, normalizeLayoutIndustry, recommendWebsiteLayouts, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
 import { resolvePremiumCertifiedVariant, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import { selectIndustryPack, type IndustryPackSelection } from "./industry-pack-intelligence";
@@ -59,11 +59,12 @@ function plannerLockedLayout(profile:OnboardingProfile,options:CompositionOption
  const id=options.selectedLayoutId?.trim();if(!id)throw new Error("Planner-selected layout ID is required.");
  const layout=findWebsiteLayout(id);if(!layout)throw new Error(`Planner-selected layout ${id} does not exist in the website layout library.`);
  if(layout.status!=="certified")throw new Error(`Planner-selected layout ${id} is not certified.`);
+ if(!isProductionLayoutCertified(layout))throw new Error(`Planner-selected layout ${id} does not have current rendered production certification.`);
  const requestedIndustry=normalizeLayoutIndustry(profile.industry?.trim()||"");
  if(layout.industry!==requestedIndustry)throw new Error(`Planner-selected layout ${id} does not match industry ${requestedIndustry}.`);
  const score=Number.isFinite(options.selectedLayoutScore)?Math.max(0,Math.min(100,Number(options.selectedLayoutScore))):100;
  const reasons=options.selectedLayoutReasons?.filter(Boolean).length?[...new Set(options.selectedLayoutReasons.filter(Boolean))]:["selected by production planner"];
- return{layout,score,reasons:[...reasons,"planner-locked certified layout"]};
+ return{layout,score,reasons:[...reasons,"planner-locked rendered-certified layout"]};
 }
 
 function recipeFamily(value:string):SectionFamily|undefined{

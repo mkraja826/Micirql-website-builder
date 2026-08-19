@@ -11,12 +11,14 @@ import {
 } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
+import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairWebsiteInvariants } from "./invariant-repair";
 import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
 const MIN_DENTAL_CONTENT_SCORE = 82;
+const MIN_PAGE_RHYTHM_SCORE = 78;
 
 export function isDentalReviewProfile(profile: OnboardingProfile): boolean {
   return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${clean(profile.industry)} ${clean(profile.subindustry)}`);
@@ -35,9 +37,6 @@ export function buildCertifiedDentalReviewDirections(
   const candidates: ReviewDirection[] = [];
   const renderedCertifiedIds = runtimeRenderedCertifiedDentalIds();
 
-  // Production Design Review must fail closed exactly like production layout
-  // recommendation. If rendered certification is missing, no dental direction is
-  // customer-visible. Development/test can still exercise the full library.
   if (process.env.NODE_ENV === "production" && renderedCertifiedIds.size === 0) return [];
 
   for (let index = 0; index < DENTAL_LAYOUT_BLUEPRINTS.length; index += 1) {
@@ -50,17 +49,17 @@ export function buildCertifiedDentalReviewDirections(
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     const dentalContentQuality = evaluateDentalContentQuality(normalizedSite, profile);
     const dentalContentErrors = dentalContentQuality.issues.filter((issue) => issue.severity === "error");
+    const pageRhythmQuality = evaluatePageRhythmQuality(normalizedSite);
+    const pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
 
-    // Design Review is for finished directions, not polished generic scaffolds.
-    // If the site's copy misses the requested dental specialty or lacks a clinic-specific CTA,
-    // withhold every direction until generation/content recovery produces a valid draft.
     if (dentalContentErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE) continue;
+    if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) continue;
 
     const industryFit = evaluateIndustryFit(normalizedSite, industry, subindustry);
     const baseScore = scoreDesign({
       site: normalizedSite,
       readinessScore: repaired.readiness.score,
-      contentScore: Math.min(contentQuality.score, dentalContentQuality.score),
+      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score),
       archetypeFitScore: industryFit.score,
     });
     const fitBonus = blueprintFitBonus(
@@ -87,6 +86,7 @@ export function buildCertifiedDentalReviewDirections(
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         `dental content ${dentalContentQuality.score}/100`,
+        `page rhythm ${pageRhythmQuality.score}/100`,
         `design quality ${designScore.total}/100`,
       ],
       site: normalizedSite,

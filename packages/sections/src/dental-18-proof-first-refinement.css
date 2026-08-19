@@ -1,0 +1,137 @@
+/* Dental 18 — Proof First refinement
+ * Preserve the credibility-first conversion strategy while removing repeated
+ * card chrome so proof, reviews and treatments read as one editorial trust
+ * narrative rather than a stack of interchangeable UI panels.
+ */
+
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof--wall{
+  background:var(--mi-color-surface);
+  border-top:1px solid var(--mi-proof-first-line);
+  border-bottom:1px solid var(--mi-proof-first-line);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall-head{
+  display:grid;
+  grid-template-columns:minmax(0,.72fr) minmax(18rem,.28fr);
+  gap:clamp(2rem,5vw,5rem);
+  align-items:end;
+  max-width:none;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  border-top:1px solid var(--mi-proof-first-line);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote{
+  min-height:18rem;
+  padding:clamp(1.4rem,2.4vw,2rem);
+  border:0;
+  border-right:1px solid var(--mi-proof-first-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote:last-child{border-right:0}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote p{
+  max-width:24ch;
+  font-size:clamp(1.35rem,2vw,1.85rem);
+  line-height:1.36;
+  letter-spacing:-.028em;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote cite{
+  padding-top:1.2rem;
+  border-top:1px solid var(--mi-proof-first-line);
+}
+
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services--spotlight{
+  padding-top:clamp(5rem,8vw,7.5rem);
+  padding-bottom:clamp(5rem,8vw,7.5rem);
+  background:var(--mi-proof-first-soft);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services--spotlight .mi-content-heading{
+  display:grid;
+  grid-template-columns:minmax(0,.72fr) minmax(18rem,.28fr);
+  gap:clamp(2rem,5vw,5rem);
+  align-items:end;
+  max-width:none;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 clamp(2rem,5vw,5rem);
+  border-top:1px solid var(--mi-proof-first-line);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item:nth-child(2n){
+  grid-column:auto;
+  min-height:0;
+  padding:1.5rem 0 2.1rem;
+  border:0;
+  border-bottom:1px solid var(--mi-proof-first-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:var(--mi-proof-first-ink);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-service-item h3{
+  max-width:18ch;
+  font-size:clamp(1.45rem,2.15vw,2rem);
+  letter-spacing:-.03em;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-service-item p,
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item:first-child p{
+  max-width:36rem;
+  color:var(--mi-proof-first-muted);
+  line-height:1.65;
+}
+
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-team--featured{
+  background:var(--mi-proof-first-blue);
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-team-card--lead .mi-team-avatar{
+  border-radius:0;
+}
+[data-mi-layout-blueprint="dental-18-proof-first"] .mi-team-card--lead>div{
+  align-self:center;
+  padding-block:clamp(1rem,3vw,2.5rem);
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall-head,
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-services--spotlight .mi-content-heading{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote{
+    min-height:0;
+    padding:1.35rem 0 1.6rem;
+    border-right:0;
+    border-bottom:1px solid var(--mi-proof-first-line);
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote:last-child{border-bottom:0}
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-proof-wall blockquote p{
+    max-width:none;
+    font-size:clamp(1.3rem,6vw,1.75rem);
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item:first-child,
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-services-spotlight .mi-service-item:nth-child(2n){
+    padding:1.25rem 0 1.55rem;
+    border-radius:0;
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-team-card--lead{
+    gap:1rem;
+  }
+}

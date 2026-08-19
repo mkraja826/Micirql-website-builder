@@ -10,6 +10,7 @@ import { persistRenderedTypographyRepair } from "./persisted-rendered-typography
 import { measureResponsiveCompositionIssues } from "./rendered-responsive-composition-quality";
 import { planResponsiveCompositionRepair } from "./rendered-responsive-composition-repair";
 import { persistResponsiveCompositionRepair } from "./persisted-responsive-composition-repair";
+import { measureRenderedImageQualityIssues } from "./rendered-image-quality";
 
 const TARGETS = [
   { viewport: "mobile" as const, width: 390, foldHeight: 844 },
@@ -118,6 +119,19 @@ export function DentalReviewRenderCertifier({
           passed: false,
           repaired: hasAnyRepair(working),
           failures: compositionIssues.map((issue) => `composition:${issue.code}:${issue.detail}`),
+        });
+        return;
+      }
+
+      const imageIssues = measureRenderedImageQualityIssues(documentRoot, target.width);
+      const imageWarningLimit = target.width <= 430 ? 4 : target.width <= 1024 ? 5 : 6;
+      const imageFailed = imageIssues.some((issue) => issue.severity === "error") || imageIssues.filter((issue) => issue.severity === "warning").length > imageWarningLimit;
+      if (imageFailed) {
+        finishCandidate({
+          direction: working,
+          passed: false,
+          repaired: hasAnyRepair(working),
+          failures: imageIssues.map((issue) => `image:${issue.code}:${issue.detail}`),
         });
         return;
       }

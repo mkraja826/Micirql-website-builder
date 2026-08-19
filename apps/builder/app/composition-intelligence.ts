@@ -23,13 +23,15 @@ const INTENT_VARIANTS:Record<CompositionIntent,Partial<Record<SectionFamily,Sect
 export function composeWebsite(profile:OnboardingProfile,options:CompositionOptions={}):WebsiteComposition{
  const ranked=rankPresets(profile),top=ranked[0];if(!top)throw new Error("No design presets are available for composition.");
  const preset=top.preset,intent=inferIntent(profile,preset.id),industryPack=selectIndustryPack({industry:profile.industry,subindustry:profile.subindustry,goals:profile.goals,services:profile.required_capabilities});
- const priorities=[...(profile.services??[]),...(profile.required_capabilities??[])];
+ const notes=profile.notes?.trim()||"";
+ const priorities=[...(profile.services??[]),...(profile.required_capabilities??[]),...(notes?[notes]:[])];
+ const styleTags=[...(profile.style_tags??[]),...(notes?[notes]:[])];
  const layoutInput:LayoutSelectionInput={
   industry:profile.industry?.trim()||preset.id,
   ...(profile.subindustry?.trim()?{subindustryId:profile.subindustry.trim()}:{}),
   ...(profile.goals?.length?{goals:profile.goals}:{}),
   ...(priorities.length?{priorities}:{}),
-  ...(profile.style_tags?.length?{styleTags:profile.style_tags}:{}),
+  ...(styleTags.length?{styleTags}:{}),
  };
  const layoutCandidate=options.selectedLayoutId?plannerLockedLayout(profile,options):recommendWebsiteLayouts(layoutInput,1)[0]??null;
  const available=preset.variants;
@@ -52,7 +54,7 @@ export function composeWebsite(profile:OnboardingProfile,options:CompositionOpti
   sections=families.slice(0,9).map((family,i)=>({family,variant:variantFor(profile,preset,intent,family),purpose:PURPOSE[family]||"Support the page narrative",priority:(i===0||family==="cta"||family==="contact"?"required":"recommended") as "required"|"recommended"}));
  }
  const changed=sections.filter(section=>section.variant!==available[section.family]);
- return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[options.selectedLayoutId?`Planner-locked certified layout ${layoutCandidate.layout.id} is the single source of truth`:`Certified layout ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100; applies after full section coverage`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
+ return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(notes?["Applied free-text business brief to preset, layout, intent and section selection"]:[]),...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[options.selectedLayoutId?`Planner-locked certified layout ${layoutCandidate.layout.id} is the single source of truth`:`Certified layout ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100; applies after full section coverage`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
 }
 
 function plannerLockedLayout(profile:OnboardingProfile,options:CompositionOptions):RankedLayout{
@@ -78,16 +80,16 @@ function recipeFamily(value:string):SectionFamily|undefined{
  return undefined;
 }
 function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested);}
-function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance/.test(text))return 1;return preferred;}
+function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),...(profile.services||[]),profile.notes].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate|elegant|sophisticated/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual|results|transformation/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir|consultation|whatsapp|phone/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance|whatsapp|phone/.test(text))return 1;return preferred;}
 function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{
- const primaryText=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[])].filter(Boolean).join(" ").toLowerCase();
+ const primaryText=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),profile.notes].filter(Boolean).join(" ").toLowerCase();
  const serviceText=(profile.services||[]).filter(Boolean).join(" ").toLowerCase();
  const text=`${primaryText} ${serviceText}`.trim();
  const isDental=DENTAL_IDS.has(id)||/dental|dentist|dentistry|orthodont|endodont|implant|smile design|root canal|tooth|oral care/.test(text);
  if(isDental){
   if(/emergency|urgent|tooth pain|broken tooth|same.?day|contact clinic|call clinic/.test(text))return"conversion";
   if(/learn|education|educational|explain treatment|treatment process|how it works/.test(primaryText))return"education";
-  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation/.test(primaryText))return"showcase";
+  if(/portfolio|gallery|showcase|before.?after|smile design|veneers|whitening|cosmetic|full mouth rehabilitation|smile makeover|transformation|results/.test(primaryText))return"showcase";
  }
  if(/demo|trial|waitlist|download|product|platform|api/.test(text)||PRODUCT_IDS.has(id))return"product";
  if(/admission|enrol|learn|course|training/.test(primaryText)||EDUCATION_IDS.has(id))return"education";

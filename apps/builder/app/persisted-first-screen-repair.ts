@@ -1,6 +1,7 @@
 import { siteSchema, type Site } from "@micirql/schema";
 import type { FirstScreenRepairPlan, FirstScreenRepairViewport } from "./rendered-first-screen-repair";
 import { persistedPageTypographyRepairCss } from "./page-typography-repair";
+import { persistedRenderedTypographyRepairCss } from "./persisted-rendered-typography-repair";
 
 export type PersistedFirstScreenRepair = {
   version: 1;
@@ -38,7 +39,9 @@ export function persistedFirstScreenRepairCss(site: Site, viewport: FirstScreenR
   const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
   const firstScreenCss = hero ? (readRepairMap(hero.props?.[PROP_KEY])[viewport]?.css ?? "") : "";
   const typographyCss = persistedPageTypographyRepairCss(site, path);
-  return [firstScreenCss, typographyCss].filter((css) => css.trim()).join("\n");
+  const renderedTypographyCss = persistedRenderedTypographyRepairCss(site, viewport, path)
+    .replaceAll("[data-mi-rendered-typography-repair='1']", "[data-mi-first-screen-repair='1']");
+  return [firstScreenCss, typographyCss, renderedTypographyCss].filter((css) => css.trim()).join("\n");
 }
 
 export function hasPersistedFirstScreenRepair(site: Site, viewport: FirstScreenRepairViewport, path = "/"): boolean {

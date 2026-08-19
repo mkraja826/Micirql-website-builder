@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { getSupabaseDraft, saveSupabaseDraft, usesSupabaseDraftStore } from "../drafts/supabase-store";
 import { evaluateFunctionalPublishGate } from "../../functional-publish-gate";
 import { repairFunctionalPublishIssues } from "../../functional-publish-repair";
+import { assessPublishRepairSync } from "../../publish-repair-sync";
 import { getPublishRuntime } from "../../publish-runtime";
 
 const MIN_PUBLISH_CONTENT_SCORE = 82;
@@ -94,18 +95,19 @@ export async function POST(request: NextRequest) {
           issues: [{ code: "DRAFT_SYNC_REQUIRED", message: "The saved draft could not be reloaded before applying publish repairs. Publishing was stopped to protect the editor state." }],
         }, { status: 409 });
       }
-      if (!sameSite(currentDraft.snapshot, parsed.data)) {
+      const syncAssessment = assessPublishRepairSync(parsed.data, currentDraft.snapshot, currentDraft.revision);
+      if (!syncAssessment.ok) {
         return Response.json({
           ok: false,
-          code: "DRAFT_CHANGED_BEFORE_PUBLISH",
+          code: syncAssessment.code,
           functionalRepairs: functionalRepair.repairs,
-          issues: [{ code: "DRAFT_CHANGED_BEFORE_PUBLISH", message: "The saved draft changed after final review. Reload the latest draft before publishing so MiCirql does not overwrite newer edits." }],
+          issues: [{ code: syncAssessment.code, message: syncAssessment.message }],
         }, { status: 409 });
       }
       try {
         const savedRepair = await saveSupabaseDraft(request, {
           snapshot: publishSite,
-          expectedRevision: currentDraft.revision,
+          expectedRevision: syncAssessment.expectedRevision,
           updatedBy: body.createdBy?.trim() || "workspace-user",
         });
         draftRepairPersisted = true;
@@ -139,10 +141,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return Response.json({ ok: false, issues: [{ code: "PUBLISH_FAILED", message: error instanceof Error ? error.message : "Publish failed." }] }, { status: 500 });
   }
-}
-
-function sameSite(left: Site, right: Site) {
-  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function cleanArray(value: unknown) { return Array.isArray(value) ? [...new Set(value.map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean))].slice(0, 48) : []; }

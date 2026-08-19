@@ -57,6 +57,11 @@ function viewportFor(width: number) {
   return "desktop";
 }
 
+function firstScreenFoldHeight(width: number) {
+  if (width <= 430) return 844;
+  return 900;
+}
+
 async function selectViewport(page: Page, viewport: "mobile" | "tablet" | "desktop") {
   const control = page.locator(".viewport-switcher button").filter({ hasText: new RegExp(`^${viewport}$`, "i") });
   await expect(control).toHaveCount(1);
@@ -149,9 +154,21 @@ export async function runDentalBlueprintCertification(args: {
     await expect(document).toHaveAttribute("data-mi-layout-blueprint", args.layoutId);
     await args.page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 
-    const metrics = await document.evaluate((element) => {
+    const metrics = await document.evaluate((element, input) => {
       const root = element as HTMLElement;
       const rootRect = root.getBoundingClientRect();
+      const relativeRect = (node: Element | null) => {
+        if (!node) return null;
+        const rect = node.getBoundingClientRect();
+        return {
+          top: rect.top - rootRect.top,
+          bottom: rect.bottom - rootRect.top,
+          left: rect.left - rootRect.left,
+          right: rect.right - rootRect.left,
+          width: rect.width,
+          height: rect.height,
+        };
+      };
       const outside = (node: Element) => {
         const rect = node.getBoundingClientRect();
         return rect.width > 0 && (rect.left < rootRect.left - 1 || rect.right > rootRect.right + 1);
@@ -167,8 +184,65 @@ export async function runDentalBlueprintCertification(args: {
         const style = getComputedStyle(node);
         return style.display === "none" || style.visibility === "hidden" || Number.parseFloat(style.opacity || "1") === 0;
       };
+      const isVisible = (node: Element) => {
+        if (isIntentionallyHiddenControl(node)) return false;
+        const rect = node.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      };
       const websiteControls = [...root.querySelectorAll("a,button,input,textarea,select")].filter((node) => !isEditorControl(node) && !isIntentionallyHiddenControl(node));
       const overflowingControlNodes = websiteControls.filter(outside);
+
+      const h1 = [...root.querySelectorAll("h1")].find(isVisible) ?? null;
+      const hero = h1?.closest("section") ?? h1?.closest(".mi-editor-section") ?? [...root.querySelectorAll("section")].find((node) => /hero/i.test(node.className)) ?? null;
+      const nav = [...root.querySelectorAll("header,nav")].find(isVisible) ?? null;
+      const heroActions = hero ? [...hero.querySelectorAll("a,button")].filter((node) => {
+        if (!isVisible(node) || isEditorControl(node)) return false;
+        const label = `${node.textContent ?? ""} ${node.getAttribute("aria-label") ?? ""}`.trim().toLowerCase();
+        return Boolean(label) && !/menu|navigation|close|previous|next/.test(label);
+      }) : [];
+      const primaryCta = heroActions[0] ?? null;
+      const heroImage = hero ? [...hero.querySelectorAll("img,video,picture img")].find(isVisible) ?? null : null;
+      const backgroundMedia = hero ? [...hero.querySelectorAll("div,figure,section")].find((node) => {
+        if (!isVisible(node)) return false;
+        const background = getComputedStyle(node).backgroundImage;
+        return Boolean(background && background !== "none");
+      }) ?? null : null;
+      const mediaNode = heroImage ?? backgroundMedia;
+
+      const h1Style = h1 ? getComputedStyle(h1) : null;
+      const h1FontPx = h1Style ? Number.parseFloat(h1Style.fontSize) || 0 : 0;
+      const rawLineHeight = h1Style ? Number.parseFloat(h1Style.lineHeight) : Number.NaN;
+      const h1LineHeightPx = Number.isFinite(rawLineHeight) ? rawLineHeight : h1FontPx * 1.2;
+      const h1Rect = relativeRect(h1);
+      const heroRect = relativeRect(hero);
+      const navRect = relativeRect(nav);
+      const ctaRect = relativeRect(primaryCta);
+      const mediaRect = relativeRect(mediaNode);
+      const h1Lines = h1Rect && h1LineHeightPx > 0 ? Math.max(1, Math.round(h1Rect.height / h1LineHeightPx)) : 0;
+      const mediaStyle = mediaNode ? getComputedStyle(mediaNode) : null;
+
+      const firstScreenFailures: string[] = [];
+      const mobile = input.width <= 430;
+      const desktop = input.width >= 1024;
+      const minH1Px = mobile ? 28 : desktop ? 40 : 34;
+      const maxH1Lines = mobile ? 4 : desktop ? 3 : 4;
+      const maxNavHeight = mobile ? 96 : 116;
+
+      if (!h1 || !h1Rect) firstScreenFailures.push("missing-visible-h1");
+      else {
+        if (h1FontPx < minH1Px) firstScreenFailures.push(`headline-too-small:${h1FontPx.toFixed(1)}px<${minH1Px}px`);
+        if (h1Lines > maxH1Lines) firstScreenFailures.push(`headline-wraps-too-many-lines:${h1Lines}>${maxH1Lines}`);
+        if (h1Rect.top > input.foldHeight * 0.62) firstScreenFailures.push(`headline-too-low:${Math.round(h1Rect.top)}px`);
+      }
+      if (navRect && navRect.height > maxNavHeight) firstScreenFailures.push(`navbar-too-tall:${Math.round(navRect.height)}px>${maxNavHeight}px`);
+      if (!primaryCta || !ctaRect) firstScreenFailures.push("missing-visible-hero-cta");
+      else {
+        if (ctaRect.top > input.foldHeight * 0.94) firstScreenFailures.push(`cta-below-conversion-fold:${Math.round(ctaRect.top)}px`);
+        if (ctaRect.bottom > input.foldHeight * 1.04) firstScreenFailures.push(`cta-not-visible-in-first-screen:${Math.round(ctaRect.bottom)}px`);
+      }
+      if (heroRect && heroRect.top > Math.max(180, input.foldHeight * 0.24)) firstScreenFailures.push(`hero-starts-too-low:${Math.round(heroRect.top)}px`);
+      if (navRect && h1Rect && h1Rect.top - navRect.bottom > (mobile ? 260 : 320)) firstScreenFailures.push(`excess-space-before-headline:${Math.round(h1Rect.top - navRect.bottom)}px`);
+
       return {
         cssViewportWidth: window.innerWidth,
         clientWidth: root.clientWidth,
@@ -182,8 +256,27 @@ export async function runDentalBlueprintCertification(args: {
           ariaLabel: node.getAttribute("aria-label") ?? "",
         })),
         clippedMedia: [...root.querySelectorAll("img,video,iframe")].filter(outside).length,
+        firstScreen: {
+          foldHeight: input.foldHeight,
+          h1FontPx: Number(h1FontPx.toFixed(1)),
+          h1LineHeightPx: Number(h1LineHeightPx.toFixed(1)),
+          h1Lines,
+          headlineTop: h1Rect ? Math.round(h1Rect.top) : null,
+          navHeight: navRect ? Math.round(navRect.height) : null,
+          heroTop: heroRect ? Math.round(heroRect.top) : null,
+          heroHeight: heroRect ? Math.round(heroRect.height) : null,
+          ctaTop: ctaRect ? Math.round(ctaRect.top) : null,
+          ctaBottom: ctaRect ? Math.round(ctaRect.bottom) : null,
+          ctaInFirstScreen: Boolean(ctaRect && ctaRect.top <= input.foldHeight * 0.94 && ctaRect.bottom <= input.foldHeight * 1.04),
+          mediaPresent: Boolean(mediaNode),
+          mediaTop: mediaRect ? Math.round(mediaRect.top) : null,
+          mediaHeight: mediaRect ? Math.round(mediaRect.height) : null,
+          mediaObjectFit: heroImage && mediaStyle ? mediaStyle.objectFit : null,
+          failures: firstScreenFailures,
+          passed: firstScreenFailures.length === 0,
+        },
       };
-    });
+    }, { width, foldHeight: firstScreenFoldHeight(width) });
 
     let mobileCheckPassed = true;
     let mobileCheckError: string | undefined;
@@ -196,19 +289,21 @@ export async function runDentalBlueprintCertification(args: {
       }
     }
 
+    const firstScreenPassed = metrics.firstScreen.passed;
     const corePassed = metrics.cssViewportWidth === width && metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
-    const passed = corePassed && mobileCheckPassed;
+    const passed = corePassed && mobileCheckPassed && firstScreenPassed;
 
     expect.soft(metrics.cssViewportWidth, `${width}px CSS viewport mismatch`).toBe(width);
     expect.soft(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
     expect.soft(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
     expect.soft(metrics.overflowingControls, `${width}px website control overflow: ${JSON.stringify(metrics.overflowingControlDetails)}`).toBe(0);
     expect.soft(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
+    expect.soft(firstScreenPassed, `${width}px rendered first-screen composition failed: ${metrics.firstScreen.failures.join(", ")}`).toBeTruthy();
     if (!mobileCheckPassed) expect.soft(mobileCheckPassed, `${width}px mobile composition check failed: ${mobileCheckError}`).toBeTruthy();
 
     await captureWebsiteEvidence(args.page, document, path.join(output, `${width}.png`));
     results.push({ width, viewport, ...metrics, mobileCheckPassed, ...(mobileCheckError ? { mobileCheckError } : {}), passed });
   }
 
-  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, blueprintCssScopeApplied: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, results }, null, 2), "utf8");
+  await writeFile(path.join(output, "report.json"), JSON.stringify({ layoutId: args.layoutId, targets: DENTAL_BLUEPRINT_TARGETS, coverage, blueprintMetadataVerified: true, blueprintCssScopeApplied: true, screenshotsIsolatedFromEditorChrome: true, screenshotBackgroundRestored: true, renderedFirstScreenCertified: true, results }, null, 2), "utf8");
 }

@@ -1,0 +1,85 @@
+/* MiCirql Dental Flagship Art Direction
+ * Five deliberately different visual systems. These are not recolors: each
+ * blueprint owns surface hierarchy, type character, card language, buttons,
+ * imagery framing and section transitions while still preserving supplied
+ * brand facts and the shared accessibility/overflow invariants.
+ */
+
+/* 01 — Clinical Authority: cool architectural healthcare, quiet depth, almost no cards. */
+[data-mi-layout-blueprint="dental-01-clinical-authority"]{
+  --flag-bg:#f7fbfc;--flag-surface:#ffffff;--flag-ink:#10282d;--flag-muted:#64777a;--flag-line:#dbe7e8;--flag-accent:#0f766e;
+  --mi-font-display:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+[data-mi-layout-blueprint="dental-01-clinical-authority"].mi-section{background:var(--flag-bg);color:var(--flag-ink)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-section__card,.mi-service-item,.mi-feature-card,.mi-team-card){background:transparent!important;box-shadow:none!important;border:0!important}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-service-item,.mi-feature-item--list){border-bottom:1px solid var(--flag-line)!important;border-radius:0!important}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero{background:radial-gradient(circle at 82% 18%,rgba(15,118,110,.12),transparent 26rem),linear-gradient(180deg,#fbfefe,#eef7f7)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media{border-radius:1.15rem;box-shadow:0 32px 80px rgba(16,40,45,.12)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){border-radius:.45rem;background:var(--flag-ink)!important;color:#fff!important;box-shadow:none!important}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-section__action--secondary,.mi-conv-btn--secondary){border:0!important;border-bottom:1px solid currentColor!important;border-radius:0!important;padding-inline:.1rem!important}
+
+/* 02 — Implant Atelier: cinematic dark luxury, warm metal accent, editorial serif. */
+[data-mi-layout-blueprint="dental-02-implant-luxury"]{
+  --flag-bg:#12100d;--flag-surface:#1a1713;--flag-paper:#f4eee4;--flag-ink:#f5efe6;--flag-muted:#b9ac9c;--flag-line:rgba(220,198,158,.22);--flag-accent:#c6a66b;
+  --mi-font-display:Georgia,"Times New Roman",serif;
+}
+[data-mi-layout-blueprint="dental-02-implant-luxury"].mi-section{background:var(--flag-bg);color:var(--flag-ink)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-type--body,.mi-content-heading p,.mi-section__heading p){color:var(--flag-muted)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-service-item,.mi-feature-card,.mi-process-card,.mi-team-card,.mi-gallery-card){background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-service-item,.mi-process-card){border-top:1px solid var(--flag-line)!important;padding-block:1.35rem!important}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-section--hero{background:radial-gradient(circle at 70% 20%,rgba(198,166,107,.16),transparent 30rem),#0d0c0a}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-section--hero .mi-section__media{border-radius:0;box-shadow:none;filter:saturate(.82) contrast(1.04)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){background:var(--flag-paper)!important;color:#15120e!important;border-radius:0!important;border:1px solid var(--flag-paper)!important;box-shadow:none!important;text-transform:uppercase;letter-spacing:.08em;font-size:.76rem!important}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-section__action--secondary,.mi-conv-btn--secondary){background:transparent!important;color:var(--flag-ink)!important;border:0!important;border-bottom:1px solid var(--flag-accent)!important;border-radius:0!important}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-proof--metrics,.mi-conv-cta){background:#17130f!important;color:var(--flag-ink)}
+
+/* 03 — Smile Studio: cosmetic editorial, luminous ivory, asymmetric image-led composition. */
+[data-mi-layout-blueprint="dental-03-smile-studio"]{
+  --flag-bg:#fbf8f3;--flag-surface:#fffdfa;--flag-ink:#2b2523;--flag-muted:#81736e;--flag-line:#e9dfd8;--flag-accent:#a27480;
+  --mi-font-display:Georgia,"Times New Roman",serif;
+}
+[data-mi-layout-blueprint="dental-03-smile-studio"].mi-section{background:var(--flag-bg);color:var(--flag-ink)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-section--hero{background:linear-gradient(135deg,#fffdf9 0%,#f4ece8 60%,#efe4e1 100%)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-section--hero .mi-section__media{border-radius:8rem 8rem 1.25rem 1.25rem;box-shadow:0 28px 90px rgba(91,64,66,.12)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-gallery-card,.mi-service-item,.mi-team-card){border:0!important;background:transparent!important;box-shadow:none!important}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card:nth-child(odd){transform:translateY(1.5rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card img{border-radius:0!important}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-service-item{padding:1.2rem 0!important;border-bottom:1px solid var(--flag-line)!important;border-radius:0!important}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){border-radius:999px!important;background:var(--flag-ink)!important;color:#fff!important;box-shadow:none!important;padding-inline:1.5rem!important}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-section__action--secondary,.mi-conv-btn--secondary){border:0!important;background:transparent!important;color:var(--flag-ink)!important;text-decoration:underline;text-underline-offset:.35em}
+
+/* 05 — Digital Dentistry: graphite technology system, translucent panels, luminous teal. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"]{
+  --flag-bg:#071516;--flag-surface:#0d2021;--flag-ink:#eefafa;--flag-muted:#98b7b7;--flag-line:rgba(121,214,205,.18);--flag-accent:#63d2c6;
+  --mi-font-display:"Avenir Next",Avenir,Inter,ui-sans-serif,system-ui,sans-serif;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"].mi-section{background:var(--flag-bg);color:var(--flag-ink)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-section--hero{background:radial-gradient(circle at 78% 18%,rgba(99,210,198,.17),transparent 28rem),radial-gradient(circle at 20% 80%,rgba(54,111,113,.16),transparent 24rem),#061213}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-feature-card,.mi-service-item,.mi-process-card){background:rgba(255,255,255,.035)!important;border:1px solid var(--flag-line)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;backdrop-filter:blur(12px)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-content-heading p,.mi-section__heading p,.mi-type--body){color:var(--flag-muted)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-section--hero .mi-section__media{border:1px solid var(--flag-line);background:linear-gradient(145deg,rgba(99,210,198,.08),rgba(255,255,255,.02));box-shadow:0 40px 100px rgba(0,0,0,.28)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){background:var(--flag-accent)!important;color:#06201f!important;border:0!important;border-radius:.45rem!important;box-shadow:0 0 0 1px rgba(99,210,198,.35),0 16px 42px rgba(99,210,198,.15)!important}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-section__action--secondary,.mi-conv-btn--secondary){background:transparent!important;color:var(--flag-ink)!important;border:1px solid var(--flag-line)!important;border-radius:.45rem!important}
+
+/* 08 — Boutique Cosmetic: mineral blush, fashion-house whitespace, borderless editorial cards. */
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"]{
+  --flag-bg:#f7f1ee;--flag-surface:#fffaf7;--flag-ink:#352b2d;--flag-muted:#8b787d;--flag-line:#e8d9d8;--flag-accent:#8d666f;
+  --mi-font-display:Georgia,"Times New Roman",serif;
+}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"].mi-section{background:var(--flag-bg);color:var(--flag-ink)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-section--hero{background:linear-gradient(180deg,#fcf8f5,#f0e6e3)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-section--hero .mi-hero__copy{max-width:34rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-section--hero .mi-section__media{border-radius:48% 48% 1.5rem 1.5rem / 20% 20% 1.5rem 1.5rem;box-shadow:0 35px 90px rgba(81,58,64,.12)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-gallery-card,.mi-service-item,.mi-team-card,.mi-section__card){background:transparent!important;border:0!important;box-shadow:none!important}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-service-item{padding:1.4rem 0!important;border-top:1px solid var(--flag-line)!important;border-radius:0!important}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-grid{gap:clamp(1.5rem,4vw,4rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){border-radius:999px!important;background:var(--flag-accent)!important;color:#fff!important;border:0!important;box-shadow:none!important;padding-inline:1.65rem!important}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-section__action--secondary,.mi-conv-btn--secondary){border:0!important;border-bottom:1px solid var(--flag-ink)!important;border-radius:0!important;background:transparent!important;padding-inline:.1rem!important}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-card:nth-child(odd){transform:none}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta),
+  [data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta),
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta),
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-section__action--primary,.mi-conv-btn--primary,.mi-shell-cta){min-height:48px}
+}

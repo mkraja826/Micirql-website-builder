@@ -68,7 +68,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run live Dental content and generated-site visual sampling
+      - name: Run live Dental content, visual and media materialization sampling
         run: pnpm qa:live-model-dental
 
       - name: Run live autonomous composition sampling
@@ -92,10 +92,18 @@ jobs:
             echo "## Live generated Dental visual QA" >> "$GITHUB_STEP_SUMMARY"
             echo "No generated-site visual report was produced." >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [[ -f test-results/live-dental-media-materialization/summary.md ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat test-results/live-dental-media-materialization/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Live Dental media materialization" >> "$GITHUB_STEP_SUMMARY"
+            echo "No media materialization report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [[ -f test-results/live-autonomous-composition/report.json ]]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
-            node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("test-results/live-autonomous-composition/report.json","utf8"));console.log(`- Model: **${r.modelId}**\n- AI acceptance: **${Math.round(r.acceptanceRate*100)}%** (${r.aiAccepted}/${r.scenarios})\n- Composition pass rate: **${Math.round(r.passRate*100)}%`)' >> "$GITHUB_STEP_SUMMARY"
+            node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("test-results/live-autonomous-composition/report.json","utf8"));console.log(`- Model: **${r.modelId}**\n- AI acceptance: **${Math.round(r.acceptanceRate*100)}%** (${r.aiAccepted}/${r.scenarios})\n- Composition pass rate: **${Math.round(r.passRate*100)}%**`)' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload live model evidence
@@ -106,6 +114,7 @@ jobs:
           path: |
             test-results/live-model-dental/
             test-results/live-generated-dental-visual/
+            test-results/live-dental-media-materialization/
             test-results/live-autonomous-composition/
           if-no-files-found: warn
           retention-days: 14

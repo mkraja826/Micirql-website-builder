@@ -6,6 +6,7 @@ const root = process.cwd();
 const onboarding = fs.readFileSync(path.join(root, "apps/builder/app/guided-onboarding.tsx"), "utf8");
 const interpreter = fs.readFileSync(path.join(root, "apps/builder/app/onboarding-brief-intelligence.ts"), "utf8");
 const route = fs.readFileSync(path.join(root, "apps/builder/app/api/onboarding/interpret/route.ts"), "utf8");
+const contentService = fs.readFileSync(path.join(root, "apps/builder/app/api/generate-content/service.ts"), "utf8");
 const assetUpload = fs.readFileSync(path.join(root, "apps/builder/app/api/assets/upload/route.ts"), "utf8");
 const assetVision = fs.readFileSync(path.join(root, "apps/builder/app/uploaded-asset-intelligence.ts"), "utf8");
 
@@ -34,6 +35,15 @@ test("user supplied factual claims are locked before content generation", () => 
   expect(interpreter).toContain("never invent missing values");
   for (const field of ["addresses", "phoneNumbers", "emails", "urls", "people", "credentials", "prices", "openingHours", "claims"]) expect(interpreter).toContain(field);
   expect(interpreter).toContain("Do not create fictional names, contact details, addresses, credentials, prices, hours, awards, statistics, guarantees, reviews or factual claims");
+});
+
+test("locked onboarding facts hydrate structured grounding buckets before AI writing", () => {
+  expect(contentService).toContain("lockedFactsFromNotes");
+  expect(contentService).toContain('labelledFacts(notes, "People/team")');
+  expect(contentService).toContain('labelledFacts(notes, "Credentials")');
+  expect(contentService).toContain('labelledFacts(notes, "Claims/statistics/guarantees")');
+  expect(contentService).toContain('labelledFacts(notes, "Prices")');
+  for (const field of ["people", "credentials", "proofClaims", "prices"]) expect(contentService).toContain(`${field},`);
 });
 
 test("onboarding accepts a batch of business photos and persists them before generation", () => {

@@ -5,6 +5,7 @@ import { siteSchema, type Site } from "@micirql/schema";
 import type { DesignPreferenceProfile } from "@micirql/design-engine";
 import type { SupabaseSession } from "./auth-client";
 import { RendererPreview } from "./renderer-preview";
+import { CompareDesigns } from "./compare-designs";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
 import { buildCertifiedDentalReviewDirections, isDentalReviewProfile } from "./dental-review-directions";
 import type { OnboardingProfile } from "./preset-ranking";
@@ -224,12 +225,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
       </div>
     </div> : null}
 
-    {activeId === "__compare__" && compared.length === 2 ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Compare designs">
-      <div className={`${styles.modal} ${styles.compareModal}`}>
-        <div className={styles.modalHeader}><div><small>Side-by-side</small><strong>Compare designs</strong></div><button type="button" onClick={() => setActiveId(undefined)}>Close</button></div>
-        <div className={styles.compareGrid}>{compared.map((direction) => <div key={direction.id} className={styles.comparePane}><h3>{displayDirectionName(direction.name)}</h3><div className={styles.comparePreview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div><button type="button" onClick={() => void choose(direction)}>Use this design</button></div>)}</div>
-      </div>
-    </div> : null}
+    {activeId === "__compare__" && compared.length === 2 ? <CompareDesigns directions={compared} viewport={viewport} savingId={savingId} onViewportChange={setViewport} onClose={() => setActiveId(undefined)} onChoose={(direction) => void choose(direction)} /> : null}
   </main>;
 }
 

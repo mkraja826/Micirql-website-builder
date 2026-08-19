@@ -44,7 +44,17 @@ const brandIntelligenceSchema = z.object({
   tone: z.enum(["clinical", "corporate", "premium", "friendly", "bold", "editorial", "neutral"]),
   typographyMood: z.enum(["technical", "humanist", "editorial", "geometric", "classic"]),
   buttonStyle: z.enum(["solid", "soft", "outline-accent", "high-contrast"]),
-  imageryStyle: z.enum(["clean-realistic", "editorial-lifestyle", "product-led", "architectural", "minimal-illustrative"]),
+  imageryStyle: z.enum([
+    "clean-realistic",
+    "editorial-lifestyle",
+    "product-led",
+    "architectural",
+    "minimal-illustrative",
+    "portrait-led",
+    "editorial",
+    "clean-product",
+    "human-lifestyle",
+  ]),
   recommendations: z.array(z.string()).max(12).default([]),
 }).optional();
 

@@ -1,12 +1,14 @@
 import { evaluateWebsiteContent, groundSiteContent, validateWebsite, type GroundingFacts } from "@micirql/design-engine";
 import { siteSchema, type Site } from "@micirql/schema";
+import { NextRequest } from "next/server";
+import { getSupabaseDraft, saveSupabaseDraft, usesSupabaseDraftStore } from "../drafts/supabase-store";
 import { evaluateFunctionalPublishGate } from "../../functional-publish-gate";
 import { repairFunctionalPublishIssues } from "../../functional-publish-repair";
 import { getPublishRuntime } from "../../publish-runtime";
 
 const MIN_PUBLISH_CONTENT_SCORE = 82;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as { site?: unknown; createdBy?: string; archetypeId?: string; groundingFacts?: Partial<GroundingFacts> };
     const parsed = siteSchema.safeParse(body.site);
@@ -72,16 +74,75 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, code: "WEBSITE_NOT_READY", readiness, contentQuality, grounding, functionalRepairs: functionalRepair.repairs, issues: readiness.errors }, { status: 422 });
     }
 
+    let draftRepairPersisted = false;
+    let repairedDraftRevision: number | undefined;
+    if (functionalRepair.repaired) {
+      if (!usesSupabaseDraftStore()) {
+        return Response.json({
+          ok: false,
+          code: "DRAFT_REPAIR_PERSISTENCE_UNAVAILABLE",
+          functionalRepairs: functionalRepair.repairs,
+          issues: [{ code: "DRAFT_REPAIR_PERSISTENCE_UNAVAILABLE", message: "MiCirql repaired the site safely, but the repaired draft cannot be persisted in the current draft-store mode. Publishing was stopped to prevent editor/live divergence." }],
+        }, { status: 503 });
+      }
+      const currentDraft = await getSupabaseDraft(request, publishSite.workspaceId, publishSite.siteId);
+      if (!currentDraft) {
+        return Response.json({
+          ok: false,
+          code: "DRAFT_SYNC_REQUIRED",
+          functionalRepairs: functionalRepair.repairs,
+          issues: [{ code: "DRAFT_SYNC_REQUIRED", message: "The saved draft could not be reloaded before applying publish repairs. Publishing was stopped to protect the editor state." }],
+        }, { status: 409 });
+      }
+      if (!sameSite(currentDraft.snapshot, parsed.data)) {
+        return Response.json({
+          ok: false,
+          code: "DRAFT_CHANGED_BEFORE_PUBLISH",
+          functionalRepairs: functionalRepair.repairs,
+          issues: [{ code: "DRAFT_CHANGED_BEFORE_PUBLISH", message: "The saved draft changed after final review. Reload the latest draft before publishing so MiCirql does not overwrite newer edits." }],
+        }, { status: 409 });
+      }
+      try {
+        const savedRepair = await saveSupabaseDraft(request, {
+          snapshot: publishSite,
+          expectedRevision: currentDraft.revision,
+          updatedBy: body.createdBy?.trim() || "workspace-user",
+        });
+        draftRepairPersisted = true;
+        repairedDraftRevision = savedRepair.revision;
+      } catch (error) {
+        return Response.json({
+          ok: false,
+          code: "DRAFT_REPAIR_SYNC_FAILED",
+          functionalRepairs: functionalRepair.repairs,
+          issues: [{ code: "DRAFT_REPAIR_SYNC_FAILED", message: error instanceof Error && error.message === "REVISION_CONFLICT" ? "The draft changed while MiCirql was applying safe publish repairs. Reload the latest version and publish again." : "MiCirql could not save its safe publish repairs, so publishing was stopped to prevent editor/live divergence." }],
+        }, { status: error instanceof Error && error.message === "REVISION_CONFLICT" ? 409 : 500 });
+      }
+    }
+
     const runtime = getPublishRuntime();
     if (!runtime) {
-      return Response.json({ ok: false, functionalRepairs: functionalRepair.repairs, issues: [{ code: "PUBLISH_RUNTIME_NOT_CONFIGURED", message: "Production publishing adapters are not configured yet." }] }, { status: 503 });
+      return Response.json({ ok: false, functionalRepairs: functionalRepair.repairs, draftRepairPersisted, repairedDraftRevision, issues: [{ code: "PUBLISH_RUNTIME_NOT_CONFIGURED", message: "Production publishing adapters are not configured yet." }] }, { status: 503 });
     }
 
     const result = await runtime.publish({ site: publishSite, createdBy: body.createdBy?.trim() || "workspace-user" });
-    return Response.json({ ...result, readiness, contentQuality, grounding, functionalRepairs: functionalRepair.repairs, repairedSite: functionalRepair.repaired ? publishSite : undefined }, { status: result.ok ? 201 : 422 });
+    return Response.json({
+      ...result,
+      readiness,
+      contentQuality,
+      grounding,
+      functionalRepairs: functionalRepair.repairs,
+      repairedSite: functionalRepair.repaired ? publishSite : undefined,
+      draftRepairPersisted,
+      repairedDraftRevision,
+    }, { status: result.ok ? 201 : 422 });
   } catch (error) {
     return Response.json({ ok: false, issues: [{ code: "PUBLISH_FAILED", message: error instanceof Error ? error.message : "Publish failed." }] }, { status: 500 });
   }
+}
+
+function sameSite(left: Site, right: Site) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function cleanArray(value: unknown) { return Array.isArray(value) ? [...new Set(value.map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean))].slice(0, 48) : []; }

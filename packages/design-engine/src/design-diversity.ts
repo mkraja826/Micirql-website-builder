@@ -52,48 +52,62 @@ export function scoreDesign(input: DesignScoreInput): DesignScore {
 export function selectDiverseDesigns<T extends { designScore: DesignScore }>(candidates: T[], limit: number): T[] {
   const ranked = [...candidates].sort((a, b) => b.designScore.total - a.designScore.total);
   const selected: T[] = [];
-  const usedSystems = new Set<string>();
+  const usedDirections = new Set<string>();
+  const usedThemeFamilies = new Set<string>();
+  const target = Math.min(limit, 8);
 
-  // Pass 1: prefer one candidate per master design system and reject near-duplicates.
+  // Pass 1: establish genuinely different visual systems first. Prefer a new
+  // theme family and a new named direction, and use a strict similarity ceiling.
   for (const candidate of ranked) {
-    if (selected.length >= limit) break;
-    const system = candidateSystem(candidate);
-    if (system && usedSystems.has(system)) continue;
-    const nearestSimilarity = selected.length
-      ? Math.max(...selected.map((picked) => designSimilarity(candidate.designScore.fingerprint, picked.designScore.fingerprint)))
-      : 0;
-    if (nearestSimilarity > 0.72) continue;
+    if (selected.length >= target) break;
+    const direction = candidateSystem(candidate);
+    const themeFamily = candidate.designScore.fingerprint.system;
+    if (direction && usedDirections.has(direction)) continue;
+    if (themeFamily && usedThemeFamilies.has(themeFamily)) continue;
+    const nearestSimilarity = nearestDesignSimilarity(candidate, selected);
+    if (nearestSimilarity >= 0.64) continue;
     selected.push(candidate);
-    if (system) usedSystems.add(system);
+    if (direction) usedDirections.add(direction);
+    if (themeFamily) usedThemeFamilies.add(themeFamily);
   }
 
-  // Pass 2: if we still need more options, allow mutations but keep the diversity penalty strong.
+  // Pass 2: add only candidates that remain clearly distinct. Never fill the
+  // quota with near-duplicates just to reach a requested count.
   const remaining = ranked.filter((candidate) => !selected.includes(candidate));
-  while (remaining.length && selected.length < limit) {
-    let bestIndex = 0;
+  while (remaining.length && selected.length < target) {
+    let bestIndex = -1;
     let bestAdjusted = -Infinity;
     for (let index = 0; index < remaining.length; index += 1) {
       const candidate = remaining[index]!;
-      const nearestSimilarity = selected.length
-        ? Math.max(...selected.map((picked) => designSimilarity(candidate.designScore.fingerprint, picked.designScore.fingerprint)))
-        : 0;
-      const system = candidateSystem(candidate);
-      const systemPenalty = system && usedSystems.has(system) ? 18 : 0;
-      const diversityBonus = (1 - nearestSimilarity) * 38;
-      const duplicatePenalty = nearestSimilarity >= 0.9 ? 55 : nearestSimilarity >= 0.8 ? 30 : nearestSimilarity >= 0.72 ? 14 : 0;
-      const adjusted = candidate.designScore.total + diversityBonus - duplicatePenalty - systemPenalty;
+      const nearestSimilarity = nearestDesignSimilarity(candidate, selected);
+      if (nearestSimilarity >= 0.72) continue;
+      const direction = candidateSystem(candidate);
+      const themeFamily = candidate.designScore.fingerprint.system;
+      const directionPenalty = direction && usedDirections.has(direction) ? 24 : 0;
+      const themePenalty = themeFamily && usedThemeFamilies.has(themeFamily) ? 12 : 0;
+      const diversityBonus = (1 - nearestSimilarity) * 52;
+      const adjusted = candidate.designScore.total + diversityBonus - directionPenalty - themePenalty;
       if (adjusted > bestAdjusted) {
         bestAdjusted = adjusted;
         bestIndex = index;
       }
     }
+    if (bestIndex < 0) break;
     const picked = remaining.splice(bestIndex, 1)[0]!;
     selected.push(picked);
-    const system = candidateSystem(picked);
-    if (system) usedSystems.add(system);
+    const direction = candidateSystem(picked);
+    const themeFamily = picked.designScore.fingerprint.system;
+    if (direction) usedDirections.add(direction);
+    if (themeFamily) usedThemeFamilies.add(themeFamily);
   }
 
   return selected;
+}
+
+function nearestDesignSimilarity<T extends { designScore: DesignScore }>(candidate: T, selected: T[]): number {
+  return selected.length
+    ? Math.max(...selected.map((picked) => designSimilarity(candidate.designScore.fingerprint, picked.designScore.fingerprint)))
+    : 0;
 }
 
 export function designSimilarity(a: DesignFingerprint, b: DesignFingerprint): number {
@@ -104,7 +118,7 @@ export function designSimilarity(a: DesignFingerprint, b: DesignFingerprint): nu
   const density = a.density === b.density ? 1 : 0;
   const shape = a.shape === b.shape ? 1 : 0;
   const modifiers = tokenSetSimilarity(a.modifiers, b.modifiers);
-  return system * 0.12 + structural * 0.43 + palette * 0.13 + typography * 0.13 + density * 0.05 + shape * 0.05 + modifiers * 0.09;
+  return system * 0.08 + structural * 0.55 + palette * 0.12 + typography * 0.11 + density * 0.04 + shape * 0.04 + modifiers * 0.06;
 }
 
 export function fingerprintDesign(site: Site): DesignFingerprint {

@@ -12,6 +12,7 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "qa:builder-journey": "playwright test --config=playwright.builder.config.ts",
     "qa:generation-benchmark": "playwright test --config=playwright.benchmark.config.ts",
     "qa:dental-diversity": "playwright test --config=playwright.dental-diversity.config.ts",
     "qa:dental-visual": "playwright test --config=playwright.dental-visual.config.ts qa/dental-visual-comparison.spec.ts qa/dental-top20-visual-evidence.spec.ts qa/dental-top20-geometry-gate.spec.ts qa/dental-runtime-css-parity.spec.ts && node qa/certify-dental-top20-visual.mjs && playwright test --config=playwright.dental-visual.config.ts qa/dental-top20-premium-gate.spec.ts",

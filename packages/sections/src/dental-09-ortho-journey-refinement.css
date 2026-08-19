@@ -1,0 +1,126 @@
+/* Dental 09 — Ortho Journey refinement
+ * Strengthen chronology and treatment progression while reducing generic card
+ * language. The page should read like an orthodontic pathway, not a stepper UI.
+ */
+
+/* Treatment choices become a clean comparison index. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight{
+  gap:0 clamp(2rem,4vw,4rem);
+  border-top:1px solid var(--mi-ortho-line);
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.45rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-ortho-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-ortho-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child p{color:var(--mi-color-text-muted)}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item h3{
+  font-size:clamp(1.35rem,2vw,1.9rem);
+  letter-spacing:-.02em;
+}
+
+/* The orthodontic journey becomes one connected horizontal track on desktop. */
+@media(min-width:48rem){
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-timeline{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    border-top:1px solid var(--mi-ortho-line);
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node{
+    position:relative;
+    min-width:0;
+    padding:1.6rem 1.25rem 1.5rem 0;
+    border:0;
+    border-bottom:1px solid var(--mi-ortho-line);
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node:not(:last-child)::after{
+    content:"";
+    position:absolute;
+    top:2.65rem;
+    right:.35rem;
+    width:calc(100% - 3.4rem);
+    height:1px;
+    background:color-mix(in srgb,var(--mi-color-primary) 40%,var(--mi-ortho-line));
+    transform:translateX(100%);
+    pointer-events:none;
+  }
+}
+
+/* Clinician support should anchor the journey, not add another panel. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Patient perspective reads as an editorial reflection. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-proof--quote blockquote{
+  padding:0 0 0 clamp(1.2rem,2.4vw,2rem);
+  border:0;
+  border-left:2px solid var(--mi-color-accent);
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Final consultation closes the journey as a band, not a floating card. */
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split{
+  background:var(--mi-ortho-ink);
+  color:#f5fbfc;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight{display:block}
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-services-spotlight .mi-service-item:first-child{
+    width:100%;
+    padding:1.15rem 0;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-timeline{
+    display:block;
+    border-left:1px solid var(--mi-ortho-line);
+    padding-left:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node{
+    position:relative;
+    width:100%;
+    padding:0 0 1.4rem 1rem;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node::before{
+    content:"";
+    position:absolute;
+    left:-1.53rem;
+    top:.72rem;
+    width:.72rem;
+    height:.72rem;
+    border-radius:50%;
+    background:var(--mi-color-primary);
+    box-shadow:0 0 0 4px var(--mi-color-surface);
+  }
+}

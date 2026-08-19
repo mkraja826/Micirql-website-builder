@@ -20,6 +20,7 @@ export default defineConfig({
     "dental-planner-contract.spec.ts",
     "dental-media-execution.spec.ts",
     "site-visual-quality.spec.ts",
+    "asset-perceptual-hash-contract.spec.ts",
   ],
   timeout: 30_000,
   fullyParallel: false,

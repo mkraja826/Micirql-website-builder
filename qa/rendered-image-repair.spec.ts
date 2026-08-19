@@ -1,16 +1,32 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
-test("rendered image repair is bounded and only fixes safe presentation metadata", () => {
+test("rendered image repair is bounded and only reselects from persisted qualified alternates", () => {
   const repair = readFileSync("apps/builder/app/rendered-image-repair.ts", "utf8");
   expect(repair).toContain("input.attempt > 0");
   expect(repair).toContain('IMAGE_CROP_TOO_AGGRESSIVE');
   expect(repair).toContain('IMAGE_ALT_MISSING');
-  expect(repair).toContain('props.imageFit = "contain"');
-  expect(repair).toContain('props.imageFocalPoint = "center"');
+  expect(repair).toContain('IMAGE_UPSCALED_TOO_FAR');
+  expect(repair).toContain('IMAGE_FAILED_TO_LOAD');
+  expect(repair).toContain('IMAGE_REUSED_TOO_OFTEN');
+  expect(repair).toContain('reselect-qualified-alternate');
+  expect(repair).toContain('props.qualifiedMediaAlternates');
+  expect(repair).toContain('!usedUrls.has(entry.url)');
+  expect(repair).toContain('Math.max(width, height) >= 900');
+  expect(repair).toContain('reselectionUnavailable');
   expect(repair).not.toContain('overflow-x:hidden');
-  expect(repair).not.toContain('IMAGE_UPSCALED_TOO_FAR\") operations.add');
-  expect(repair).not.toContain('IMAGE_FAILED_TO_LOAD\") operations.add');
+});
+
+test("media execution carries only ranked same-intent alternates into generated sections", () => {
+  const execution = readFileSync("apps/builder/app/media-execution.ts", "utf8");
+  const apply = readFileSync("apps/builder/app/apply-media-execution.ts", "utf8");
+  expect(execution).toContain("rankAssets(decision,assets,usedIds,usedUrls,usedSignatures)");
+  expect(execution).toContain("ranked.slice(1,4)");
+  expect(execution).toContain("qualifiedAlternates");
+  expect(execution).toContain("aspectScore(a.aspect,d.aspect)");
+  expect(execution).toContain("similarity>=.78");
+  expect(apply).toContain("qualifiedMediaAlternates");
+  expect(apply).toContain("mediaSelectionIntent");
 });
 
 test("image QA issues carry section targeting metadata for deterministic repair", () => {

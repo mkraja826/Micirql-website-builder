@@ -25,6 +25,11 @@ function config() {
   return url && key ? { url, key } : undefined;
 }
 
+function serviceRoleKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  return key || undefined;
+}
+
 export function usesSupabaseDraftStore() {
   return process.env.MICIRQL_DRAFT_STORE !== "memory" && Boolean(config());
 }
@@ -46,6 +51,18 @@ export function supabaseHeaders(request: NextRequest) {
   return {
     apikey: cfg.key,
     authorization: `Bearer ${token}`,
+    "content-type": "application/json",
+  };
+}
+
+export function supabaseServiceHeaders() {
+  const cfg = config();
+  if (!cfg) throw new Error("Supabase draft store is not configured.");
+  const key = serviceRoleKey();
+  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for trusted server operations.");
+  return {
+    apikey: key,
+    authorization: `Bearer ${key}`,
     "content-type": "application/json",
   };
 }

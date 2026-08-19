@@ -7,6 +7,8 @@ export type RenderedImageQualityIssue = {
     | "IMAGE_REUSED_TOO_OFTEN";
   severity: "warning" | "error";
   detail: string;
+  sectionId?: string;
+  src?: string;
 };
 
 /**
@@ -30,14 +32,20 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
       return rect.width >= 96 && rect.height >= 72;
     });
 
-  const srcCounts = new Map<string, number>();
+  const srcCounts = new Map<string, { count: number; sectionIds: Set<string> }>();
   for (const image of images) {
     const rect = image.getBoundingClientRect();
     const src = image.currentSrc || image.src;
-    if (src) srcCounts.set(src, (srcCounts.get(src) ?? 0) + 1);
+    const sectionId = image.closest<HTMLElement>("[data-mi-section-id]")?.dataset.miSectionId;
+    if (src) {
+      const current = srcCounts.get(src) ?? { count: 0, sectionIds: new Set<string>() };
+      current.count += 1;
+      if (sectionId) current.sectionIds.add(sectionId);
+      srcCounts.set(src, current);
+    }
 
     if (!image.complete || image.naturalWidth <= 0 || image.naturalHeight <= 0) {
-      issues.push({ code: "IMAGE_FAILED_TO_LOAD", severity: "error", detail: src || "unknown image" });
+      issues.push({ code: "IMAGE_FAILED_TO_LOAD", severity: "error", detail: src || "unknown image", sectionId, src });
       continue;
     }
 
@@ -51,6 +59,8 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
         code: "IMAGE_UPSCALED_TOO_FAR",
         severity: upscale > upscaleError ? "error" : "warning",
         detail: `${Math.round(rect.width)}x${Math.round(rect.height)} rendered from ${image.naturalWidth}x${image.naturalHeight} (${upscale.toFixed(2)}x)`,
+        sectionId,
+        src,
       });
     }
 
@@ -64,22 +74,26 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
           code: "IMAGE_CROP_TOO_AGGRESSIVE",
           severity: cropPressure > 3.2 ? "error" : "warning",
           detail: `source ${sourceRatio.toFixed(2)} vs box ${boxRatio.toFixed(2)} (${cropPressure.toFixed(2)}x crop pressure)`,
+          sectionId,
+          src,
         });
       }
     }
 
     const alt = (image.getAttribute("alt") ?? "").trim();
     if (!alt) {
-      issues.push({ code: "IMAGE_ALT_MISSING", severity: "warning", detail: src || "visible image" });
+      issues.push({ code: "IMAGE_ALT_MISSING", severity: "warning", detail: src || "visible image", sectionId, src });
     }
   }
 
-  for (const [src, count] of srcCounts) {
-    if (count >= 3) {
+  for (const [src, value] of srcCounts) {
+    if (value.count >= 3) {
       issues.push({
         code: "IMAGE_REUSED_TOO_OFTEN",
-        severity: count >= 4 ? "error" : "warning",
-        detail: `${count} visible uses of ${src}`,
+        severity: value.count >= 4 ? "error" : "warning",
+        detail: `${value.count} visible uses of ${src}`,
+        sectionId: [...value.sectionIds][0],
+        src,
       });
     }
   }
@@ -90,7 +104,7 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
 function dedupe(issues: RenderedImageQualityIssue[]): RenderedImageQualityIssue[] {
   const seen = new Set<string>();
   return issues.filter((issue) => {
-    const key = `${issue.code}:${issue.detail}`;
+    const key = `${issue.code}:${issue.sectionId ?? ""}:${issue.detail}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

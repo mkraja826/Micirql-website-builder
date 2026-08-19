@@ -15,6 +15,8 @@ export type PremiumCorrectionResult = {
 const SHELL = new Set(["navbar", "footer"]);
 const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 
+type SiteSection = Site["pages"][number]["sections"][number];
+
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
   const depthRepaired = repairContentDepth(site);
   const initial = evaluatePremiumQualityGate(depthRepaired);
@@ -59,6 +61,10 @@ function qualityRank(premium: PremiumQualityResult, firstBuild: FirstBuildQualit
   return premium.score + firstBuild.score + readinessBonus - blockerPenalty;
 }
 
+function isVisualLocked(section: SiteSection): boolean {
+  return section.props?.layoutVisualLocked === true && typeof section.props?.layoutBlueprintId === "string";
+}
+
 function repairContrast(site: Site) {
   const colors = site.theme.brand.colors;
   const backgroundIsDark = luminance(colors.background) < 0.32;
@@ -74,6 +80,7 @@ function repairHomeRhythm(site: Site) {
     if (section.hidden) continue;
     const family = familyFromId(section.component.componentId);
     if (!family || SHELL.has(family)) continue;
+    if (isVisualLocked(section)) continue;
     if (family === "cta") section.props = { ...section.props, paletteRole: "primary" };
     else if (family === "contact") section.props = { ...section.props, paletteRole: "surface" };
     else section.props = { ...section.props, paletteRole: contentIndex++ % 2 === 0 ? "background" : "surface" };
@@ -85,7 +92,7 @@ function diversifyRepeatedVariants(site: Site) {
   if (!home) return;
   const seen = new Map<string, number>();
   for (const section of home.sections) {
-    if (section.hidden) continue;
+    if (section.hidden || isVisualLocked(section)) continue;
     const id = section.component.componentId;
     const count = seen.get(id) ?? 0;
     seen.set(id, count + 1);
@@ -102,6 +109,7 @@ function repairLateConversion(site: Site) {
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
   if (!home) return;
   const visibleContent = home.sections.filter((section) => !section.hidden && !SHELL.has(familyFromId(section.component.componentId) ?? ""));
+  if (visibleContent.some(isVisualLocked)) return;
   if (visibleContent.slice(Math.floor(visibleContent.length * 0.66)).some((section) => CONVERSION.has(familyFromId(section.component.componentId) ?? ""))) return;
 
   const footerIndex = home.sections.findIndex((section) => familyFromId(section.component.componentId) === "footer");

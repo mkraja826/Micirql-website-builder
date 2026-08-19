@@ -6,6 +6,7 @@ import type { DesignPreferenceProfile } from "@micirql/design-engine";
 import type { SupabaseSession } from "./auth-client";
 import { RendererPreview } from "./renderer-preview";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
+import { buildCertifiedDentalReviewDirections, isDentalReviewProfile } from "./dental-review-directions";
 import type { OnboardingProfile } from "./preset-ranking";
 import styles from "./first-build-review.module.css";
 
@@ -29,10 +30,12 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [activeId, setActiveId] = useState<string>();
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
-  const pool = useMemo(
-    () => draft && preferenceLoaded ? buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile) : [],
-    [draft, profile, preferenceLoaded, preferenceProfile],
-  );
+  const pool = useMemo(() => {
+    if (!draft || !preferenceLoaded) return [];
+    return isDentalReviewProfile(profile)
+      ? buildCertifiedDentalReviewDirections(draft.snapshot, profile, 8, preferenceProfile)
+      : buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
+  }, [draft, profile, preferenceLoaded, preferenceProfile]);
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
   const visible = useMemo(() => visibleIds.map((id) => byId.get(id)).filter((item): item is ReviewDirection => Boolean(item)), [visibleIds, byId]);
   const active = activeId ? byId.get(activeId) : undefined;

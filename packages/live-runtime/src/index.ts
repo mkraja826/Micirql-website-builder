@@ -77,7 +77,8 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
     ...(socialImage ? { socialImage } : {}),
   };
   const firstScreenRepair = liveFirstScreenRepair(site, path);
-  const document = pageDocument(prepared.value.seo, content, brandMeta, firstScreenRepair);
+  const typographyRepair = livePageTypographyRepair(site, path);
+  const document = pageDocument(prepared.value.seo, content, brandMeta, firstScreenRepair, typographyRepair);
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
@@ -137,19 +138,34 @@ export function liveFirstScreenRepair(site: Site, path: string): LiveFirstScreen
   return { css: blocks.join("\n"), enabled: blocks.length > 0, mobile, tablet, desktop };
 }
 
+export type LivePageTypographyRepair = { css: string; enabled: boolean };
+
+export function livePageTypographyRepair(site: Site, path: string): LivePageTypographyRepair {
+  const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
+  const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+  const raw = hero?.props?.pageTypographyRepair;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { css: "", enabled: false };
+  const css = (raw as Record<string, unknown>).css;
+  const normalized = typeof css === "string" ? css.trim() : "";
+  return { css: normalized, enabled: Boolean(normalized) };
+}
+
 function pageDocument(
   seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] },
   body: string,
   brand: { favicon?: string; socialImage?: string; siteName: string },
   firstScreenRepair: LiveFirstScreenRepair = { css: "", enabled: false, mobile: "", tablet: "", desktop: "" },
+  typographyRepair: LivePageTypographyRepair = { css: "", enabled: false },
 ) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
   const icon = brand.favicon ? `<link rel="icon" href="${escapeAttr(brand.favicon)}"><link rel="apple-touch-icon" href="${escapeAttr(brand.favicon)}">` : "";
   const socialImage = brand.socialImage ? `<meta property="og:image" content="${escapeAttr(brand.socialImage)}"><meta property="og:image:alt" content="${escapeAttr(`${brand.siteName} preview`)}"><meta name="twitter:image" content="${escapeAttr(brand.socialImage)}">` : "";
   const social = `<meta property="og:type" content="website"><meta property="og:site_name" content="${escapeAttr(brand.siteName)}"><meta property="og:title" content="${escapeAttr(seo.title)}"><meta property="og:description" content="${escapeAttr(seo.description)}"><meta property="og:url" content="${escapeAttr(seo.canonical)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escapeAttr(seo.title)}"><meta name="twitter:description" content="${escapeAttr(seo.description)}">${socialImage}`;
   const repairStyle = firstScreenRepair.enabled ? `<style data-mi-persisted-first-screen-repair>${firstScreenRepair.css}</style>` : "";
+  const typographyStyle = typographyRepair.enabled ? `<style data-mi-persisted-page-typography-repair>${typographyRepair.css}</style>` : "";
   const repairAttribute = firstScreenRepair.enabled ? ' data-mi-first-screen-repair="1"' : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}</head><body${repairAttribute}>${body}${formFeedbackScript()}</body></html>`;
+  const typographyAttribute = typographyRepair.enabled ? ' data-mi-page-typography-repair="1"' : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}${typographyStyle}</head><body${repairAttribute}${typographyAttribute}>${body}${formFeedbackScript()}</body></html>`;
 }
 
 function formFeedbackScript() {

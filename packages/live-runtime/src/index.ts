@@ -112,13 +112,13 @@ function socialImageFor(site: Site) {
   return site.theme.brand.faviconAssetId;
 }
 
-type LiveFirstScreenRepair = { css: string; enabled: boolean };
+export type LiveFirstScreenRepair = { css: string; enabled: boolean; mobile: string; tablet: string; desktop: string };
 
-function liveFirstScreenRepair(site: Site, path: string): LiveFirstScreenRepair {
+export function liveFirstScreenRepair(site: Site, path: string): LiveFirstScreenRepair {
   const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
   const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
   const raw = hero?.props?.renderedFirstScreenRepairs;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { css: "", enabled: false };
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { css: "", enabled: false, mobile: "", tablet: "", desktop: "" };
   const repairs = raw as Record<string, unknown>;
   const cssFor = (viewport: "mobile" | "tablet" | "desktop") => {
     const entry = repairs[viewport];
@@ -134,14 +134,14 @@ function liveFirstScreenRepair(site: Site, path: string): LiveFirstScreenRepair 
     tablet ? `@media (min-width:431px) and (max-width:1024px){${tablet}}` : "",
     desktop ? `@media (min-width:1025px){${desktop}}` : "",
   ].filter(Boolean);
-  return { css: blocks.join("\n"), enabled: blocks.length > 0 };
+  return { css: blocks.join("\n"), enabled: blocks.length > 0, mobile, tablet, desktop };
 }
 
 function pageDocument(
   seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] },
   body: string,
   brand: { favicon?: string; socialImage?: string; siteName: string },
-  firstScreenRepair: LiveFirstScreenRepair = { css: "", enabled: false },
+  firstScreenRepair: LiveFirstScreenRepair = { css: "", enabled: false, mobile: "", tablet: "", desktop: "" },
 ) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
   const icon = brand.favicon ? `<link rel="icon" href="${escapeAttr(brand.favicon)}"><link rel="apple-touch-icon" href="${escapeAttr(brand.favicon)}">` : "";

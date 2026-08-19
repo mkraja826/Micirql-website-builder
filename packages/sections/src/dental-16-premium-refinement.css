@@ -1,0 +1,140 @@
+/* Premium refinement — Dental 16 Multi-Specialty Hub
+ * Reduce dashboard-like card repetition while preserving dense information architecture.
+ */
+
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight{
+  border-top:1px solid var(--mi-hub-line);
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-services-spotlight{
+  gap:0 clamp(1.6rem,3vw,3rem);
+  border-top:1px solid var(--mi-hub-line);
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item:nth-child(4n+2),
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item:nth-child(4n+3){
+  min-height:0;
+  padding:1.45rem 0 1.8rem;
+  border:0;
+  border-bottom:1px solid var(--mi-hub-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item:hover{
+  transform:none;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-service-index{
+  display:inline-block;
+  margin-bottom:.85rem;
+  letter-spacing:.12em;
+  font-weight:820;
+}
+
+/* Team behaves like a specialist directory, not two boxed widgets. */
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.6rem;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-featured__grid{
+  padding:0;
+  border:0;
+  border-top:1px solid var(--mi-hub-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-card--compact{
+  padding:1rem 0;
+  border-bottom:1px solid var(--mi-hub-line);
+  border-radius:0;
+  background:transparent;
+}
+
+/* Journey becomes a connected clinical pathway instead of repeated cards. */
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-timeline{
+  gap:0;
+  border-top:1px solid var(--mi-hub-line);
+  border-bottom:1px solid var(--mi-hub-line);
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-node{
+  padding:1.35rem 1.2rem 1.55rem;
+  border:0;
+  border-right:1px solid var(--mi-hub-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-node:last-child{
+  border-right:0;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-node>span{
+  border-radius:999px;
+  background:transparent;
+  color:var(--mi-color-primary);
+  border:1px solid var(--mi-hub-line);
+}
+
+/* Testimonial reads as a clinical endorsement rather than another card. */
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-proof--quote blockquote{
+  max-width:64rem;
+  margin-inline:auto;
+  padding:2rem 0 0;
+  border:0;
+  border-top:1px solid var(--mi-hub-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-proof--quote blockquote p{
+  max-width:22ch;
+  font-size:clamp(2rem,3.8vw,3.8rem);
+  line-height:1.04;
+  letter-spacing:-.035em;
+}
+
+/* Final conversion is a strong band, not a floating panel. */
+[data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-services--spotlight .mi-service-item:first-child{
+    padding:1.15rem 0 1.35rem;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-team--featured .mi-team-featured__grid{
+    margin-top:1.2rem;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-timeline{
+    grid-template-columns:1fr;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-node{
+    border-right:0;
+    border-bottom:1px solid var(--mi-hub-line);
+    padding:1.05rem 0 1.2rem;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-process--timeline .mi-process-node:last-child{
+    border-bottom:0;
+  }
+  [data-mi-layout-blueprint="dental-16-multi-specialty"] .mi-proof--quote blockquote{
+    padding-top:1.4rem;
+  }
+}

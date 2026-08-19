@@ -63,7 +63,12 @@ export async function POST(request: NextRequest) {
     let customerAssets: MediaAsset[] = [];
     stage = "media";
     try {
-      const mediaPlan = planPageMedia(architecturalSite, industry);
+      const mediaPlan = planPageMedia(architecturalSite, industry, {
+        subindustry: facts.subindustry,
+        services: facts.services,
+        goals: facts.goals,
+        notes: facts.notes,
+      });
       const pools = await loadMediaPools(workspaceId);
       customerAssets = pools.customerAssets;
       mediaExecution = executeMediaPlan({ plan: mediaPlan, ...pools, allowGeneration: true });

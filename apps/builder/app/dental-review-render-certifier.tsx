@@ -11,6 +11,7 @@ import { measureResponsiveCompositionIssues } from "./rendered-responsive-compos
 import { planResponsiveCompositionRepair } from "./rendered-responsive-composition-repair";
 import { persistResponsiveCompositionRepair } from "./persisted-responsive-composition-repair";
 import { measureRenderedImageQualityIssues } from "./rendered-image-quality";
+import { applyRenderedImageRepair, planRenderedImageRepair } from "./rendered-image-repair";
 
 const TARGETS = [
   { viewport: "mobile" as const, width: 390, foldHeight: 844 },
@@ -41,6 +42,7 @@ export function DentalReviewRenderCertifier({
   const [firstScreenAttempt, setFirstScreenAttempt] = useState<0 | 1>(0);
   const [typographyAttempt, setTypographyAttempt] = useState<0 | 1>(0);
   const [compositionAttempt, setCompositionAttempt] = useState<0 | 1>(0);
+  const [imageAttempt, setImageAttempt] = useState<0 | 1>(0);
   const [results, setResults] = useState<CertificationResult[]>([]);
   const probeRef = useRef<HTMLDivElement>(null);
   const completedSignature = useRef("");
@@ -51,6 +53,7 @@ export function DentalReviewRenderCertifier({
     setFirstScreenAttempt(0);
     setTypographyAttempt(0);
     setCompositionAttempt(0);
+    setImageAttempt(0);
     setResults([]);
     setWorking(directions[0]);
     completedSignature.current = "";
@@ -127,6 +130,12 @@ export function DentalReviewRenderCertifier({
       const imageWarningLimit = target.width <= 430 ? 4 : target.width <= 1024 ? 5 : 6;
       const imageFailed = imageIssues.some((issue) => issue.severity === "error") || imageIssues.filter((issue) => issue.severity === "warning").length > imageWarningLimit;
       if (imageFailed) {
+        const plan = planRenderedImageRepair({ issues: imageIssues, attempt: imageAttempt });
+        if (imageAttempt === 0 && plan.required) {
+          setWorking((current) => current ? { ...current, site: applyRenderedImageRepair(current.site, plan) } : current);
+          setImageAttempt(1);
+          return;
+        }
         finishCandidate({
           direction: working,
           passed: false,
@@ -141,12 +150,13 @@ export function DentalReviewRenderCertifier({
         setFirstScreenAttempt(0);
         setTypographyAttempt(0);
         setCompositionAttempt(0);
+        setImageAttempt(0);
         return;
       }
       finishCandidate({ direction: working, passed: true, repaired: hasAnyRepair(working), failures: [] });
     }, 260);
     return () => window.clearTimeout(timer);
-  }, [candidateIndex, compositionAttempt, directions.length, firstScreenAttempt, targetIndex, typographyAttempt, working]);
+  }, [candidateIndex, compositionAttempt, directions.length, firstScreenAttempt, imageAttempt, targetIndex, typographyAttempt, working]);
 
   function finishCandidate(result: CertificationResult) {
     const nextResults = [...results, result];
@@ -157,6 +167,7 @@ export function DentalReviewRenderCertifier({
     setFirstScreenAttempt(0);
     setTypographyAttempt(0);
     setCompositionAttempt(0);
+    setImageAttempt(0);
     setWorking(directions[nextIndex]);
     if (nextIndex >= directions.length && completedSignature.current !== signature) {
       completedSignature.current = signature;
@@ -280,10 +291,12 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
 
 function hasAnyRepair(direction: ReviewDirection): boolean {
   const home = direction.site.pages.find((page) => page.path === "/") ?? direction.site.pages[0];
-  const hero = home?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+  const sections = home?.sections ?? [];
+  const hero = sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
   const firstScreen = hero?.props?.renderedFirstScreenRepairs;
   const typography = hero?.props?.renderedTypographyRepairs;
   const composition = hero?.props?.responsiveCompositionRepairs;
+  const image = sections.some((section) => Boolean(section.props?.renderedImageRepair));
   const populated = (value: unknown) => Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length);
-  return populated(firstScreen) || populated(typography) || populated(composition);
+  return populated(firstScreen) || populated(typography) || populated(composition) || image;
 }

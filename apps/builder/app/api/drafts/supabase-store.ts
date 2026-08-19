@@ -55,11 +55,11 @@ export function supabaseHeaders(request: NextRequest) {
   };
 }
 
-export function supabaseServiceHeaders() {
+export function supabaseTrustedHeaders(request: NextRequest) {
   const cfg = config();
   if (!cfg) throw new Error("Supabase draft store is not configured.");
   const key = serviceRoleKey();
-  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for trusted server operations.");
+  if (!key) return supabaseHeaders(request);
   return {
     apikey: key,
     authorization: `Bearer ${key}`,

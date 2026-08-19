@@ -15,6 +15,7 @@ export default defineConfig({
     "dental-content-quality.spec.ts",
     "content-specialty-rules.spec.ts",
     "dental-architect-content-gate.spec.ts",
+    "dental-content-auto-repair.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

@@ -6,6 +6,7 @@ import {
   groundSiteContent,
   type GroundingFacts,
 } from "@micirql/design-engine";
+import { buildSpecialtyContentRules } from "./content-specialty-rules";
 import { executeRoutedTask, type ModelExecutor, type ModelExecutorRegistry } from "./model-executor";
 import type { ModelProfile } from "./model-routing";
 import type { PlannerModel } from "./planner-adapter";
@@ -65,7 +66,7 @@ export function createModelExecutorRegistry(executors: readonly ModelExecutor[])
   return { get(profileId) { return byProfile.get(profileId); } };
 }
 
-function baseRules(): string[] {
+export function contentRulesForFacts(facts: GroundingFacts): string[] {
   return [
     "Return one complete Site object matching the supplied schema shape.",
     "Change only SEO title/description and content fields explicitly listed as editable in the contract.",
@@ -77,6 +78,7 @@ function baseRules(): string[] {
     "Avoid weak CTAs such as Learn more, Explore, Discover, Get started or Click here. Use a concrete next action appropriate to the page.",
     "Do not repeat the same claim across multiple sections. Each visible section must contribute a distinct idea.",
     "Keep copy concise enough for the limits and guidance in each contract entry.",
+    ...buildSpecialtyContentRules(facts),
   ];
 }
 
@@ -90,14 +92,14 @@ function qualityPass(site: Site) {
   };
 }
 
-function qualityRepairRules(quality: ReturnType<typeof evaluateWebsiteContent>): string[] {
+function qualityRepairRules(quality: ReturnType<typeof evaluateWebsiteContent>, facts: GroundingFacts): string[] {
   const issueLines = quality.issues.slice(0, MAX_REWRITE_ISSUES).map((issue, index) => {
     const location = [issue.pageId, issue.sectionId, issue.path].filter(Boolean).join(" / ");
     return `${index + 1}. ${issue.code}${location ? ` at ${location}` : ""}: ${issue.message}`;
   });
 
   return [
-    ...baseRules(),
+    ...contentRulesForFacts(facts),
     "This is a targeted quality-repair pass. Preserve all content that is already good and rewrite only what is needed to resolve the listed quality issues.",
     "Do not make unrelated stylistic changes. Do not alter structure, layout, media, actions, links, facts or item counts.",
     "Remove generic AI marketing language. Make each section communicate a distinct, concrete idea using the supplied business facts.",
@@ -141,7 +143,7 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
       site: before,
       contract,
       facts: input.facts,
-      rules: baseRules(),
+      rules: contentRulesForFacts(input.facts),
     },
     profiles: input.profiles,
     executors: input.executors,
@@ -160,7 +162,7 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
       site: materialized.site,
       contract,
       facts: input.facts,
-      rules: qualityRepairRules(quality.contentQuality),
+      rules: qualityRepairRules(quality.contentQuality, input.facts),
     }) as unknown;
 
     materialized = materializeCandidate(before, repairedOutput, input.facts);

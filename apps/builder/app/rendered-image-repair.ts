@@ -13,8 +13,6 @@ export type RenderedImageRepairPlan = {
 export function planRenderedImageRepair(input: {
   issues: RenderedImageQualityIssue[];
   attempt: number;
-  site?: Site;
-  path?: string;
 }): RenderedImageRepairPlan {
   if (input.attempt > 0 || input.issues.length === 0) return empty();
   const operations = new Set<string>();
@@ -27,7 +25,7 @@ export function planRenderedImageRepair(input: {
     if (issue.sectionId) sectionIds.add(issue.sectionId);
     if (issue.code === "IMAGE_CROP_TOO_AGGRESSIVE" && issue.sectionId) operations.add("relax-aggressive-crop");
     if (issue.code === "IMAGE_ALT_MISSING" && issue.sectionId) operations.add("restore-image-alt");
-    if ((issue.code === "IMAGE_FAILED_TO_LOAD" || issue.code === "IMAGE_UPSCALED_TOO_FAR" || issue.code === "IMAGE_REUSED_TOO_OFTEN") && issue.sectionId && input.site && hasQualifiedAlternate(input.site, issue.sectionId, input.path ?? "/")) {
+    if ((issue.code === "IMAGE_FAILED_TO_LOAD" || issue.code === "IMAGE_UPSCALED_TOO_FAR" || issue.code === "IMAGE_REUSED_TOO_OFTEN") && issue.sectionId) {
       operations.add("reselect-qualified-alternate");
       reselectSectionIds.add(issue.sectionId);
     }
@@ -86,18 +84,11 @@ export function applyRenderedImageRepair(site: Site, plan: RenderedImageRepairPl
       version: 2,
       operations: [...plan.operations],
       reasons: [...plan.reasons],
-      ...(reselection ? { reselection } : {}),
+      ...(reselection ? { reselection } : { reselectionUnavailable: plan.reselectSectionIds.includes(section.id) }),
     };
   }
 
   return siteSchema.parse(next);
-}
-
-function hasQualifiedAlternate(site: Site, sectionId: string, path: string): boolean {
-  const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
-  const section = page?.sections.find((candidate) => candidate.id === sectionId);
-  if (!section) return false;
-  return qualifiedAlternates((section.props as Record<string, unknown>).qualifiedMediaAlternates).length > 0;
 }
 
 function bestQualifiedAlternate(value: unknown, usedUrls: Set<string>): Record<string, unknown> | undefined {

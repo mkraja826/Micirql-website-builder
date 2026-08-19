@@ -22,6 +22,7 @@ on:
       - "qa/dental-visual-comparison.spec.ts"
       - "qa/dental-top20-premium-gate.spec.ts"
       - "qa/dental-top20-visual-evidence.spec.ts"
+      - "qa/dental-flagship-visual-evidence.spec.ts"
       - "qa/dental-top20-geometry-gate.spec.ts"
       - "qa/dental-runtime-css-parity.spec.ts"
       - "playwright.dental-visual.config.ts"
@@ -48,6 +49,7 @@ on:
       - "qa/dental-visual-comparison.spec.ts"
       - "qa/dental-top20-premium-gate.spec.ts"
       - "qa/dental-top20-visual-evidence.spec.ts"
+      - "qa/dental-flagship-visual-evidence.spec.ts"
       - "qa/dental-top20-geometry-gate.spec.ts"
       - "qa/dental-runtime-css-parity.spec.ts"
       - "playwright.dental-visual.config.ts"
@@ -76,7 +78,7 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run Dental Top-20 contract and visual evidence
+      - name: Run Dental Top-20 and flagship visual evidence
         run: pnpm qa:dental-visual
 
       - name: Add visual benchmark summary
@@ -88,6 +90,10 @@ jobs:
           if [ -f test-results/dental-top20-visual-evidence/summary.md ]; then
             cat test-results/dental-top20-visual-evidence/summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [ -d qa-artifacts/dental-flagship-evidence ]; then
+            echo "### Flagship evidence" >> "$GITHUB_STEP_SUMMARY"
+            echo "Focused 5-design premium screenshot evidence generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload visual evidence
         if: always()
@@ -98,4 +104,5 @@ jobs:
             test-results/dental-visual-comparison
             test-results/dental-top20-visual-evidence
             test-results/visual-review
+            qa-artifacts/dental-flagship-evidence
           retention-days: 30

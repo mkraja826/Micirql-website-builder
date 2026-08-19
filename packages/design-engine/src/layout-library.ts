@@ -5,6 +5,32 @@ export const WEBSITE_LAYOUT_LIBRARY: readonly WebsiteLayoutBlueprint[] = [
   ...DENTAL_LAYOUT_BLUEPRINTS,
 ];
 
+function runtimeEnv(name: string): string | undefined {
+  try {
+    return typeof process !== "undefined" ? process.env?.[name] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isProductionRuntime(): boolean {
+  return runtimeEnv("NODE_ENV") === "production";
+}
+
+export function productionCertifiedLayoutIds(industry: string): Set<string> | null {
+  const normalized = normalizeLayoutIndustry(industry);
+  if (normalized !== "dental") return null;
+  const raw = runtimeEnv("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS")?.trim();
+  if (!raw) return isProductionRuntime() ? new Set<string>() : null;
+  return new Set(raw.split(",").map((value) => value.trim()).filter(Boolean));
+}
+
+export function isProductionLayoutCertified(layout: WebsiteLayoutBlueprint): boolean {
+  if (layout.status !== "certified") return false;
+  const allowed = productionCertifiedLayoutIds(layout.industry);
+  return allowed === null ? true : allowed.has(layout.id);
+}
+
 export function normalizeLayoutIndustry(industry: string): string {
   const normalized = industry.trim().toLowerCase();
   if (/\bdental|dentist|dentistry|orthodont|endodont|implant\b/.test(normalized)) return "dental";
@@ -27,10 +53,10 @@ export function normalizeLayoutSubindustry(value: string | undefined): string | 
     "full arch implants": "implant-dentistry",
     "cosmetic dentistry": "cosmetic-dentistry",
     "smile design": "cosmetic-dentistry",
-    "veneers": "cosmetic-dentistry",
-    "orthodontics": "orthodontics",
+    veneers: "cosmetic-dentistry",
+    orthodontics: "orthodontics",
     "clear aligners": "orthodontics",
-    "endodontics": "endodontics",
+    endodontics: "endodontics",
     "root canal": "endodontics",
   };
   return aliases[normalized] ?? normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -44,7 +70,6 @@ function normalizeGoals(values: readonly string[] | undefined, context: string):
   if (!values?.length && !context) return undefined;
   const result = [...(values ?? [])];
   const text = `${context} ${(values ?? []).join(" ")}`.toLowerCase();
-
   if (/book|appointment|consult|enquir|schedule/.test(text)) result.push("book appointment", "consultation");
   if (/implant/.test(text) && /book|consult|appointment|enquir/.test(text)) result.push("implant consultation");
   if (/cosmetic|smile design|veneer|whitening/.test(text) && /book|consult|appointment|enquir/.test(text)) result.push("cosmetic consultation");
@@ -53,7 +78,6 @@ function normalizeGoals(values: readonly string[] | undefined, context: string):
   if (/urgent|emergency|tooth pain|broken tooth|same.?day|contact clinic|call clinic/.test(text)) result.push("urgent contact", "book appointment");
   if (/learn|education|educational|explain|how it works|treatment process|journey/.test(text)) result.push("explain treatment journey");
   if (/discover|treatment options|services|treatment discovery/.test(text)) result.push("treatment discovery");
-
   return unique(result);
 }
 
@@ -61,7 +85,6 @@ function normalizePriorities(values: readonly string[] | undefined, context: str
   if (!values?.length && !context) return undefined;
   const result = [...(values ?? [])];
   const text = `${context} ${(values ?? []).join(" ")}`.toLowerCase();
-
   if (/book|appointment|contact|enquir|schedule/.test(text)) result.push("appointment");
   if (/location|map|address|nearby/.test(text)) result.push("location");
   if (/gallery|before.?after|portfolio|smile design|veneer|whitening|rehabilitation|result|outcome/.test(text)) result.push("visual outcomes");
@@ -74,7 +97,6 @@ function normalizePriorities(values: readonly string[] | undefined, context: str
   if (/urgent|emergency|tooth pain|broken tooth|same.?day/.test(text)) result.push("pain relief", "appointment");
   if (/comfort|calm|anxiety|gentle/.test(text)) result.push("comfort");
   if (/checkup|crown|bridge|filling|gum care|preventive|restorative/.test(text)) result.push("treatments");
-
   return unique(result);
 }
 
@@ -82,7 +104,6 @@ function normalizeStyles(values: readonly string[] | undefined, context: string)
   if (!values?.length && !context) return undefined;
   const result = [...(values ?? [])];
   const text = `${context} ${(values ?? []).join(" ")}`.toLowerCase();
-
   if (/luxury|elegant/.test(text)) result.push("luxury", "premium", "elegant");
   if (/family|welcoming/.test(text)) result.push("family", "friendly", "approachable");
   if (/professional|clinical/.test(text)) result.push("professional", "clinical");
@@ -93,7 +114,6 @@ function normalizeStyles(values: readonly string[] | undefined, context: string)
   if (/emergency|urgent/.test(text)) result.push("urgent", "direct", "reassuring");
   if (/bold|campaign/.test(text)) result.push("bold", "campaign");
   if (/educational|education|learn|explain/.test(text)) result.push("evidence");
-
   return unique(result);
 }
 
@@ -103,11 +123,9 @@ export function normalizeLayoutSelectionInput(input: LayoutSelectionInput): Layo
   const subindustryId = normalizeLayoutSubindustry(rawSubindustry);
   const context = [rawSubindustry, ...(input.goals ?? []), ...(input.priorities ?? []), ...(input.styleTags ?? [])].join(" ");
   const dentalContext = industry === "dental" ? context : "";
-
   const goals = normalizeGoals(input.goals, dentalContext);
   const priorities = normalizePriorities(input.priorities, dentalContext);
   const styleTags = normalizeStyles(input.styleTags, dentalContext);
-
   return {
     industry,
     ...(subindustryId ? { subindustryId } : {}),
@@ -121,7 +139,8 @@ export function layoutsForIndustry(industry: string, options: { includeDrafts?: 
   const normalized = normalizeLayoutIndustry(industry);
   return WEBSITE_LAYOUT_LIBRARY.filter((layout) => {
     if (layout.industry !== normalized) return false;
-    return options.includeDrafts ? layout.status !== "retired" : layout.status === "certified";
+    if (options.includeDrafts) return layout.status !== "retired";
+    return isProductionLayoutCertified(layout);
   });
 }
 
@@ -129,9 +148,11 @@ export function findWebsiteLayout(id: string): WebsiteLayoutBlueprint | undefine
   return WEBSITE_LAYOUT_LIBRARY.find((layout) => layout.id === id);
 }
 
-/** Production selector: only certified layouts are eligible. */
+/** Production selector: only statically certified + rendered-certified layouts are eligible. */
 export function recommendWebsiteLayouts(input: LayoutSelectionInput, limit = 5): RankedLayout[] {
-  return rankWebsiteLayouts(WEBSITE_LAYOUT_LIBRARY, normalizeLayoutSelectionInput(input)).slice(0, Math.max(1, limit));
+  const normalized = normalizeLayoutSelectionInput(input);
+  const eligible = WEBSITE_LAYOUT_LIBRARY.filter((layout) => layout.industry === normalized.industry && isProductionLayoutCertified(layout));
+  return rankWebsiteLayouts(eligible, normalized).slice(0, Math.max(1, limit));
 }
 
 /** Internal selector: ranks drafts so they can be implemented and certified in order of fit. */

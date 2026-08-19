@@ -18,6 +18,7 @@ export default defineConfig({
     "dental-content-auto-repair.spec.ts",
     "page-media-hero-coordination.spec.ts",
     "hero-coherence-quality.spec.ts",
+    "above-fold-composition-quality.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

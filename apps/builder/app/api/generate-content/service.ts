@@ -23,6 +23,7 @@ export type GuardedContentGenerationRequest = {
   siteId: string;
   expectedRevision: number;
   facts?: Partial<GroundingFacts>;
+  repairRules?: string[];
 };
 
 type ContentUsage = { inputTokens: number; outputTokens: number; costMicrousd: number };
@@ -65,6 +66,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   if (!attempts.length) { const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number }; error.status = 503; throw error; }
 
   const facts = normalizeFacts(input.facts, { name: current.snapshot.name, subtype: current.snapshot.subtype, seoBlueprint: current.snapshot.seoBlueprint });
+  const repairRules = cleanArray(input.repairRules).slice(0, 16);
   const recovery = await runGenerationRecovery(
     attempts.map((attempt) => ({ profile: attempt, profileId: attempt.profile.id, provider: attempt.profile.provider, model: attempt.profile.model })),
     async ({ profile: attempt }) => {
@@ -74,6 +76,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
           facts,
           profiles: [attempt.profile],
           executors: createModelExecutorRegistry([createJsonContentExecutor(attempt.planner)]),
+          supplementalRules: repairRules,
         });
       } catch (error) {
         console.error(`MiCirql content provider ${attempt.profile.provider}/${attempt.profile.model} failed.`, error);
@@ -98,7 +101,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
       originalDraftRevision: current.revision,
       savedDraftRevision: saved.revision,
     },
-    audit: { appliedFields: generated.appliedFields, structureIntact: generated.structureIntact, restoredChanges: generated.restoredChanges, groundingIssueCount: generated.groundingIssues.length, groundingIssues: generated.groundingIssues, contentQuality: generated.contentQuality },
+    audit: { appliedFields: generated.appliedFields, structureIntact: generated.structureIntact, restoredChanges: generated.restoredChanges, groundingIssueCount: generated.groundingIssues.length, groundingIssues: generated.groundingIssues, contentQuality: generated.contentQuality, repairRuleCount: repairRules.length },
   };
 }
 

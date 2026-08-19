@@ -38,6 +38,7 @@ import "@micirql/sections/dental-16-premium-refinement.css";
 import "@micirql/sections/dental-15-smile-campaign-refinement.css";
 import "@micirql/sections/dental-20-complete-signature-refinement.css";
 import "@micirql/sections/dental-19-quiet-precision-refinement.css";
+import "@micirql/sections/dental-10-immediate-care-refinement.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

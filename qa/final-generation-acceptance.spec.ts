@@ -4,19 +4,24 @@ import { expect, test } from "@playwright/test";
 
 const root = process.cwd();
 
-test("onboarding hard-rejects failed final premium acceptance before persisting", async () => {
+test("onboarding retries failed final premium acceptance before hard rejection and persistence", async () => {
   const source = await readFile(path.join(root, "apps/builder/app/api/onboarding/route.ts"), "utf8");
-  const evaluation = source.indexOf("finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot)");
+  const firstEvaluation = source.indexOf("finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot)");
+  const correction = source.indexOf("finalCorrection=applyFinalGenerationCorrection(nextSnapshot)");
+  const secondEvaluation = source.indexOf("finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot)", firstEvaluation + 1);
   const rejection = source.indexOf("if(!finalAcceptance.ready)throw premiumGenerationError(finalAcceptance)");
   const persistence = source.indexOf("await saveSupabaseDraft(request,{snapshot:nextSnapshot");
   const softCatch = source.indexOf("if(isPremiumGenerationError(error))throw error");
 
-  expect(evaluation).toBeGreaterThan(-1);
-  expect(rejection).toBeGreaterThan(evaluation);
+  expect(firstEvaluation).toBeGreaterThan(-1);
+  expect(correction).toBeGreaterThan(firstEvaluation);
+  expect(secondEvaluation).toBeGreaterThan(correction);
+  expect(rejection).toBeGreaterThan(secondEvaluation);
   expect(persistence).toBeGreaterThan(rejection);
   expect(softCatch).toBeGreaterThan(rejection);
   expect(source).toContain('code:"PREMIUM_GENERATION_NOT_READY"');
   expect(source).toContain("quality:error.report");
+  expect(source).toContain("finalCorrection:finalCorrection?");
 });
 
 test("final acceptance combines premium, content, typography, imagery and mobile-structure dimensions", async () => {
@@ -33,4 +38,19 @@ test("final acceptance combines premium, content, typography, imagery and mobile
   expect(source).toContain("TYPOGRAPHY_HERO_WRAP_RISK");
   expect(source).toContain("MOBILE_CTA_WRAP_RISK");
   expect(source).toContain("RENDERED_MOBILE_REQUIRED");
+});
+
+test("targeted correction only repairs dimensions that failed and re-scores the result", async () => {
+  const source = await readFile(path.join(root, "apps/builder/app/final-generation-correction.ts"), "utf8");
+
+  expect(source).toContain('failed.has("content") || failed.has("premium")');
+  expect(source).toContain('failed.has("typography")');
+  expect(source).toContain('failed.has("mobile-structure") || failed.has("typography")');
+  expect(source).toContain('failed.has("imagery")');
+  expect(source).toContain("repairContentDepth(candidate)");
+  expect(source).toContain("repairTypography(candidate)");
+  expect(source).toContain("compactMobileRiskCopy(candidate)");
+  expect(source).toContain("repairImageReferences(candidate)");
+  expect(source).toContain("applyPremiumQualityCorrection(candidate)");
+  expect(source).toContain("evaluateFinalGenerationAcceptance(candidate)");
 });

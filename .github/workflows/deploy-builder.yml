@@ -20,6 +20,7 @@ on:
       - 'packages/schema/**'
       - 'packages/sections/**'
       - 'packages/workspace/**'
+      - 'qa/dental-production-certification-gate.spec.ts'
       - 'qa/dental-top20-visual-evidence.spec.ts'
       - 'qa/dental-top20-premium-gate.spec.ts'
       - 'qa/dental-top20-geometry-gate.spec.ts'

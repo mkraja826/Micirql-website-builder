@@ -21,11 +21,13 @@ export async function materializeGeneratedMedia(input:{
  const authorization=input.request.headers.get("authorization");
  if(!authorization||maxGenerated===0)return{execution:input.execution,generated:0,warnings:authorization?[]:["Generated media could not be materialized because authorization was unavailable."]};
  const assignments=assignSections(input.site,input.execution.requests);
+ const selectedGenerationIndexes=selectGeneratedMediaIndexes(input.site,assignments.map(item=>item.request),maxGenerated);
  const warnings:string[]=[];let generated=0;
  const requests:MediaRequest[]=[];
- for(const assignment of assignments){
+ for(let index=0;index<assignments.length;index++){
+  const assignment=assignments[index]!;
   const media=assignment.request;
-  if(media.source!=="generated"||!media.generationPrompt||generated>=maxGenerated){requests.push(media);continue;}
+  if(media.source!=="generated"||!media.generationPrompt||!selectedGenerationIndexes.has(index)){requests.push(media);continue;}
   try{
    const response=await fetch(new URL("/api/assets/generate",input.request.url),{
     method:"POST",
@@ -50,6 +52,35 @@ export function generatedMediaBudget(site:Site):number{
  if(blueprintId==="dental-03-smile-studio"||blueprintId==="dental-05-digital-dentistry")return 3;
  if(blueprintId==="dental-02-implant-luxury"||blueprintId==="dental-08-boutique-cosmetic"||blueprintId==="dental-01-clinical-authority")return 2;
  return 2;
+}
+
+const BLUEPRINT_MEDIA_PRIORITY:Record<string,SectionFamily[]>={
+ "dental-01-clinical-authority":["hero","about","features","process","services","gallery"],
+ "dental-02-implant-luxury":["hero","process","features","about","services","gallery"],
+ "dental-03-smile-studio":["hero","gallery","about","services","features","process"],
+ "dental-05-digital-dentistry":["hero","features","process","about","services","gallery"],
+ "dental-08-boutique-cosmetic":["hero","about","gallery","services","features","process"],
+};
+
+export function generatedMediaPriority(site:Site):SectionFamily[]{
+ const blueprintId=lockedBlueprintId(site);
+ return blueprintId&&BLUEPRINT_MEDIA_PRIORITY[blueprintId]
+  ? [...BLUEPRINT_MEDIA_PRIORITY[blueprintId]!]
+  : ["hero","features","gallery","about","process","services"];
+}
+
+export function selectGeneratedMediaIndexes(site:Site,requests:MediaRequest[],limit:number):Set<number>{
+ const cap=Math.max(0,Math.floor(limit));
+ if(cap===0)return new Set();
+ const priority=generatedMediaPriority(site);
+ const rank=new Map(priority.map((family,index)=>[family,index]));
+ const eligible=requests
+  .map((request,index)=>({request,index}))
+  .filter(({request})=>request.source==="generated"&&Boolean(request.generationPrompt))
+  .sort((a,b)=>(rank.get(a.request.family)??99)-(rank.get(b.request.family)??99)||a.index-b.index)
+  .slice(0,cap)
+  .map(item=>item.index);
+ return new Set(eligible);
 }
 
 function lockedBlueprintId(site:Site):string|undefined{

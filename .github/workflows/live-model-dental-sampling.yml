@@ -9,6 +9,11 @@ on:
         default: "3"
         type: choice
         options: ["1", "2", "3", "4", "5", "6"]
+  push:
+    branches: [main]
+    paths:
+      - "qa/live-dental-customer-path.spec.ts"
+      - ".github/workflows/live-model-dental-sampling.yml"
 
 permissions:
   contents: read
@@ -19,7 +24,7 @@ jobs:
     timeout-minutes: 30
     env:
       CI: "1"
-      MI_LIVE_SAMPLE_COUNT: ${{ inputs.sample_count }}
+      MI_LIVE_SAMPLE_COUNT: ${{ inputs.sample_count || '3' }}
       MICIRQL_TEXT_MODEL_ENDPOINT: ${{ secrets.MICIRQL_TEXT_MODEL_ENDPOINT }}
       MICIRQL_TEXT_MODEL_API_KEY: ${{ secrets.MICIRQL_TEXT_MODEL_API_KEY }}
       MICIRQL_TEXT_MODEL: ${{ secrets.MICIRQL_TEXT_MODEL }}

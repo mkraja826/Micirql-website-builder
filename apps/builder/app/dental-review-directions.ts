@@ -16,6 +16,7 @@ import { repairPageRhythm } from "./page-rhythm-repair";
 import { evaluatePageTypographyQuality } from "./page-typography-quality";
 import { repairPageTypography } from "./page-typography-repair";
 import { evaluatePageMediaArtDirection } from "./page-media-art-direction-quality";
+import { repairPageMediaArtDirection } from "./page-media-art-direction-repair";
 import { repairWebsiteInvariants } from "./invariant-repair";
 import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
@@ -79,8 +80,6 @@ export function buildCertifiedDentalReviewDirections(
     let pageTypographyErrors = pageTypographyQuality.issues.filter((issue) => issue.severity === "error" && !issue.repairable);
     let pageTypographyRepairOperations: string[] = [];
 
-    // Exactly one bounded presentation-only typography repair. It cannot rewrite
-    // copy, change font families or replace certified section variants.
     if (pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE || pageTypographyQuality.issues.some((issue) => issue.severity === "error")) {
       const typographyRepair = repairPageTypography(candidateSite, pageTypographyQuality.issues);
       if (typographyRepair.repaired) {
@@ -93,8 +92,20 @@ export function buildCertifiedDentalReviewDirections(
 
     if (pageTypographyErrors.length || pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
 
-    const mediaArtDirection = evaluatePageMediaArtDirection(candidateSite);
-    const mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
+    let mediaArtDirection = evaluatePageMediaArtDirection(candidateSite);
+    let mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
+    let mediaArtDirectionRepairOperations: string[] = [];
+
+    if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) {
+      const artDirectionRepair = repairPageMediaArtDirection(candidateSite, mediaArtDirection);
+      if (artDirectionRepair.repaired) {
+        candidateSite = artDirectionRepair.site;
+        mediaArtDirectionRepairOperations = artDirectionRepair.operations;
+        mediaArtDirection = evaluatePageMediaArtDirection(candidateSite);
+        mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
+      }
+    }
+
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
 
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
@@ -129,6 +140,7 @@ export function buildCertifiedDentalReviewDirections(
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
+        ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
         `dental content ${dentalContentQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
         `page typography ${pageTypographyQuality.score}/100`,

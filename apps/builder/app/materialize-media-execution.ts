@@ -44,7 +44,7 @@ export async function materializeGeneratedMedia(input:{
  return{execution:{...input.execution,requests},generated,warnings};
 }
 
-function generatedMediaBudget(site:Site):number{
+export function generatedMediaBudget(site:Site):number{
  const blueprintId=lockedBlueprintId(site);
  if(!blueprintId)return 2;
  if(blueprintId==="dental-03-smile-studio"||blueprintId==="dental-05-digital-dentistry")return 3;

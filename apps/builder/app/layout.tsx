@@ -44,6 +44,7 @@ import "@micirql/sections/dental-12-calm-dentistry-refinement.css";
 import "@micirql/sections/dental-09-ortho-journey-refinement.css";
 import "@micirql/sections/dental-05-digital-dentistry-refinement.css";
 import "@micirql/sections/dental-04-family-care-refinement.css";
+import "@micirql/sections/dental-01-clinical-authority-refinement.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

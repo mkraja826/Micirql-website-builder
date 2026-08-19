@@ -12,120 +12,51 @@ export type VisualMediaPlan={style:"photographic"|"editorial"|"product"|"illustr
 const PHOTO_IDS=new Set(["medical-clinic","dental-clinic","premium-implant-clinic","physiotherapy","dermatology","fitness","yoga-spa","veterinary","salon-beauty","hotel-resort","bakery-catering","events-wedding","travel-tourism","restaurant","real-estate","construction","fashion-brand","jewellery","furniture-interiors","beauty-brand","photographer","artist"]);
 const PRODUCT_IDS=new Set(["saas","ai-startup","fintech-startup","healthtech-startup","edtech-startup","marketplace-startup","consumer-app-startup","developer-api-startup","cybersecurity-startup","deeptech-startup"]);
 
+type FlagshipDirection={style:VisualMediaPlan["style"];hero:string;heroAspect:VisualAspect;heroProminence:VisualProminence;services:string;technology:string;process:string;gallery:string;tags:string[];rules:string[]};
+const FLAGSHIP:Record<string,FlagshipDirection>={
+ "dental-01-clinical-authority":{style:"photographic",hero:"Bright architectural dental consultation with calm specialist authority, clean daylight, restrained clinical composition and generous negative space; generic non-identifying context unless real clinic media is supplied",heroAspect:"3:2",heroProminence:"balanced",services:"Clean treatment-detail photography with simple clinical context and no decorative lifestyle imagery",technology:"Precise dental scanning or treatment-planning detail with clean neutral background; do not imply ownership of specific equipment",process:"Calm consultation and planning sequence with documentary clinical clarity",gallery:"Verified clinic or treatment context with consistent cool, clean visual language",tags:["clinical-authority","architectural","clean-daylight","specialist","restrained"],rules:["Prefer bright neutral clinical photography with controlled negative space","Avoid fashion-editorial, moody luxury and generic smiling lifestyle imagery"]},
+ "dental-02-implant-luxury":{style:"editorial",hero:"Cinematic premium implant consultation portrait, adult patient confidence, dark refined environment, directional light, editorial negative space, warm restrained atmosphere; generic non-identifying people only",heroAspect:"portrait",heroProminence:"dominant",services:"Close editorial details of implant consultation and restorative planning, sophisticated and non-graphic",technology:"Dark premium digital implant-planning or scan detail with precise luminous interface context; never claim clinic equipment",process:"Editorial consultation-to-planning journey with quiet high-value treatment atmosphere",gallery:"Verified implant case media when supplied; otherwise sophisticated restorative-planning details without fabricated outcomes",tags:["implant-atelier","cinematic","dark-editorial","warm-neutral","portrait-led"],rules:["Hero should feel like a luxury healthcare campaign rather than ordinary clinic stock","Use restrained dark editorial imagery and avoid bright generic clinic interiors"]},
+ "dental-03-smile-studio":{style:"editorial",hero:"Luminous natural smile portrait or cosmetic smile-design consultation, soft warm daylight, fashion-editorial crop, authentic expression and asymmetric negative space; no synthetic treatment result",heroAspect:"portrait",heroProminence:"dominant",services:"Elegant cosmetic consultation details for smile design, veneers or whitening without guaranteed-result imagery",technology:"Minimal digital smile-design or scanning context with soft editorial styling",process:"Consultation, smile planning and review expressed through warm image-led storytelling",gallery:"Verified cosmetic cases when supplied; otherwise natural smile portraits and consultation details, varied crops, no fake before-and-after",tags:["smile-studio","cosmetic-editorial","luminous","natural-smile","asymmetric"],rules:["Use luminous human editorial photography with varied portrait and detail crops","Never generate or source synthetic before-and-after treatment results"]},
+ "dental-05-digital-dentistry":{style:"product",hero:"Advanced digital dentistry scanning and treatment-planning scene, precise technology detail, dark graphite environment, teal-lit interface atmosphere, minimal people, product-photography composition; generic equipment context only",heroAspect:"wide",heroProminence:"dominant",services:"Precision dental treatment context photographed like modern technology product documentation",technology:"Macro intraoral scanner, 3D dental scan or digital planning interface concept, crisp technical lighting, no unsupported equipment ownership",process:"Digital scan-to-plan workflow shown as precise technical stages rather than lifestyle photography",gallery:"Technology and planning details with controlled dark backgrounds and clean product framing",tags:["digital-dentistry","technology-led","scanner","precision","product-photography","graphite"],rules:["Technology imagery outranks generic dentist-patient stock for this blueprint","Prefer crisp product-style technical visuals with minimal lifestyle content"]},
+ "dental-08-boutique-cosmetic":{style:"editorial",hero:"Quiet boutique cosmetic dentistry portrait, soft mineral-neutral styling, refined natural smile, close editorial crop, diffused light and large calm negative space; no synthetic outcome",heroAspect:"portrait",heroProminence:"balanced",services:"Sparse beauty-editorial dental details with tactile neutral backgrounds and no clinical clutter",technology:"Only subtle smile-design or consultation detail when useful; technology should never dominate the boutique story",process:"Quiet consultation narrative using intimate detail photography and restrained composition",gallery:"Large verified cosmetic case photography when supplied; otherwise refined natural-smile and consultation portraits with fashion-house spacing",tags:["boutique-cosmetic","soft-editorial","mineral-neutral","intimate","fashion-house"],rules:["Keep image density intentionally low and let a few large images carry the page","Avoid generic clinic interiors, busy mosaics and technology-heavy imagery"]},
+};
+
 export function planVisualMedia(profile:OnboardingProfile,composition:WebsiteComposition,quality:GenerationQualityProfile):VisualMediaPlan{
  const id=composition.preset.id;
- const text=[profile.industry,profile.subindustry,...(profile.services||[]),...(profile.style_tags||[])].filter(Boolean).join(" ").toLowerCase();
+ const text=[profile.industry,profile.subindustry,...(profile.services||[]),...(profile.style_tags||[]),profile.notes].filter(Boolean).join(" ").toLowerCase();
+ const pack=composition.industryPack;
+ const dental=pack?.pack.id==="dental"?{subindustry:pack.subindustry?.id??null,imagery:pack.subindustry?.imageryProfile??[]}:null;
+ const layoutId=composition.layoutCandidate?.layout.id??null;
+ const flagship=layoutId?FLAGSHIP[layoutId]:undefined;
  const photographic=PHOTO_IDS.has(id)||/clinic|hotel|restaurant|fashion|property|construction|artist|photo|wedding|travel|salon/.test(text);
  const product=PRODUCT_IDS.has(id)||quality.heroEmphasis==="product";
  const editorial=quality.sectionRhythm==="cinematic"||/luxury|editorial|premium/.test(text);
- const style:VisualMediaPlan["style"]=product&&!photographic?"product":editorial&&photographic?"editorial":photographic?"photographic":product?"product":"mixed";
- const pack=composition.industryPack;
- const dental=pack?.pack.id==="dental"?{subindustry:pack.subindustry?.id??null,imagery:pack.subindustry?.imageryProfile??[]}:null;
- const sections=composition.sections.map((s,index)=>dental?decideDental(s.family,index,style,quality,dental.subindustry,dental.imagery):decide(s.family,index,style,quality,text));
+ const style:VisualMediaPlan["style"]=flagship?.style??(product&&!photographic?"product":editorial&&photographic?"editorial":photographic?"photographic":product?"product":"mixed");
+ const sections=composition.sections.map((s,index)=>dental?decideDental(s.family,index,style,quality,dental.subindustry,dental.imagery,layoutId):decide(s.family,index,style,quality,text));
  for(let i=1;i<sections.length;i++){const prev=sections[i-1],cur=sections[i];if(prev&&cur&&prev.prominence==="dominant"&&cur.prominence==="dominant")cur.prominence="balanced";}
- const industryRules=dental?[
-  "Dental imagery must match the selected dental sub-industry rather than generic healthcare imagery",
-  "Doctor and team portraits must come from customer-supplied or verified reusable assets",
-  "Before-and-after dental evidence may only be shown when supplied and verified; never synthesize treatment outcomes",
-  "Do not depict equipment, facilities, credentials or procedures as belonging to the clinic unless that fact is grounded in supplied business information",
- ]:[];
+ const industryRules=dental?["Dental imagery must match the selected dental sub-industry rather than generic healthcare imagery","Doctor and team portraits must come from customer-supplied assets","Before-and-after dental evidence may only be shown when supplied and verified; never synthesize treatment outcomes","Do not depict equipment, facilities, credentials or procedures as belonging to the clinic unless grounded in supplied business information",...(flagship?[`Certified imagery direction locked to ${layoutId}`,...flagship.rules]:[])]:[];
  return{style,sections,rules:["Use supplied business media before generated or stock media","Never invent certificates, staff, facilities, projects or product screenshots","Do not repeat the same image in multiple primary sections","Keep text readable over imagery and provide useful alt text","Prefer no image over an irrelevant decorative image",...industryRules]};
 }
 
-function decideDental(family:SectionFamily,index:number,style:VisualMediaPlan["style"],q:GenerationQualityProfile,subindustry:string|null,imagery:string[]):SectionVisualDecision{
+function decideDental(family:SectionFamily,index:number,style:VisualMediaPlan["style"],q:GenerationQualityProfile,subindustry:string|null,imagery:string[],layoutId:string|null):SectionVisualDecision{
+ const flagship=layoutId?FLAGSHIP[layoutId]:undefined;
  const profile=dentalProfile(subindustry,imagery);
  let role:VisualRole="none",prominence:VisualProminence="supporting",aspect:VisualAspect="4:3",subject="";
- if(family==="hero"){
-  role="hero-photo";prominence=q.imageDensity==="low"?"balanced":"dominant";aspect="wide";subject=profile.hero;
- } else if(family==="services"){
-  role=q.imageDensity==="low"?"none":"hero-photo";prominence="supporting";aspect="4:3";subject=profile.services;
- } else if(family==="features"){
-  role=q.imageDensity==="high"?"illustration":"none";prominence="supporting";aspect="4:3";subject=profile.technology;
- } else if(family==="process"){
-  role="process";prominence="supporting";aspect="16:9";subject=profile.process;
- } else if(family==="team"){
-  role="people";prominence="balanced";aspect="portrait";subject="Verified portraits of the clinic's real dentist or dental team, supplied by the business";
- } else if(family==="about"){
-  role="place";prominence=q.visualWeight>70?"balanced":"supporting";aspect="3:2";subject="Verified clinic interior, reception, treatment room or real team environment supplied by the business";
- } else if(family==="gallery"){
-  if(subindustry==="cosmetic-dentistry"){
-   role="portfolio";prominence="dominant";aspect="3:2";subject="Verified cosmetic dentistry case photography or before-and-after outcomes supplied by the clinic; otherwise use truthful smile-design or consultation context";
-  } else {
-   role="portfolio";prominence="balanced";aspect="3:2";subject=profile.gallery;
-  }
- } else if(family==="testimonials"){
-  role="none";subject="Use review text or verified review-source branding; do not fabricate patient portraits";
- } else if(family==="cta"){
-  role=style==="editorial"?"texture":"none";prominence="supporting";aspect="wide";subject="Subtle abstract dental brand atmosphere using the selected palette, with no clinical claims";
- }
+ if(family==="hero"){role="hero-photo";prominence=flagship?.heroProminence??(q.imageDensity==="low"?"balanced":"dominant");aspect=flagship?.heroAspect??"wide";subject=flagship?.hero??profile.hero;}
+ else if(family==="services"){role=q.imageDensity==="low"&&!flagship?"none":"hero-photo";prominence="supporting";aspect="4:3";subject=flagship?.services??profile.services;}
+ else if(family==="features"){role=flagship&&layoutId==="dental-05-digital-dentistry"?"product-ui":q.imageDensity==="high"?"illustration":"none";prominence=layoutId==="dental-05-digital-dentistry"?"balanced":"supporting";aspect="4:3";subject=flagship?.technology??profile.technology;}
+ else if(family==="process"){role="process";prominence="supporting";aspect="16:9";subject=flagship?.process??profile.process;}
+ else if(family==="team"){role="people";prominence=layoutId==="dental-02-implant-luxury"?"dominant":"balanced";aspect="portrait";subject="Verified portrait of the clinic's real dentist or dental team, supplied by the business";}
+ else if(family==="about"){role="place";prominence=q.visualWeight>70?"balanced":"supporting";aspect="3:2";subject="Verified clinic interior, reception, treatment room or real team environment supplied by the business";}
+ else if(family==="gallery"){role="portfolio";prominence=layoutId==="dental-03-smile-studio"?"dominant":layoutId==="dental-08-boutique-cosmetic"?"balanced":"balanced";aspect="3:2";subject=flagship?.gallery??profile.gallery;}
+ else if(family==="testimonials"){role="none";subject="Use review text or verified review-source branding; do not fabricate patient portraits";}
+ else if(family==="cta"){role=style==="editorial"?"texture":"none";prominence="supporting";aspect="wide";subject="Subtle abstract dental brand atmosphere using the selected palette, with no clinical claims";}
  const avoid=["generic handshake stock photography","generic corporate office imagery","fake doctors or patient identities","fabricated clinic interiors","fabricated equipment or credentials","synthetic before-and-after treatment results","graphic or distressing procedure imagery",...(index>0?["repeating the hero visual"]:[])];
- const preferredTags=dentalPreferredTags(subindustry,family,role);
- return{family,role,prominence,aspect,subject,avoid,...(preferredTags.length?{preferredTags}:{})};
+ const preferredTags=[...dentalPreferredTags(subindustry,family,role),...(flagship?.tags??[]),...(layoutId?[layoutId]:[])];
+ return{family,role,prominence,aspect,subject,avoid,preferredTags:[...new Set(preferredTags)]};
 }
 
-function dentalPreferredTags(subindustry:string|null,family:SectionFamily,role:VisualRole){
- const base=["dental","dentistry",subindustry??"general-dentistry",family,role];
- const specialty=subindustry==="implant-dentistry"?["implant","implant-planning","restorative","precision"]
-  :subindustry==="cosmetic-dentistry"?["cosmetic","smile-design","natural-smile","aesthetic"]
-  :subindustry==="orthodontics"?["orthodontics","aligner","braces","scanning"]
-  :subindustry==="endodontics"?["endodontics","root-canal","tooth-preservation","precision"]
-  :["general-dentistry","preventive-care","consultation","welcoming"];
- const roleTags=family==="hero"?["hero"]:family==="services"?["treatment","service"]:family==="features"?["technology"]:family==="process"?["consultation","journey"]:family==="gallery"?["case-context"]:family==="about"?["clinic-environment"]:family==="team"?["verified-team"]:[];
- return [...new Set([...base,...specialty,...roleTags])];
-}
-
-function dentalProfile(subindustry:string|null,imagery:string[]){
- const hints=imagery.length?` Preferred visual cues: ${imagery.join(", ")}.`:"";
- switch(subindustry){
-  case "implant-dentistry":return{
-   hero:`Premium implant consultation or digital treatment-planning context focused on confidence, precision and adult care; use a generic non-identifying care scene unless real clinic media is supplied.${hints}`,
-   services:"Clear non-graphic visual context for implant consultation, restorative planning and smile rehabilitation; avoid implying a specific patient's outcome",
-   technology:"Generic digital implant-planning, scan or 3D dental-technology concept unless the clinic has supplied evidence of specific equipment",
-   process:"A calm consultation-to-planning dental implant journey shown without surgical detail or unsupported promises",
-   gallery:"Verified implant case media when supplied; otherwise premium consultation, planning or restorative-care context without fabricated outcomes",
-  };
-  case "cosmetic-dentistry":return{
-   hero:`Natural smile-confidence or smile-design consultation context with premium, warm presentation; no synthetic before-and-after result.${hints}`,
-   services:"Tasteful, non-graphic visual context for veneers, whitening or smile-design services without promising a result",
-   technology:"Generic digital smile-design or scanning concept unless specific clinic technology is supplied and verified",
-   process:"Consultation, smile planning and review journey presented as process rather than a guaranteed transformation",
-   gallery:"Verified before-and-after or case photography supplied by the clinic; otherwise natural smile portraits and consultation context only",
-  };
-  case "orthodontics":return{
-   hero:`Friendly orthodontic consultation with aligner, braces or digital-scanning context suitable for teen and adult care; avoid identifiable real staff unless supplied.${hints}`,
-   services:"Clean visual explanations of braces, clear aligners and orthodontic consultation without fabricated patient outcomes",
-   technology:"Generic intraoral-scanning or orthodontic planning visual unless the clinic has supplied the exact technology",
-   process:"A clear consultation, records, treatment-plan and review journey without promising treatment duration or result",
-   gallery:"Verified orthodontic case media when supplied; otherwise aligner, braces, scanning or consultation context",
-  };
-  case "endodontics":return{
-   hero:`Calm specialist dental consultation or precision endodontic-care context focused on reassurance and pain relief without dramatic procedure imagery.${hints}`,
-   services:"Non-graphic root-canal consultation and tooth-preservation visual context",
-   technology:"Generic precision dentistry or magnification concept unless microscope or equipment ownership is supplied by the clinic",
-   process:"Assessment, diagnosis, treatment and follow-up journey expressed calmly and without graphic imagery",
-   gallery:"Verified clinic or technology media when supplied; otherwise calm precision-dentistry context",
-  };
-  default:return{
-   hero:`Welcoming general dental-care environment, natural smile or dentist-patient consultation context with a bright, trustworthy feel; use generic non-identifying context unless real clinic media is supplied.${hints}`,
-   services:"Treatment-specific but non-graphic dental care imagery covering the services actually supplied in the business brief",
-   technology:"Generic modern dental-care or scanning concept only when useful; never imply equipment the clinic did not report",
-   process:"A reassuring appointment, assessment, treatment-plan and follow-up journey",
-   gallery:"Verified clinic, treatment-room or care-environment media when supplied; otherwise truthful general dental context",
-  };
- }
-}
-
-function decide(family:SectionFamily,index:number,style:VisualMediaPlan["style"],q:GenerationQualityProfile,text:string):SectionVisualDecision{
- let role:VisualRole="none",prominence:VisualProminence="supporting",aspect:VisualAspect="4:3",subject="";
- if(family==="hero"){role=style==="product"?"product-ui":style==="photographic"||style==="editorial"?"hero-photo":"abstract";prominence=q.imageDensity==="low"?"balanced":"dominant";aspect="wide";subject=heroSubject(text,role);}
- else if(family==="gallery"){role=style==="product"?"product-ui":"portfolio";prominence="dominant";aspect="3:2";subject="Authentic examples of the business, work, product or environment";}
- else if(family==="team"){role="people";prominence="balanced";aspect="portrait";subject="Real team or leadership portraits when supplied";}
- else if(family==="process"){role=style==="product"?"product-ui":"process";prominence="supporting";aspect="16:9";subject="A real workflow, product state or service process";}
- else if(family==="about"){role=style==="product"?"illustration":"place";prominence=q.visualWeight>70?"balanced":"supporting";aspect="3:2";subject="Founder, team, workspace, facility or brand story evidence";}
- else if(family==="features"){role=style==="product"?"product-ui":q.imageDensity==="high"?"illustration":"none";prominence="supporting";aspect="4:3";subject="Visual evidence that directly explains the feature";}
- else if(family==="services"){role=q.imageDensity==="high"?"hero-photo":"none";prominence="supporting";aspect="4:3";subject="Service-specific authentic imagery";}
- else if(family==="testimonials"){role="none";subject="Avoid fake customer portraits";}
- else if(family==="cta"){role=q.sectionRhythm==="cinematic"?"texture":"none";prominence="supporting";aspect="wide";subject="Subtle brand atmosphere only";}
- return{family,role,prominence,aspect,subject,avoid:["generic handshake stock photography","unrelated decorative imagery","fake logos or awards",...(index>0?["repeating the hero visual"]:[])]};
-}
+function dentalPreferredTags(subindustry:string|null,family:SectionFamily,role:VisualRole){const base=["dental","dentistry",subindustry??"general-dentistry",family,role];const specialty=subindustry==="implant-dentistry"?["implant","implant-planning","restorative","precision"]:subindustry==="cosmetic-dentistry"?["cosmetic","smile-design","natural-smile","aesthetic"]:subindustry==="orthodontics"?["orthodontics","aligner","braces","scanning"]:subindustry==="endodontics"?["endodontics","root-canal","tooth-preservation","precision"]:["general-dentistry","preventive-care","consultation","welcoming"];return[...new Set([...base,...specialty])];}
+function dentalProfile(subindustry:string|null,imagery:string[]){const hints=imagery.length?` Preferred visual cues: ${imagery.join(", ")}.`:"";if(subindustry==="implant-dentistry")return{hero:`Premium implant consultation or digital treatment-planning context; generic non-identifying care scene.${hints}`,services:"Non-graphic implant consultation and restorative planning",technology:"Generic digital implant planning or scan concept",process:"Calm consultation-to-planning implant journey",gallery:"Verified implant case media when supplied; otherwise restorative planning context"};if(subindustry==="cosmetic-dentistry")return{hero:`Natural smile-confidence or smile-design consultation; no synthetic result.${hints}`,services:"Tasteful veneers, whitening or smile-design consultation context",technology:"Generic digital smile-design or scanning concept",process:"Consultation, smile planning and review journey",gallery:"Verified cosmetic case media when supplied; otherwise natural smile context"};if(subindustry==="orthodontics")return{hero:`Friendly orthodontic consultation with aligner, braces or scanning context.${hints}`,services:"Clean braces and aligner consultation context",technology:"Generic intraoral scanning or orthodontic planning",process:"Consultation, records, treatment-plan and review journey",gallery:"Verified orthodontic cases or aligner/scanning context"};if(subindustry==="endodontics")return{hero:`Calm precision endodontic consultation without dramatic procedure imagery.${hints}`,services:"Non-graphic root-canal consultation context",technology:"Generic precision dentistry or magnification concept",process:"Assessment, diagnosis, treatment and follow-up",gallery:"Verified clinic media or precision-dentistry context"};return{hero:`Welcoming general dental consultation or natural smile context; generic non-identifying scene.${hints}`,services:"Treatment-specific non-graphic dental care imagery",technology:"Generic modern dental-care or scanning concept",process:"Reassuring appointment, assessment, plan and follow-up journey",gallery:"Verified clinic media or truthful general dental context"};}
+function decide(family:SectionFamily,index:number,style:VisualMediaPlan["style"],q:GenerationQualityProfile,text:string):SectionVisualDecision{let role:VisualRole="none",prominence:VisualProminence="supporting",aspect:VisualAspect="4:3",subject="";if(family==="hero"){role=style==="product"?"product-ui":style==="photographic"||style==="editorial"?"hero-photo":"abstract";prominence=q.imageDensity==="low"?"balanced":"dominant";aspect="wide";subject=heroSubject(text,role);}else if(family==="gallery"){role=style==="product"?"product-ui":"portfolio";prominence="dominant";aspect="3:2";subject="Authentic examples of the business, work, product or environment";}else if(family==="team"){role="people";prominence="balanced";aspect="portrait";subject="Real team or leadership portraits when supplied";}else if(family==="process"){role=style==="product"?"product-ui":"process";prominence="supporting";aspect="16:9";subject="A real workflow, product state or service process";}else if(family==="about"){role=style==="product"?"illustration":"place";prominence=q.visualWeight>70?"balanced":"supporting";aspect="3:2";subject="Founder, team, workspace, facility or brand story evidence";}else if(family==="features"){role=style==="product"?"product-ui":q.imageDensity==="high"?"illustration":"none";subject="Visual evidence that directly explains the feature";}else if(family==="services"){role=q.imageDensity==="high"?"hero-photo":"none";subject="Service-specific authentic imagery";}else if(family==="testimonials")subject="Avoid fake customer portraits";else if(family==="cta"){role=q.sectionRhythm==="cinematic"?"texture":"none";aspect="wide";subject="Subtle brand atmosphere only";}return{family,role,prominence,aspect,subject,avoid:["generic handshake stock photography","unrelated decorative imagery","fake logos or awards",...(index>0?["repeating the hero visual"]:[])]};}
 function heroSubject(text:string,role:VisualRole){if(role==="product-ui")return"A truthful product interface or product-focused visual derived from supplied product context";if(/clinic|medical|dental/.test(text))return"Authentic care environment, clinician or treatment context without fabricated claims";if(/hotel|travel|restaurant|property|construction/.test(text))return"A strong real-world environment or destination establishing the offer immediately";if(/artist|fashion|photo|jewellery|beauty/.test(text))return"Signature work or product imagery representing the creator or brand";return"A distinctive business-relevant visual supporting the primary promise";}

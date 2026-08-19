@@ -1,0 +1,51 @@
+/* Flagship typography systems: scale, rhythm, weight and tracking are blueprint-owned. */
+
+/* 01 Clinical Authority — precise, modern, highly legible. */
+[data-mi-layout-blueprint="dental-01-clinical-authority"]{--mi-font-display:Inter,ui-sans-serif,system-ui,sans-serif;--mi-font-body:Inter,ui-sans-serif,system-ui,sans-serif}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-type--display,.mi-type--h1,.mi-section__heading h1,.mi-section__heading h2,.mi-hero__copy h1){font-family:var(--mi-font-display);font-weight:650;letter-spacing:-.035em;line-height:.98}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-hero__copy h1{font-size:clamp(3rem,6.2vw,6.5rem);max-width:11ch}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-type--h2,.mi-section__heading h2){font-size:clamp(2rem,3.5vw,3.8rem);max-width:15ch}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-type--body,p,li){font-family:var(--mi-font-body);line-height:1.65;letter-spacing:-.005em}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] :is(.mi-eyebrow,.mi-type--eyebrow){font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+
+/* 02 Implant Atelier — cinematic serif, large contrast, quiet UI typography. */
+[data-mi-layout-blueprint="dental-02-implant-luxury"]{--mi-font-display:Garamond,Georgia,"Times New Roman",serif;--mi-font-body:Inter,ui-sans-serif,system-ui,sans-serif}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-type--display,.mi-type--h1,.mi-section__heading h1,.mi-section__heading h2,.mi-hero__copy h1){font-family:var(--mi-font-display);font-weight:400;letter-spacing:-.055em;line-height:.88}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero__copy h1{font-size:clamp(4rem,8.8vw,9.2rem);max-width:9ch}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-type--h2,.mi-section__heading h2){font-size:clamp(2.8rem,5.3vw,5.8rem);max-width:11ch}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-type--body,p,li){font-family:var(--mi-font-body);font-weight:400;line-height:1.72;letter-spacing:.005em}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] :is(.mi-eyebrow,.mi-type--eyebrow,.mi-shell-links a){font-family:var(--mi-font-body);font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase}
+
+/* 03 Smile Studio — fashion editorial serif with softer body rhythm. */
+[data-mi-layout-blueprint="dental-03-smile-studio"]{--mi-font-display:Palatino,"Book Antiqua",Georgia,serif;--mi-font-body:"Trebuchet MS",Inter,ui-sans-serif,sans-serif}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-type--display,.mi-type--h1,.mi-section__heading h1,.mi-section__heading h2,.mi-hero__copy h1){font-family:var(--mi-font-display);font-weight:400;letter-spacing:-.045em;line-height:.92}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero__copy h1{font-size:clamp(3.6rem,8vw,8.4rem);max-width:9.5ch}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-type--h2,.mi-section__heading h2){font-size:clamp(2.5rem,4.7vw,5rem);max-width:12ch}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-type--body,p,li){font-family:var(--mi-font-body);font-size:clamp(1rem,1.1vw,1.12rem);line-height:1.75;letter-spacing:.002em}
+[data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-eyebrow,.mi-type--eyebrow){font-size:.7rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+
+/* 05 Digital Dentistry — geometric technical typography. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"]{--mi-font-display:"Avenir Next",Avenir,"Segoe UI",Inter,sans-serif;--mi-font-body:Inter,ui-sans-serif,system-ui,sans-serif}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-type--display,.mi-type--h1,.mi-section__heading h1,.mi-section__heading h2,.mi-hero__copy h1){font-family:var(--mi-font-display);font-weight:700;letter-spacing:-.05em;line-height:.9}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero__copy h1{font-size:clamp(3.4rem,7.2vw,7.8rem);max-width:10ch}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-type--h2,.mi-section__heading h2){font-size:clamp(2.2rem,4vw,4.3rem);max-width:13ch}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-type--body,p,li){font-family:var(--mi-font-body);line-height:1.62;letter-spacing:-.01em}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] :is(.mi-eyebrow,.mi-type--eyebrow,.mi-shell-links a){font-size:.67rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+
+/* 08 Boutique Cosmetic — softer fashion-house typography, lighter display weight. */
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"]{--mi-font-display:Georgia,"Times New Roman",serif;--mi-font-body:"Trebuchet MS",Inter,ui-sans-serif,sans-serif}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-type--display,.mi-type--h1,.mi-section__heading h1,.mi-section__heading h2,.mi-hero__copy h1){font-family:var(--mi-font-display);font-weight:400;letter-spacing:-.06em;line-height:.9}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero__copy h1{font-size:clamp(4rem,9vw,9.6rem);max-width:8.5ch}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-type--h2,.mi-section__heading h2){font-size:clamp(2.8rem,5.2vw,5.5rem);max-width:11ch}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-type--body,p,li){font-family:var(--mi-font-body);line-height:1.8;letter-spacing:.005em}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-eyebrow,.mi-type--eyebrow,.mi-shell-links a){font-size:.66rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+
+/* Mobile-specific optical correction instead of desktop type simply shrinking. */
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-hero__copy h1{font-size:clamp(2.65rem,12vw,4.2rem);line-height:.98;max-width:12ch}
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero__copy h1{font-size:clamp(3.3rem,15vw,5.4rem);line-height:.9;max-width:9ch}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero__copy h1{font-size:clamp(3rem,14vw,5rem);line-height:.94;max-width:10ch}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero__copy h1{font-size:clamp(2.9rem,13vw,4.8rem);line-height:.93;max-width:11ch}
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero__copy h1{font-size:clamp(3.4rem,15vw,5.8rem);line-height:.92;max-width:9ch}
+  [data-mi-layout-blueprint] :is(.mi-type--body,p,li){font-size:1rem}
+}

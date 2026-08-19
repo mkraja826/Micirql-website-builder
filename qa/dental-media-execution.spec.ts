@@ -80,3 +80,80 @@ test("first-build generation does not silently expand to non-Dental abstract med
   expect(execution.requests[0]?.source).toBe("none");
   expect(execution.generationCount).toBe(0);
 });
+
+test("near-duplicate reusable dental imagery is rejected across primary sections", () => {
+  const plan: VisualMediaPlan = {
+    style: "editorial",
+    rules: [],
+    sections: [
+      {
+        family: "hero",
+        role: "hero-photo",
+        prominence: "dominant",
+        aspect: "portrait",
+        subject: "Generic premium implant consultation portrait",
+        avoid: [],
+        preferredTags: ["implant", "consultation", "portrait-led"],
+      },
+      {
+        family: "services",
+        role: "hero-photo",
+        prominence: "supporting",
+        aspect: "4:3",
+        subject: "Generic restorative implant planning detail",
+        avoid: ["repeating the hero visual"],
+        preferredTags: ["implant", "restorative", "planning"],
+      },
+    ],
+  };
+  const libraryAssets: MediaAsset[] = [
+    {
+      id: "portrait-a",
+      url: "https://example.test/portrait-a.jpg",
+      source: "library",
+      tags: ["dental", "implant", "consultation", "portrait-led", "adult-patient", "directional-light", "close-portrait"],
+      alt: "Premium implant consultation portrait",
+      aspect: "portrait",
+      verified: true,
+    },
+    {
+      id: "portrait-b-near-duplicate",
+      url: "https://example.test/portrait-b.jpg",
+      source: "library",
+      tags: ["dental", "implant", "consultation", "portrait-led", "adult-patient", "directional-light", "close-portrait", "restorative", "planning"],
+      alt: "Premium implant consultation portrait variation",
+      aspect: "4:3",
+      verified: true,
+    },
+    {
+      id: "planning-detail-distinct",
+      url: "https://example.test/planning-detail.jpg",
+      source: "library",
+      tags: ["dental", "implant", "restorative", "planning", "scan-detail", "over-shoulder", "technical-detail"],
+      alt: "Restorative implant planning detail",
+      aspect: "4:3",
+      verified: true,
+    },
+  ];
+  const execution = executeMediaPlan({ plan, libraryAssets, allowGeneration: false });
+
+  expect(execution.requests[0]?.asset?.id).toBe("portrait-a");
+  expect(execution.requests[1]?.asset?.id).toBe("planning-detail-distinct");
+  expect(execution.requests.map((request) => request.asset?.id)).not.toContain("portrait-b-near-duplicate");
+});
+
+test("generated dental media gets section-specific composition diversity instructions", () => {
+  const plan: VisualMediaPlan = {
+    style: "editorial",
+    rules: [],
+    sections: [
+      { family: "hero", role: "hero-photo", prominence: "dominant", aspect: "portrait", subject: "Generic non-identifying implant consultation context", avoid: [] },
+      { family: "process", role: "process", prominence: "supporting", aspect: "16:9", subject: "Generic calm implant consultation-to-planning context", avoid: ["repeating the hero visual"] },
+    ],
+  };
+  const execution = executeMediaPlan({ plan, allowGeneration: true });
+
+  expect(execution.requests[0]?.generationPrompt).toContain("campaign-style composition");
+  expect(execution.requests[1]?.generationPrompt).toContain("documentary sequence framing");
+  expect(execution.requests[1]?.generationPrompt).not.toEqual(execution.requests[0]?.generationPrompt);
+});

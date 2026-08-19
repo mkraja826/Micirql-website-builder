@@ -32,10 +32,21 @@ export function orientationForSection(family?: string): PexelsOrientation {
   return "landscape";
 }
 
+export function focalPointForSection(family?: string, orientation?: string): { x: number; y: number } {
+  const normalized = family?.trim().toLowerCase() ?? "";
+  if (normalized === "team") return { x: 0.5, y: 0.34 };
+  if (normalized === "hero") return orientation === "portrait" ? { x: 0.5, y: 0.38 } : { x: 0.56, y: 0.46 };
+  if (normalized === "about") return { x: 0.52, y: 0.44 };
+  if (normalized === "gallery") return { x: 0.5, y: 0.5 };
+  if (normalized === "services" || normalized === "features" || normalized === "process") return { x: 0.5, y: 0.46 };
+  return { x: 0.5, y: 0.5 };
+}
+
 export async function fetchPexelsImage(input: {
   query: string;
   family?: string;
   domain?: string;
+  excludedPhotoIds?: number[];
 }) {
   const apiKey = getPexelsApiKey();
   if (!apiKey) throw new Error("PEXELS_API_KEY is not configured.");
@@ -46,7 +57,7 @@ export async function fetchPexelsImage(input: {
     query,
     orientation,
     size: "large",
-    per_page: "20",
+    per_page: "24",
     page: "1",
   });
 
@@ -60,7 +71,7 @@ export async function fetchPexelsImage(input: {
   }
 
   const payload = (await response.json()) as PexelsSearchResponse;
-  const photo = chooseBestPhoto(payload.photos ?? [], orientation, query);
+  const photo = chooseBestPhoto(payload.photos ?? [], orientation, query, new Set(input.excludedPhotoIds ?? []));
   if (!photo) throw new Error(`Pexels returned no usable image for: ${query}`);
 
   const imageUrl = pickImageUrl(photo, orientation);
@@ -137,9 +148,11 @@ function uniqueTerms(terms: string[]): string[] {
   });
 }
 
-function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, query: string): PexelsPhoto | null {
-  const usable = photos.filter((photo) => photo.width >= 1200 && photo.height >= 800);
-  if (!usable.length) return photos[0] ?? null;
+function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, query: string, excludedPhotoIds: Set<number>): PexelsPhoto | null {
+  const nonDuplicate = photos.filter((photo) => !excludedPhotoIds.has(photo.id));
+  const usable = nonDuplicate.filter((photo) => photo.width >= 1200 && photo.height >= 800);
+  const candidates = usable.length ? usable : nonDuplicate;
+  if (!candidates.length) return null;
 
   const target = orientation === "portrait" ? 0.8 : orientation === "square" ? 1 : 1.5;
   const queryTerms = query
@@ -147,7 +160,7 @@ function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, 
     .split(/\s+/)
     .filter((term) => term.length >= 4 && !["modern", "professional", "bright"].includes(term));
 
-  return [...usable].sort((a, b) => scorePhoto(a, target, queryTerms) - scorePhoto(b, target, queryTerms))[0] ?? null;
+  return [...candidates].sort((a, b) => scorePhoto(a, target, queryTerms) - scorePhoto(b, target, queryTerms))[0] ?? null;
 }
 
 function scorePhoto(photo: PexelsPhoto, targetRatio: number, queryTerms: string[]): number {

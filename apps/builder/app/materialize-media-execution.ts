@@ -13,7 +13,11 @@ export async function materializeGeneratedMedia(input:{
  domain?:string;
  maxGenerated?:number;
 }):Promise<MediaMaterializationResult>{
- const maxGenerated=Math.max(0,Math.min(input.maxGenerated??2,4));
+ const requestedCap=Math.max(0,Math.min(input.maxGenerated??2,4));
+ const blueprintCap=generatedMediaBudget(input.site);
+ // Legacy callers still pass maxGenerated:1. Treat that as the old default floor
+ // rather than allowing it to collapse visual-first certified layouts to one image.
+ const maxGenerated=Math.max(requestedCap,blueprintCap);
  const authorization=input.request.headers.get("authorization");
  if(!authorization||maxGenerated===0)return{execution:input.execution,generated:0,warnings:authorization?[]:["Generated media could not be materialized because authorization was unavailable."]};
  const assignments=assignSections(input.site,input.execution.requests);
@@ -38,6 +42,24 @@ export async function materializeGeneratedMedia(input:{
   }catch(error){warnings.push(`${media.family}: ${error instanceof Error?error.message:"Image generation failed."}`);requests.push(media);}
  }
  return{execution:{...input.execution,requests},generated,warnings};
+}
+
+function generatedMediaBudget(site:Site):number{
+ const blueprintId=lockedBlueprintId(site);
+ if(!blueprintId)return 2;
+ if(blueprintId==="dental-03-smile-studio"||blueprintId==="dental-05-digital-dentistry")return 3;
+ if(blueprintId==="dental-02-implant-luxury"||blueprintId==="dental-08-boutique-cosmetic"||blueprintId==="dental-01-clinical-authority")return 2;
+ return 2;
+}
+
+function lockedBlueprintId(site:Site):string|undefined{
+ for(const page of site.pages){
+  for(const section of page.sections){
+   const value=section.props.layoutBlueprintId;
+   if(section.props.layoutVisualLock===true&&typeof value==="string"&&value.trim())return value.trim();
+  }
+ }
+ return undefined;
 }
 
 type Assignment={request:MediaRequest;pagePath:string;sectionId:string};

@@ -15,7 +15,7 @@ export async function computeImageDHash(file: File): Promise<string | undefined>
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return undefined;
     context.imageSmoothingEnabled = true;
-    context.drawImage(image, 0, 0, 9, 8);
+    context.drawImage(image.source, 0, 0, 9, 8);
     const data = context.getImageData(0, 0, 9, 8).data;
     let bits = "";
     for (let y = 0; y < 8; y++) {
@@ -42,11 +42,11 @@ function luminance(data: Uint8ClampedArray, index: number) {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 }
 
-async function loadImage(file: File): Promise<{ drawImage: CanvasImageSource; cleanup(): void }> {
+async function loadImage(file: File): Promise<{ source: CanvasImageSource; cleanup(): void }> {
   if (typeof createImageBitmap === "function") {
     try {
       const bitmap = await createImageBitmap(file);
-      return { drawImage: bitmap, cleanup: () => bitmap.close() };
+      return { source: bitmap, cleanup: () => bitmap.close() };
     } catch {
       // Fall through to HTMLImageElement for older/mobile browsers.
     }
@@ -54,7 +54,7 @@ async function loadImage(file: File): Promise<{ drawImage: CanvasImageSource; cl
   return await new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const image = new Image();
-    image.onload = () => resolve({ drawImage: image, cleanup: () => URL.revokeObjectURL(url) });
+    image.onload = () => resolve({ source: image, cleanup: () => URL.revokeObjectURL(url) });
     image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not decode image for perceptual hashing.")); };
     image.src = url;
   });

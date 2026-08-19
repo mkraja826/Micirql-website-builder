@@ -68,7 +68,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run live Dental content, visual and media materialization sampling
+      - name: Run live Dental content, visual, media and customer-path sampling
         run: pnpm qa:live-model-dental
 
       - name: Run live autonomous composition sampling
@@ -78,28 +78,16 @@ jobs:
         if: always()
         shell: bash
         run: |
-          if [[ -f test-results/live-model-dental/summary.md ]]; then
-            cat test-results/live-model-dental/summary.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "## Live model dental copy sampling" >> "$GITHUB_STEP_SUMMARY"
-            echo "No copy report was produced." >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if [[ -f test-results/live-generated-dental-visual/summary.md ]]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            cat test-results/live-generated-dental-visual/summary.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "## Live generated Dental visual QA" >> "$GITHUB_STEP_SUMMARY"
-            echo "No generated-site visual report was produced." >> "$GITHUB_STEP_SUMMARY"
-          fi
-          if [[ -f test-results/live-dental-media-materialization/summary.md ]]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            cat test-results/live-dental-media-materialization/summary.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "## Live Dental media materialization" >> "$GITHUB_STEP_SUMMARY"
-            echo "No media materialization report was produced." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for report in \
+            test-results/live-model-dental/summary.md \
+            test-results/live-generated-dental-visual/summary.md \
+            test-results/live-dental-media-materialization/summary.md \
+            test-results/live-dental-customer-path/summary.md; do
+            if [[ -f "$report" ]]; then
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              cat "$report" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
           if [[ -f test-results/live-autonomous-composition/report.json ]]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
@@ -115,6 +103,7 @@ jobs:
             test-results/live-model-dental/
             test-results/live-generated-dental-visual/
             test-results/live-dental-media-materialization/
+            test-results/live-dental-customer-path/
             test-results/live-autonomous-composition/
           if-no-files-found: warn
           retention-days: 14

@@ -8,10 +8,13 @@ import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
 import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
+import { evaluateDentalContentQuality, type DentalContentQualityResult } from "../../../dental-content-quality";
 import { safeRecordBuildObservability } from "../../../build-observability";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
 import { loadMediaPools } from "../media-assets";
+
+const MIN_DENTAL_CONTENT_SCORE = 82;
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
@@ -40,6 +43,7 @@ export async function POST(request: NextRequest) {
       goals: list(body.goals),
       notes: optionalText(body.notes) ?? null,
     };
+    const requiredCapabilities = list(body.requiredCapabilities);
     const plan = planPageArchitecture({
       businessName,
       industry,
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
       location: facts.location,
       services: facts.services,
       goals: facts.goals,
-      requiredCapabilities: list(body.requiredCapabilities),
+      requiredCapabilities,
       notes: facts.notes,
     });
     stage = "designing";
@@ -119,6 +123,26 @@ export async function POST(request: NextRequest) {
       const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
       throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
     }
+
+    let dentalContentQuality: DentalContentQualityResult | null = null;
+    if (isDentalBrief(facts)) {
+      dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, {
+        business_name: businessName,
+        industry,
+        subindustry: facts.subindustry,
+        location: facts.location,
+        services: facts.services,
+        goals: facts.goals,
+        required_capabilities: requiredCapabilities,
+        notes: facts.notes,
+      });
+      const dentalErrors = dentalContentQuality.issues.filter((item) => item.severity === "error");
+      if (dentalErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE) {
+        const codes = [...new Set((dentalErrors.length ? dentalErrors : dentalContentQuality.issues).map((item) => item.code))];
+        throw new Error(`GENERATED_DENTAL_CONTENT_QUALITY_FAILED: ${codes.join(", ") || `score ${dentalContentQuality.score}/${MIN_DENTAL_CONTENT_SCORE}`}`);
+      }
+    }
+
     const visualQuality = evaluateSiteVisualQuality(finalDraft.snapshot);
     if (!visualQuality.ready) {
       const codes = [...new Set(visualQuality.issues.map((item) => item.code))];
@@ -128,6 +152,7 @@ export async function POST(request: NextRequest) {
     const fallbackCount = content?.recovery?.failedProviders ?? 0;
     const recoveryReason = contentWarning || mediaWarning || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
+    const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100);
     await safeRecordBuildObservability(request, {
       workspaceId,
       siteId,
@@ -137,12 +162,12 @@ export async function POST(request: NextRequest) {
       provider: content?.model.provider ?? null,
       model: content?.model.model ?? null,
       fallbackCount,
-      qualityScore: Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score),
+      qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,
@@ -156,6 +181,11 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed.", buildId }, { status: 500 });
   }
+}
+
+function isDentalBrief(facts: { industry: string; subindustry: string | null; services: string[]; notes: string | null }) {
+  const textValue = [facts.industry, facts.subindustry, ...facts.services, facts.notes].filter(Boolean).join(" ").toLowerCase();
+  return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic dentistry|smile design|veneer/.test(textValue);
 }
 
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }

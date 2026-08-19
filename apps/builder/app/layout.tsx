@@ -40,6 +40,7 @@ import "@micirql/sections/dental-09-ortho-journey-refinement.css";
 import "@micirql/sections/dental-10-immediate-care-refinement.css";
 import "@micirql/sections/dental-12-calm-dentistry-refinement.css";
 import "@micirql/sections/dental-13-implant-results-refinement.css";
+import "@micirql/sections/dental-14-city-clinic-refinement.css";
 import "@micirql/sections/dental-15-smile-campaign-refinement.css";
 import "@micirql/sections/dental-16-premium-refinement.css";
 import "@micirql/sections/dental-18-proof-first-refinement.css";

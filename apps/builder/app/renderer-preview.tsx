@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
 import { SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
+import { persistedFirstScreenRepairCss } from "./persisted-first-screen-repair";
 
 type PreviewSection = {
   id: string;
@@ -57,11 +58,10 @@ export function RendererPreview({
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
   const [dropIndex, setDropIndex] = useState<number>();
   const requestId = useRef(0);
+  const repairCss = persistedFirstScreenRepairCss(site, viewport, path);
 
   useEffect(() => {
     const id = ++requestId.current;
-    // Render the current Site snapshot immediately so the canvas can never go blank
-    // while the server preview is being prepared or if that request fails.
     setPreview(localPreview(site, path));
     setStatus("ready");
     const timer = window.setTimeout(async () => {
@@ -81,8 +81,6 @@ export function RendererPreview({
         setStatus("ready");
       } catch (caught) {
         if (id !== requestId.current) return;
-        // Keep the already-rendered local snapshot visible. Surface the server issue
-        // non-destructively instead of replacing the website with an empty/error canvas.
         setPreview(localPreview(site, path));
         setError(caught instanceof Error ? caught.message : "Preview failed.");
         setStatus("ready");
@@ -136,7 +134,8 @@ export function RendererPreview({
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
       {status === "ready" && preview?.sections ? (
-        <main className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} style={(preview.themeStyle ?? {}) as CSSProperties}>
+        <main className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} data-mi-first-screen-repair={repairCss ? "1" : undefined} style={(preview.themeStyle ?? {}) as CSSProperties}>
+          {repairCss ? <style data-mi-persisted-first-screen-repair>{repairCss}</style> : null}
           {insertionZone(undefined, 0)}
           {preview.sections.map((section, index) => {
             const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);

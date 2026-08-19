@@ -42,7 +42,7 @@ export function applyPremiumCorrectivePass(site: Site): PremiumCorrectionResult 
 }
 
 function isVisualLocked(section: SiteSection): boolean {
-  return section.props?.layoutVisualLocked === true && typeof section.props?.layoutBlueprintId === "string";
+  return section.props?.layoutVisualLock === true && typeof section.props?.layoutBlueprintId === "string";
 }
 
 function normalizeSurfaceRhythm(sections: SiteSection[], corrections: string[]) {

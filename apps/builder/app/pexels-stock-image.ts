@@ -46,7 +46,7 @@ export async function fetchPexelsImage(input: {
     query,
     orientation,
     size: "large",
-    per_page: "12",
+    per_page: "20",
     page: "1",
   });
 
@@ -60,7 +60,7 @@ export async function fetchPexelsImage(input: {
   }
 
   const payload = (await response.json()) as PexelsSearchResponse;
-  const photo = chooseBestPhoto(payload.photos ?? [], orientation);
+  const photo = chooseBestPhoto(payload.photos ?? [], orientation, query);
   if (!photo) throw new Error(`Pexels returned no usable image for: ${query}`);
 
   const imageUrl = pickImageUrl(photo, orientation);
@@ -96,22 +96,68 @@ function buildSearchQuery(prompt: string, domain?: string, family?: string): str
     .replace(/[^a-z0-9\s-]/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
-  const context = [domain, family].filter(Boolean).join(" ");
-  const terms = `${context} ${cleaned}`.trim().split(/\s+/).slice(0, 12);
-  return terms.join(" ") || "professional business interior";
+
+  const normalizedDomain = domain?.trim().toLowerCase() ?? "";
+  const normalizedFamily = family?.trim().toLowerCase() ?? "";
+  const domainHint = dentalSearchHint(normalizedDomain, normalizedFamily);
+  const context = [domainHint, domain, family].filter(Boolean).join(" ");
+  const terms = `${context} ${cleaned}`.trim().split(/\s+/).filter(Boolean).slice(0, 16);
+  return uniqueTerms(terms).join(" ") || "professional business interior";
 }
 
-function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation): PexelsPhoto | null {
+function dentalSearchHint(domain: string, family: string): string {
+  if (!/(dental|dentist|dentistry|clinic)/.test(domain)) return "";
+  switch (family) {
+    case "hero":
+      return "modern dental clinic dentist patient consultation bright interior";
+    case "team":
+      return "professional dentist portrait dental clinic clinician";
+    case "gallery":
+      return "modern dental clinic interior treatment room dental equipment";
+    case "about":
+      return "dentist patient consultation dental clinic care";
+    case "services":
+      return "dentist dental treatment consultation modern clinic";
+    case "features":
+      return "digital dentistry dental scanner modern clinic technology";
+    case "process":
+      return "dentist patient consultation treatment planning dental clinic";
+    default:
+      return "modern dental clinic professional dentistry";
+  }
+}
+
+function uniqueTerms(terms: string[]): string[] {
+  const seen = new Set<string>();
+  return terms.filter((term) => {
+    const normalized = term.toLowerCase();
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, query: string): PexelsPhoto | null {
   const usable = photos.filter((photo) => photo.width >= 1200 && photo.height >= 800);
   if (!usable.length) return photos[0] ?? null;
+
   const target = orientation === "portrait" ? 0.8 : orientation === "square" ? 1 : 1.5;
-  return [...usable].sort((a, b) => {
-    const aRatio = a.width / a.height;
-    const bRatio = b.width / b.height;
-    const aScore = Math.abs(aRatio - target) - Math.min(a.width * a.height / 40_000_000, 0.25);
-    const bScore = Math.abs(bRatio - target) - Math.min(b.width * b.height / 40_000_000, 0.25);
-    return aScore - bScore;
-  })[0] ?? null;
+  const queryTerms = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((term) => term.length >= 4 && !["modern", "professional", "bright"].includes(term));
+
+  return [...usable].sort((a, b) => scorePhoto(a, target, queryTerms) - scorePhoto(b, target, queryTerms))[0] ?? null;
+}
+
+function scorePhoto(photo: PexelsPhoto, targetRatio: number, queryTerms: string[]): number {
+  const ratio = photo.width / photo.height;
+  const ratioPenalty = Math.abs(ratio - targetRatio);
+  const resolutionBonus = Math.min(photo.width * photo.height / 40_000_000, 0.25);
+  const alt = photo.alt?.toLowerCase() ?? "";
+  const semanticHits = queryTerms.reduce((hits, term) => hits + (alt.includes(term) ? 1 : 0), 0);
+  const semanticBonus = Math.min(semanticHits * 0.09, 0.45);
+  return ratioPenalty - resolutionBonus - semanticBonus;
 }
 
 function pickImageUrl(photo: PexelsPhoto, orientation: PexelsOrientation): string {

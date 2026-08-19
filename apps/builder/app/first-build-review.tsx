@@ -188,10 +188,15 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
             <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
           </div>
           <div className={styles.utilityActions}>
-            <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
-            <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
-            <button type="button" onClick={() => moreLike(direction)}>More like this</button>
-            <button type="button" onClick={() => regenerate(direction)}>Try another</button>
+            <button type="button" className={styles.previewAction} onClick={() => setActiveId(direction.id)}>Preview</button>
+            <details className={styles.moreActions}>
+              <summary aria-label={`More actions for ${name}`}>•••</summary>
+              <div className={styles.moreActionsMenu}>
+                <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
+                <button type="button" onClick={() => moreLike(direction)}>More like this</button>
+                <button type="button" onClick={() => regenerate(direction)}>Try another</button>
+              </div>
+            </details>
           </div>
           <div className={styles.actions}><button type="button" disabled={Boolean(savingId)} onClick={() => void choose(direction)}>{savingId === direction.id ? "Saving…" : "Use this design"}</button></div>
         </article>;

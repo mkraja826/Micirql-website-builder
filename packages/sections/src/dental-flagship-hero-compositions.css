@@ -1,0 +1,54 @@
+/* Five flagship hero compositions. Geometry is intentionally blueprint-owned. */
+
+/* 01 Clinical Authority — restrained 42/58 split with architectural media. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__split{grid-template-columns:minmax(0,.78fr) minmax(28rem,1.22fr);gap:clamp(3rem,6vw,7rem);align-items:center}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__copy{padding-block:2rem}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media{align-self:stretch;min-height:38rem}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-section__media img{height:100%;aspect-ratio:auto;object-fit:cover}
+}
+
+/* 02 Implant Atelier — true full-bleed cinematic hero with low-left copy. */
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive{min-height:min(92vh,64rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{min-height:min(92vh,64rem);align-items:flex-end;padding-bottom:clamp(5rem,9vw,8rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__copy{max-width:52rem;margin-right:auto}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-type--display{max-width:9ch}
+
+/* 03 Smile Studio — editorial three-column magazine opening. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid{grid-template-columns:minmax(3.5rem,.12fr) minmax(0,.92fr) minmax(24rem,1.08fr);gap:clamp(2rem,4.5vw,5rem);align-items:end}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__copy{padding-bottom:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media{transform:translateY(2.5rem);max-width:34rem;justify-self:end}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__index{writing-mode:vertical-rl;transform:rotate(180deg);font-size:clamp(2.5rem,4vw,4.25rem);opacity:.55}
+}
+
+/* 05 Digital Dentistry — product-launch composition: copy + wide diagnostic viewport. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered>.mi-container{grid-template-columns:minmax(0,.72fr) minmax(32rem,1.28fr);gap:clamp(2rem,4vw,4.5rem)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media{transform:perspective(1200px) rotateY(-2.5deg);transform-origin:right center}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media img{min-height:34rem;aspect-ratio:16/10}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-type--display{max-width:8.5ch}
+}
+
+/* 08 Boutique Cosmetic — image-led fashion spread with compact copy column. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__editorial-grid{grid-template-columns:minmax(2.5rem,.08fr) minmax(18rem,.62fr) minmax(30rem,1.3fr);gap:clamp(2.5rem,6vw,7rem);align-items:center}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__copy{max-width:30rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media{justify-self:end;width:min(100%,39rem);margin-right:-2vw}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media img{min-height:42rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__index{font-size:1rem;letter-spacing:.18em;writing-mode:vertical-rl;transform:rotate(180deg)}
+}
+
+/* Mobile is redesigned, not merely shrunk. */
+@media(max-width:47.99rem){
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-section--hero .mi-hero__split,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered>.mi-container,
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__editorial-grid{display:flex;flex-direction:column;gap:1.4rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero__index,
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero__index{display:none}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media{transform:none}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive,[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{min-height:78svh}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{align-items:flex-end;padding-block:5rem 3.5rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media,[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media{transform:none;width:100%;margin:0;max-width:none}
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel-analysis";
+import { customerSafeApiMessage, fetchJsonWithRetry } from "./safe-api-json";
 import styles from "./guided-onboarding.module.css";
 
 export type GuidedOnboardingValue = {
@@ -30,6 +31,8 @@ type LayoutRecommendation = {
   archetype?: string;
   styleTags?: string[];
 };
+
+type ApiPayload = Record<string, unknown> & { error?: string };
 
 const initialValue: GuidedOnboardingValue = { context: "", businessName: "", industry: "", subindustry: "", location: "", services: "", goals: [], styleTags: [], requiredCapabilities: [], languages: "en", notes: "", logoUrl: null, brandColors: [] };
 
@@ -66,10 +69,10 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       const dataUrl = await fileDataUrl(file); setLogoPreview(dataUrl);
       const [brandColors, clientAnalysis] = await Promise.all([extractBrandColors(file), analyzeLogoPixels(file)]);
       const cleanupDataUrl = await createTransparentLogoDerivative(file, clientAnalysis);
-      const response = await fetch("/api/brand/logo", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, siteId, fileName: file.name, contentType: file.type, dataUrl, clientAnalysis: clientAnalysis ?? null, cleanupDataUrl: cleanupDataUrl ?? null }) });
-      const payload = await response.json(); if (!response.ok || !payload?.url) throw new Error(payload?.error ?? "Logo upload failed.");
+      const { response, payload } = await fetchJsonWithRetry<ApiPayload>("/api/brand/logo", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, siteId, fileName: file.name, contentType: file.type, dataUrl, clientAnalysis: clientAnalysis ?? null, cleanupDataUrl: cleanupDataUrl ?? null }) }, { retries: 1, onRetry: (_, attempt) => console.warn("MiCirql logo API retry", { stage: "logo", attempt }) });
+      if (!response.ok || !payload?.url) throw new Error(typeof payload?.error === "string" ? payload.error : "Logo upload failed.");
       setValue((current) => ({ ...current, logoUrl: String(payload.url), brandColors })); if (payload.cleanupApplied && payload.url) setLogoPreview(String(payload.url));
-    } catch (caught) { setLocalError(caught instanceof Error ? caught.message : "Logo upload failed."); } finally { setLogoBusy(false); }
+    } catch (caught) { setLocalError(customerSafeApiMessage(caught, caught instanceof Error && !caught.message.includes("API_RESPONSE") ? caught.message : "MiCirql couldn’t process the logo. Please try again.")); } finally { setLogoBusy(false); }
   }
 
   async function uploadBusinessAssets(files?: FileList | null) {
@@ -82,14 +85,18 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       for (const file of selected) {
         if (file.size > 8 * 1024 * 1024) { summary.push(`${file.name}: skipped (over 8 MB)`); continue; }
         const [dataUrl, dimensions] = await Promise.all([fileDataUrl(file), imageDimensions(file)]);
-        const response = await fetch("/api/assets/upload", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height }) });
-        const payload = await response.json();
-        if (!response.ok || !payload?.asset) { summary.push(`${file.name}: upload failed`); continue; }
-        const category = typeof payload?.classification?.category === "string" ? payload.classification.category : "business image";
-        summary.push(`${file.name}: ${category}`);
+        try {
+          const { response, payload } = await fetchJsonWithRetry<ApiPayload>("/api/assets/upload", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height }) }, { retries: 1, onRetry: (_, attempt) => console.warn("MiCirql asset API retry", { stage: "business-media", attempt }) });
+          if (!response.ok || !payload?.asset) { summary.push(`${file.name}: upload failed`); continue; }
+          const classification = payload.classification && typeof payload.classification === "object" && !Array.isArray(payload.classification) ? payload.classification as Record<string, unknown> : undefined;
+          const category = typeof classification?.category === "string" ? classification.category : "business image";
+          summary.push(`${file.name}: ${category}`);
+        } catch {
+          summary.push(`${file.name}: upload failed`);
+        }
       }
       setAssetSummary((current) => [...current, ...summary].slice(-12));
-    } catch (caught) { setLocalError(caught instanceof Error ? caught.message : "Business image upload failed."); } finally { setAssetBusy(false); }
+    } catch (caught) { setLocalError(customerSafeApiMessage(caught, "Business image upload failed. Please try again.")); } finally { setAssetBusy(false); }
   }
 
   async function interpretBrief() {
@@ -97,8 +104,9 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
     if (context.length < 20) { setLocalError("Tell MiCirql a little more about your business and the website you want."); return; }
     setInterpreting(true); setLocalError("");
     try {
-      const response = await fetch("/api/onboarding/interpret", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ context }) });
-      const payload = await response.json(); if (!response.ok || !payload?.profile) throw new Error(payload?.error ?? "MiCirql could not understand the brief.");
+      const { response, payload, attempts } = await fetchJsonWithRetry<ApiPayload>("/api/onboarding/interpret", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ context }) }, { retries: 1, onRetry: (retryError, attempt) => console.warn("MiCirql brief interpretation retry", { stage: "understanding-brief", attempt, code: retryError.message }) });
+      if (!response.ok || !payload?.profile) throw new Error(typeof payload?.error === "string" ? payload.error : "MiCirql could not understand the brief.");
+      if (attempts > 1) console.info("MiCirql brief interpretation recovered", { stage: "understanding-brief", attempts });
       const profile = payload.profile as Record<string, unknown>;
       const next: GuidedOnboardingValue = {
         ...value,
@@ -119,7 +127,10 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       setInterpretedContext(context);
       setDesignMatch(asLayoutRecommendation(payload.layoutRecommendation));
       setRunnerUp(asLayoutRecommendation(payload.layoutAlternative));
-    } catch (caught) { setLocalError(caught instanceof Error ? caught.message : "MiCirql could not understand the brief."); } finally { setInterpreting(false); }
+    } catch (caught) {
+      console.error("MiCirql brief interpretation failed", { stage: "understanding-brief", error: caught instanceof Error ? caught.message : "UNKNOWN" });
+      setLocalError(customerSafeApiMessage(caught, "MiCirql couldn’t understand the brief right now. Please try again."));
+    } finally { setInterpreting(false); }
   }
 
   async function buildWebsite() {

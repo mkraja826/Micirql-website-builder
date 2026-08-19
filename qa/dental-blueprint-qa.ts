@@ -5,7 +5,7 @@ import type { Site } from "@micirql/schema";
 import { findWebsiteLayout } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
 import { clearRenderedFirstScreenRepair, runRenderedFirstScreenRepairCycle } from "./rendered-first-screen-browser";
-import { measureRenderedPageTypography } from "./rendered-page-typography-browser";
+import { clearRenderedPageTypographyRepair, runRenderedPageTypographyRepairCycle } from "./rendered-page-typography-browser";
 
 export const DENTAL_BLUEPRINT_TARGETS = [360, 390, 430, 768, 1024, 1440] as const;
 
@@ -143,6 +143,7 @@ export async function runDentalBlueprintCertification(args: {
     const documentRoot = args.page.locator(".renderer-preview-document");
     await expect(documentRoot).toBeVisible();
     await clearRenderedFirstScreenRepair(args.page, documentRoot);
+    await clearRenderedPageTypographyRepair(args.page, documentRoot);
     await documentRoot.evaluate((element, metadata) => {
       element.setAttribute("data-mi-layout-blueprint", metadata.layoutId);
       element.setAttribute("data-mi-layout-archetype", metadata.archetype);
@@ -150,9 +151,10 @@ export async function runDentalBlueprintCertification(args: {
     await expect(documentRoot).toHaveAttribute("data-mi-layout-blueprint", args.layoutId);
     await args.page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 
-    const repair = await runRenderedFirstScreenRepairCycle(args.page, documentRoot, width);
-    const metrics = repair.metrics;
-    const typography = await measureRenderedPageTypography(documentRoot, width);
+    const firstScreenRepair = await runRenderedFirstScreenRepairCycle(args.page, documentRoot, width);
+    const metrics = firstScreenRepair.metrics;
+    const typographyRepair = await runRenderedPageTypographyRepairCycle(args.page, documentRoot, width);
+    const typography = typographyRepair.metrics;
 
     let mobileCheckPassed = true;
     let mobileCheckError: string | undefined;
@@ -175,8 +177,8 @@ export async function runDentalBlueprintCertification(args: {
     expect.soft(metrics.overflowingSections, `${width}px section overflow`).toBe(0);
     expect.soft(metrics.overflowingControls, `${width}px website control overflow: ${JSON.stringify(metrics.overflowingControlDetails)}`).toBe(0);
     expect.soft(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
-    expect.soft(firstScreenPassed, `${width}px rendered first-screen composition failed after ${repair.attempted ? "one repair" : "initial render"}: ${metrics.firstScreen.failures.join(", ")}`).toBeTruthy();
-    expect.soft(typographyPassed, `${width}px rendered typography failed: ${typography.issues.map((issue) => `${issue.code}:${issue.detail}`).join(", ")}`).toBeTruthy();
+    expect.soft(firstScreenPassed, `${width}px rendered first-screen composition failed after ${firstScreenRepair.attempted ? "one repair" : "initial render"}: ${metrics.firstScreen.failures.join(", ")}`).toBeTruthy();
+    expect.soft(typographyPassed, `${width}px rendered typography failed after ${typographyRepair.attempted ? "one repair" : "initial render"}: ${typography.issues.map((issue) => `${issue.code}:${issue.detail}`).join(", ")}`).toBeTruthy();
     if (!mobileCheckPassed) expect.soft(mobileCheckPassed, `${width}px mobile composition check failed: ${mobileCheckError}`).toBeTruthy();
 
     await captureWebsiteEvidence(args.page, documentRoot, path.join(output, `${width}.png`));
@@ -186,13 +188,22 @@ export async function runDentalBlueprintCertification(args: {
       ...metrics,
       renderedTypography: typography,
       firstScreenRepair: {
-        attempted: repair.attempted,
-        operations: repair.plan.operations,
-        reasons: repair.plan.reasons,
-        before: repair.before,
-        after: repair.after,
-        repaired: repair.repaired,
-        rejectedAfterRepair: repair.rejectedAfterRepair,
+        attempted: firstScreenRepair.attempted,
+        operations: firstScreenRepair.plan.operations,
+        reasons: firstScreenRepair.plan.reasons,
+        before: firstScreenRepair.before,
+        after: firstScreenRepair.after,
+        repaired: firstScreenRepair.repaired,
+        rejectedAfterRepair: firstScreenRepair.rejectedAfterRepair,
+      },
+      renderedTypographyRepair: {
+        attempted: typographyRepair.attempted,
+        operations: typographyRepair.plan.operations,
+        reasons: typographyRepair.plan.reasons,
+        before: typographyRepair.before,
+        after: typographyRepair.after,
+        repaired: typographyRepair.repaired,
+        rejectedAfterRepair: typographyRepair.rejectedAfterRepair,
       },
       mobileCheckPassed,
       ...(mobileCheckError ? { mobileCheckError } : {}),
@@ -211,6 +222,7 @@ export async function runDentalBlueprintCertification(args: {
     renderedFirstScreenCertified: true,
     renderedFirstScreenAutoRepair: "single-bounded-pass",
     renderedResponsiveTypographyCertified: true,
+    renderedResponsiveTypographyAutoRepair: "single-bounded-pass",
     results,
   }, null, 2), "utf8");
 }

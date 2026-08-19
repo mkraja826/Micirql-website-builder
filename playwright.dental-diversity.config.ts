@@ -14,6 +14,7 @@ export default defineConfig({
     "dental-review-ranking.spec.ts",
     "dental-content-quality.spec.ts",
     "content-specialty-rules.spec.ts",
+    "dental-architect-content-gate.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

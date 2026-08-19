@@ -20,6 +20,7 @@ export type GuidedOnboardingValue = {
   notes: string;
   logoUrl: string | null;
   brandColors: string[];
+  selectedLayoutId: string;
 };
 
 type LayoutRecommendation = {
@@ -34,7 +35,7 @@ type LayoutRecommendation = {
 
 type ApiPayload = Record<string, unknown> & { error?: string };
 
-const initialValue: GuidedOnboardingValue = { context: "", businessName: "", industry: "", subindustry: "", location: "", services: "", goals: [], styleTags: [], requiredCapabilities: [], languages: "en", notes: "", logoUrl: null, brandColors: [] };
+const initialValue: GuidedOnboardingValue = { context: "", businessName: "", industry: "", subindustry: "", location: "", services: "", goals: [], styleTags: [], requiredCapabilities: [], languages: "en", notes: "", logoUrl: null, brandColors: [], selectedLayoutId: "" };
 
 export function GuidedOnboarding({ session, workspaceId, siteId, building, error, onBack, onSubmit }: { session: SupabaseSession; workspaceId: string; siteId: string; building: boolean; error?: string; onBack?: () => void; onSubmit(value: GuidedOnboardingValue): Promise<void> | void; }) {
   const [value, setValue] = useState<GuidedOnboardingValue>(initialValue);
@@ -52,7 +53,7 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
   const interpretationReady = Boolean(interpreted && interpretedContext === value.context.trim());
 
   function updateContext(context: string) {
-    setValue((current) => ({ ...current, context }));
+    setValue((current) => ({ ...current, context, selectedLayoutId: "" }));
     if (context.trim() !== interpretedContext) {
       setInterpreted(null);
       setDesignMatch(null);
@@ -108,6 +109,7 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
       if (!response.ok || !payload?.profile) throw new Error(typeof payload?.error === "string" ? payload.error : "MiCirql could not understand the brief.");
       if (attempts > 1) console.info("MiCirql brief interpretation recovered", { stage: "understanding-brief", attempts });
       const profile = payload.profile as Record<string, unknown>;
+      const recommendation = asLayoutRecommendation(payload.layoutRecommendation);
       const next: GuidedOnboardingValue = {
         ...value,
         context,
@@ -121,11 +123,12 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
         requiredCapabilities: asList(profile.requiredCapabilities),
         languages: asList(profile.languages).join(", ") || "en",
         notes: asText(profile.notes) || context,
+        selectedLayoutId: recommendation?.id ?? "",
       };
       setValue(next);
       setInterpreted(next);
       setInterpretedContext(context);
-      setDesignMatch(asLayoutRecommendation(payload.layoutRecommendation));
+      setDesignMatch(recommendation);
       setRunnerUp(asLayoutRecommendation(payload.layoutAlternative));
     } catch (caught) {
       console.error("MiCirql brief interpretation failed", { stage: "understanding-brief", error: caught instanceof Error ? caught.message : "UNKNOWN" });
@@ -135,8 +138,9 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
 
   async function buildWebsite() {
     if (!interpreted || interpretedContext !== value.context.trim()) return void interpretBrief();
+    if (!designMatch?.id || interpreted.selectedLayoutId !== designMatch.id) { setLocalError("The reviewed design match is no longer current. Analyze the brief again before building."); return; }
     setLocalError("");
-    await onSubmit({ ...interpreted, context: value.context.trim(), logoUrl: value.logoUrl, brandColors: value.brandColors });
+    await onSubmit({ ...interpreted, context: value.context.trim(), logoUrl: value.logoUrl, brandColors: value.brandColors, selectedLayoutId: designMatch.id });
   }
 
   const busy = building || logoBusy || assetBusy || interpreting;

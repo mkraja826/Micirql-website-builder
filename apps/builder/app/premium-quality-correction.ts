@@ -1,5 +1,6 @@
 import { evaluatePremiumQualityGate, type PremiumQualityResult } from "@micirql/design-engine";
 import { siteSchema, type Site } from "@micirql/schema";
+import { applyLockedBlueprintPalette } from "./blueprint-palette-lock";
 import { repairContentDepth } from "./content-depth-repair";
 import { evaluateFirstBuildQuality, type FirstBuildQualityResult } from "./first-build-quality";
 
@@ -18,7 +19,11 @@ const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 type SiteSection = Site["pages"][number]["sections"][number];
 
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
-  const depthRepaired = repairContentDepth(site);
+  // The certified blueprint gets the final say on palette family. This runs
+  // after generic AI/brand color advice, so later passes cannot collapse
+  // distinct layouts back into one color system.
+  const paletteLocked = applyLockedBlueprintPalette(site);
+  const depthRepaired = repairContentDepth(paletteLocked);
   const initial = evaluatePremiumQualityGate(depthRepaired);
   const initialFirstBuild = evaluateFirstBuildQuality(depthRepaired);
   const contentChanged = JSON.stringify(depthRepaired) !== JSON.stringify(site);
@@ -40,7 +45,9 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
   diversifyRepeatedVariants(candidate);
   repairLateConversion(candidate);
 
-  const validated = repairContentDepth(siteSchema.parse(candidate));
+  // Reassert the lock after any generic repair. Contrast/content can be fixed,
+  // but the blueprint-owned palette family cannot be replaced.
+  const validated = repairContentDepth(applyLockedBlueprintPalette(siteSchema.parse(candidate)));
   const final = evaluatePremiumQualityGate(validated);
   const finalFirstBuild = evaluateFirstBuildQuality(validated);
   const useCandidate = qualityRank(final, finalFirstBuild) > qualityRank(initial, initialFirstBuild);
@@ -62,7 +69,7 @@ function qualityRank(premium: PremiumQualityResult, firstBuild: FirstBuildQualit
 }
 
 function isVisualLocked(section: SiteSection): boolean {
-  return section.props?.layoutVisualLocked === true && typeof section.props?.layoutBlueprintId === "string";
+  return section.props?.layoutVisualLock === true && typeof section.props?.layoutBlueprintId === "string";
 }
 
 function repairContrast(site: Site) {

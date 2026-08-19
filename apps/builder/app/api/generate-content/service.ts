@@ -105,6 +105,13 @@ async function recordContentUsage(request: NextRequest, input: { workspaceId: st
 
 function normalizeFacts(value: Partial<GroundingFacts> | undefined, site: { name: string; subtype: string | undefined; seoBlueprint: { targetLocations: string[]; priorityTopics: string[] } }): GroundingFacts {
   const industry = text(value?.industry) || site.subtype;
+  const notes = optionalText(value?.notes) ?? null;
+  const locked = lockedFactsFromNotes(notes);
+  const people = mergeFacts(cleanArray(value?.people), locked.people);
+  const credentials = mergeFacts(cleanArray(value?.credentials), locked.credentials);
+  const proofClaims = mergeFacts(cleanArray(value?.proofClaims), locked.proofClaims);
+  const prices = mergeFacts(cleanArray(value?.prices), locked.prices);
+
   return {
     businessName: text(value?.businessName) || site.name,
     ...(industry ? { industry } : {}),
@@ -112,12 +119,39 @@ function normalizeFacts(value: Partial<GroundingFacts> | undefined, site: { name
     location: optionalText(value?.location) ?? site.seoBlueprint.targetLocations[0] ?? null,
     services: cleanArray(value?.services).length ? cleanArray(value?.services) : site.seoBlueprint.priorityTopics,
     goals: cleanArray(value?.goals),
-    notes: optionalText(value?.notes) ?? null,
-    people: cleanArray(value?.people),
-    credentials: cleanArray(value?.credentials),
-    proofClaims: cleanArray(value?.proofClaims),
-    prices: cleanArray(value?.prices),
+    notes,
+    people,
+    credentials,
+    proofClaims,
+    prices,
   };
+}
+
+/**
+ * The context-first onboarding interpreter records explicit user facts in a locked,
+ * labelled block inside notes. Hydrate those labels back into structured grounding
+ * buckets so initial website generation and later regenerations use the same facts.
+ */
+function lockedFactsFromNotes(notes: string | null): Pick<GroundingFacts, "people" | "credentials" | "proofClaims" | "prices"> {
+  if (!notes) return { people: [], credentials: [], proofClaims: [], prices: [] };
+  return {
+    people: labelledFacts(notes, "People/team"),
+    credentials: labelledFacts(notes, "Credentials"),
+    proofClaims: labelledFacts(notes, "Claims/statistics/guarantees"),
+    prices: labelledFacts(notes, "Prices"),
+  };
+}
+
+function labelledFacts(notes: string, label: string): string[] {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = notes.match(new RegExp(`^${escaped}:\\s*(.+)$`, "im"));
+  const raw = match?.[1]?.trim();
+  if (!raw || raw.toLowerCase() === "not supplied") return [];
+  return raw.split("|").map((item) => item.trim()).filter(Boolean).slice(0, 48);
+}
+
+function mergeFacts(primary: string[], locked: string[]): string[] {
+  return [...new Set([...primary, ...locked].map((item) => item.trim()).filter(Boolean))].slice(0, 48);
 }
 
 function providerName(endpoint: string) { try { const host = new URL(endpoint).hostname; if (host.includes("googleapis.com")) return "google"; if (host.includes("openai.com")) return "openai"; if (host.includes("groq.com")) return "groq"; if (host.includes("nvidia.com")) return "nvidia"; return host; } catch { return "openai-compatible"; } }

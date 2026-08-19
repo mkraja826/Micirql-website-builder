@@ -29,18 +29,21 @@ export function getPexelsApiKey(): string | null {
   return process.env.PEXELS_API_KEY?.trim() || null;
 }
 
-export function orientationForSection(family?: string): PexelsOrientation {
+export function orientationForSection(family?: string, desiredAspect?: string): PexelsOrientation {
+  const aspect = desiredAspect?.trim().toLowerCase() ?? "";
+  if (aspect === "portrait" || aspect === "4:5") return "portrait";
+  if (aspect === "1:1" || aspect === "square") return "square";
+  if (aspect === "wide" || aspect === "21:9" || aspect === "16:9" || aspect === "3:2" || aspect === "4:3") return "landscape";
   const normalized = family?.trim().toLowerCase() ?? "";
   if (normalized === "team") return "portrait";
-  if (normalized === "gallery") return "landscape";
-  if (normalized === "hero" || normalized === "about" || normalized === "services") return "landscape";
   return "landscape";
 }
 
-export function focalPointForSection(family?: string, orientation?: string): { x: number; y: number } {
+export function focalPointForSection(family?: string, orientation?: string, desiredAspect?: string): { x: number; y: number } {
   const normalized = family?.trim().toLowerCase() ?? "";
+  const portraitIntent = orientation === "portrait" || desiredAspect === "portrait" || desiredAspect === "4:5";
   if (normalized === "team") return { x: 0.5, y: 0.34 };
-  if (normalized === "hero") return orientation === "portrait" ? { x: 0.5, y: 0.38 } : { x: 0.56, y: 0.46 };
+  if (normalized === "hero") return portraitIntent ? { x: 0.5, y: 0.36 } : { x: 0.56, y: 0.46 };
   if (normalized === "about") return { x: 0.52, y: 0.44 };
   if (normalized === "gallery") return { x: 0.5, y: 0.5 };
   if (normalized === "services" || normalized === "features" || normalized === "process") return { x: 0.5, y: 0.46 };
@@ -51,13 +54,15 @@ export async function fetchPexelsImage(input: {
   query: string;
   family?: string;
   domain?: string;
+  desiredAspect?: string;
+  preferredTags?: string[];
   excludedPhotoIds?: number[];
 }) {
   const apiKey = getPexelsApiKey();
   if (!apiKey) throw new Error("PEXELS_API_KEY is not configured.");
 
-  const orientation = orientationForSection(input.family);
-  const query = buildSearchQuery(input.query, input.domain, input.family);
+  const orientation = orientationForSection(input.family, input.desiredAspect);
+  const query = buildSearchQuery(input.query, input.domain, input.family, input.preferredTags);
   const params = new URLSearchParams({
     query,
     orientation,
@@ -76,7 +81,7 @@ export async function fetchPexelsImage(input: {
   }
 
   const payload = (await response.json()) as PexelsSearchResponse;
-  const photo = chooseBestPhoto(payload.photos ?? [], orientation, query, new Set(input.excludedPhotoIds ?? []));
+  const photo = chooseBestPhoto(payload.photos ?? [], orientation, input.desiredAspect, query, input.preferredTags ?? [], new Set(input.excludedPhotoIds ?? []));
   if (!photo) throw new Error(`Pexels returned no usable image for: ${query}`);
 
   const imageUrl = pickImageUrl(photo, orientation);
@@ -146,41 +151,63 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function buildSearchQuery(prompt: string, domain?: string, family?: string): string {
+function buildSearchQuery(prompt: string, domain?: string, family?: string, preferredTags: string[] = []): string {
   const cleaned = prompt
-    .replace(/\b(website|webpage|hero section|section|premium|high quality|4k|8k|ultra realistic|generate|image of|photo of)\b/gi, " ")
+    .replace(/\b(website|webpage|hero section|section|high quality|4k|8k|ultra realistic|generate|image of|photo of|visual role|composition|aspect ratio)\b/gi, " ")
+    .replace(/\b(no text|logos|certificates|awards|identifiable real people|fabricated facilities|fabricated projects|unsupported claims)\b/gi, " ")
     .replace(/[^a-z0-9\s-]/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
   const normalizedDomain = domain?.trim().toLowerCase() ?? "";
   const normalizedFamily = family?.trim().toLowerCase() ?? "";
-  const domainHint = dentalSearchHint(normalizedDomain, normalizedFamily);
-  const context = [domainHint, domain, family].filter(Boolean).join(" ");
-  const terms = `${context} ${cleaned}`.trim().split(/\s+/).filter(Boolean).slice(0, 16);
+  const styleHint = blueprintStyleHint(preferredTags);
+  const domainHint = dentalSearchHint(normalizedDomain, normalizedFamily, preferredTags);
+  const context = [styleHint, domainHint, ...preferredTags, domain, family].filter(Boolean).join(" ");
+  const terms = `${context} ${cleaned}`.trim().split(/\s+/).filter(Boolean).slice(0, 24);
   return uniqueTerms(terms).join(" ") || "professional business interior";
 }
 
-function dentalSearchHint(domain: string, family: string): string {
-  if (!/(dental|dentist|dentistry|clinic)/.test(domain)) return "";
+function blueprintStyleHint(tags: string[]): string {
+  const text = tags.join(" ").toLowerCase();
+  if (/portrait-led|portrait|editorial|cinematic|luxury|atelier/.test(text)) return "editorial portrait cinematic refined natural light";
+  if (/technology-led|technology|scanner|digital|precision|implant-planning/.test(text)) return "digital dentistry scanner technology precision clinical closeup";
+  if (/outcome-led|cosmetic|smile-design|aesthetic|natural-smile/.test(text)) return "cosmetic dentistry natural smile editorial aesthetic consultation";
+  if (/clinical|authority|specialist/.test(text)) return "bright clinical specialist dentistry clean architectural daylight";
+  if (/boutique|soft|warm|ivory|minimal/.test(text)) return "soft editorial portrait warm neutral minimal refined";
+  return "";
+}
+
+function dentalSearchHint(domain: string, family: string, preferredTags: string[]): string {
+  if (!/(dental|dentist|dentistry|clinic)/.test(`${domain} ${preferredTags.join(" ")}`)) return "";
+  const specialty = specialtyHint(preferredTags);
   switch (family) {
     case "hero":
-      return "modern dental clinic dentist patient consultation bright interior";
+      return specialty || "dentist patient consultation modern dental care";
     case "team":
-      return "professional dentist portrait dental clinic clinician";
+      return "professional dentist portrait clinician";
     case "gallery":
-      return "modern dental clinic interior treatment room dental equipment";
+      return specialty || "dental clinic care environment";
     case "about":
-      return "dentist patient consultation dental clinic care";
+      return specialty || "dentist patient consultation dental care";
     case "services":
-      return "dentist dental treatment consultation modern clinic";
+      return specialty || "dental treatment consultation";
     case "features":
-      return "digital dentistry dental scanner modern clinic technology";
+      return /technology|scanner|digital|precision/i.test(preferredTags.join(" ")) ? "digital dentistry scanner treatment planning technology" : specialty || "modern dental care technology";
     case "process":
-      return "dentist patient consultation treatment planning dental clinic";
+      return specialty || "dentist patient consultation treatment planning";
     default:
-      return "modern dental clinic professional dentistry";
+      return specialty || "professional dentistry";
   }
+}
+
+function specialtyHint(tags: string[]): string {
+  const text = tags.join(" ").toLowerCase();
+  if (/implant/.test(text)) return "implant dentistry consultation digital treatment planning adult patient";
+  if (/orthodont/.test(text)) return "orthodontic consultation clear aligner braces digital scanning";
+  if (/endodont|root-canal/.test(text)) return "endodontic consultation precision dentistry tooth preservation";
+  if (/cosmetic|smile-design|aesthetic/.test(text)) return "cosmetic dentistry smile design natural smile consultation";
+  return "";
 }
 
 function uniqueTerms(terms: string[]): string[] {
@@ -193,28 +220,38 @@ function uniqueTerms(terms: string[]): string[] {
   });
 }
 
-function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, query: string, excludedPhotoIds: Set<number>): PexelsPhoto | null {
+function chooseBestPhoto(photos: PexelsPhoto[], orientation: PexelsOrientation, desiredAspect: string | undefined, query: string, preferredTags: string[], excludedPhotoIds: Set<number>): PexelsPhoto | null {
   const nonDuplicate = photos.filter((photo) => !excludedPhotoIds.has(photo.id));
   const usable = nonDuplicate.filter((photo) => photo.width >= 1200 && photo.height >= 800);
   const candidates = usable.length ? usable : nonDuplicate;
   if (!candidates.length) return null;
 
-  const target = orientation === "portrait" ? 0.8 : orientation === "square" ? 1 : 1.5;
-  const queryTerms = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((term) => term.length >= 4 && !["modern", "professional", "bright"].includes(term));
+  const target = targetRatioFor(desiredAspect, orientation);
+  const queryTerms = uniqueTerms([...query.toLowerCase().split(/\s+/), ...preferredTags.map((tag) => tag.toLowerCase())])
+    .filter((term) => term.length >= 4 && !["modern", "professional", "bright", "dental", "dentistry"].includes(term));
 
   return [...candidates].sort((a, b) => scorePhoto(a, target, queryTerms) - scorePhoto(b, target, queryTerms))[0] ?? null;
 }
 
+function targetRatioFor(desiredAspect: string | undefined, orientation: PexelsOrientation): number {
+  switch (desiredAspect) {
+    case "portrait": return 0.8;
+    case "1:1": return 1;
+    case "4:3": return 4 / 3;
+    case "3:2": return 1.5;
+    case "16:9": return 16 / 9;
+    case "wide": return 2.1;
+    default: return orientation === "portrait" ? 0.8 : orientation === "square" ? 1 : 1.5;
+  }
+}
+
 function scorePhoto(photo: PexelsPhoto, targetRatio: number, queryTerms: string[]): number {
   const ratio = photo.width / photo.height;
-  const ratioPenalty = Math.abs(ratio - targetRatio);
+  const ratioPenalty = Math.abs(ratio - targetRatio) * 1.35;
   const resolutionBonus = Math.min(photo.width * photo.height / 40_000_000, 0.25);
   const alt = photo.alt?.toLowerCase() ?? "";
   const semanticHits = queryTerms.reduce((hits, term) => hits + (alt.includes(term) ? 1 : 0), 0);
-  const semanticBonus = Math.min(semanticHits * 0.09, 0.45);
+  const semanticBonus = Math.min(semanticHits * 0.11, 0.66);
   return ratioPenalty - resolutionBonus - semanticBonus;
 }
 

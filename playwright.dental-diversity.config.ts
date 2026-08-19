@@ -9,6 +9,7 @@ export default defineConfig({
     "design-genome-diversity.spec.ts",
     "review-direction-certification.spec.ts",
     "review-direction-theme-diversity.spec.ts",
+    "review-candidate-set-diversity.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

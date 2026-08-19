@@ -49,6 +49,10 @@ export function applyWebsiteLayoutBlueprint(site: Site, layout: WebsiteLayoutBlu
         layoutDensity: layout.design.density,
         layoutImageStyle: layout.design.imageStyle,
         layoutRhythm: layout.design.sectionRhythm,
+        layoutRadius: layout.design.radius,
+        layoutPaletteIds: [...layout.design.preferredPaletteIds],
+        layoutTypographyIds: [...layout.design.preferredTypographyIds],
+        layoutVisualLocked: true,
         layoutMobileRules: [...layout.responsive.mobile.rules],
         ...presentationFor(layoutSection, family),
       };
@@ -57,7 +61,18 @@ export function applyWebsiteLayoutBlueprint(site: Site, layout: WebsiteLayoutBlu
 
     page.sections = [...ordered, ...unknown.map((section) => ({
       ...section,
-      props: { ...section.props, layoutBlueprintId: layout.id, layoutArchetype: layout.archetype },
+      props: {
+        ...section.props,
+        layoutBlueprintId: layout.id,
+        layoutArchetype: layout.archetype,
+        layoutDensity: layout.design.density,
+        layoutImageStyle: layout.design.imageStyle,
+        layoutRhythm: layout.design.sectionRhythm,
+        layoutRadius: layout.design.radius,
+        layoutPaletteIds: [...layout.design.preferredPaletteIds],
+        layoutTypographyIds: [...layout.design.preferredTypographyIds],
+        layoutVisualLocked: true,
+      },
     }))];
   }
 
@@ -77,23 +92,17 @@ function applyLayoutDesignLanguage(site: Site, layout: WebsiteLayoutBlueprint) {
     buttonStyle: buttonStyleFor(layout.archetype, layout.design.radius),
     imageryStyle: imageryStyleFor(layout.design.imageStyle),
     recommendations: [
-      ...(previous?.recommendations ?? []),
-      `Certified layout: ${layout.name}`,
-      `Section rhythm: ${layout.design.sectionRhythm}`,
-      `Image direction: ${layout.design.imageStyle}`,
-      ...layout.responsive.mobile.rules.slice(0, 4),
+      `Visual system locked to certified layout: ${layout.name}`,
+      `Palette family lock: ${layout.design.preferredPaletteIds.join(" / ") || "brand-resolved"}`,
+      `Typography family lock: ${layout.design.preferredTypographyIds.join(" / ") || "brand-resolved"}`,
+      `Section rhythm lock: ${layout.design.sectionRhythm}`,
+      `Image direction lock: ${layout.design.imageStyle}`,
+      `Density lock: ${layout.design.density}`,
+      `Radius lock: ${layout.design.radius}`,
+      ...(previous?.recommendations ?? []).filter((item) => !/palette family|typography|section rhythm|image direction|density|radius/i.test(item)),
+      ...layout.responsive.mobile.rules.slice(0, 3),
     ].slice(0, 12),
   };
-
-  // Blueprint palette IDs are art-direction preferences, not permission to
-  // overwrite customer-supplied brand colors. Keep the resolved brand palette
-  // and expose the preferred palette to the renderer through recommendations.
-  if (layout.design.preferredPaletteIds.length) {
-    brand.intelligence.recommendations = [
-      `Preferred palette family: ${layout.design.preferredPaletteIds[0]}`,
-      ...brand.intelligence.recommendations,
-    ].slice(0, 12);
-  }
 }
 
 function densityFor(value: WebsiteLayoutBlueprint["design"]["density"]): Site["theme"]["brand"]["density"] {

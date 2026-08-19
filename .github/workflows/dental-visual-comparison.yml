@@ -1,5 +1,6 @@
 name: Dental Premium Visual Gate
 
+# QA trigger: corrected flagship visual run
 on:
   workflow_dispatch:
   pull_request:

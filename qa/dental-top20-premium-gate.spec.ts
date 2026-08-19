@@ -1,7 +1,11 @@
+import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { DENTAL_LAYOUT_BLUEPRINTS } from "@micirql/design-engine";
 
 const REQUIRED_VIEWPORTS = [360, 390, 430, 768, 1024, 1440] as const;
+const REQUIRED_RENDERED_VIEWPORTS = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"] as const;
 const ENGINEERING_FLOOR = 8.5;
 const PREMIUM_PROMOTION_FLOOR = 9;
 const REQUIRED_HARD_RULES = [
@@ -36,15 +40,43 @@ const EXPECTED_LAYOUT_IDS = [
   "dental-20-complete-signature",
 ] as const;
 
-test("all 20 certified dental layouts are present and premium-review ready", async () => {
+type VisualCertification = {
+  schemaVersion: number;
+  certified: boolean;
+  sourceCommit: string;
+  requiredViewports: string[];
+  layouts: Array<{ layoutId: string; passed: boolean }>;
+};
+
+async function loadVisualCertification(): Promise<VisualCertification> {
+  const certificationPath = path.join(process.cwd(), "test-results", "dental-top20-visual-evidence", "certification.json");
+  return JSON.parse(await readFile(certificationPath, "utf8")) as VisualCertification;
+}
+
+function currentCommit(): string {
+  return process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+}
+
+test("all 20 certified dental layouts are present and backed by current rendered visual evidence", async () => {
+  const certification = await loadVisualCertification();
   const ids = DENTAL_LAYOUT_BLUEPRINTS.map((layout) => layout.id);
   expect(ids).toHaveLength(20);
   expect(new Set(ids).size).toBe(20);
   expect(ids).toEqual(EXPECTED_LAYOUT_IDS);
   expect(PREMIUM_PROMOTION_FLOOR).toBeGreaterThan(ENGINEERING_FLOOR);
 
+  expect(certification.schemaVersion).toBe(1);
+  expect(certification.certified, "Rendered visual certification must pass before Top-20 promotion").toBe(true);
+  expect(certification.sourceCommit, "Rendered evidence is stale and does not belong to the current commit").toBe(currentCommit());
+  expect(certification.requiredViewports).toEqual(REQUIRED_RENDERED_VIEWPORTS);
+  expect(certification.layouts).toHaveLength(20);
+  expect(new Set(certification.layouts.map((entry) => entry.layoutId))).toEqual(new Set(EXPECTED_LAYOUT_IDS));
+  expect(certification.layouts.every((entry) => entry.passed), "Every Dental Top-20 layout must pass rendered geometry certification").toBe(true);
+
+  const renderedById = new Map(certification.layouts.map((entry) => [entry.layoutId, entry.passed]));
   for (const layout of DENTAL_LAYOUT_BLUEPRINTS) {
-    expect(layout.status, `${layout.id} must be certified before Top-20 review`).toBe("certified");
+    expect(layout.status, `${layout.id} static certification metadata is missing`).toBe("certified");
+    expect(renderedById.get(layout.id), `${layout.id} has no current six-viewport rendered certification`).toBe(true);
     expect(layout.quality.minimumDesktopScore, `${layout.id} engineering desktop floor`).toBeGreaterThanOrEqual(ENGINEERING_FLOOR);
     expect(layout.quality.minimumMobileScore, `${layout.id} engineering mobile floor`).toBeGreaterThanOrEqual(ENGINEERING_FLOOR);
     expect(layout.quality.requiredViewports, `${layout.id} must declare the complete responsive matrix`).toEqual(REQUIRED_VIEWPORTS);

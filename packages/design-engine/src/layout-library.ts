@@ -47,7 +47,7 @@ export function normalizeLayoutSubindustry(value: string | undefined): string | 
     "pediatric dentistry": "general-dentistry",
     "emergency dentistry": "general-dentistry",
     "restorative dentistry": "general-dentistry",
-    "prosthodontics": "general-dentistry",
+    prosthodontics: "general-dentistry",
     "implant dentistry": "implant-dentistry",
     "dental implants": "implant-dentistry",
     "full arch implants": "implant-dentistry",
@@ -60,6 +60,22 @@ export function normalizeLayoutSubindustry(value: string | undefined): string | 
     "root canal": "endodontics",
   };
   return aliases[normalized] ?? normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function inferDentalSubindustry(rawSubindustry: string, context: string): string | undefined {
+  const fallback = normalizeLayoutSubindustry(rawSubindustry);
+  const text = context.toLowerCase();
+  const implantFocus = /(focus(?:es|ed)?\s+(?:mainly|primarily)\s+on[^.]{0,80}implant|speciali[sz](?:e|es|ed|ing)?[^.]{0,80}implant|primary\s+(?:specialty|focus)[^.]{0,80}implant)/.test(text);
+  const implantSignals = ["dental implant", "full-mouth rehabilitation", "full mouth rehabilitation", "full arch", "all-on-4", "all on 4"].filter((signal) => text.includes(signal)).length;
+  if (implantFocus || implantSignals >= 2) return "implant-dentistry";
+
+  const cosmeticFocus = /(focus(?:es|ed)?\s+(?:mainly|primarily)\s+on[^.]{0,80}(?:cosmetic|smile|veneer)|speciali[sz](?:e|es|ed|ing)?[^.]{0,80}(?:cosmetic|smile|veneer)|primary\s+(?:specialty|focus)[^.]{0,80}(?:cosmetic|smile|veneer))/.test(text);
+  const cosmeticSignals = ["cosmetic dentistry", "smile design", "smile makeover", "veneers", "teeth whitening"].filter((signal) => text.includes(signal)).length;
+  if (cosmeticFocus || cosmeticSignals >= 2) return "cosmetic-dentistry";
+
+  if (/(focus(?:es|ed)?\s+(?:mainly|primarily)\s+on[^.]{0,80}(?:orthodont|aligner|braces)|primary\s+(?:specialty|focus)[^.]{0,80}(?:orthodont|aligner|braces))/.test(text)) return "orthodontics";
+  if (/(focus(?:es|ed)?\s+(?:mainly|primarily)\s+on[^.]{0,80}(?:root canal|endodont)|primary\s+(?:specialty|focus)[^.]{0,80}(?:root canal|endodont))/.test(text)) return "endodontics";
+  return fallback;
 }
 
 function unique(values: string[]): string[] {
@@ -104,11 +120,13 @@ function normalizeStyles(values: readonly string[] | undefined, context: string)
   if (!values?.length && !context) return undefined;
   const result = [...(values ?? [])];
   const text = `${context} ${(values ?? []).join(" ")}`.toLowerCase();
-  if (/luxury|elegant/.test(text)) result.push("luxury", "premium", "elegant");
+  if (/premium|luxury|high.?end|upmarket|elegant|refined/.test(text)) result.push("luxury", "premium", "elegant");
+  if (/implant|full.?mouth rehabilitation|full arch/.test(text)) result.push("implant");
+  if (/cosmetic|smile design|smile makeover|veneer|whitening/.test(text)) result.push("cosmetic");
   if (/family|welcoming/.test(text)) result.push("family", "friendly", "approachable");
   if (/professional|clinical/.test(text)) result.push("professional", "clinical");
   if (/clean/.test(text)) result.push("clean");
-  if (/visual|photo|gallery|before.?after/.test(text)) result.push("visual", "outcomes");
+  if (/visual|photo|gallery|before.?after|result|outcome/.test(text)) result.push("visual", "outcomes");
   if (/modern|advanced|digital/.test(text)) result.push("modern");
   if (/calm|wellness|natural|warm/.test(text)) result.push("calm", "wellness", "warm");
   if (/emergency|urgent/.test(text)) result.push("urgent", "direct", "reassuring");
@@ -120,9 +138,10 @@ function normalizeStyles(values: readonly string[] | undefined, context: string)
 export function normalizeLayoutSelectionInput(input: LayoutSelectionInput): LayoutSelectionInput {
   const industry = normalizeLayoutIndustry(input.industry);
   const rawSubindustry = input.subindustryId?.trim() ?? "";
-  const subindustryId = normalizeLayoutSubindustry(rawSubindustry);
-  const context = [rawSubindustry, ...(input.goals ?? []), ...(input.priorities ?? []), ...(input.styleTags ?? [])].join(" ");
-  const dentalContext = industry === "dental" ? context : "";
+  const rawContext = input.context?.trim() ?? "";
+  const signalContext = [rawContext, rawSubindustry, ...(input.goals ?? []), ...(input.priorities ?? []), ...(input.styleTags ?? [])].join(" ");
+  const subindustryId = industry === "dental" ? inferDentalSubindustry(rawSubindustry, rawContext || signalContext) : normalizeLayoutSubindustry(rawSubindustry);
+  const dentalContext = industry === "dental" ? signalContext : "";
   const goals = normalizeGoals(input.goals, dentalContext);
   const priorities = normalizePriorities(input.priorities, dentalContext);
   const styleTags = normalizeStyles(input.styleTags, dentalContext);
@@ -132,6 +151,7 @@ export function normalizeLayoutSelectionInput(input: LayoutSelectionInput): Layo
     ...(goals?.length ? { goals } : {}),
     ...(priorities?.length ? { priorities } : {}),
     ...(styleTags?.length ? { styleTags } : {}),
+    ...(rawContext ? { context: rawContext } : {}),
   };
 }
 

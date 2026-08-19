@@ -28,8 +28,8 @@ export type GroundingReport = { site: Site; issues: GroundingIssue[]; grounded: 
 type RiskPattern = { re: RegExp; reason: string; allowIfFactContainsMatch?: boolean };
 
 const RISK_PATTERNS: RiskPattern[] = [
-  { re: /\b\d+\+?\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|practice|clinical experience)\b/i, reason: "unsupplied years of experience" },
-  { re: /\b\d+\+?\s+(?:clients?|patients?|projects?|locations?|awards?|cases?|customers?|implants?|smiles?|surgeries?|procedures?)\b/i, reason: "unsupplied numeric proof" },
+  { re: /\b\d[\d,]*\+?\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|practice|clinical experience)\b/i, reason: "unsupplied years of experience" },
+  { re: /\b\d[\d,]*\+?\s+(?:clients?|patients?|projects?|locations?|awards?|cases?|customers?|implants?|smiles?|surgeries?|procedures?)\b/i, reason: "unsupplied numeric proof" },
   { re: /\b(?:dr\.?|doctor|prof\.?|professor)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b/, reason: "unsupplied clinician or team identity", allowIfFactContainsMatch: true },
   { re: /\b(?:BDS|MDS|DDS|DMD|MBBS|MD|MS|MCh|FRCS|FDS|FICOI|MICOI|PhD)\b/i, reason: "unsupplied professional qualification", allowIfFactContainsMatch: true },
   { re: /\b(?:implantologist|orthodontist|prosthodontist|endodontist|periodontist|oral surgeon|cosmetic dentist|pediatric dentist|paediatric dentist)\b/i, reason: "unsupplied clinical specialty", allowIfFactContainsMatch: true },
@@ -112,7 +112,7 @@ function safeReplacement(field: string, family: string, original: string): strin
     if (family === "services") return "Our services";
     return original
       .replace(/\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|fellowship[- ]trained|no\.?\s*1|#1|best in|leading|top[- ]rated|expert|experienced|renowned|highly skilled|trusted|best possible|guaranteed|100%|pain[- ]free|painless)\b/gi, "")
-      .replace(/\b\d+\+?\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|practice|clinical experience)\b/gi, "")
+      .replace(/\b\d[\d,]*\+?\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|practice|clinical experience)\b/gi, "")
       .replace(/\s{2,}/g, " ").trim() || "Learn more";
   }
   return SAFE_REPLACEMENTS[family] ?? SAFE_REPLACEMENTS.content ?? "Add verified business information here.";

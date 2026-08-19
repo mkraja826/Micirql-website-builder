@@ -32,12 +32,17 @@ type ChatCompletionResponse = {
   error?: { message?: string };
 };
 
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;
+const BASE_DELAY_MS = 350;
+const MAX_DELAY_MS = 5_000;
+
 export function createOpenAiCompatibleJsonPlannerModel(config: OpenAiCompatibleTextProviderConfig): PlannerModel {
   validateConfig(config);
   return {
     id: config.id,
     async generate(request: PlannerModelRequest): Promise<unknown> {
-      const response = await fetch(config.endpoint, {
+      const response = await fetchWithRetry(config.endpoint, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -79,6 +84,46 @@ export function createOpenAiCompatibleJsonPlannerModel(config: OpenAiCompatibleT
       return parseJsonContent(content);
     },
   };
+}
+
+async function fetchWithRetry(input: string, init: RequestInit): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(input, init);
+      if (!RETRYABLE_STATUS.has(response.status) || attempt === MAX_ATTEMPTS) return response;
+      await discardBody(response);
+      await sleep(retryDelayMs(response.headers.get("retry-after"), attempt));
+    } catch (error) {
+      if (!isRetryableNetworkError(error) || attempt === MAX_ATTEMPTS) throw error;
+      lastError = error;
+      await sleep(retryDelayMs(null, attempt));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Text provider request failed after retries.");
+}
+
+function retryDelayMs(retryAfter: string | null, attempt: number): number {
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(MAX_DELAY_MS, Math.round(seconds * 1_000));
+    const timestamp = Date.parse(retryAfter);
+    if (Number.isFinite(timestamp)) return Math.min(MAX_DELAY_MS, Math.max(0, timestamp - Date.now()));
+  }
+  return Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1));
+}
+
+function isRetryableNetworkError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") return false;
+  return error instanceof TypeError || (error instanceof Error && /network|fetch failed|socket|timeout|timed out|connection|econn/i.test(error.message));
+}
+
+async function discardBody(response: Response): Promise<void> {
+  try { await response.arrayBuffer(); } catch { /* best effort */ }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function validateConfig(config: OpenAiCompatibleTextProviderConfig): void {

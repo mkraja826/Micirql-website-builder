@@ -12,6 +12,7 @@ export type ImageMetadata = {
   width: number;
   height: number;
   dominantTone?: string;
+  perceptualHash?: string;
 };
 
 export type IngestionClassification = {
@@ -110,6 +111,7 @@ export function createAssetIngestionPipeline(deps: {
         if (!Number.isFinite(metadata.width) || !Number.isFinite(metadata.height) || metadata.width <= 0 || metadata.height <= 0) {
           throw new Error("Invalid image dimensions.");
         }
+        if (metadata.perceptualHash && !/^[0-9a-f]{16}$/i.test(metadata.perceptualHash)) throw new Error("Invalid perceptual hash.");
       } catch (error) {
         return { ok: false, stage: "inspection", reason: message(error) };
       }
@@ -144,6 +146,7 @@ export function createAssetIngestionPipeline(deps: {
           aspectRatio: metadata.width / metadata.height,
           focalPoint,
           ...(metadata.dominantTone ? { dominantTone: metadata.dominantTone } : {}),
+          ...(metadata.perceptualHash ? { perceptualHash: metadata.perceptualHash.toLowerCase() } : {}),
           domains: classification.domains,
           subtypes: classification.subtypes ?? [],
           sectionFamilies: classification.sectionFamilies ?? [],
@@ -219,6 +222,4 @@ export function createStrictProvenanceValidator(): ProvenanceValidator {
   };
 }
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : "Unknown asset ingestion error.";
-}
+function message(error: unknown) { return error instanceof Error ? error.message : String(error); }

@@ -1,0 +1,123 @@
+/* Dental 20 — flagship refinement
+ * Reduce visual overload in the complete-signature blueprint. The flagship
+ * keeps every major trust/conversion beat, but relies on editorial rhythm and
+ * section contrast rather than repeated framed surfaces.
+ */
+
+/* Proof stays layered below the hero but loses the floating dashboard card. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof--metrics>.mi-container{
+  padding:1.15rem 0;
+  border:0;
+  border-top:1px solid var(--mi-signature-line);
+  border-bottom:1px solid var(--mi-signature-line);
+  border-radius:0;
+  background:var(--mi-color-surface);
+  box-shadow:none;
+  backdrop-filter:none;
+}
+
+/* Treatment discovery becomes an editorial catalogue. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight{
+  gap:0;
+  border-top:1px solid var(--mi-signature-line);
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item:nth-child(n){
+  min-height:0;
+  padding:1.5rem .35rem;
+  border:0;
+  border-bottom:1px solid var(--mi-signature-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item h3{
+  font-family:var(--mi-font-display,Georgia,serif);
+  font-size:clamp(1.45rem,2vw,2rem);
+}
+
+/* Lead clinician reads as a portrait feature, not a large card. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-card--lead{
+  overflow:visible;
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-card--lead img{
+  border-radius:.55rem;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-card--lead>div{
+  padding:1.25rem 0 0;
+}
+
+/* Process is a continuous patient pathway rather than another set of boxes. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-timeline{
+  gap:0;
+  border-top:1px solid var(--mi-signature-line);
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-node{
+  min-width:0;
+  padding:1.35rem .8rem 1.35rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-signature-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Testimonial should interrupt the information flow like an editorial quote. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof--quote blockquote{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof--quote blockquote p{
+  max-width:20ch;
+  font-family:var(--mi-font-display,Georgia,serif);
+  text-wrap:balance;
+}
+
+/* The last CTA is a true closing band, not another panel inside a section. */
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split{
+  background:var(--mi-signature-navy);
+  color:#eff7f8;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof--metrics{
+    width:100%;
+    margin:0;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof--metrics>.mi-container{
+    width:min(100% - 1.5rem,var(--mi-content-lg));
+    padding:.35rem 0;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item:first-child,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight .mi-service-item:nth-child(n){
+    width:100%;
+    padding:1.2rem 0;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-timeline{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-node{
+    width:100%;
+    padding:1.15rem 0;
+  }
+}

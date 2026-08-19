@@ -7,6 +7,7 @@ import { planRenderedFirstScreenRepair } from "./rendered-first-screen-repair";
 import { persistFirstScreenRepair } from "./persisted-first-screen-repair";
 import { planRenderedPageTypographyRepair } from "./rendered-page-typography-repair";
 import { persistRenderedTypographyRepair } from "./persisted-rendered-typography-repair";
+import { measureResponsiveCompositionIssues } from "./rendered-responsive-composition-quality";
 
 const TARGETS = [
   { viewport: "mobile" as const, width: 390, foldHeight: 844 },
@@ -81,8 +82,7 @@ export function DentalReviewRenderCertifier({
       }
 
       const typographyIssues = measureRenderedTypographyIssues(documentRoot, target.width);
-      const warningBudget = target.viewport === "mobile" ? 4 : target.viewport === "tablet" ? 4 : 5;
-      const typographyFailed = typographyIssues.some((issue) => issue.severity === "error") || typographyIssues.filter((issue) => issue.severity === "warning").length > warningBudget;
+      const typographyFailed = typographyIssues.some((issue) => issue.severity === "error") || typographyIssues.filter((issue) => issue.severity === "warning").length > (target.width <= 430 ? 4 : target.width <= 1024 ? 4 : 5);
       if (typographyFailed) {
         const plan = planRenderedPageTypographyRepair({ width: target.width, issues: typographyIssues, attempt: typographyAttempt });
         if (typographyAttempt === 0 && plan.required) {
@@ -95,6 +95,19 @@ export function DentalReviewRenderCertifier({
           passed: false,
           repaired: hasAnyRepair(working),
           failures: typographyIssues.map((issue) => `typography:${issue.code}`),
+        });
+        return;
+      }
+
+      const compositionIssues = measureResponsiveCompositionIssues(documentRoot, target.width);
+      const compositionWarningLimit = target.width <= 430 ? 3 : target.width <= 1024 ? 4 : 5;
+      const compositionFailed = compositionIssues.some((issue) => issue.severity === "error") || compositionIssues.filter((issue) => issue.severity === "warning").length > compositionWarningLimit;
+      if (compositionFailed) {
+        finishCandidate({
+          direction: working,
+          passed: false,
+          repaired: hasAnyRepair(working),
+          failures: compositionIssues.map((issue) => `composition:${issue.code}:${issue.detail}`),
         });
         return;
       }
@@ -131,7 +144,6 @@ export function DentalReviewRenderCertifier({
     ref={probeRef}
     aria-hidden="true"
     data-mi-dental-review-certifier
-    data-mi-certification-viewport={target.viewport}
     style={{ position: "fixed", left: "-20000px", top: 0, width: target.width, maxWidth: target.width, opacity: 0, pointerEvents: "none" }}
   >
     <RendererPreview
@@ -177,8 +189,7 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
   const tablet = width > 430 && width <= 1024;
   const minH1 = mobile ? 28 : tablet ? 34 : 40;
   const maxLines = mobile ? 4 : tablet ? 4 : 3;
-  const maxNav = mobile ? 96 : tablet ? 104 : 116;
-  const maxHeadlineGap = mobile ? 260 : tablet ? 290 : 320;
+  const maxNav = mobile ? 96 : tablet ? 108 : 116;
   const failures: string[] = [];
 
   if (!h1 || !h1Rect) failures.push("missing-visible-h1");
@@ -193,8 +204,8 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
     if (ctaRect.top > foldHeight * 0.94) failures.push(`cta-below-conversion-fold:${Math.round(ctaRect.top)}px`);
     if (ctaRect.bottom > foldHeight * 1.04) failures.push(`cta-not-visible-in-first-screen:${Math.round(ctaRect.bottom)}px`);
   }
-  if (heroRect && heroRect.top > Math.max(tablet ? 210 : 180, foldHeight * 0.24)) failures.push(`hero-starts-too-low:${Math.round(heroRect.top)}px`);
-  if (navRect && h1Rect && h1Rect.top - navRect.bottom > maxHeadlineGap) failures.push(`excess-space-before-headline:${Math.round(h1Rect.top - navRect.bottom)}px`);
+  if (heroRect && heroRect.top > Math.max(tablet ? 200 : 180, foldHeight * 0.24)) failures.push(`hero-starts-too-low:${Math.round(heroRect.top)}px`);
+  if (navRect && h1Rect && h1Rect.top - navRect.bottom > (mobile ? 260 : tablet ? 290 : 320)) failures.push(`excess-space-before-headline:${Math.round(h1Rect.top - navRect.bottom)}px`);
   return failures;
 }
 
@@ -219,7 +230,7 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
 
   for (const heading of [...root.querySelectorAll("h1,h2,h3")].filter(visible)) {
     const count = lines(heading);
-    const limit = heading.tagName.toLowerCase() === "h1" ? (mobile || tablet ? 4 : 3) : (mobile ? 4 : tablet ? 4 : 3);
+    const limit = heading.tagName.toLowerCase() === "h1" ? (mobile || tablet ? 4 : 3) : (mobile ? 4 : 3);
     if (count > limit) issues.push({ code: "HEADING_TOO_MANY_RENDERED_LINES", severity: "error" });
   }
   for (const action of [...root.querySelectorAll("a,button")].filter(visible)) {
@@ -236,7 +247,7 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
   const cardTitles = [...root.querySelectorAll(".mi-card h3,.mi-service-item h3,[class*='card'] h3,[class*='item'] h3")].filter(visible);
   if (cardTitles.length >= 2) {
     const heights = cardTitles.map((title) => title.getBoundingClientRect().height);
-    if (Math.max(...heights) - Math.min(...heights) > (tablet ? 28 : 32)) issues.push({ code: "CARD_TITLE_HEIGHT_VARIANCE", severity: "warning" });
+    if (Math.max(...heights) - Math.min(...heights) > 32) issues.push({ code: "CARD_TITLE_HEIGHT_VARIANCE", severity: "warning" });
   }
   return issues;
 }

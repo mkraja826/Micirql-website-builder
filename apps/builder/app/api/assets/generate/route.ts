@@ -1,6 +1,6 @@
 import type { AssetRecord } from "@micirql/assets";
-import { fetchPexelsImage, getPexelsApiKey } from "../../../pexels-stock-image";
-import { assertWorkspaceAccess, insertAsset, uploadAssetBinary } from "../supabase-assets";
+import { fetchPexelsImage, focalPointForSection, getPexelsApiKey } from "../../../pexels-stock-image";
+import { assertWorkspaceAccess, insertAsset, listAssets, uploadAssetBinary } from "../supabase-assets";
 
 export async function POST(request: Request) {
   try {
@@ -29,10 +29,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const existingAssets = await listAssets(body.workspaceId);
+    const excludedPhotoIds = existingAssets
+      .map((asset) => asset.sourceReference?.match(/^pexels:(\d+)\|/)?.[1])
+      .filter((value): value is string => Boolean(value))
+      .map((value) => Number(value))
+      .filter(Number.isFinite);
+
     const result = await fetchPexelsImage({
       query: body.prompt,
       ...(body.family ? { family: body.family } : {}),
       ...(body.domain ? { domain: body.domain } : {}),
+      excludedPhotoIds,
     });
 
     const id = `pexels-${result.photoId}-${crypto.randomUUID()}`;
@@ -57,7 +65,7 @@ export async function POST(request: Request) {
       height: result.height,
       orientation: result.orientation,
       aspectRatio: result.aspectRatio,
-      focalPoint: { x: 0.5, y: body.family === "team" ? 0.34 : 0.5 },
+      focalPoint: focalPointForSection(body.family, result.orientation),
       domains: [],
       subtypes: [],
       sectionFamilies: body.family ? [body.family] : [],
@@ -86,6 +94,7 @@ export async function POST(request: Request) {
           photographer: result.photographer,
           photographerUrl: result.photographerUrl,
           query: result.query,
+          duplicateCandidatesExcluded: excludedPhotoIds.length,
         },
         attribution: {
           label: `Photo by ${result.photographer} on Pexels`,

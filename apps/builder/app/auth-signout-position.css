@@ -1,4 +1,4 @@
-/* Keep the authenticated session action anchored to the lower-left instead of competing with publish controls. */
+/* Keep the authenticated session action anchored away from primary builder controls. */
 .auth-signout {
   top: auto !important;
   right: auto !important;
@@ -31,14 +31,26 @@
   box-shadow: 0 0 0 3px rgba(124,58,237,.22), 0 10px 28px rgba(0,0,0,.24);
 }
 
-/* On the mobile editor, keep Sign out above the persistent tool bar. */
+/* Mobile: never float Sign out over review cards. Keep it compact in the top-right.
+ * The editor is the only exception because its persistent bottom toolbar owns the top chrome. */
 @media (max-width: 899px) {
+  .auth-signout {
+    top: calc(env(safe-area-inset-top) + 10px) !important;
+    right: 10px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: auto;
+    min-height: 38px;
+    padding-inline: 11px !important;
+    font-size: .68rem;
+  }
+
   body:has(.mobile-editor-bar) .auth-signout {
+    top: auto !important;
+    right: auto !important;
     bottom: calc(76px + env(safe-area-inset-bottom)) !important;
     left: 10px !important;
-    width: auto;
     min-height: 40px;
     padding-inline: 12px !important;
-    font-size: .68rem;
   }
 }

@@ -1,0 +1,77 @@
+/* Flagship conversion systems: navigation, consultation, contact and footer are blueprint-owned. */
+
+/* 01 Clinical Authority — calm institutional navigation and evidence-first consultation. */
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-navbar{border-bottom-color:var(--flag-line)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-cta{border-radius:.25rem}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-conv-cta--split .mi-cta-split{border-radius:0;box-shadow:none;background:transparent;border-width:1px 0;padding-inline:0}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-contact-form :is(input,textarea,select,button){border-radius:.2rem}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-shell-footer{border-top:1px solid var(--flag-line)}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-contact-split{grid-template-columns:.72fr 1.28fr;gap:clamp(4rem,8vw,9rem)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-footer-columns{grid-template-columns:1.45fr .9fr auto;gap:clamp(3rem,6vw,7rem)}
+}
+
+/* 02 Implant Atelier — discreet luxury shell, cinematic consultation, editorial footer. */
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar{position:absolute;inset:0 0 auto;background:linear-gradient(180deg,rgba(9,8,7,.72),transparent);color:#fff;border:0}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar .mi-shell-cta{background:transparent;color:inherit;border:1px solid rgba(255,255,255,.45);border-radius:999px}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta{padding-block:clamp(7rem,15vw,14rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta--brand .mi-conv-heading h2{font-size:clamp(3rem,7vw,7rem);line-height:.9;max-width:10ch}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-panel{border-radius:0;box-shadow:none;border:1px solid currentColor;background:transparent}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-footer--editorial{padding-top:clamp(6rem,12vw,11rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-footer-wordmark{font-weight:500;letter-spacing:-.055em}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-cta-brand{grid-template-columns:minmax(0,1.5fr) .5fr;align-items:end}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-cta-brand__mark{display:none}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-contact-panel{grid-template-columns:.62fr 1.38fr;gap:clamp(4rem,9vw,10rem);padding:clamp(3rem,7vw,7rem)}
+}
+
+/* 03 Smile Studio — expressive studio navigation and poster-like booking close. */
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-navbar--centered .mi-nav-centered{min-height:6rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-cta{border-radius:999px}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--center{padding-block:clamp(6rem,14vw,12rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-cta-center .mi-conv-heading h2{font-size:clamp(3.2rem,9vw,8.5rem);line-height:.86;letter-spacing:-.06em;max-width:9ch}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-form :is(input,textarea,select){border-width:0 0 1px;border-radius:0;background:transparent;padding-inline:0}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-form button{border-radius:999px}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-footer-wordmark{font-style:italic;font-weight:700}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-classic{grid-template-columns:1.2fr .8fr;gap:clamp(5rem,10vw,11rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-footer-editorial-row{grid-template-columns:1.3fr .7fr}
+}
+
+/* 05 Digital Dentistry — product UI shell and high-clarity conversion console. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-navbar{background:rgba(5,16,17,.92);color:#effffd;border-color:rgba(132,255,237,.14);backdrop-filter:blur(20px)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-cta{border-radius:.5rem;box-shadow:0 0 0 1px rgba(132,255,237,.18) inset}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-cta-split{border-radius:.75rem;background:linear-gradient(135deg,rgba(12,36,37,.98),rgba(6,20,21,.98));box-shadow:0 2rem 6rem rgba(0,0,0,.24)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-panel{border-radius:.75rem;background:#0a1b1c;box-shadow:none}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-form :is(input,textarea,select){background:#071516;border-color:rgba(132,255,237,.16);border-radius:.4rem}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-form button{border-radius:.4rem}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-shell-footer{background:#041011;border-top:1px solid rgba(132,255,237,.12)}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-cta-split{grid-template-columns:1.3fr .7fr}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-panel{grid-template-columns:.75fr 1.25fr;gap:clamp(2rem,5vw,5rem)}
+}
+
+/* 08 Boutique Cosmetic — fashion-house shell with quiet controls and oversized close. */
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-shell-navbar{border:0;background:color-mix(in srgb,var(--flag-bg) 94%,transparent)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-shell-links{gap:clamp(1.5rem,3vw,3rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-shell-cta{background:transparent;color:inherit;border:1px solid currentColor;border-radius:0;text-transform:uppercase;letter-spacing:.12em;font-size:.72rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-conv-cta{padding-block:clamp(8rem,17vw,16rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-cta-center .mi-conv-heading h2{font-size:clamp(3.5rem,9vw,9rem);line-height:.88;letter-spacing:-.055em;max-width:10ch}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-conv-btn{border-radius:0;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;padding-inline:1.6rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-contact-form :is(input,textarea,select){border-width:0 0 1px;border-radius:0;background:transparent;padding-inline:0}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-contact-form button{border-radius:0;text-transform:uppercase;letter-spacing:.12em}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-shell-footer--editorial{padding-top:clamp(7rem,14vw,13rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-footer-wordmark{font-weight:400;letter-spacing:-.045em}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-contact-split{grid-template-columns:.55fr 1.45fr;gap:clamp(5rem,12vw,13rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-footer-editorial-row{grid-template-columns:.65fr 1.35fr;gap:clamp(4rem,10vw,10rem)}
+}
+
+/* Mobile: preserve identity without sacrificing touch targets or readable navigation. */
+@media(max-width:47.99rem){
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-shell-navbar{position:relative;background:#0b0908}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-navbar--centered .mi-nav-centered{min-height:4.5rem}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-shell-cta{letter-spacing:.08em}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-conv-cta,
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-conv-cta{padding-block:clamp(5rem,18vw,7rem)}
+}

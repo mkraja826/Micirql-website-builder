@@ -37,8 +37,10 @@ test("Top-20 blueprints carry enforceable geometry and mobile safety contracts",
     ).toBe(true);
 
     // Require at least one desktop rule that establishes deliberate composition.
+    // Portrait-led/editorial spreads are valid composition systems too, even when
+    // the blueprint does not literally use words like grid or split.
     expect(
-      desktopRules.some((rule) => /(grid|column|split|asym|media|image|hero|layout|composition|width|span|offset)/.test(rule)),
+      desktopRules.some((rule) => /(grid|column|split|asym|media|image|hero|layout|composition|width|span|offset|portrait|spread|mosaic)/.test(rule)),
       `${layout.id}: desktop rules do not explicitly establish composition`,
     ).toBe(true);
   }

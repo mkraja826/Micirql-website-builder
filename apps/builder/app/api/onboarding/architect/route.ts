@@ -7,6 +7,7 @@ import { materializeGeneratedMedia } from "../../../materialize-media-execution"
 import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
+import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
 import { safeRecordBuildObservability } from "../../../build-observability";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
@@ -118,6 +119,11 @@ export async function POST(request: NextRequest) {
       const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
       throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
     }
+    const visualQuality = evaluateSiteVisualQuality(finalDraft.snapshot);
+    if (!visualQuality.ready) {
+      const codes = [...new Set(visualQuality.issues.map((item) => item.code))];
+      throw new Error(`GENERATED_SITE_VISUAL_QUALITY_FAILED: ${codes.join(", ")}`);
+    }
 
     const fallbackCount = content?.recovery?.failedProviders ?? 0;
     const recoveryReason = contentWarning || mediaWarning || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
@@ -131,12 +137,12 @@ export async function POST(request: NextRequest) {
       provider: content?.model.provider ?? null,
       model: content?.model.model ?? null,
       fallbackCount,
-      qualityScore: content?.audit.contentQuality.score ?? null,
+      qualityScore: Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score),
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

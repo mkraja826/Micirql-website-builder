@@ -32,6 +32,7 @@ import "@micirql/sections/dental-20-complete-signature.css";
 import "@micirql/sections/dental-responsive-safety.css";
 import "@micirql/sections/premium-output-system.css";
 import "@micirql/sections/premium-geometry.css";
+import "@micirql/sections/interaction-polish.css";
 import "@micirql/sections/dental-01-clinical-authority-refinement.css";
 import "@micirql/sections/dental-04-family-care-refinement.css";
 import "@micirql/sections/dental-05-digital-dentistry-refinement.css";

@@ -12,6 +12,7 @@ export default defineConfig({
     "review-candidate-set-diversity.spec.ts",
     "certified-dental-review-directions.spec.ts",
     "dental-review-ranking.spec.ts",
+    "dental-content-quality.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

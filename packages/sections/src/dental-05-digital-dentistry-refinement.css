@@ -1,0 +1,132 @@
+/* Dental 05 — Digital Dentistry refinement
+ * Keep precision, structured workflow and modern technology, but remove the
+ * repeated product-dashboard chrome that can make a clinic resemble SaaS.
+ */
+
+/* Hero stays technical, while the media becomes clinical photography rather
+ * than a framed product module. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media{
+  border:0;
+  border-radius:.35rem;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media::before{
+  top:auto;
+  left:0;
+  bottom:-1.9rem;
+  padding:.35rem 0 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-color-text-muted);
+  font-size:.66rem;
+  letter-spacing:.14em;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media img{
+  border-radius:.35rem;
+}
+
+/* Technology capabilities remain structured but lose icon-tile treatment. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-features--split .mi-feature-index{
+  display:block;
+  width:auto;
+  height:auto;
+  border:0;
+  border-radius:0;
+  color:#72dcc6;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+/* Treatments become a clinical applications index. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-services-spotlight{
+  gap:0 clamp(2rem,4vw,4rem);
+  border-top:1px solid var(--mi-digital-line);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.45rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-digital-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-digital-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item:first-child p{color:var(--mi-color-text-muted)}
+
+/* Workflow becomes a connected clinical process, not a row of modules. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-timeline{
+  gap:0;
+  border-top:1px solid var(--mi-digital-line);
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node{
+  min-width:0;
+  padding:1.35rem 1rem 1.35rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-digital-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node>span{
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-color-primary);
+  font-weight:850;
+}
+
+/* Clinician section should humanize the technology. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.35rem;
+}
+
+/* End with a confident technology-enabled care band, not a product CTA card. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split{
+  background:var(--mi-digital-ink);
+  color:#effcfa;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-contact-form{
+  border-radius:.5rem;
+  box-shadow:none;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-hero--centered .mi-section__media::before{
+    position:static;
+    display:block;
+    margin-top:.55rem;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-services-spotlight{display:block}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--spotlight .mi-service-item:first-child{
+    width:100%;
+    padding:1.15rem 0;
+  }
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-timeline{display:block}
+  [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process--timeline .mi-process-node{
+    width:100%;
+    padding:1.1rem 0;
+  }
+}

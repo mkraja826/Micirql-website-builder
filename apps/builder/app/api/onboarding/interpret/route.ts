@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       ...(profile.subindustry ? { subindustryId: profile.subindustry } : {}),
       goals: profile.goals,
       priorities: profile.requiredCapabilities,
-      styleTags: profile.styleTags,
+      styleTags: [...profile.styleTags, context],
     }, 2).map((item) => ({
       id: item.layout.id,
       name: item.layout.name,

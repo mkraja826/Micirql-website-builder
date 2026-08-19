@@ -47,7 +47,7 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
   return { ready: checks.every((check) => !check.blocking || check.ok), checks };
 }
 
-export function PublishReadinessManager({ site }: { site: Site }) {
+export function PublishReadinessManager({ site, onFactsSaved }: { site: Site; onFactsSaved?: () => void }) {
   const report = publishReadiness(site);
   const completion = analyzeMissingInformation(site);
   const blockers = report.checks.filter((check) => check.blocking && !check.ok);
@@ -56,7 +56,7 @@ export function PublishReadinessManager({ site }: { site: Site }) {
   const primaryDomain = site.domains.find((domain) => domain.primary) ?? site.domains[0];
   return <div className="publish-readiness launch-readiness">
     <section className={`launch-summary ${report.ready ? "is-ready" : "is-blocked"}`}><div className="launch-summary-copy"><span>{report.ready ? "Launch ready" : `${blockers.length} launch blocker${blockers.length === 1 ? "" : "s"}`}</span><strong>{report.ready ? "Your website is ready to go live." : "Finish these items before publishing."}</strong><small>{report.ready ? "Your required pages, actions, SEO, media and publishing checks have passed." : "MiCirql will keep Publish disabled until every blocking item is resolved."}</small></div><div className="launch-score"><strong>{passed.length}/{report.checks.length}</strong><span>checks passed</span></div></section>
-    <BusinessFactsEditor site={site} />
+    <BusinessFactsEditor site={site} onFactsSaved={onFactsSaved} />
     <section className="launch-domain-card"><div><span>Where your site will go live</span><strong>{primaryDomain?.hostname ?? `${site.domain}.micirql.site`}</strong><small>{primaryDomain ? (primaryDomain.status === "active" && primaryDomain.sslStatus === "active" ? "Custom domain connected · SSL active" : "Custom domain setup still in progress") : "MiCirql subdomain ready · connect a custom domain anytime"}</small></div><b className={primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "is-waiting" : "is-live"}>{primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "Pending" : "Ready"}</b></section>
     {blockers.length ? <section className="launch-blockers"><div className="launch-section-heading"><span>Fix before launch</span><strong>{blockers.length} item{blockers.length === 1 ? "" : "s"}</strong></div><div className="readiness-list">{blockers.map((check) => <div key={check.id} className="readiness-row is-fail"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>Required</b></div>)}</div></section> : null}
     <section className="launch-passed"><div className="launch-section-heading"><span>Launch checks</span><strong>{passed.length} passed</strong></div><div className="readiness-list">{passed.map((check) => <div key={check.id} className="readiness-row is-ok"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>{check.blocking ? "Ready" : "Checked"}</b></div>)}{info.map((check) => <div key={check.id} className="readiness-row"><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div><b>Info</b></div>)}</div></section>
@@ -64,7 +64,7 @@ export function PublishReadinessManager({ site }: { site: Site }) {
   </div>;
 }
 
-function BusinessFactsEditor({ site }: { site: Site }) {
+function BusinessFactsEditor({ site, onFactsSaved }: { site: Site; onFactsSaved?: () => void }) {
   const [facts, setFacts] = useState<BusinessFacts>(EMPTY_FACTS);
   const [state, setState] = useState<"loading" | "ready" | "saving" | "saved" | "error">("loading");
   const [message, setMessage] = useState("");
@@ -88,7 +88,7 @@ function BusinessFactsEditor({ site }: { site: Site }) {
     window.addEventListener("micirql:add-grounding-fact", handler);
     return () => window.removeEventListener("micirql:add-grounding-fact", handler);
   }, []);
-  async function save() {setState("saving"); setMessage("");try {const response = await fetch("/api/business-facts", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ workspaceId: site.workspaceId, siteId: site.siteId, facts }) });const payload = await response.json() as { ok?: boolean; error?: string };if (!response.ok || !payload.ok) throw new Error(payload.error ?? "Business facts could not be saved.");setState("saved"); setHighlight(undefined); setMessage("Verified facts saved. Previously blocked factual copy can now be retried.");} catch (error) {setState("error"); setMessage(error instanceof Error ? error.message : "Business facts could not be saved.");}}
+  async function save() {setState("saving"); setMessage("");try {const response = await fetch("/api/business-facts", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ workspaceId: site.workspaceId, siteId: site.siteId, facts }) });const payload = await response.json() as { ok?: boolean; error?: string };if (!response.ok || !payload.ok) throw new Error(payload.error ?? "Business facts could not be saved.");setState("saved"); setHighlight(undefined); setMessage("Verified facts saved. Retrying the previously blocked edit…");onFactsSaved?.();} catch (error) {setState("error"); setMessage(error instanceof Error ? error.message : "Business facts could not be saved.");}}
   function setField(key: FactKey, value: string) {const items = value.split("\n").map((item) => item.trim()).filter(Boolean).slice(0, 48);setFacts((current) => ({ ...current, [key]: items }));if (state === "saved") setState("ready");}
   return <section className="business-facts-editor" aria-label="Verified business facts"><div className="launch-section-heading"><span>Verified business facts</span><strong>Ground AI and website claims</strong></div><p className="content-completion-note">Only add facts you can stand behind. MiCirql uses these details to allow names, credentials, prices, hours, statistics and other factual claims in generated or edited copy.</p>{state === "loading" ? <div className="content-completion-done"><strong>Loading verified facts…</strong></div> : <div className="business-facts-grid">{FACT_FIELDS.map((field) => <label key={field.key} className={highlight === field.key ? "is-highlighted" : ""}><span>{field.label}</span><textarea data-fact-key={field.key} rows={facts[field.key].length > 2 ? 4 : 2} placeholder={field.hint} value={facts[field.key].join("\n")} onChange={(event) => setField(field.key, event.target.value)} /><small>One verified fact per line.</small></label>)}</div>}<div className="business-facts-actions"><button type="button" onClick={() => void save()} disabled={state === "loading" || state === "saving"}>{state === "saving" ? "Saving…" : "Save verified facts"}</button>{message ? <span role={state === "error" ? "alert" : "status"}>{message}</span> : null}</div></section>;
 }

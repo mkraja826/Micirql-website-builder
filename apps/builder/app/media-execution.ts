@@ -11,17 +11,18 @@ export function executeMediaPlan(input:MediaExecutionInput):MediaExecutionPlan{
  const used=new Set<string>();let generationCount=0;
  const requests=input.plan.sections.map(decision=>{
   if(decision.role==="none")return none(decision,"The visual plan intentionally prefers a text-led section.");
-  const pools:[MediaSource,MediaAsset[]][]=[
-   ["customer",input.customerAssets??[]],
-   ["library",input.libraryAssets??[]],
-   ["licensed",input.licensedAssets??[]]
-  ];
+  const identityMedia=requiresCustomerIdentityMedia(decision);
+  const pools:[MediaSource,MediaAsset[]][]=identityMedia
+   ? [["customer",input.customerAssets??[]]]
+   : [["customer",input.customerAssets??[]],["library",input.libraryAssets??[]],["licensed",input.licensedAssets??[]]];
   for(const[source,assets]of pools){const asset=bestAsset(decision,assets,used);if(asset){used.add(asset.id);return{family:decision.family,...(decision.pagePath?{pagePath:decision.pagePath}:{}),source,asset,alt:asset.alt||safeAlt(decision),reason:`Matched ${source} media to ${decision.role} intent${decision.preferredTags?.length?" using certified tags":""}.`};}}
+  if(identityMedia)return none(decision,"Team and leadership identity media must come from customer-supplied assets; reusable stock cannot represent the business's real people.");
   if(input.allowGeneration&&canGenerate(decision)){generationCount++;return{family:decision.family,...(decision.pagePath?{pagePath:decision.pagePath}:{}),source:"generated" as const,generationPrompt:prompt(decision),alt:safeAlt(decision),reason:"No truthful reusable asset matched; generation is allowed for this non-claim visual."};}
   return none(decision,"No suitable truthful asset was available, so the section remains image-free.");
  });
- return{requests,generationCount,rules:[...input.plan.rules,"Customer assets always outrank reusable or generated media","Certified industry tags strongly influence reusable-media ranking","First-build AI media generation is currently restricted to explicitly Dental visual contexts","Generated media must not depict a real employee, customer, facility, certificate, award or completed project unless supplied as reference","A generated Dental hero is generic editorial context only and must never be presented as the clinic, its staff, a real patient or a treatment result","Do not reuse a primary asset across sections","Generation is a fallback, not a default"]};
+ return{requests,generationCount,rules:[...input.plan.rules,"Customer assets always outrank reusable or generated media","Team and leadership portraits are identity-bearing media and must be customer supplied","Certified industry tags strongly influence reusable-media ranking","First-build AI media generation is currently restricted to explicitly Dental visual contexts","Generated media must not depict a real employee, customer, facility, certificate, award or completed project unless supplied as reference","A generated Dental hero is generic editorial context only and must never be presented as the clinic, its staff, a real patient or a treatment result","Do not reuse a primary asset across sections","Generation is a fallback, not a default"]};
 }
+function requiresCustomerIdentityMedia(d:SectionVisualDecision){return d.family==="team"||d.role==="people";}
 function bestAsset(d:SectionVisualDecision,assets:MediaAsset[],used:Set<string>){
  let best:MediaAsset|undefined,score=0;
  for(const a of assets){

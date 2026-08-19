@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:external-provider-retry|generation-recovery)\.spec\.ts/,
+  testMatch: /(?:external-provider-retry|generation-recovery|build-watchdog)\.spec\.ts/,
   timeout: 15_000,
   fullyParallel: false,
   workers: 1,

@@ -1,6 +1,8 @@
-import { validateWebsite } from "@micirql/design-engine";
+import { evaluateWebsiteContent, validateWebsite } from "@micirql/design-engine";
 import { siteSchema, type Site } from "@micirql/schema";
 import { getPublishRuntime } from "../../publish-runtime";
+
+const MIN_PUBLISH_CONTENT_SCORE = 82;
 
 export async function POST(request: Request) {
   try {
@@ -10,6 +12,23 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, issues: [{ code: "INVALID_DRAFT", message: "The draft failed Site Schema validation." }] }, { status: 400 });
     }
 
+    const contentQuality = evaluateWebsiteContent(parsed.data);
+    const contentErrors = contentQuality.issues.filter((issue) => issue.severity === "error");
+    if (contentErrors.length || contentQuality.score < MIN_PUBLISH_CONTENT_SCORE) {
+      return Response.json({
+        ok: false,
+        code: "CONTENT_QUALITY_NOT_READY",
+        contentQuality,
+        issues: contentErrors.length
+          ? contentErrors
+          : [{
+              code: "CONTENT_QUALITY_SCORE_LOW",
+              severity: "error",
+              message: `Content quality score ${contentQuality.score} is below the publish minimum of ${MIN_PUBLISH_CONTENT_SCORE}.`,
+            }],
+      }, { status: 422 });
+    }
+
     const archetypeId = body.archetypeId?.trim() || inferArchetype(parsed.data);
     const readiness = validateWebsite(parsed.data, archetypeId);
     if (!readiness.ready) {
@@ -17,6 +36,7 @@ export async function POST(request: Request) {
         ok: false,
         code: "WEBSITE_NOT_READY",
         readiness,
+        contentQuality,
         issues: readiness.errors,
       }, { status: 422 });
     }
@@ -30,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     const result = await runtime.publish({ site: parsed.data, createdBy: body.createdBy?.trim() || "workspace-user" });
-    return Response.json({ ...result, readiness }, { status: result.ok ? 201 : 422 });
+    return Response.json({ ...result, readiness, contentQuality }, { status: result.ok ? 201 : 422 });
   } catch (error) {
     return Response.json({ ok: false, issues: [{ code: "PUBLISH_FAILED", message: error instanceof Error ? error.message : "Publish failed." }] }, { status: 500 });
   }

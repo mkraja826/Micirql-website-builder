@@ -29,6 +29,7 @@ export function buildCertifiedDentalReviewDirections(
   const industry = clean(profile.industry) || "dental";
   const subindustry = normalizeDentalSubindustry(profile.subindustry);
   const goals = profileGoals(profile);
+  const briefSignals = profileSignals(profile);
   const candidates: ReviewDirection[] = [];
 
   for (let index = 0; index < DENTAL_LAYOUT_BLUEPRINTS.length; index += 1) {
@@ -44,7 +45,15 @@ export function buildCertifiedDentalReviewDirections(
       contentScore: contentQuality.score,
       archetypeFitScore: industryFit.score,
     });
-    const fitBonus = blueprintFitBonus(blueprint.fit.subindustryIds, blueprint.fit.goals, blueprint.fit.priorities, subindustry, goals);
+    const fitBonus = blueprintFitBonus(
+      blueprint.fit.subindustryIds,
+      blueprint.fit.goals,
+      blueprint.fit.priorities,
+      blueprint.styleTags,
+      subindustry,
+      goals,
+      briefSignals,
+    );
     const biased = applyPreferenceBias(baseScore, preferenceProfile);
     const designScore = { ...biased, total: Math.min(100, biased.total + fitBonus) };
 
@@ -57,7 +66,8 @@ export function buildCertifiedDentalReviewDirections(
         blueprint.archetype.replace(/-/g, " "),
         `${blueprint.design.imageStyle} imagery`,
         `${blueprint.design.sectionRhythm} section rhythm`,
-        ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`matched to ${subindustry.replace(/-/g, " ")}`] : []),
+        ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
+        ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         `design quality ${designScore.total}/100`,
       ],
       site: normalizedSite,
@@ -70,29 +80,63 @@ export function buildCertifiedDentalReviewDirections(
   }
 
   const ranked = [...candidates].sort((a, b) => b.designScore.total - a.designScore.total);
-  return selectDiverseDesigns(ranked, Math.min(REVIEW_LIMIT, count, ranked.length));
+  const selected = selectDiverseDesigns(ranked, Math.min(REVIEW_LIMIT, count, ranked.length));
+
+  // Preserve the strongest brief match at #1. Diversity matters for alternatives,
+  // but it must never demote the layout that best matches the user's specialty intent.
+  const top = ranked[0];
+  if (!top) return selected;
+  return [top, ...selected.filter((candidate) => candidate.id !== top.id)].slice(0, Math.min(REVIEW_LIMIT, count));
 }
 
 function blueprintFitBonus(
   subindustries: string[],
   blueprintGoals: string[],
   priorities: string[],
+  styleTags: string[],
   subindustry: string,
   goals: string[],
+  signals: string[],
 ): number {
   let bonus = 0;
-  if (subindustry && subindustries.includes(subindustry)) bonus += 8;
+
+  // Specialty intent is the dominant ranking signal. A layout built specifically
+  // for implants/cosmetic/ortho/endo must beat a generic dental layout when that
+  // specialty is explicit in the interpreted brief.
+  if (subindustry && subindustries.includes(subindustry)) {
+    bonus += subindustries.length === 1 ? 18 : 12;
+  } else if (subindustry && subindustries.length && !subindustries.includes(subindustry)) {
+    bonus -= 10;
+  }
+
   const goalMatches = goals.filter((goal) => blueprintGoals.some((candidate) => looselyMatches(candidate, goal))).length;
-  bonus += Math.min(5, goalMatches * 2);
-  if (subindustry === "implant-dentistry" && priorities.some((item) => /implant|technology|doctor/.test(item))) bonus += 3;
-  if (subindustry === "cosmetic-dentistry" && priorities.some((item) => /visual|outcome|confidence/.test(item))) bonus += 3;
-  return Math.min(12, bonus);
+  bonus += Math.min(6, goalMatches * 2);
+
+  const priorityMatches = priorities.filter((priority) => signals.some((signal) => looselyMatches(priority, signal))).length;
+  bonus += Math.min(6, priorityMatches * 2);
+
+  const styleMatches = styleTags.filter((tag) => signals.some((signal) => looselyMatches(tag, signal))).length;
+  bonus += Math.min(5, styleMatches);
+
+  if (subindustry === "implant-dentistry" && priorities.some((item) => /implant|technology|doctor/.test(item))) bonus += 4;
+  if (subindustry === "cosmetic-dentistry" && priorities.some((item) => /visual|outcome|confidence/.test(item))) bonus += 4;
+  if (subindustry === "orthodontics" && priorities.some((item) => /journey|treatment|technology/.test(item))) bonus += 4;
+  if (subindustry === "endodontics" && priorities.some((item) => /technology|doctor|trust/.test(item))) bonus += 4;
+
+  return Math.max(-10, Math.min(30, bonus));
 }
 
 function profileGoals(profile: OnboardingProfile): string[] {
-  const value = (profile as OnboardingProfile & { goals?: unknown }).goals;
-  if (!Array.isArray(value)) return [];
-  return value.map(clean).filter(Boolean);
+  return Array.isArray(profile.goals) ? profile.goals.map(clean).filter(Boolean) : [];
+}
+
+function profileSignals(profile: OnboardingProfile): string[] {
+  return [
+    ...(Array.isArray(profile.style_tags) ? profile.style_tags : []),
+    ...(Array.isArray(profile.services) ? profile.services : []),
+    ...(Array.isArray(profile.required_capabilities) ? profile.required_capabilities : []),
+    profile.notes ?? "",
+  ].map(clean).filter(Boolean);
 }
 
 function normalizeDentalSubindustry(value: unknown): string {

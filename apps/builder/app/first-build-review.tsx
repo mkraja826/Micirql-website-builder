@@ -13,13 +13,7 @@ type DraftRecord = { workspaceId: string; siteId: string; revision: number; snap
 type Viewport = "desktop" | "mobile";
 type PreferenceSignal = "more_like_this" | "compare" | "regenerate" | "selected";
 
-export function FirstBuildReview({
-  session,
-  workspaceId,
-  siteId,
-  profile,
-  onComplete,
-}: {
+export function FirstBuildReview({ session, workspaceId, siteId, profile, onComplete }: {
   session: SupabaseSession;
   workspaceId: string;
   siteId: string;
@@ -36,7 +30,7 @@ export function FirstBuildReview({
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const pool = useMemo(
-    () => draft && preferenceLoaded ? buildReviewDirections(draft.snapshot, profile, 48, preferenceProfile) : [],
+    () => draft && preferenceLoaded ? buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile) : [],
     [draft, profile, preferenceLoaded, preferenceProfile],
   );
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
@@ -55,17 +49,14 @@ export function FirstBuildReview({
           fetch(`/api/drafts?${draftQuery}`, { headers, cache: "no-store" }),
           fetch(`/api/design-preferences?${preferenceQuery}`, { headers, cache: "no-store" }),
         ]);
-
         const draftPayload = await draftResponse.json() as { draft?: DraftRecord; error?: string };
         if (!draftResponse.ok || !draftPayload.draft) throw new Error(draftPayload.error ?? "Could not load the generated website.");
         const next = { ...draftPayload.draft, snapshot: siteSchema.parse(draftPayload.draft.snapshot) };
-
         let learnedProfile: DesignPreferenceProfile | undefined;
         if (preferenceResponse.ok) {
           const preferencePayload = await preferenceResponse.json() as { profile?: DesignPreferenceProfile };
           learnedProfile = preferencePayload.profile?.signalCount ? preferencePayload.profile : undefined;
         }
-
         if (!cancelled) {
           setDraft(next);
           setPreferenceProfile(learnedProfile);
@@ -82,7 +73,7 @@ export function FirstBuildReview({
   }, [session.access_token, workspaceId, siteId]);
 
   useEffect(() => {
-    if (pool.length && visibleIds.length === 0) setVisibleIds(pool.slice(0, 20).map((item) => item.id));
+    if (pool.length && visibleIds.length === 0) setVisibleIds(pool.map((item) => item.id));
   }, [pool, visibleIds.length]);
 
   async function choose(direction: ReviewDirection) {
@@ -123,7 +114,7 @@ export function FirstBuildReview({
     void recordPreference("more_like_this", direction);
     const fingerprint = direction.designScore.fingerprint;
     const ranked = [...pool].sort((a, b) => similarityToFingerprint(b.designScore.fingerprint, fingerprint) - similarityToFingerprint(a.designScore.fingerprint, fingerprint));
-    setVisibleIds(ranked.slice(0, 20).map((item) => item.id));
+    setVisibleIds(ranked.slice(0, 8).map((item) => item.id));
   }
 
   function toggleCompare(direction: ReviewDirection) {
@@ -151,7 +142,7 @@ export function FirstBuildReview({
           typographyBody: direction.site.theme.brand.typography.body,
           metadata: {
             variantSeed: direction.variantSeed,
-            name: direction.name,
+            name: displayDirectionName(direction.name),
             designQuality: direction.designScore.total,
             fingerprint: direction.designScore.fingerprint,
             ...metadata,
@@ -163,46 +154,51 @@ export function FirstBuildReview({
     }
   }
 
-  if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing diverse design directions and learning from your previous choices…"}</p></div></main>;
+  if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing distinct design directions and learning from your previous choices…"}</p></div></main>;
+
+  const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
 
   return <main className={styles.shell}>
     <header className={styles.header}>
       <span>MiCirql design review</span>
-      <h1>Choose from 20 different directions.</h1>
-      <p>MiCirql keeps your business structure, functionality and logo-derived brand colors intact, then varies theme language, typography, layout and section composition. Taste stays with you.</p>
+      <h1>Choose your design direction.</h1>
+      <p>MiCirql selected the strongest visually distinct directions for this website. Your business structure, functionality and brand colors stay intact while composition, typography and visual language change.</p>
       <div className={styles.headerActions}>
-        <strong>{visible.length} directions</strong>
-        <span>{preferenceProfile?.signalCount ? `Personalized from ${preferenceProfile.signalCount} prior choice${preferenceProfile.signalCount === 1 ? "" : "s"}.` : "No prior design preference is required."}</span>
+        <strong>{countLabel}</strong>
+        <span>{preferenceProfile?.signalCount ? `Personalized from ${preferenceProfile.signalCount} prior choice${preferenceProfile.signalCount === 1 ? "" : "s"}.` : "Only meaningfully different directions are shown."}</span>
         {compared.length === 2 ? <button type="button" onClick={() => setActiveId("__compare__")}>Compare selected</button> : null}
       </div>
     </header>
 
     <section className={styles.grid}>
-      {visible.map((direction, index) => <article className={styles.card} key={direction.id}>
-        <div className={styles.cardTop}>
-          <span className={styles.badge}>{index < 3 ? `Top ${index + 1}` : `#${index + 1}`}</span>
-          <strong>{direction.name}</strong>
-          <small>{direction.reasons.slice(0, 2).join(" · ") || direction.description}</small>
-        </div>
-        <div className={styles.previewButton} aria-label={`${direction.name} design preview`}>
-          <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
-        </div>
-        <div className={styles.utilityActions}>
-          <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
-          <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
-          <button type="button" onClick={() => moreLike(direction)}>More like this</button>
-          <button type="button" onClick={() => regenerate(direction)}>Regenerate</button>
-        </div>
-        <div className={styles.actions}><button type="button" disabled={Boolean(savingId)} onClick={() => void choose(direction)}>{savingId === direction.id ? "Saving…" : "Use this design"}</button></div>
-      </article>)}
+      {visible.map((direction, index) => {
+        const name = displayDirectionName(direction.name);
+        return <article className={styles.card} key={direction.id}>
+          <div className={styles.cardTop}>
+            <span className={styles.badge}>{index < 3 ? `Top ${index + 1}` : `Direction ${index + 1}`}</span>
+            <strong>{name}</strong>
+            <small>{direction.description}</small>
+          </div>
+          <div className={styles.previewButton} aria-label={`${name} design preview`}>
+            <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
+          </div>
+          <div className={styles.utilityActions}>
+            <button type="button" onClick={() => setActiveId(direction.id)}>Preview</button>
+            <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
+            <button type="button" onClick={() => moreLike(direction)}>More like this</button>
+            <button type="button" onClick={() => regenerate(direction)}>Try another</button>
+          </div>
+          <div className={styles.actions}><button type="button" disabled={Boolean(savingId)} onClick={() => void choose(direction)}>{savingId === direction.id ? "Saving…" : "Use this design"}</button></div>
+        </article>;
+      })}
     </section>
 
     {error ? <div className={styles.error}>{error}</div> : null}
 
-    {active && activeId !== "__compare__" ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label={`${active.name} preview`}>
+    {active && activeId !== "__compare__" ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label={`${displayDirectionName(active.name)} preview`}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
-          <div><small>Design preview</small><strong>{active.name}</strong></div>
+          <div><small>Design preview</small><strong>{displayDirectionName(active.name)}</strong></div>
           <div className={styles.modalTools}>
             <button type="button" className={viewport === "desktop" ? styles.selectedAction : ""} onClick={() => setViewport("desktop")}>Desktop</button>
             <button type="button" className={viewport === "mobile" ? styles.selectedAction : ""} onClick={() => setViewport("mobile")}>Mobile</button>
@@ -212,7 +208,7 @@ export function FirstBuildReview({
         <div className={viewport === "mobile" ? styles.fullPreviewMobile : styles.fullPreview}><RendererPreview site={active.site} path={active.site.pages[0]?.path ?? "/"} viewport={viewport} onSelectSection={() => {}} /></div>
         <div className={styles.modalFooter}>
           <button type="button" onClick={() => moreLike(active)}>More like this</button>
-          <button type="button" onClick={() => regenerate(active)}>Regenerate</button>
+          <button type="button" onClick={() => regenerate(active)}>Try another</button>
           <button type="button" className={styles.primaryModalAction} disabled={Boolean(savingId)} onClick={() => void choose(active)}>{savingId === active.id ? "Saving…" : "Use this design"}</button>
         </div>
       </div>
@@ -221,10 +217,14 @@ export function FirstBuildReview({
     {activeId === "__compare__" && compared.length === 2 ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Compare designs">
       <div className={`${styles.modal} ${styles.compareModal}`}>
         <div className={styles.modalHeader}><div><small>Side-by-side</small><strong>Compare designs</strong></div><button type="button" onClick={() => setActiveId(undefined)}>Close</button></div>
-        <div className={styles.compareGrid}>{compared.map((direction) => <div key={direction.id} className={styles.comparePane}><h3>{direction.name}</h3><div className={styles.comparePreview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div><button type="button" onClick={() => void choose(direction)}>Use this design</button></div>)}</div>
+        <div className={styles.compareGrid}>{compared.map((direction) => <div key={direction.id} className={styles.comparePane}><h3>{displayDirectionName(direction.name)}</h3><div className={styles.comparePreview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div><button type="button" onClick={() => void choose(direction)}>Use this design</button></div>)}</div>
       </div>
     </div> : null}
   </main>;
+}
+
+function displayDirectionName(name: string) {
+  return name.replace(/\s*·\s*variation\s+\d+\s*$/i, "").trim();
 }
 
 function designSignature(site: Site) {

@@ -14,6 +14,7 @@ const VIEWPORTS = [
   { id: "mobile-390", mode: "mobile", width: 390, height: 844 },
   { id: "mobile-430", mode: "mobile", width: 430, height: 932 },
   { id: "tablet-768", mode: "tablet", width: 768, height: 1024 },
+  { id: "desktop-1024", mode: "desktop", width: 1024, height: 768 },
   { id: "desktop-1440", mode: "desktop", width: 1440, height: 900 },
 ] as const;
 
@@ -183,6 +184,45 @@ async function metrics(preview: Locator, viewportHeight: number) {
       return clipsX || clipsY;
     }).slice(0, 20).map((node) => ({ tag: node.tagName, cls: node.className, text: node.textContent?.trim().slice(0,100) ?? "", clientWidth: node.clientWidth, scrollWidth: node.scrollWidth, clientHeight: node.clientHeight, scrollHeight: node.scrollHeight }));
 
+    const collisionNodes = [...root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,p,blockquote,a,button,input,textarea,select")].filter((node) => {
+      const r = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return r.width > 2 && r.height > 2 && style.visibility !== "hidden" && style.display !== "none";
+    });
+    const collisions: Array<{ first:string; second:string; overlapWidth:number; overlapHeight:number }> = [];
+    for (let i = 0; i < collisionNodes.length && collisions.length < 20; i++) {
+      const a = collisionNodes[i]!;
+      const ar = a.getBoundingClientRect();
+      for (let j = i + 1; j < collisionNodes.length && collisions.length < 20; j++) {
+        const b = collisionNodes[j]!;
+        if (a.contains(b) || b.contains(a)) continue;
+        const sectionA = a.closest("section,.mi-editor-section");
+        const sectionB = b.closest("section,.mi-editor-section");
+        if (!sectionA || sectionA !== sectionB) continue;
+        const br = b.getBoundingClientRect();
+        const overlapWidth = Math.min(ar.right, br.right) - Math.max(ar.left, br.left);
+        const overlapHeight = Math.min(ar.bottom, br.bottom) - Math.max(ar.top, br.top);
+        if (overlapWidth > 6 && overlapHeight > 6) {
+          collisions.push({
+            first: `${a.tagName}.${String(a.className).slice(0,60)}:${a.textContent?.trim().slice(0,50) ?? ""}`,
+            second: `${b.tagName}.${String(b.className).slice(0,60)}:${b.textContent?.trim().slice(0,50) ?? ""}`,
+            overlapWidth: Math.round(overlapWidth),
+            overlapHeight: Math.round(overlapHeight),
+          });
+        }
+      }
+    }
+
+    const actionSelector = ".mi-section__action,.mi-conv-btn,a[href],button";
+    const wrappedActions = [...root.querySelectorAll<HTMLElement>(actionSelector)].filter((node) => {
+      const r = node.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0 || !node.textContent?.trim()) return false;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const lineRects = [...range.getClientRects()].filter((line) => line.width > 1 && line.height > 1);
+      return lineRects.length > 1;
+    }).slice(0,20).map((node) => ({ tag:node.tagName, cls:node.className, text:node.textContent?.trim().slice(0,80) ?? "", width:Math.round(node.getBoundingClientRect().width), height:Math.round(node.getBoundingClientRect().height) }));
+
     const distortedImages = [...root.querySelectorAll<HTMLImageElement>("img")].filter((img) => {
       const r = img.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0 || !img.naturalWidth || !img.naturalHeight) return false;
@@ -215,6 +255,10 @@ async function metrics(preview: Locator, viewportHeight: number) {
       tooSmallActions,
       clippedTextCount: clippedText.length,
       clippedText,
+      collisionCount: collisions.length,
+      collisions,
+      wrappedActionCount: wrappedActions.length,
+      wrappedActions,
       distortedImageCount: distortedImages.length,
       distortedImages,
       oversizedSectionCount: oversizedSections.length,
@@ -256,6 +300,8 @@ test("capture all 20 certified Dental layouts through the production blueprint p
       expect(measured.scrollWidth, `${layout.id} overflowed at ${viewport.width}px`).toBeLessThanOrEqual(measured.clientWidth + 1);
       expect(measured.overflowCount, `${layout.id} has children escaping the preview at ${viewport.width}px: ${JSON.stringify(measured.overflowers)}`).toBe(0);
       expect(measured.clippedTextCount, `${layout.id} has clipped text at ${viewport.width}px: ${JSON.stringify(measured.clippedText)}`).toBe(0);
+      expect(measured.collisionCount, `${layout.id} has overlapping text or controls at ${viewport.width}px: ${JSON.stringify(measured.collisions)}`).toBe(0);
+      expect(measured.wrappedActionCount, `${layout.id} has wrapped CTA/button labels at ${viewport.width}px: ${JSON.stringify(measured.wrappedActions)}`).toBe(0);
       expect(measured.distortedImageCount, `${layout.id} has distorted images at ${viewport.width}px: ${JSON.stringify(measured.distortedImages)}`).toBe(0);
       expect(measured.malformedControlCount, `${layout.id} has malformed CTA/form controls at ${viewport.width}px: ${JSON.stringify(measured.malformedControls)}`).toBe(0);
       if (viewport.width <= 430) {
@@ -279,7 +325,7 @@ test("capture all 20 certified Dental layouts through the production blueprint p
     `- Distinct production fingerprints: **${uniqueFingerprints}/20**`,
     `- Viewports per layout: **${VIEWPORTS.length}**`,
     `- Total screenshots: **${report.length * VIEWPORTS.length}**`,
-    "- Hard gates: full certified blueprint coverage, production blueprint application, no document overflow, no child escape, no clipped text, no stretched images, sane CTA/form geometry, mobile interactive height >= 44px, no abnormally tall mobile sections",
+    "- Hard gates: full certified blueprint coverage, production blueprint application, no document overflow, no child escape, no clipped text, no text/control collisions, no wrapped CTA labels, no stretched images, sane CTA/form geometry, mobile interactive height >= 44px, no abnormally tall mobile sections",
     "",
     ...report.map((entry) => `- ${entry.layoutId}: PASS`),
     "",

@@ -37,13 +37,9 @@ export function evaluatePageMediaArtDirection(site: Site, path = "/"): MediaArtD
     const tokens: string[] = [];
     if (intent && typeof intent === "object" && !Array.isArray(intent)) {
       const record = intent as Record<string, unknown>;
+      if (Array.isArray(record.selectedAssetTags)) tokens.push(...record.selectedAssetTags.filter((value): value is string => typeof value === "string"));
       if (Array.isArray(record.preferredTags)) tokens.push(...record.preferredTags.filter((value): value is string => typeof value === "string"));
       if (typeof record.reason === "string") tokens.push(record.reason);
-    }
-    const alternates = props.qualifiedMediaAlternates;
-    if (Array.isArray(alternates) && alternates[0] && typeof alternates[0] === "object") {
-      const record = alternates[0] as Record<string, unknown>;
-      if (Array.isArray(record.tags)) tokens.push(...record.tags.filter((value): value is string => typeof value === "string"));
     }
     const signature = classifyMediaArtDirectionTokens(tokens.join(" "));
     if (signature.style || signature.temperature || signature.lighting) signatures.push(signature);

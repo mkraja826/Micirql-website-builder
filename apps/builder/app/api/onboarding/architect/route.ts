@@ -8,6 +8,7 @@ import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
 import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
+import { evaluateAboveFoldComposition } from "../../../above-fold-composition-quality";
 import { evaluateDentalContentQuality, type DentalContentQualityResult } from "../../../dental-content-quality";
 import { evaluateHeroCoherence } from "../../../hero-coherence-quality";
 import { safeRecordBuildObservability } from "../../../build-observability";
@@ -187,6 +188,13 @@ export async function POST(request: NextRequest) {
       throw new Error(`GENERATED_HERO_COHERENCE_FAILED: ${codes.join(", ") || `score ${heroCoherence.score}/${MIN_HERO_COHERENCE_SCORE}`}`);
     }
 
+    const aboveFoldQuality = evaluateAboveFoldComposition(finalDraft.snapshot);
+    if (!aboveFoldQuality.ready) {
+      const blocking = aboveFoldQuality.issues.filter((item) => item.severity === "error");
+      const codes = [...new Set((blocking.length ? blocking : aboveFoldQuality.issues).map((item) => item.code))];
+      throw new Error(`GENERATED_ABOVE_FOLD_QUALITY_FAILED: ${codes.join(", ") || `score ${aboveFoldQuality.score}/${aboveFoldQuality.threshold}`}`);
+    }
+
     const visualQuality = evaluateSiteVisualQuality(finalDraft.snapshot);
     if (!visualQuality.ready) {
       const codes = [...new Set(visualQuality.issues.map((item) => item.code))];
@@ -197,7 +205,7 @@ export async function POST(request: NextRequest) {
     const dentalRecoveryReason = dentalRepairApplied ? `Dental specialty content auto-repaired: ${dentalRepairCodes.join(", ")}` : null;
     const recoveryReason = contentWarning || mediaWarning || dentalRecoveryReason || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
-    const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100, heroCoherence.score);
+    const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100, heroCoherence.score, aboveFoldQuality.score);
     await safeRecordBuildObservability(request, {
       workspaceId,
       siteId,
@@ -209,10 +217,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

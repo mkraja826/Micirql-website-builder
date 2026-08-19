@@ -27,6 +27,7 @@ export const assetRecordSchema = z.object({
   aspectRatio: z.number().positive(),
   focalPoint: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).default({ x: 0.5, y: 0.5 }),
   dominantTone: z.string().optional(),
+  perceptualHash: z.string().regex(/^[0-9a-fA-F]{16}$/).optional(),
   domains: z.array(domainSchema).default([]),
   subtypes: z.array(z.string()).default([]),
   sectionFamilies: z.array(z.string()).default([]),

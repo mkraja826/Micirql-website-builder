@@ -25,6 +25,7 @@ function apply(props:Record<string,unknown>,request:MediaRequest,family:SectionF
   source:request.source,
   desiredAspect:request.desiredAspect,
   preferredTags:[...(request.preferredTags??[])],
+  selectedAssetTags:[...request.asset.tags],
   reason:request.reason,
  };
  if(family==="gallery"||family==="team"||family==="features"){

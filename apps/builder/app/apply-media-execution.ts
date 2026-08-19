@@ -13,8 +13,8 @@ function apply(props:Record<string,unknown>,request:MediaRequest,family:SectionF
  const image={src:request.asset.url,alt:request.alt};
  props.image=image;props.imageSlotMode="section";
  props.imageFit=family==="features"?"contain":"cover";
- props.imageFocalPoint=request.asset.tags.some(tag=>/person|people|team|portrait|face/i.test(tag))?"face-safe":"center";
- const ratio=normalizeRatio(request.asset.aspect);if(ratio)props.imageRatio=ratio;
+ props.imageFocalPoint=request.asset.tags.some(tag=>/person|people|team|portrait|face/i.test(tag))||request.desiredAspect==="portrait"?"face-safe":"center";
+ const ratio=normalizeRatio(request.desiredAspect??request.asset.aspect);if(ratio)props.imageRatio=ratio;
  if(family==="gallery"||family==="team"||family==="features"){
   const items=Array.isArray(props.items)?props.items as Array<Record<string,unknown>>:[];
   const target=items.find(item=>!item.image);if(target){target.image=request.asset.url;props.imageSlotMode=props.image?"both":"items";}

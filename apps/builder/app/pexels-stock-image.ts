@@ -20,6 +20,11 @@ type PexelsPhoto = {
 
 type PexelsSearchResponse = { photos?: PexelsPhoto[] };
 
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;
+const BASE_DELAY_MS = 350;
+const MAX_DELAY_MS = 5_000;
+
 export function getPexelsApiKey(): string | null {
   return process.env.PEXELS_API_KEY?.trim() || null;
 }
@@ -61,7 +66,7 @@ export async function fetchPexelsImage(input: {
     page: "1",
   });
 
-  const response = await fetch(`https://api.pexels.com/v1/search?${params}`, {
+  const response = await fetchWithRetry(`https://api.pexels.com/v1/search?${params}`, {
     headers: { Authorization: apiKey },
     cache: "no-store",
   });
@@ -75,7 +80,7 @@ export async function fetchPexelsImage(input: {
   if (!photo) throw new Error(`Pexels returned no usable image for: ${query}`);
 
   const imageUrl = pickImageUrl(photo, orientation);
-  const imageResponse = await fetch(imageUrl, { cache: "no-store" });
+  const imageResponse = await fetchWithRetry(imageUrl, { cache: "no-store" });
   if (!imageResponse.ok) throw new Error(`Pexels image download failed (${imageResponse.status}).`);
   const bytes = new Uint8Array(await imageResponse.arrayBuffer());
   if (!bytes.byteLength) throw new Error("Pexels returned an empty image.");
@@ -99,6 +104,46 @@ export async function fetchPexelsImage(input: {
     query,
     sourceUrl: imageUrl,
   };
+}
+
+async function fetchWithRetry(input: string, init: RequestInit): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(input, init);
+      if (!RETRYABLE_STATUS.has(response.status) || attempt === MAX_ATTEMPTS) return response;
+      await discardBody(response);
+      await sleep(retryDelayMs(response.headers.get("retry-after"), attempt));
+    } catch (error) {
+      if (!isRetryableNetworkError(error) || attempt === MAX_ATTEMPTS) throw error;
+      lastError = error;
+      await sleep(retryDelayMs(null, attempt));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Pexels request failed after retries.");
+}
+
+function retryDelayMs(retryAfter: string | null, attempt: number): number {
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(MAX_DELAY_MS, Math.round(seconds * 1_000));
+    const timestamp = Date.parse(retryAfter);
+    if (Number.isFinite(timestamp)) return Math.min(MAX_DELAY_MS, Math.max(0, timestamp - Date.now()));
+  }
+  return Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1));
+}
+
+function isRetryableNetworkError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "AbortError") return false;
+  return error instanceof TypeError || (error instanceof Error && /network|fetch failed|socket|timeout|timed out|connection|econn/i.test(error.message));
+}
+
+async function discardBody(response: Response): Promise<void> {
+  try { await response.arrayBuffer(); } catch { /* best effort */ }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildSearchQuery(prompt: string, domain?: string, family?: string): string {

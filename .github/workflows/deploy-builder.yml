@@ -1,6 +1,6 @@
 name: Deploy Builder to Cloudflare
 
-# Secret refresh trigger: 2026-08-18
+# Secret refresh trigger: 2026-08-19
 on:
   workflow_dispatch:
   push:
@@ -38,7 +38,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       MICIRQL_SUPABASE_SECRET_KEY: ${{ secrets.MICIRQL_SUPABASE_SECRET_KEY }}
       MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
-      MICIRQL_BFL_API_KEY: ${{ secrets.MICIRQL_BFL_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
       MICIRQL_DRAFT_STORE: supabase
@@ -59,6 +59,7 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID"; exit 1; }
           test -n "$MICIRQL_SUPABASE_SECRET_KEY" || { echo "Missing MICIRQL_SUPABASE_SECRET_KEY"; exit 1; }
+          test -n "$PEXELS_API_KEY" || { echo "Missing PEXELS_API_KEY"; exit 1; }
 
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm --filter @micirql/builder typecheck
@@ -77,8 +78,7 @@ jobs:
         shell: bash
         run: printf '%s' "$MICIRQL_LIBRARY_ADMIN_TOKEN" | pnpm exec wrangler secret put MICIRQL_LIBRARY_ADMIN_TOKEN
 
-      - name: Upload BFL image API key to Builder Worker
-        if: ${{ env.MICIRQL_BFL_API_KEY != '' }}
+      - name: Upload Pexels API key to Builder Worker
         working-directory: apps/builder
         shell: bash
-        run: printf '%s' "$MICIRQL_BFL_API_KEY" | pnpm exec wrangler secret put MICIRQL_BFL_API_KEY
+        run: printf '%s' "$PEXELS_API_KEY" | pnpm exec wrangler secret put PEXELS_API_KEY

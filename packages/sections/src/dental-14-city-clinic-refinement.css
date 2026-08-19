@@ -1,0 +1,79 @@
+/* Dental 14 — City Clinic refinement
+ * Keep the urban/location-led identity while reducing repeated framed panels.
+ * The result should feel architectural and contemporary rather than dashboard-like.
+ */
+
+/* Treatments become a compact urban index rather than a tile grid. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight{
+  gap:0 clamp(2rem,4vw,4rem);
+  border-top:1px solid var(--mi-city-line);
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:nth-child(n){
+  min-height:0;
+  padding:1.35rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-city-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-city-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-service-item h3{
+  font-size:clamp(1.45rem,2.2vw,2rem);
+  letter-spacing:-.025em;
+}
+
+/* Clinician presence becomes editorial and human. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.55rem;
+}
+
+/* Quote stays strong through typography rather than another visual box. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-proof--quote blockquote{
+  max-width:58rem;
+  padding-left:clamp(1.2rem,2.4vw,2rem);
+  border-left:2px solid var(--mi-color-primary);
+}
+
+/* Closing CTA becomes a city-clinic band. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split{
+  background:var(--mi-city-ink);
+  color:#f6fbfb;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+/* Keep the form usable and legible, but remove excess chrome. */
+[data-mi-layout-blueprint="dental-14-city-clinic"] .mi-contact-form{
+  border-radius:.7rem;
+  box-shadow:none;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight{display:block}
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:first-child,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-services-spotlight .mi-service-item:nth-child(n){
+    width:100%;
+    padding:1.15rem 0;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-conv-cta--split .mi-cta-split{width:100%}
+}

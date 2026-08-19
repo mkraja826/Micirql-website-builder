@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       reasons: item.reasons,
       archetype: item.layout.archetype,
       styleTags: item.layout.styleTags,
+      preferredSubindustry: item.layout.fit.subindustryIds.length === 1 ? item.layout.fit.subindustryIds[0] : null,
     }));
     return NextResponse.json({ ok: true, profile, layoutRecommendation: layoutRecommendations[0] ?? null, layoutAlternative: layoutRecommendations[1] ?? null });
   } catch (error) {

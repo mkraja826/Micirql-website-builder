@@ -15,6 +15,18 @@ function apply(props:Record<string,unknown>,request:MediaRequest,family:SectionF
  props.imageFit=family==="features"?"contain":"cover";
  props.imageFocalPoint=request.asset.tags.some(tag=>/person|people|team|portrait|face/i.test(tag))||request.desiredAspect==="portrait"?"face-safe":"center";
  const ratio=normalizeRatio(request.desiredAspect??request.asset.aspect);if(ratio)props.imageRatio=ratio;
+ if(request.qualifiedAlternates?.length){
+  props.qualifiedMediaAlternates=request.qualifiedAlternates.map(({asset,score,reason})=>({
+   id:asset.id,url:asset.url,alt:asset.alt??request.alt,tags:[...asset.tags],aspect:asset.aspect,verified:Boolean(asset.verified),
+   ...(asset.width?{width:asset.width}:{}),...(asset.height?{height:asset.height}:{}),score,reason,
+  }));
+ }
+ props.mediaSelectionIntent={
+  source:request.source,
+  desiredAspect:request.desiredAspect,
+  preferredTags:[...(request.preferredTags??[])],
+  reason:request.reason,
+ };
  if(family==="gallery"||family==="team"||family==="features"){
   const items=Array.isArray(props.items)?props.items as Array<Record<string,unknown>>:[];
   const target=items.find(item=>!item.image);if(target){target.image=request.asset.url;props.imageSlotMode=props.image?"both":"items";}

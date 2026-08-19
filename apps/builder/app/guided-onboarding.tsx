@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SupabaseSession } from "./auth-client";
+import { computeImageDHash } from "./image-perceptual-hash";
 import { analyzeLogoPixels, createTransparentLogoDerivative } from "./logo-pixel-analysis";
 import { customerSafeApiMessage, fetchJsonWithRetry } from "./safe-api-json";
 import styles from "./guided-onboarding.module.css";
@@ -86,9 +87,9 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
     try {
       for (const file of selected) {
         if (file.size > 8 * 1024 * 1024) { summary.push(`${file.name}: skipped (over 8 MB)`); continue; }
-        const [dataUrl, dimensions] = await Promise.all([fileDataUrl(file), imageDimensions(file)]);
+        const [dataUrl, dimensions, perceptualHash] = await Promise.all([fileDataUrl(file), imageDimensions(file), computeImageDHash(file)]);
         try {
-          const { response, payload } = await fetchJsonWithRetry<ApiPayload>("/api/assets/upload", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height }) }, { retries: 1, onRetry: (_, attempt) => console.warn("MiCirql asset API retry", { stage: "business-media", attempt }) });
+          const { response, payload } = await fetchJsonWithRetry<ApiPayload>("/api/assets/upload", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height, perceptualHash }) }, { retries: 1, onRetry: (_, attempt) => console.warn("MiCirql asset API retry", { stage: "business-media", attempt }) });
           if (!response.ok || !payload?.asset) { summary.push(`${file.name}: upload failed`); continue; }
           const classification = payload.classification && typeof payload.classification === "object" && !Array.isArray(payload.classification) ? payload.classification as Record<string, unknown> : undefined;
           const category = typeof classification?.category === "string" ? classification.category : "business image";

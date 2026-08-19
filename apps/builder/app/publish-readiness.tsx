@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { analyzeMissingInformation, type MissingInformationItem } from "@micirql/design-engine";
 import { getDomainPack } from "@micirql/domains";
 import type { Site } from "@micirql/schema";
 
 export type ReadinessCheck = { id: string; label: string; ok: boolean; detail: string; blocking: boolean };
+type FactKey = "people" | "credentials" | "prices" | "openingHours" | "claims" | "addresses" | "phoneNumbers" | "emails" | "urls";
+type BusinessFacts = Record<FactKey, string[]>;
+const EMPTY_FACTS: BusinessFacts = { people: [], credentials: [], prices: [], openingHours: [], claims: [], addresses: [], phoneNumbers: [], emails: [], urls: [] };
+const FACT_FIELDS: Array<{ key: FactKey; label: string; hint: string }> = [
+  { key: "people", label: "People / team", hint: "Dr. Priya Rao" },
+  { key: "credentials", label: "Credentials", hint: "BDS, MDS · Prosthodontist" },
+  { key: "prices", label: "Prices", hint: "₹25,000 implant consultation package" },
+  { key: "openingHours", label: "Opening hours", hint: "Mon–Sat 9:00 AM–7:00 PM" },
+  { key: "claims", label: "Verified proof / claims", hint: "12 years of experience · 5,000+ patients" },
+  { key: "addresses", label: "Addresses", hint: "Clinic address" },
+  { key: "phoneNumbers", label: "Phone numbers", hint: "+91 90000 00000" },
+  { key: "emails", label: "Emails", hint: "hello@example.com" },
+  { key: "urls", label: "Website / profile URLs", hint: "https://example.com" },
+];
 
 export function publishReadiness(site: Site): { ready: boolean; checks: ReadinessCheck[] } {
   const pack = getDomainPack(site.domain);
@@ -46,6 +61,8 @@ export function PublishReadinessManager({ site }: { site: Site }) {
       <div className="launch-score"><strong>{passed.length}/{report.checks.length}</strong><span>checks passed</span></div>
     </section>
 
+    <BusinessFactsEditor site={site} />
+
     <section className="launch-domain-card">
       <div><span>Where your site will go live</span><strong>{primaryDomain?.hostname ?? `${site.domain}.micirql.site`}</strong><small>{primaryDomain ? (primaryDomain.status === "active" && primaryDomain.sslStatus === "active" ? "Custom domain connected · SSL active" : "Custom domain setup still in progress") : "MiCirql subdomain ready · connect a custom domain anytime"}</small></div>
       <b className={primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "is-waiting" : "is-live"}>{primaryDomain && (primaryDomain.status !== "active" || primaryDomain.sslStatus !== "active") ? "Pending" : "Ready"}</b>
@@ -61,6 +78,53 @@ export function PublishReadinessManager({ site }: { site: Site }) {
       <p className="content-completion-note">Recommendations improve the website but do not block publishing unless they also appear above under “Fix before launch”.</p>
     </section>
   </div>;
+}
+
+function BusinessFactsEditor({ site }: { site: Site }) {
+  const [facts, setFacts] = useState<BusinessFacts>(EMPTY_FACTS);
+  const [state, setState] = useState<"loading" | "ready" | "saving" | "saved" | "error">("loading");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const query = new URLSearchParams({ workspaceId: site.workspaceId, siteId: site.siteId });
+    void fetch(`/api/business-facts?${query}`, { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json() as { facts?: Partial<BusinessFacts>; error?: string };
+        if (!response.ok) throw new Error(payload.error ?? "Business facts could not be loaded.");
+        if (!cancelled) {
+          setFacts({ ...EMPTY_FACTS, ...(payload.facts ?? {}) });
+          setState("ready");
+        }
+      })
+      .catch((error) => { if (!cancelled) { setMessage(error instanceof Error ? error.message : "Business facts could not be loaded."); setState("error"); } });
+    return () => { cancelled = true; };
+  }, [site.workspaceId, site.siteId]);
+
+  async function save() {
+    setState("saving"); setMessage("");
+    try {
+      const response = await fetch("/api/business-facts", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ workspaceId: site.workspaceId, siteId: site.siteId, facts }) });
+      const payload = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) throw new Error(payload.error ?? "Business facts could not be saved.");
+      setState("saved"); setMessage("Verified facts saved. Previously blocked factual copy can now be retried.");
+    } catch (error) {
+      setState("error"); setMessage(error instanceof Error ? error.message : "Business facts could not be saved.");
+    }
+  }
+
+  function setField(key: FactKey, value: string) {
+    const items = value.split("\n").map((item) => item.trim()).filter(Boolean).slice(0, 48);
+    setFacts((current) => ({ ...current, [key]: items }));
+    if (state === "saved") setState("ready");
+  }
+
+  return <section className="business-facts-editor" aria-label="Verified business facts">
+    <div className="launch-section-heading"><span>Verified business facts</span><strong>Ground AI and website claims</strong></div>
+    <p className="content-completion-note">Only add facts you can stand behind. MiCirql uses these details to allow names, credentials, prices, hours, statistics and other factual claims in generated or edited copy.</p>
+    {state === "loading" ? <div className="content-completion-done"><strong>Loading verified facts…</strong></div> : <div className="business-facts-grid">{FACT_FIELDS.map((field) => <label key={field.key}><span>{field.label}</span><textarea rows={facts[field.key].length > 2 ? 4 : 2} placeholder={field.hint} value={facts[field.key].join("\n")} onChange={(event) => setField(field.key, event.target.value)} /><small>One verified fact per line.</small></label>)}</div>}
+    <div className="business-facts-actions"><button type="button" onClick={() => void save()} disabled={state === "loading" || state === "saving"}>{state === "saving" ? "Saving…" : "Save verified facts"}</button>{message ? <span role={state === "error" ? "alert" : "status"}>{message}</span> : null}</div>
+  </section>;
 }
 
 function openCompletionItem(site: Site, item: MissingInformationItem) {

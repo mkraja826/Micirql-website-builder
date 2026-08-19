@@ -5,6 +5,8 @@ import type { ReviewDirection } from "./review-directions";
 import { RendererPreview } from "./renderer-preview";
 import { planRenderedFirstScreenRepair } from "./rendered-first-screen-repair";
 import { persistFirstScreenRepair } from "./persisted-first-screen-repair";
+import { planRenderedPageTypographyRepair } from "./rendered-page-typography-repair";
+import { persistRenderedTypographyRepair } from "./persisted-rendered-typography-repair";
 
 const TARGETS = [
   { viewport: "mobile" as const, width: 390, foldHeight: 844 },
@@ -18,6 +20,8 @@ type CertificationResult = {
   failures: string[];
 };
 
+type TypographyIssue = { code: string; severity: "warning" | "error" };
+
 export function DentalReviewRenderCertifier({
   directions,
   onComplete,
@@ -29,7 +33,8 @@ export function DentalReviewRenderCertifier({
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [targetIndex, setTargetIndex] = useState(0);
   const [working, setWorking] = useState<ReviewDirection>();
-  const [attempt, setAttempt] = useState<0 | 1>(0);
+  const [firstScreenAttempt, setFirstScreenAttempt] = useState<0 | 1>(0);
+  const [typographyAttempt, setTypographyAttempt] = useState<0 | 1>(0);
   const [results, setResults] = useState<CertificationResult[]>([]);
   const probeRef = useRef<HTMLDivElement>(null);
   const completedSignature = useRef("");
@@ -37,7 +42,8 @@ export function DentalReviewRenderCertifier({
   useEffect(() => {
     setCandidateIndex(0);
     setTargetIndex(0);
-    setAttempt(0);
+    setFirstScreenAttempt(0);
+    setTypographyAttempt(0);
     setResults([]);
     setWorking(directions[0]);
     completedSignature.current = "";
@@ -60,29 +66,47 @@ export function DentalReviewRenderCertifier({
       const documentRoot = probeRef.current?.querySelector<HTMLElement>(".renderer-preview-document");
       if (!documentRoot) return;
       const target = TARGETS[targetIndex]!;
-      const failures = measureFirstScreen(documentRoot, target.width, target.foldHeight);
+      const firstScreenFailures = measureFirstScreen(documentRoot, target.width, target.foldHeight);
 
-      if (!failures.length) {
-        if (targetIndex < TARGETS.length - 1) {
-          setTargetIndex((value) => value + 1);
-          setAttempt(0);
+      if (firstScreenFailures.length) {
+        const plan = planRenderedFirstScreenRepair({ width: target.width, failures: firstScreenFailures, attempt: firstScreenAttempt });
+        if (firstScreenAttempt === 0 && plan.required) {
+          setWorking((current) => current ? { ...current, site: persistFirstScreenRepair(current.site, plan) } : current);
+          setFirstScreenAttempt(1);
           return;
         }
-        finishCandidate({ direction: working, passed: true, repaired: hasAnyRepair(working), failures: [] });
+        finishCandidate({ direction: working, passed: false, repaired: hasAnyRepair(working), failures: firstScreenFailures });
         return;
       }
 
-      const plan = planRenderedFirstScreenRepair({ width: target.width, failures, attempt });
-      if (attempt === 0 && plan.required) {
-        setWorking((current) => current ? { ...current, site: persistFirstScreenRepair(current.site, plan) } : current);
-        setAttempt(1);
+      const typographyIssues = measureRenderedTypographyIssues(documentRoot, target.width);
+      const typographyFailed = typographyIssues.some((issue) => issue.severity === "error") || typographyIssues.filter((issue) => issue.severity === "warning").length > (target.width <= 430 ? 4 : 5);
+      if (typographyFailed) {
+        const plan = planRenderedPageTypographyRepair({ width: target.width, issues: typographyIssues, attempt: typographyAttempt });
+        if (typographyAttempt === 0 && plan.required) {
+          setWorking((current) => current ? { ...current, site: persistRenderedTypographyRepair(current.site, plan) } : current);
+          setTypographyAttempt(1);
+          return;
+        }
+        finishCandidate({
+          direction: working,
+          passed: false,
+          repaired: hasAnyRepair(working),
+          failures: typographyIssues.map((issue) => `typography:${issue.code}`),
+        });
         return;
       }
 
-      finishCandidate({ direction: working, passed: false, repaired: hasAnyRepair(working), failures });
+      if (targetIndex < TARGETS.length - 1) {
+        setTargetIndex((value) => value + 1);
+        setFirstScreenAttempt(0);
+        setTypographyAttempt(0);
+        return;
+      }
+      finishCandidate({ direction: working, passed: true, repaired: hasAnyRepair(working), failures: [] });
     }, 260);
     return () => window.clearTimeout(timer);
-  }, [attempt, candidateIndex, directions.length, targetIndex, working]);
+  }, [candidateIndex, directions.length, firstScreenAttempt, targetIndex, typographyAttempt, working]);
 
   function finishCandidate(result: CertificationResult) {
     const nextResults = [...results, result];
@@ -90,7 +114,8 @@ export function DentalReviewRenderCertifier({
     setResults(nextResults);
     setCandidateIndex(nextIndex);
     setTargetIndex(0);
-    setAttempt(0);
+    setFirstScreenAttempt(0);
+    setTypographyAttempt(0);
     setWorking(directions[nextIndex]);
     if (nextIndex >= directions.length && completedSignature.current !== signature) {
       completedSignature.current = signature;
@@ -168,9 +193,54 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
   return failures;
 }
 
+function measureRenderedTypographyIssues(root: HTMLElement, width: number): TypographyIssue[] {
+  const editor = "[data-mi-canvas-action],.mi-editor-insert-zone,.mi-editor-canvas-toolbar";
+  const visible = (node: Element) => {
+    if (node.closest(editor)) return false;
+    const style = getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+  };
+  const lineHeight = (node: Element) => {
+    const style = getComputedStyle(node);
+    const explicit = Number.parseFloat(style.lineHeight);
+    const fontSize = Number.parseFloat(style.fontSize) || 16;
+    return Number.isFinite(explicit) ? explicit : fontSize * 1.2;
+  };
+  const lines = (node: Element) => Math.max(1, Math.round(node.getBoundingClientRect().height / Math.max(1, lineHeight(node))));
+  const mobile = width <= 430;
+  const tablet = width > 430 && width <= 1024;
+  const issues: TypographyIssue[] = [];
+
+  for (const heading of [...root.querySelectorAll("h1,h2,h3")].filter(visible)) {
+    const count = lines(heading);
+    const limit = heading.tagName.toLowerCase() === "h1" ? (mobile || tablet ? 4 : 3) : (mobile ? 4 : 3);
+    if (count > limit) issues.push({ code: "HEADING_TOO_MANY_RENDERED_LINES", severity: "error" });
+  }
+  for (const action of [...root.querySelectorAll("a,button")].filter(visible)) {
+    if (action.scrollWidth > action.clientWidth + 1) issues.push({ code: "ACTION_TEXT_OVERFLOW", severity: "error" });
+    if (lines(action) > 2) issues.push({ code: "ACTION_WRAP_EXCESSIVE", severity: "error" });
+  }
+  for (const paragraph of [...root.querySelectorAll("p,.mi-type--body,.mi-type--body-sm")].filter(visible)) {
+    const text = (paragraph.textContent ?? "").trim();
+    if (text.length < 90) continue;
+    const count = lines(paragraph);
+    const limit = mobile ? 9 : tablet ? 8 : 7;
+    if (count > limit) issues.push({ code: "PARAGRAPH_RENDERED_TOO_DENSE", severity: count > limit + 2 ? "error" : "warning" });
+  }
+  const cardTitles = [...root.querySelectorAll(".mi-card h3,.mi-service-item h3,[class*='card'] h3,[class*='item'] h3")].filter(visible);
+  if (cardTitles.length >= 2) {
+    const heights = cardTitles.map((title) => title.getBoundingClientRect().height);
+    if (Math.max(...heights) - Math.min(...heights) > 32) issues.push({ code: "CARD_TITLE_HEIGHT_VARIANCE", severity: "warning" });
+  }
+  return issues;
+}
+
 function hasAnyRepair(direction: ReviewDirection): boolean {
   const home = direction.site.pages.find((page) => page.path === "/") ?? direction.site.pages[0];
   const hero = home?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
-  const value = hero?.props?.renderedFirstScreenRepairs;
-  return Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length);
+  const firstScreen = hero?.props?.renderedFirstScreenRepairs;
+  const typography = hero?.props?.renderedTypographyRepairs;
+  const populated = (value: unknown) => Boolean(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length);
+  return populated(firstScreen) || populated(typography);
 }

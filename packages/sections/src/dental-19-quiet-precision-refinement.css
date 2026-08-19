@@ -1,0 +1,92 @@
+/* Dental 19 — Quiet Precision refinement
+ * Preserve the intentionally minimal identity while preventing the page from
+ * feeling under-designed. Hierarchy comes from measured rules, typographic
+ * contrast, restrained accent marks and tighter mobile rhythm—not cards.
+ */
+
+/* Give the editorial hero one deliberate accent without adding chrome. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy{
+  position:relative;
+  padding-top:1.15rem;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  width:clamp(3.5rem,7vw,6.5rem);
+  height:2px;
+  background:var(--mi-color-primary);
+}
+
+/* Treatment index gets stronger scan hierarchy while remaining card-free. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item{
+  position:relative;
+  padding-left:clamp(2.5rem,4vw,4rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item::before{
+  content:counter(mi-quiet-service,decimal-leading-zero);
+  counter-increment:mi-quiet-service;
+  position:absolute;
+  left:0;
+  top:1.55rem;
+  color:var(--mi-color-primary);
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight{
+  counter-reset:mi-quiet-service;
+}
+
+/* Clinician information gains an anchor so whitespace feels intentional. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured__grid{
+  align-self:center;
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead>div{
+  max-width:34rem;
+}
+
+/* Gallery rhythm becomes asymmetric enough to feel art-directed while quiet. */
+@media(min-width:48rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card:nth-child(even){
+    margin-top:clamp(2.5rem,5vw,5rem);
+  }
+}
+
+/* A slim accent rule makes the large review feel authored, not simply empty. */
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote{
+  position:relative;
+  padding-left:clamp(1.25rem,2.4vw,2.2rem);
+}
+[data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:2.3rem;
+  bottom:.2rem;
+  width:2px;
+  background:var(--mi-color-primary);
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"]{
+    --mi-section-space:clamp(3.7rem,14vw,5rem);
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__copy{
+    padding-top:.9rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item:first-child{
+    padding-left:2.4rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight .mi-service-item::before{
+    top:1.48rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote{
+    padding-left:1rem;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-proof-quote blockquote::before{
+    top:1.6rem;
+  }
+}

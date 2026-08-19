@@ -37,6 +37,13 @@ test("user supplied factual claims are locked before content generation", () => 
   expect(interpreter).toContain("Do not create fictional names, contact details, addresses, credentials, prices, hours, awards, statistics, guarantees, reviews or factual claims");
 });
 
+test("deterministic fallback preserves explicit high-risk business facts without a model", () => {
+  for (const helper of ["inferExplicitAddresses", "inferExplicitPeople", "inferExplicitCredentials", "inferExplicitOpeningHours", "inferExplicitClaims"]) expect(interpreter).toContain(helper);
+  expect(interpreter).toContain("years?(?:\\s+of)?\\s+experience");
+  expect(interpreter).toContain("patients|implants|cases|surgeries|procedures|customers|clients");
+  expect(interpreter).toContain("BDS|MDS|MBBS|MD|MS|DNB|MCh|DDS|DMD|FDS|PhD");
+});
+
 test("locked onboarding facts hydrate structured grounding buckets before AI writing", () => {
   expect(contentService).toContain("lockedFactsFromNotes");
   expect(contentService).toContain('labelledFacts(notes, "People/team")');

@@ -15,6 +15,7 @@ import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
 import { evaluatePageTypographyQuality } from "./page-typography-quality";
 import { repairPageTypography } from "./page-typography-repair";
+import { evaluatePageMediaArtDirection } from "./page-media-art-direction-quality";
 import { repairWebsiteInvariants } from "./invariant-repair";
 import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
@@ -23,6 +24,7 @@ const REVIEW_LIMIT = 8;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_PAGE_RHYTHM_SCORE = 78;
 const MIN_PAGE_TYPOGRAPHY_SCORE = 82;
+const MIN_MEDIA_ART_DIRECTION_SCORE = 80;
 
 export function isDentalReviewProfile(profile: OnboardingProfile): boolean {
   return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${clean(profile.industry)} ${clean(profile.subindustry)}`);
@@ -91,11 +93,15 @@ export function buildCertifiedDentalReviewDirections(
 
     if (pageTypographyErrors.length || pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
 
+    const mediaArtDirection = evaluatePageMediaArtDirection(candidateSite);
+    const mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
+    if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
+
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
     const baseScore = scoreDesign({
       site: candidateSite,
       readinessScore: repaired.readiness.score,
-      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score, pageTypographyQuality.score),
+      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score, pageTypographyQuality.score, mediaArtDirection.score),
       archetypeFitScore: industryFit.score,
     });
     const fitBonus = blueprintFitBonus(
@@ -126,6 +132,7 @@ export function buildCertifiedDentalReviewDirections(
         `dental content ${dentalContentQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
         `page typography ${pageTypographyQuality.score}/100`,
+        `media art direction ${mediaArtDirection.score}/100`,
         `design quality ${designScore.total}/100`,
       ],
       site: candidateSite,

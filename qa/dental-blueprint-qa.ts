@@ -5,6 +5,7 @@ import type { Site } from "@micirql/schema";
 import { findWebsiteLayout } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
 import { clearRenderedFirstScreenRepair, runRenderedFirstScreenRepairCycle } from "./rendered-first-screen-browser";
+import { measureRenderedPageTypography } from "./rendered-page-typography-browser";
 
 export const DENTAL_BLUEPRINT_TARGETS = [360, 390, 430, 768, 1024, 1440] as const;
 
@@ -151,6 +152,7 @@ export async function runDentalBlueprintCertification(args: {
 
     const repair = await runRenderedFirstScreenRepairCycle(args.page, documentRoot, width);
     const metrics = repair.metrics;
+    const typography = await measureRenderedPageTypography(documentRoot, width);
 
     let mobileCheckPassed = true;
     let mobileCheckError: string | undefined;
@@ -164,8 +166,9 @@ export async function runDentalBlueprintCertification(args: {
     }
 
     const firstScreenPassed = metrics.firstScreen.passed;
+    const typographyPassed = typography.passed;
     const corePassed = metrics.cssViewportWidth === width && metrics.scrollWidth <= metrics.clientWidth + 1 && metrics.overflowingSections === 0 && metrics.overflowingControls === 0 && metrics.clippedMedia === 0;
-    const passed = corePassed && mobileCheckPassed && firstScreenPassed;
+    const passed = corePassed && mobileCheckPassed && firstScreenPassed && typographyPassed;
 
     expect.soft(metrics.cssViewportWidth, `${width}px CSS viewport mismatch`).toBe(width);
     expect.soft(metrics.scrollWidth, `${width}px document overflow`).toBeLessThanOrEqual(metrics.clientWidth + 1);
@@ -173,6 +176,7 @@ export async function runDentalBlueprintCertification(args: {
     expect.soft(metrics.overflowingControls, `${width}px website control overflow: ${JSON.stringify(metrics.overflowingControlDetails)}`).toBe(0);
     expect.soft(metrics.clippedMedia, `${width}px media overflow`).toBe(0);
     expect.soft(firstScreenPassed, `${width}px rendered first-screen composition failed after ${repair.attempted ? "one repair" : "initial render"}: ${metrics.firstScreen.failures.join(", ")}`).toBeTruthy();
+    expect.soft(typographyPassed, `${width}px rendered typography failed: ${typography.issues.map((issue) => `${issue.code}:${issue.detail}`).join(", ")}`).toBeTruthy();
     if (!mobileCheckPassed) expect.soft(mobileCheckPassed, `${width}px mobile composition check failed: ${mobileCheckError}`).toBeTruthy();
 
     await captureWebsiteEvidence(args.page, documentRoot, path.join(output, `${width}.png`));
@@ -180,6 +184,7 @@ export async function runDentalBlueprintCertification(args: {
       width,
       viewport,
       ...metrics,
+      renderedTypography: typography,
       firstScreenRepair: {
         attempted: repair.attempted,
         operations: repair.plan.operations,
@@ -205,6 +210,7 @@ export async function runDentalBlueprintCertification(args: {
     screenshotBackgroundRestored: true,
     renderedFirstScreenCertified: true,
     renderedFirstScreenAutoRepair: "single-bounded-pass",
+    renderedResponsiveTypographyCertified: true,
     results,
   }, null, 2), "utf8");
 }

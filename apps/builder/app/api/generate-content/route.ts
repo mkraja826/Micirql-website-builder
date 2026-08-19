@@ -38,19 +38,30 @@ export async function POST(request: NextRequest) {
 function normalizeFacts(value: unknown): Partial<GroundingFacts> | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const input = value as Record<string, unknown>;
-  const businessName = optionalText(input.businessName);
+  const locked = input.lockedFacts && typeof input.lockedFacts === "object" && !Array.isArray(input.lockedFacts)
+    ? input.lockedFacts as Record<string, unknown>
+    : {};
+
+  const businessName = optionalText(input.businessName) ?? optionalText(locked.businessName);
   const industry = optionalText(input.industry);
+  const location = optionalText(input.location) ?? optionalText(locked.location);
+
   return {
     ...(businessName ? { businessName } : {}),
     ...(industry ? { industry } : {}),
     subindustry: optionalText(input.subindustry) ?? null,
-    location: optionalText(input.location) ?? null,
+    location: location ?? null,
     services: stringArray(input.services),
     goals: stringArray(input.goals),
     notes: optionalText(input.notes) ?? null,
+    people: mergeArrays(stringArray(input.people), stringArray(locked.people)),
+    credentials: mergeArrays(stringArray(input.credentials), stringArray(locked.credentials)),
+    proofClaims: mergeArrays(stringArray(input.proofClaims), stringArray(input.claims), stringArray(locked.claims)),
+    prices: mergeArrays(stringArray(input.prices), stringArray(locked.prices)),
   };
 }
 
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function optionalText(value: unknown) { const next = text(value); return next || undefined; }
 function stringArray(value: unknown) { return Array.isArray(value) ? value.map(text).filter(Boolean) : []; }
+function mergeArrays(...lists: string[][]) { return [...new Set(lists.flat().map((value) => value.trim()).filter(Boolean))].slice(0, 48); }

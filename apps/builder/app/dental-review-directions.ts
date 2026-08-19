@@ -12,6 +12,7 @@ import {
 import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
+import { repairPageRhythm } from "./page-rhythm-repair";
 import { repairWebsiteInvariants } from "./invariant-repair";
 import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
@@ -49,15 +50,32 @@ export function buildCertifiedDentalReviewDirections(
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     const dentalContentQuality = evaluateDentalContentQuality(normalizedSite, profile);
     const dentalContentErrors = dentalContentQuality.issues.filter((issue) => issue.severity === "error");
-    const pageRhythmQuality = evaluatePageRhythmQuality(normalizedSite);
-    const pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
 
     if (dentalContentErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE) continue;
+
+    let candidateSite = normalizedSite;
+    let pageRhythmQuality = evaluatePageRhythmQuality(candidateSite);
+    let pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
+    let pageRhythmRepairOperations: string[] = [];
+
+    // One bounded whole-page composition repair. The repair is deterministic and
+    // cannot rewrite content, remove sections, replace the certified family, or
+    // change functionality. A second failure is final for this candidate.
+    if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) {
+      const rhythmRepair = repairPageRhythm(candidateSite, pageRhythmQuality.issues);
+      if (rhythmRepair.repaired) {
+        candidateSite = normalizeWebsiteContent(rhythmRepair.site);
+        pageRhythmRepairOperations = rhythmRepair.operations;
+        pageRhythmQuality = evaluatePageRhythmQuality(candidateSite);
+        pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
+      }
+    }
+
     if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) continue;
 
-    const industryFit = evaluateIndustryFit(normalizedSite, industry, subindustry);
+    const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
     const baseScore = scoreDesign({
-      site: normalizedSite,
+      site: candidateSite,
       readinessScore: repaired.readiness.score,
       contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score),
       archetypeFitScore: industryFit.score,
@@ -85,12 +103,13 @@ export function buildCertifiedDentalReviewDirections(
         `${blueprint.design.sectionRhythm} section rhythm`,
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
+        ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         `dental content ${dentalContentQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
         `design quality ${designScore.total}/100`,
       ],
-      site: normalizedSite,
-      themeFamily: normalizedSite.theme.family,
+      site: candidateSite,
+      themeFamily: candidateSite.theme.family,
       variantSeed: index,
       readiness: repaired.readiness,
       contentQuality,

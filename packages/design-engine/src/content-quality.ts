@@ -41,6 +41,33 @@ const PLACEHOLDER_PATTERNS = [
   /\bexplore (home|contact|doctor|cases) and find the right next step\.?$/i,
 ];
 
+const GENERIC_AI_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\belevate your\b/i, label: "elevate your" },
+  { pattern: /\btransform your\b/i, label: "transform your" },
+  { pattern: /\bunlock (the|your)\b/i, label: "unlock" },
+  { pattern: /\bseamless(ly)?\b/i, label: "seamless" },
+  { pattern: /\bcutting[- ]edge\b/i, label: "cutting-edge" },
+  { pattern: /\bstate[- ]of[- ]the[- ]art\b/i, label: "state-of-the-art" },
+  { pattern: /\bworld[- ]class\b/i, label: "world-class" },
+  { pattern: /\bexceptional (care|service|results|experience)\b/i, label: "exceptional" },
+  { pattern: /\bpersonalized solutions?\b/i, label: "personalized solutions" },
+  { pattern: /\btailored to (your|you)\b/i, label: "tailored to you" },
+  { pattern: /\bjourney to (a|your)\b/i, label: "journey to" },
+  { pattern: /\bwhere .{0,35} meets .{0,35}\b/i, label: "where X meets Y" },
+  { pattern: /\bdiscover the difference\b/i, label: "discover the difference" },
+  { pattern: /\bexperience the difference\b/i, label: "experience the difference" },
+  { pattern: /\byour (trusted|premier|leading) (partner|choice|destination)\b/i, label: "trusted partner" },
+];
+
+const WEAK_CTA_PATTERNS = [
+  /^(learn more|read more|click here|submit|continue|next|get started|explore|discover|find out more)$/i,
+  /^(contact us|reach out)$/i,
+];
+
+const STOP_WORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "our", "that", "the", "their", "this", "to", "we", "with", "you", "your",
+]);
+
 export function normalizeWebsiteContent(site: Site): Site {
   const next = structuredClone(site);
   for (const page of next.pages) {
@@ -83,6 +110,8 @@ export function normalizeWebsiteContent(site: Site): Site {
 export function evaluateWebsiteContent(site: Site): ContentQualityResult {
   const issues: ContentQualityIssue[] = [];
   const seenPhrases = new Map<string, { pageId: string; sectionId: string }>();
+  const semanticCopy: Array<{ text: string; pageId: string; sectionId: string; path: string }> = [];
+  const openingCounts = new Map<string, Array<{ pageId: string; sectionId: string }>>();
 
   for (const page of site.pages) {
     const seenFamilies = new Map<string, string>();
@@ -111,10 +140,15 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
         if (wordCount(title) > max) issues.push(issue("TITLE_TOO_LONG", "warning", `${family ?? "Section"} title is too long for its layout.`, page.id, section.id, "title"));
         detectDuplicate(title, page.id, section.id, seenPhrases, issues);
         detectPlaceholder(title, page.id, section.id, "title", issues);
+        detectGenericAiCopy(title, page.id, section.id, "title", issues);
+        semanticCopy.push({ text: title, pageId: page.id, sectionId: section.id, path: "title" });
       }
       if (description) {
         if (wordCount(description) > LIMITS.descriptionWords) issues.push(issue("DESCRIPTION_TOO_LONG", "warning", "Section paragraph is too dense.", page.id, section.id, "description"));
         detectPlaceholder(description, page.id, section.id, "description", issues);
+        detectGenericAiCopy(description, page.id, section.id, "description", issues);
+        collectOpening(description, page.id, section.id, openingCounts);
+        semanticCopy.push({ text: description, pageId: page.id, sectionId: section.id, path: "description" });
       }
 
       for (const key of ["primaryAction", "secondaryAction"] as const) {
@@ -122,7 +156,10 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
         if (action && typeof action === "object") {
           const label = text((action as Record<string, unknown>).label);
           if (label && wordCount(label) > LIMITS.ctaLabelWords) issues.push(issue("CTA_TOO_LONG", "warning", "CTA label should stay short and actionable.", page.id, section.id, `${key}.label`));
-          if (label) detectPlaceholder(label, page.id, section.id, `${key}.label`, issues);
+          if (label) {
+            detectPlaceholder(label, page.id, section.id, `${key}.label`, issues);
+            detectWeakCta(label, page.id, section.id, `${key}.label`, issues);
+          }
         }
       }
 
@@ -141,15 +178,25 @@ export function evaluateWebsiteContent(site: Site): ContentQualityResult {
           if (itemTitle) {
             detectDuplicate(itemTitle, page.id, section.id, seenPhrases, issues);
             detectPlaceholder(itemTitle, page.id, section.id, `items.${index}.title`, issues);
+            detectGenericAiCopy(itemTitle, page.id, section.id, `items.${index}.title`, issues);
+            semanticCopy.push({ text: itemTitle, pageId: page.id, sectionId: section.id, path: `items.${index}.title` });
           }
-          if (itemDescription) detectPlaceholder(itemDescription, page.id, section.id, `items.${index}.description`, issues);
+          if (itemDescription) {
+            detectPlaceholder(itemDescription, page.id, section.id, `items.${index}.description`, issues);
+            detectGenericAiCopy(itemDescription, page.id, section.id, `items.${index}.description`, issues);
+            collectOpening(itemDescription, page.id, section.id, openingCounts);
+          }
         });
       }
     }
   }
 
-  const score = Math.max(0, 100 - issues.filter((x) => x.severity === "error").length * 15 - issues.filter((x) => x.severity === "warning").length * 3);
-  return { score, issues };
+  detectSemanticDuplicates(semanticCopy, issues);
+  detectRepeatedOpenings(openingCounts, issues);
+
+  const uniqueIssues = dedupeIssues(issues);
+  const score = Math.max(0, 100 - uniqueIssues.filter((x) => x.severity === "error").length * 15 - uniqueIssues.filter((x) => x.severity === "warning").length * 3);
+  return { score, issues: uniqueIssues };
 }
 
 function detectDuplicate(value: string, pageId: string, sectionId: string, seen: Map<string, { pageId: string; sectionId: string }>, issues: ContentQualityIssue[]) {
@@ -163,9 +210,55 @@ function detectDuplicate(value: string, pageId: string, sectionId: string, seen:
   }
 }
 
+function detectSemanticDuplicates(entries: Array<{ text: string; pageId: string; sectionId: string; path: string }>, issues: ContentQualityIssue[]) {
+  for (let index = 0; index < entries.length; index++) {
+    const current = entries[index]!;
+    const currentTokens = contentTokens(current.text);
+    if (currentTokens.size < 4) continue;
+    for (let priorIndex = 0; priorIndex < index; priorIndex++) {
+      const prior = entries[priorIndex]!;
+      if (prior.sectionId === current.sectionId) continue;
+      const score = jaccard(currentTokens, contentTokens(prior.text));
+      if (score >= 0.72) {
+        issues.push(issue("DUPLICATE_MESSAGE", "warning", "Two sections communicate nearly the same message. Give each section a distinct role.", current.pageId, current.sectionId, current.path));
+        break;
+      }
+    }
+  }
+}
+
 function detectPlaceholder(value: string, pageId: string, sectionId: string, path: string, issues: ContentQualityIssue[]) {
   if (!PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value.trim()))) return;
   issues.push(issue("PLACEHOLDER_COPY", "error", "Generated website contains placeholder or scaffolding copy.", pageId, sectionId, path));
+}
+
+function detectGenericAiCopy(value: string, pageId: string, sectionId: string, path: string, issues: ContentQualityIssue[]) {
+  const match = GENERIC_AI_PATTERNS.find(({ pattern }) => pattern.test(value));
+  if (!match) return;
+  issues.push(issue("GENERIC_AI_COPY", "warning", `Generic AI-style wording detected (${match.label}). Prefer specific, evidence-led language.`, pageId, sectionId, path));
+}
+
+function detectWeakCta(value: string, pageId: string, sectionId: string, path: string, issues: ContentQualityIssue[]) {
+  if (!WEAK_CTA_PATTERNS.some((pattern) => pattern.test(value.trim()))) return;
+  issues.push(issue("WEAK_CTA", "warning", "CTA is vague. Use a specific next step such as Book a consultation, View treatments, Check availability or Call the clinic.", pageId, sectionId, path));
+}
+
+function collectOpening(value: string, pageId: string, sectionId: string, openings: Map<string, Array<{ pageId: string; sectionId: string }>>) {
+  const words = normalizePhrase(value).split(" ").filter(Boolean).slice(0, 3);
+  if (words.length < 3) return;
+  const key = words.join(" ");
+  const entries = openings.get(key) ?? [];
+  entries.push({ pageId, sectionId });
+  openings.set(key, entries);
+}
+
+function detectRepeatedOpenings(openings: Map<string, Array<{ pageId: string; sectionId: string }>>, issues: ContentQualityIssue[]) {
+  for (const [opening, entries] of openings) {
+    const sectionIds = new Set(entries.map((entry) => entry.sectionId));
+    if (sectionIds.size < 3) continue;
+    const last = entries.at(-1)!;
+    issues.push(issue("REPETITIVE_SENTENCE_OPENING", "warning", `Multiple content blocks begin with “${opening}…”. Vary sentence rhythm.`, last.pageId, last.sectionId));
+  }
 }
 
 function familyFromComponentId(componentId: string): string | undefined {
@@ -201,6 +294,32 @@ function text(value: unknown): string {
 
 function normalizePhrase(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function contentTokens(value: string): Set<string> {
+  return new Set(
+    normalizePhrase(value)
+      .split(" ")
+      .filter((token) => token.length >= 3 && !STOP_WORDS.has(token)),
+  );
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (!a.size || !b.size) return 0;
+  let intersection = 0;
+  for (const token of a) if (b.has(token)) intersection++;
+  const union = a.size + b.size - intersection;
+  return union ? intersection / union : 0;
+}
+
+function dedupeIssues(issues: ContentQualityIssue[]): ContentQualityIssue[] {
+  const seen = new Set<string>();
+  return issues.filter((entry) => {
+    const key = [entry.code, entry.pageId, entry.sectionId, entry.path, entry.message].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function issue(code: string, severity: "error" | "warning", message: string, pageId?: string, sectionId?: string, path?: string): ContentQualityIssue {

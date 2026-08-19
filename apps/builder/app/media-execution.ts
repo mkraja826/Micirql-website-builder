@@ -2,12 +2,12 @@ import type { SectionFamily } from "@micirql/sections";
 import type { VisualMediaPlan, SectionVisualDecision, VisualAspect } from "./visual-media-intelligence";
 
 export type MediaSource="customer"|"library"|"licensed"|"generated"|"none";
-export type MediaAsset={id:string;name?:string;url:string;source:Exclude<MediaSource,"none">;tags:string[];alt?:string;aspect?:string;verified?:boolean};
+export type MediaAsset={id:string;name?:string;url:string;source:Exclude<MediaSource,"none">;tags:string[];alt?:string;aspect?:string;verified?:boolean;perceptualHash?:string};
 export type MediaExecutionInput={plan:VisualMediaPlan;customerAssets?:MediaAsset[];libraryAssets?:MediaAsset[];licensedAssets?:MediaAsset[];allowGeneration?:boolean};
 export type MediaRequest={family:SectionFamily;pagePath?:string;source:MediaSource;asset?:MediaAsset;generationPrompt?:string;desiredAspect?:VisualAspect;preferredTags?:string[];alt:string;reason:string};
 export type MediaExecutionPlan={requests:MediaRequest[];generationCount:number;rules:string[]};
 
-type VisualSignature={tokens:Set<string>;aspect?:string};
+type VisualSignature={tokens:Set<string>;aspect?:string;perceptualHash?:string};
 
 export function executeMediaPlan(input:MediaExecutionInput):MediaExecutionPlan{
  const usedIds=new Set<string>(),usedUrls=new Set<string>(),usedSignatures:VisualSignature[]=[];let generationCount=0;
@@ -28,7 +28,7 @@ export function executeMediaPlan(input:MediaExecutionInput):MediaExecutionPlan{
   if(input.allowGeneration&&canGenerate(decision)){generationCount++;return{family:decision.family,...(decision.pagePath?{pagePath:decision.pagePath}:{}),source:"generated" as const,generationPrompt:prompt(decision,index),desiredAspect:decision.aspect,...(decision.preferredTags?.length?{preferredTags:[...decision.preferredTags]}:{}),alt:safeAlt(decision),reason:"No truthful and visually distinct reusable asset matched; generation is allowed for this non-claim visual."};}
   return none(decision,"No suitable truthful and visually distinct asset was available, so the section remains image-free.");
  });
- return{requests,generationCount,rules:[...input.plan.rules,"Customer assets always outrank reusable or generated media","Team and leadership portraits are identity-bearing media and must be customer supplied","Clinic-specific interiors, verified cases and treatment-result evidence must be customer supplied","Certified industry tags strongly influence reusable-media ranking","Blueprint aspect ratio is a strong ranking signal and survives into final section cropping","Duplicate asset IDs and duplicate asset URLs are blocked across primary sections","Reusable media is scored against previously selected visual signatures to avoid near-duplicate subjects, poses and compositions","Highly similar stock/library images are rejected when a more distinct option is available","Generated media prompts deliberately vary composition by section role instead of repeating the hero look","Dental blueprint support imagery may be generated only when the subject is generic, non-identifying and non-claim","Synthetic before-and-after outcomes, real-team stand-ins, fabricated clinic interiors, fabricated equipment ownership and credentials are never allowed","Do not reuse a primary asset across sections","Generation is a fallback, not a default"]};
+ return{requests,generationCount,rules:[...input.plan.rules,"Customer assets always outrank reusable or generated media","Team and leadership portraits are identity-bearing media and must be customer supplied","Clinic-specific interiors, verified cases and treatment-result evidence must be customer supplied","Certified industry tags strongly influence reusable-media ranking","Blueprint aspect ratio is a strong ranking signal and survives into final section cropping","Duplicate asset IDs and duplicate asset URLs are blocked across primary sections","Reusable media is scored against previously selected visual signatures to avoid near-duplicate subjects, poses and compositions","Perceptual image hashes, when available, override misleading filenames/tags and reject near-identical imagery","Highly similar stock/library images are rejected when a more distinct option is available","Generated media prompts deliberately vary composition by section role instead of repeating the hero look","Dental blueprint support imagery may be generated only when the subject is generic, non-identifying and non-claim","Synthetic before-and-after outcomes, real-team stand-ins, fabricated clinic interiors, fabricated equipment ownership and credentials are never allowed","Do not reuse a primary asset across sections","Generation is a fallback, not a default"]};
 }
 function requiresCustomerIdentityMedia(d:SectionVisualDecision){return d.family==="team"||d.role==="people";}
 function requiresCustomerEvidenceMedia(d:SectionVisualDecision){
@@ -57,16 +57,24 @@ function bestAsset(d:SectionVisualDecision,assets:MediaAsset[],usedIds:Set<strin
 function visualSignature(asset:MediaAsset):VisualSignature{
  const generic=new Set(["dental","dentistry","dentist","clinic","healthcare","medical","image","photo","photography","hero","services","service","about","gallery","team","wide","portrait","landscape","4:3","3:2","16:9","1:1"]);
  const raw=[...asset.tags,asset.name??"",asset.alt??""].join(" ").toLowerCase().split(/[^a-z0-9-]+/).filter(token=>token.length>=4&&!generic.has(token));
- return{tokens:new Set(raw),aspect:asset.aspect};
+ return{tokens:new Set(raw),aspect:asset.aspect,perceptualHash:asset.perceptualHash};
 }
 function maxVisualSimilarity(signature:VisualSignature,used:VisualSignature[]){let max=0;for(const prior of used)max=Math.max(max,signatureSimilarity(signature,prior));return max;}
 function signatureSimilarity(a:VisualSignature,b:VisualSignature){
- if(!a.tokens.size||!b.tokens.size)return a.aspect&&b.aspect&&a.aspect===b.aspect?0.12:0;
+ const perceptual=perceptualSimilarity(a.perceptualHash,b.perceptualHash);
+ if(perceptual!==null&&perceptual>=.84)return perceptual;
+ if(!a.tokens.size||!b.tokens.size)return Math.max(perceptual??0,a.aspect&&b.aspect&&a.aspect===b.aspect?0.12:0);
  let intersection=0;for(const token of a.tokens)if(b.tokens.has(token))intersection++;
  const union=new Set([...a.tokens,...b.tokens]).size;
  const lexical=union?intersection/union:0;
  const aspectBoost=a.aspect&&b.aspect&&a.aspect===b.aspect?0.08:0;
- return Math.min(1,lexical+aspectBoost);
+ return Math.min(1,Math.max(perceptual??0,lexical+aspectBoost));
+}
+export function perceptualSimilarity(a?:string,b?:string){
+ if(!a||!b||!/^[0-9a-f]{16}$/i.test(a)||!/^[0-9a-f]{16}$/i.test(b))return null;
+ let distance=0;
+ for(let i=0;i<16;i++){let value=parseInt(a[i],16)^parseInt(b[i],16);while(value){distance+=value&1;value>>=1;}}
+ return 1-distance/64;
 }
 function aspectScore(assetAspect:string|undefined,desired:VisualAspect){
  if(!assetAspect)return 0;

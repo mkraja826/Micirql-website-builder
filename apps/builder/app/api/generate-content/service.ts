@@ -15,6 +15,7 @@ import {
   CLOUDFLARE_CONTENT_PROFILE_ID,
   createWorkersAiJsonPlannerModel,
 } from "../../cloudflare-workers-ai-text";
+import { runGenerationRecovery } from "../../generation-recovery";
 import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseHeaders } from "../drafts/supabase-store";
 
 export type GuardedContentGenerationRequest = {
@@ -64,29 +65,42 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   if (!attempts.length) { const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number }; error.status = 503; throw error; }
 
   const facts = normalizeFacts(input.facts, { name: current.snapshot.name, subtype: current.snapshot.subtype, seoBlueprint: current.snapshot.seoBlueprint });
-  let generated: Awaited<ReturnType<typeof generateGuardedSiteContent>> | undefined;
-  let selectedProfile: ModelProfile | undefined;
-  let lastError: unknown;
+  const recovery = await runGenerationRecovery(
+    attempts.map((attempt) => ({ profile: attempt, profileId: attempt.profile.id, provider: attempt.profile.provider, model: attempt.profile.model })),
+    async ({ profile: attempt }) => {
+      try {
+        return await generateGuardedSiteContent({
+          site: current.snapshot,
+          facts,
+          profiles: [attempt.profile],
+          executors: createModelExecutorRegistry([createJsonContentExecutor(attempt.planner)]),
+        });
+      } catch (error) {
+        console.error(`MiCirql content provider ${attempt.profile.provider}/${attempt.profile.model} failed.`, error);
+        throw error;
+      }
+    },
+  );
 
-  for (const attempt of attempts) {
-    try {
-      generated = await generateGuardedSiteContent({ site: current.snapshot, facts, profiles: [attempt.profile], executors: createModelExecutorRegistry([createJsonContentExecutor(attempt.planner)]) });
-      selectedProfile = attempt.profile; break;
-    } catch (error) {
-      lastError = error;
-      console.error(`MiCirql content provider ${attempt.profile.provider}/${attempt.profile.model} failed.`, error);
-    }
-  }
-
-  if (!generated || !selectedProfile) throw lastError instanceof Error ? lastError : new Error("Content generation failed for every configured provider.");
-
+  // Persist exactly once, and only after a provider has produced a schema-valid,
+  // grounded, structure-safe candidate that passed the content-quality threshold.
+  // Every failed, malformed or low-quality candidate leaves the current draft intact.
+  const generated = recovery.result;
+  const selectedProfile = recovery.selectedProfile.profile;
   const saved = await saveSupabaseDraft(request, { snapshot: generated.site, expectedRevision: current.revision });
   const selectedUsage = usageByProfile.get(selectedProfile.id);
   return {
     draft: saved,
     model: { id: generated.model.id, provider: generated.model.provider, model: generated.model.model },
     ...(selectedUsage ? { usage: selectedUsage } : {}),
-    fallbackUsed: attempts[0]?.profile.id !== selectedProfile.id,
+    fallbackUsed: recovery.fallbackUsed,
+    recovery: {
+      attemptedProviders: attempts.length,
+      failedProviders: recovery.failures.length,
+      failures: recovery.failures,
+      originalDraftRevision: current.revision,
+      savedDraftRevision: saved.revision,
+    },
     audit: { appliedFields: generated.appliedFields, structureIntact: generated.structureIntact, restoredChanges: generated.restoredChanges, groundingIssueCount: generated.groundingIssues.length, groundingIssues: generated.groundingIssues, contentQuality: generated.contentQuality },
   };
 }

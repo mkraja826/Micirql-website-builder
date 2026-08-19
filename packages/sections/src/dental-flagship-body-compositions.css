@@ -35,11 +35,10 @@
 @media(min-width:48rem){
 [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid{grid-template-columns:1.25fr .75fr .75fr;grid-auto-rows:minmax(13rem,auto)}
 [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid .mi-service-item:first-child{grid-row:span 2}
-[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
-[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid>*{grid-column:span 4}
-[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid>*:first-child{grid-column:span 8}
 [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof-metrics{grid-template-columns:repeat(4,1fr);gap:1px;background:var(--flag-line)}
 [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof-metrics article{background:var(--flag-bg);border:0;padding:clamp(1.5rem,3vw,3rem)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process-cards{grid-template-columns:1.25fr .75fr .75fr;align-items:stretch}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process-cards article:first-child{grid-row:span 2;min-height:100%}
 }
 
 /* 08 Boutique Cosmetic — fashion-house whitespace, image-led editorial sequencing. */
@@ -60,8 +59,13 @@
 [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services-editorial-grid,
 [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight,
 [data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process-cards,
 [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid{grid-template-columns:1fr}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid .mi-service-item:first-child,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-process-cards article:first-child{grid-row:auto;min-height:auto}
 [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight .mi-service-item:nth-child(3),
 [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid .mi-service-item:nth-child(odd){margin:0}
-[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-card:nth-child(3n){width:auto}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof-wall blockquote:nth-child(even){margin-top:0}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-card:nth-child(3n){width:auto;grid-column:auto}
 }

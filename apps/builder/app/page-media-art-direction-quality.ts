@@ -17,7 +17,7 @@ export type MediaArtDirectionResult = {
   samples: number;
 };
 
-type Signature = { style?: string; temperature?: string; lighting?: string };
+export type MediaArtDirectionSignature = { style?: string; temperature?: string; lighting?: string };
 
 /**
  * Site-level art-direction QA. This intentionally scores the selected media set
@@ -28,7 +28,7 @@ export function evaluatePageMediaArtDirection(site: Site, path = "/"): MediaArtD
   const page = site.pages.find((candidate) => candidate.path === path) ?? site.pages[0];
   if (!page) return { score: 100, issues: [], dominant: {}, samples: 0 };
 
-  const signatures: Signature[] = [];
+  const signatures: MediaArtDirectionSignature[] = [];
   for (const section of page.sections) {
     const props = section.props as Record<string, unknown>;
     const image = props.image;
@@ -45,7 +45,7 @@ export function evaluatePageMediaArtDirection(site: Site, path = "/"): MediaArtD
       const record = alternates[0] as Record<string, unknown>;
       if (Array.isArray(record.tags)) tokens.push(...record.tags.filter((value): value is string => typeof value === "string"));
     }
-    const signature = classify(tokens.join(" ").toLowerCase());
+    const signature = classifyMediaArtDirectionTokens(tokens.join(" "));
     if (signature.style || signature.temperature || signature.lighting) signatures.push(signature);
   }
 
@@ -75,20 +75,21 @@ export function evaluatePageMediaArtDirection(site: Site, path = "/"): MediaArtD
   };
 }
 
-function classify(text: string): Signature {
+export function classifyMediaArtDirectionTokens(text: string): MediaArtDirectionSignature {
+  const normalized = text.toLowerCase();
   return {
-    style: first(text, [
+    style: first(normalized, [
       ["editorial", /editorial|campaign|luxury|atelier|cinematic|fashion/],
       ["clinical", /clinical|precision|medical|sterile|technology|scanner|technical/],
       ["documentary", /documentary|candid|consultation|planning|over-shoulder|natural/],
       ["studio", /studio|portrait|posed|headshot/],
     ]),
-    temperature: first(text, [
+    temperature: first(normalized, [
       ["warm", /warm|cream|beige|gold|amber|sunlit|earth/],
       ["cool", /cool|blue|cyan|steel|silver|crisp-white|crisp white/],
       ["neutral", /neutral|white|minimal|restrained|clean/],
     ]),
-    lighting: first(text, [
+    lighting: first(normalized, [
       ["high-key", /high-key|high key|bright|airy|soft-light|soft light/],
       ["low-key", /low-key|low key|moody|dramatic|shadow|dark/],
       ["natural", /natural-light|natural light|daylight|window light|documentary/],

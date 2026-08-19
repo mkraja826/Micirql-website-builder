@@ -131,15 +131,15 @@ function deterministicLockedFacts(brief: string): LockedBriefFacts {
   return {
     businessName: businessName === "My Business" ? "" : businessName,
     location: locationMatch?.[1]?.trim() ?? "",
-    addresses: [],
+    addresses: inferExplicitAddresses(brief),
     phoneNumbers,
     emails,
     urls,
-    people: [],
-    credentials: [],
+    people: inferExplicitPeople(brief),
+    credentials: inferExplicitCredentials(brief),
     prices,
-    openingHours: [],
-    claims: [],
+    openingHours: inferExplicitOpeningHours(brief),
+    claims: inferExplicitClaims(brief),
   };
 }
 
@@ -191,6 +191,37 @@ function inferServices(brief: string) {
   const match = brief.match(/(?:services?|offer|focus(?:ed)? on|speciali[sz](?:e|ing) in)\s*(?:include|are|on|:)?\s*([^.!?\n]{3,180})/i);
   if (!match?.[1]) return [];
   return match[1].split(/,|\band\b/i).map((item) => item.trim()).filter(Boolean).slice(0, 12);
+}
+
+function inferExplicitAddresses(brief: string) {
+  const matches = [...brief.matchAll(/\b(?:address|clinic address|office address)\s*(?:is|:)?\s*([^\n.;]{8,140})/gi)];
+  return unique(matches.map((match) => match[1] ?? "")).slice(0, 6);
+}
+
+function inferExplicitPeople(brief: string) {
+  const doctors = brief.match(/\bDr\.?\s+[A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3}/g) ?? [];
+  const named = [...brief.matchAll(/\b(?:doctor|dentist|founder|owner|director|specialist)\s+(?:is|named|called)\s+([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3})/g)].map((match) => match[1] ?? "");
+  return unique([...doctors, ...named]).slice(0, 12);
+}
+
+function inferExplicitCredentials(brief: string) {
+  const degrees = brief.match(/\b(?:BDS|MDS|MBBS|MD|MS|DNB|MCh|DDS|DMD|FDS|PhD)\b/gi) ?? [];
+  const qualified = [...brief.matchAll(/\b(?:qualified as|qualification(?:s)?(?: are| is|:)?|credentials?(?: are| is|:)?)\s*([^\n.;]{2,100})/gi)].map((match) => match[1] ?? "");
+  return unique([...degrees, ...qualified]).slice(0, 16);
+}
+
+function inferExplicitOpeningHours(brief: string) {
+  const dayRange = brief.match(/\b(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?)(?:\s*[-–]\s*(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?))?\s*[:,-]?\s*\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)?\s*(?:-|–|to)\s*\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)/g) ?? [];
+  const labelled = [...brief.matchAll(/\b(?:opening hours|open|working hours|clinic hours)\s*(?:are|is|:)?\s*([^\n.;]{5,120})/gi)].map((match) => match[1] ?? "");
+  return unique([...dayRange, ...labelled]).slice(0, 12);
+}
+
+function inferExplicitClaims(brief: string) {
+  const experience = brief.match(/\b\d+\+?\s+years?(?:\s+of)?\s+experience\b/gi) ?? [];
+  const volume = brief.match(/\b\d[\d,]*\+?\s+(?:patients|implants|cases|surgeries|procedures|customers|clients)\b/gi) ?? [];
+  const awards = [...brief.matchAll(/\b(?:award(?:ed|s)?|winner of|recognized as|recognised as)\s+([^\n.;]{3,120})/gi)].map((match) => match[0] ?? "");
+  const guarantees = brief.match(/\b(?:money[- ]back guarantee|lifetime guarantee|\d+[- ]year guarantee|guaranteed [^\n.;]{3,80})/gi) ?? [];
+  return unique([...experience, ...volume, ...awards, ...guarantees]).slice(0, 16);
 }
 
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }

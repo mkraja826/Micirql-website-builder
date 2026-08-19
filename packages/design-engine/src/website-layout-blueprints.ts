@@ -73,14 +73,60 @@ export type RankedLayout = {
   reasons: string[];
 };
 
+function normalizeSignal(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function normalizedSet(values: readonly string[]): Set<string> {
-  return new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean));
+  return new Set(values.map(normalizeSignal).filter(Boolean));
+}
+
+const SIGNAL_ALIASES: Record<string, readonly string[]> = {
+  premium: ["premium", "luxury", "high end", "high-end", "upmarket", "sophisticated", "refined"],
+  luxury: ["luxury", "premium", "high end", "high-end", "upmarket"],
+  elegant: ["elegant", "sophisticated", "refined", "graceful"],
+  editorial: ["editorial", "magazine", "fashion editorial", "story led", "story-led"],
+  minimal: ["minimal", "minimalist", "clean", "restrained", "whitespace", "white space", "uncluttered"],
+  clinical: ["clinical", "medical", "sterile", "evidence based", "evidence-based"],
+  authoritative: ["authoritative", "authority", "expert", "specialist", "credible", "credibility"],
+  technology: ["technology", "tech", "digital", "digital scanning", "scanner", "3d scan", "cad cam", "cad/cam"],
+  advanced: ["advanced", "cutting edge", "cutting-edge", "latest technology", "modern technology"],
+  precision: ["precision", "precise", "accuracy", "accurate", "digital planning", "treatment planning"],
+  modern: ["modern", "contemporary", "digital", "technology forward", "technology-forward"],
+  cosmetic: ["cosmetic", "smile makeover", "smile design", "veneers", "whitening", "aesthetic dentistry"],
+  visual: ["visual", "image led", "image-led", "photography", "before after", "before and after", "gallery"],
+  outcomes: ["outcomes", "results", "transformations", "transformation", "before after", "before and after"],
+  boutique: ["boutique", "exclusive", "intimate", "bespoke"],
+  soft: ["soft", "gentle", "calm", "warm", "subtle"],
+  implant: ["implant", "implants", "implant dentistry", "full mouth rehabilitation", "full mouth implants"],
+  friendly: ["friendly", "approachable", "welcoming", "family friendly", "family-friendly"],
+  trust: ["trust", "trusted", "credible", "credibility", "reassuring"],
+  conversion: ["conversion", "lead generation", "lead-generation", "book appointment", "booking"],
+};
+
+function phrasePresent(text: string, phrase: string): boolean {
+  const haystack = ` ${normalizeSignal(text)} `;
+  const needle = normalizeSignal(phrase);
+  return Boolean(needle) && haystack.includes(` ${needle} `);
+}
+
+function requestedMatchesSignal(requested: readonly string[] | undefined, supportedSignal: string): boolean {
+  if (!requested?.length) return false;
+  const normalizedSupported = normalizeSignal(supportedSignal);
+  if (!normalizedSupported) return false;
+  const aliases = SIGNAL_ALIASES[normalizedSupported] ?? [normalizedSupported];
+  return requested.some((value) => aliases.some((alias) => phrasePresent(value, alias)));
 }
 
 function overlapScore(requested: readonly string[] | undefined, supported: readonly string[], weight: number, reasons: string[], label: string) {
   if (!requested?.length) return 0;
-  const supportedSet = normalizedSet(supported);
-  const matches = [...new Set(requested.map((item) => item.trim().toLowerCase()).filter((item) => supportedSet.has(item)))];
+  const matches = [...new Set(supported.map(normalizeSignal).filter((signal) => signal && requestedMatchesSignal(requested, signal)))];
   if (!matches.length) return 0;
   reasons.push(`${label}: ${matches.join(", ")}`);
   return Math.min(weight, matches.length * Math.max(1, Math.floor(weight / 2)));
@@ -90,14 +136,13 @@ type SignalSelector = (layout: WebsiteLayoutBlueprint) => readonly string[];
 
 function rarityBonus(eligible: readonly WebsiteLayoutBlueprint[], layout: WebsiteLayoutBlueprint, requested: readonly string[] | undefined, selector: SignalSelector, label: string, reasons: string[]): number {
   if (!requested?.length) return 0;
-  const supportedSet = normalizedSet(selector(layout));
-  const requestedSignals = [...new Set(requested.map((value) => value.trim().toLowerCase()).filter(Boolean))];
+  const supportedSignals = [...normalizedSet(selector(layout))];
   const bonuses: string[] = [];
   let total = 0;
 
-  for (const signal of requestedSignals) {
-    if (!supportedSet.has(signal)) continue;
-    const frequency = eligible.filter((candidate) => normalizedSet(selector(candidate)).has(signal)).length;
+  for (const signal of supportedSignals) {
+    if (!requestedMatchesSignal(requested, signal)) continue;
+    const frequency = eligible.filter((candidate) => [...normalizedSet(selector(candidate))].some((candidateSignal) => candidateSignal === signal)).length;
     const points = frequency <= 1 ? 10 : frequency <= 3 ? 7 : frequency <= 5 ? 4 : 0;
     if (!points) continue;
     total += points;

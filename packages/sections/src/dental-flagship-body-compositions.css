@@ -1,0 +1,67 @@
+/* Flagship dental body compositions: blueprint-owned geometry beyond the hero. */
+
+/* 01 Clinical Authority — disciplined institutional rhythm, lists over cards. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services-split{grid-template-columns:minmax(18rem,.55fr) minmax(0,1.45fr);gap:clamp(3rem,7vw,8rem)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof-metrics{grid-template-columns:1.35fr repeat(3,1fr);gap:0}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof-metrics article{padding-inline:clamp(1rem,2vw,2rem);border-left:1px solid var(--flag-line)}
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-proof-metrics article:first-child{border-left:0;padding-left:0}
+}
+
+/* 02 Implant Atelier — long editorial bands and cinematic proof, no dashboard grids. */
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services--editorial{padding-block:clamp(6rem,12vw,11rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services-editorial-grid{counter-reset:atelier-service}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-service-item{position:relative}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services-editorial-grid{grid-template-columns:1fr;max-width:68rem;margin-left:auto}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services-editorial-grid .mi-service-item{display:grid;grid-template-columns:8rem minmax(0,1fr) minmax(16rem,.7fr);gap:2rem;align-items:start}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof-quote{grid-template-columns:.35fr 1.65fr;gap:clamp(3rem,8vw,9rem)}
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-proof-quote blockquote p{font-size:clamp(2.5rem,5.2vw,5.8rem);max-width:13ch}
+}
+
+/* 03 Smile Studio — magazine pacing with asymmetric service and gallery rhythm. */
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight{grid-template-columns:1.25fr .75fr;grid-auto-flow:dense;gap:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight .mi-service-item:first-child{grid-row:span 2;min-height:38rem}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight .mi-service-item:nth-child(3){margin-left:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof-wall{grid-template-columns:1.15fr .85fr;gap:clamp(2rem,5vw,5rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof-wall blockquote:nth-child(even){margin-top:clamp(4rem,8vw,8rem)}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-grid{grid-template-columns:1.2fr .8fr 1fr;align-items:start}
+}
+
+/* 05 Digital Dentistry — modular technology console, dense but deliberate. */
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services--cards{background:linear-gradient(180deg,#071516,#0a1b1c)}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid{grid-template-columns:1.25fr .75fr .75fr;grid-auto-rows:minmax(13rem,auto)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid .mi-service-item:first-child{grid-row:span 2}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid>*{grid-column:span 4}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-feature-grid>*:first-child{grid-column:span 8}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof-metrics{grid-template-columns:repeat(4,1fr);gap:1px;background:var(--flag-line)}
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-proof-metrics article{background:var(--flag-bg);border:0;padding:clamp(1.5rem,3vw,3rem)}
+}
+
+/* 08 Boutique Cosmetic — fashion-house whitespace, image-led editorial sequencing. */
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] :is(.mi-services--editorial,.mi-about--editorial,.mi-proof--quote){padding-block:clamp(6rem,13vw,12rem)}
+@media(min-width:48rem){
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid{grid-template-columns:.72fr 1.28fr;column-gap:clamp(4rem,10vw,10rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid .mi-service-item:nth-child(odd){margin-top:clamp(5rem,10vw,10rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-about-editorial{grid-template-columns:.65fr 1.05fr .55fr;gap:clamp(3rem,7vw,7rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-about-editorial-media{margin-top:clamp(5rem,9vw,9rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-grid{grid-template-columns:.72fr 1.28fr;gap:clamp(3rem,8vw,8rem)}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-card:nth-child(3n){grid-column:1/-1;width:62%;justify-self:center}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-proof-quote{grid-template-columns:.45fr 1.55fr;gap:clamp(4rem,10vw,10rem)}
+}
+
+/* Mobile keeps each system readable and removes desktop-only offsets. */
+@media(max-width:47.99rem){
+[data-mi-layout-blueprint="dental-01-clinical-authority"] .mi-services-list,
+[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-services-editorial-grid,
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight,
+[data-mi-layout-blueprint="dental-05-digital-dentistry"] .mi-services-card-grid,
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid{grid-template-columns:1fr}
+[data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services-spotlight .mi-service-item:nth-child(3),
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-services-editorial-grid .mi-service-item:nth-child(odd){margin:0}
+[data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-gallery-card:nth-child(3n){width:auto}
+}

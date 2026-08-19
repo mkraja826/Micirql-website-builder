@@ -10,6 +10,7 @@ export default defineConfig({
     "review-direction-certification.spec.ts",
     "review-direction-theme-diversity.spec.ts",
     "review-candidate-set-diversity.spec.ts",
+    "certified-dental-review-directions.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
     "page-architecture-intelligence.spec.ts",

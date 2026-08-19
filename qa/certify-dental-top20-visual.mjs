@@ -1,10 +1,12 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { appendFile, readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 
 const root = process.cwd();
-const evidencePath = path.join(root, "test-results", "dental-top20-visual-evidence", "report.json");
-const certificationPath = path.join(root, "test-results", "dental-top20-visual-evidence", "certification.json");
+const evidenceDirectory = path.join(root, "test-results", "dental-top20-visual-evidence");
+const evidencePath = path.join(evidenceDirectory, "report.json");
+const certificationPath = path.join(evidenceDirectory, "certification.json");
+const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
@@ -51,14 +53,18 @@ if (failures.length) {
   process.exit(1);
 }
 
+const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
+const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
   evidenceFile: "test-results/dental-top20-visual-evidence/report.json",
   requiredViewports,
-  layouts: (evidence.report ?? []).map((entry) => ({ layoutId: entry.layoutId, passed: true })),
+  runtimeEnvironmentKey: "MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS",
+  certifiedLayoutIds,
+  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true })),
   hardGates: [
     "no document overflow",
     "no child escape",
@@ -73,4 +79,6 @@ const certification = {
 };
 
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Certified 20 Dental layouts against six rendered viewports for ${currentSha}.`);
+await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
+if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports for ${currentSha}.`);

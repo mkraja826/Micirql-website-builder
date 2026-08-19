@@ -104,7 +104,7 @@ export function DentalReviewRenderCertifier({
     ref={probeRef}
     aria-hidden="true"
     data-mi-dental-review-certifier
-    style={{ position: "fixed", left: "-20000px", top: 0, width: target.width, maxWidth: target.width, visibility: "hidden", pointerEvents: "none" }}
+    style={{ position: "fixed", left: "-20000px", top: 0, width: target.width, maxWidth: target.width, opacity: 0, pointerEvents: "none" }}
   >
     <RendererPreview
       site={working.site}
@@ -120,7 +120,7 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
   const visible = (node: Element) => {
     const style = getComputedStyle(node);
     const rect = node.getBoundingClientRect();
-    return style.display !== "none" && style.visibility !== "hidden" && Number.parseFloat(style.opacity || "1") !== 0 && rect.width > 0 && rect.height > 0;
+    return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   };
   const relative = (node: Element | null) => {
     if (!node) return null;

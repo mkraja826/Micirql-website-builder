@@ -25,8 +25,12 @@ on:
       - 'qa/dental-top20-premium-gate.spec.ts'
       - 'qa/dental-top20-geometry-gate.spec.ts'
       - 'qa/dental-runtime-css-parity.spec.ts'
+      - 'qa/dental-media-execution.spec.ts'
+      - 'qa/site-visual-quality.spec.ts'
+      - 'qa/perceptual-hash-upload-contract.spec.ts'
       - 'qa/certify-dental-top20-visual.mjs'
       - 'playwright.dental-visual.config.ts'
+      - 'playwright.dental-diversity.config.ts'
       - 'package.json'
       - '.github/workflows/deploy-builder.yml'
 
@@ -73,6 +77,9 @@ jobs:
 
       - name: Install Chromium for premium visual certification
         run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify Dental generation intelligence
+        run: pnpm qa:dental-diversity
 
       - name: Certify Dental Top-20 rendered output
         run: pnpm qa:dental-visual

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { evaluateGeneratedSiteQuality } from "@micirql/design-engine";
 import { applyPageArchitecture, planPageArchitecture } from "../../../page-architecture-intelligence";
 import { planPageMedia } from "../../../page-media-intelligence";
 import { executeMediaPlan, type MediaAsset } from "../../../media-execution";
@@ -109,6 +110,15 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql functional binding pass failed; keeping generated content and media.", error);
     }
 
+    stage = "quality";
+    const finalDraft = await getSupabaseDraft(request, workspaceId, siteId);
+    if (!finalDraft) throw new Error("GENERATED_SITE_QUALITY_FAILED: final draft unavailable");
+    const generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
+    if (!generatedQuality.ready) {
+      const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
+      throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
+    }
+
     const fallbackCount = content?.recovery?.failedProviders ?? 0;
     const recoveryReason = contentWarning || mediaWarning || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
@@ -123,10 +133,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore: content?.audit.contentQuality.score ?? null,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

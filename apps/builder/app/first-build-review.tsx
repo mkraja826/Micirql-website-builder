@@ -176,11 +176,13 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     <section className={styles.grid}>
       {visible.map((direction, index) => {
         const name = displayDirectionName(direction.name);
+        const recommendation = index === 0 ? recommendationReasons(direction) : [];
         return <article className={styles.card} key={direction.id}>
           <div className={styles.cardTop}>
-            <span className={styles.badge}>{index < 3 ? `Top ${index + 1}` : `Direction ${index + 1}`}</span>
+            <span className={styles.badge}>{index === 0 ? "Best match" : index < 3 ? `Top ${index + 1}` : `Direction ${index + 1}`}</span>
             <strong>{name}</strong>
             <small>{direction.description}</small>
+            {index === 0 && recommendation.length ? <div className={styles.matchReasons}>{recommendation.map((reason) => <span key={reason}>{reason}</span>)}</div> : null}
           </div>
           <div className={styles.previewButton} aria-label={`${name} design preview`}>
             <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
@@ -228,6 +230,15 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
 function displayDirectionName(name: string) {
   return name.replace(/\s*·\s*variation\s+\d+\s*$/i, "").trim();
+}
+
+function recommendationReasons(direction: ReviewDirection): string[] {
+  const ignored = /certified dental design system|design quality|readiness|content quality/i;
+  const normalized = direction.reasons
+    .filter((reason) => !ignored.test(reason))
+    .map((reason) => reason.replace(/^matched to\s+/i, "").replace(/\bsection rhythm$/i, "").trim())
+    .filter(Boolean);
+  return [...new Set(normalized)].slice(0, 3);
 }
 
 function designSignature(site: Site) {

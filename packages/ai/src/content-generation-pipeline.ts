@@ -82,6 +82,8 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
         "Do not add, remove or reorder pages, sections, items, links, actions, bindings, media, components or integrations.",
         "Use only supplied business facts. Never invent people, credentials, testimonials, ratings, statistics, prices, guarantees, addresses, hours or awards.",
         "Authority adjectives such as expert, experienced, renowned, highly skilled, trusted, leading or best must not be used unless directly supported by supplied facts.",
+        "Write to the existing visual geometry: hero headings <= 12 words, ordinary section headings <= 10 words, eyebrows <= 5 words, CTA labels <= 4 words, item titles <= 6 words, hero supporting copy <= 40 words, ordinary section body copy <= 48 words, and item descriptions <= 24 words.",
+        "Prefer one strong sentence over two weak sentences. Avoid filler, repeated claims, stacked adjectives, long comma chains and generic marketing phrases.",
         "Keep copy concise enough for the limits and guidance in each contract entry.",
       ],
     },

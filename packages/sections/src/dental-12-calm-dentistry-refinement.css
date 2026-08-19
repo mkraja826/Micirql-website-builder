@@ -1,0 +1,105 @@
+/* Dental 12 — Calm Dentistry refinement
+ * Preserve softness and low-stress interaction while adding enough editorial
+ * structure that the experience feels intentional rather than bland.
+ */
+
+/* Reassurance metrics become a quiet information rail. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics{
+  gap:0;
+  border-top:1px solid var(--mi-calm-line);
+  border-bottom:1px solid var(--mi-calm-line);
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics article{
+  padding:1rem clamp(.7rem,1.5vw,1.15rem);
+  border:0;
+  border-right:1px solid var(--mi-calm-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics article:last-child{border-right:0}
+
+/* Care options stay soft but stop reading as a grid of wellness cards. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight{
+  gap:0 clamp(2rem,4vw,4rem);
+  border-top:1px solid var(--mi-calm-line);
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  min-height:0;
+  padding:1.45rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-calm-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-calm-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item:first-child p{color:var(--mi-color-text-muted)}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item h3{
+  font-family:Georgia,"Times New Roman",serif;
+  font-weight:500;
+  font-size:clamp(1.35rem,2vw,1.85rem);
+}
+
+/* Clinician reassurance is portrait-led rather than another rounded panel. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Patient quote keeps softness through typography, not a large pastel card. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--quote blockquote{
+  position:relative;
+  padding:0 0 0 clamp(1.2rem,2.5vw,2.1rem);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--quote blockquote::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.25rem;
+  bottom:.25rem;
+  width:2px;
+  border-radius:999px;
+  background:var(--mi-color-primary);
+}
+
+/* Closing action remains gentle: no elevated sales panel. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-conv-cta--split{
+  border-top:1px solid var(--mi-calm-line);
+  border-bottom:1px solid var(--mi-calm-line);
+}
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Forms remain visibly bounded for usability, but reduce oversized chrome. */
+[data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-contact-form{
+  border-radius:1rem;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics article:last-child{
+    border-right:0;
+  }
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--metrics .mi-proof-metrics article:nth-child(odd){border-right:1px solid var(--mi-calm-line)}
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight{display:block}
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-services-spotlight .mi-service-item:first-child{
+    width:100%;
+    padding:1.15rem 0;
+  }
+  [data-mi-layout-blueprint="dental-12-wellness-calm"] .mi-proof--quote{
+    padding-block:clamp(3.5rem,14vw,5rem);
+  }
+}

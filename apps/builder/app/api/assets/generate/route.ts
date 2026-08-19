@@ -12,6 +12,8 @@ export async function POST(request: Request) {
       family?: string;
       domain?: string;
       prompt?: string;
+      desiredAspect?: string;
+      preferredTags?: string[];
     };
 
     if (!body.workspaceId || !body.siteId || !body.sectionId || !body.pagePath || !body.prompt) {
@@ -40,6 +42,8 @@ export async function POST(request: Request) {
       query: body.prompt,
       ...(body.family ? { family: body.family } : {}),
       ...(body.domain ? { domain: body.domain } : {}),
+      ...(body.desiredAspect ? { desiredAspect: body.desiredAspect } : {}),
+      ...(body.preferredTags?.length ? { preferredTags: body.preferredTags } : {}),
       excludedPhotoIds,
     });
 
@@ -49,6 +53,7 @@ export async function POST(request: Request) {
     const tags = [
       body.domain ?? "general",
       purpose,
+      ...(body.preferredTags ?? []),
       "pexels",
       "licensed-stock",
       `photographer:${result.photographer}`,
@@ -65,7 +70,7 @@ export async function POST(request: Request) {
       height: result.height,
       orientation: result.orientation,
       aspectRatio: result.aspectRatio,
-      focalPoint: focalPointForSection(body.family, result.orientation),
+      focalPoint: focalPointForSection(body.family, result.orientation, body.desiredAspect),
       domains: [],
       subtypes: [],
       sectionFamilies: body.family ? [body.family] : [],
@@ -94,6 +99,8 @@ export async function POST(request: Request) {
           photographer: result.photographer,
           photographerUrl: result.photographerUrl,
           query: result.query,
+          requestedAspect: body.desiredAspect ?? null,
+          preferredTags: body.preferredTags ?? [],
           duplicateCandidatesExcluded: excludedPhotoIds.length,
         },
         attribution: {

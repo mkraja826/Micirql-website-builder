@@ -28,7 +28,33 @@ export function persistRenderedTypographyRepair(site: Site, plan: RenderedTypogr
     reasons: [...plan.reasons],
     css: plan.css,
   };
-  hero.props = { ...hero.props, [PROP_KEY]: current };
+
+  const rawPageTypography = hero.props?.pageTypographyRepair;
+  const pageTypography = rawPageTypography && typeof rawPageTypography === "object" && !Array.isArray(rawPageTypography)
+    ? { ...(rawPageTypography as Record<string, unknown>) }
+    : {};
+  const previousResponsive = readRepairMap(pageTypography.renderedResponsive);
+  previousResponsive[plan.viewport] = current[plan.viewport];
+  const baseCss = typeof pageTypography.baseCss === "string"
+    ? pageTypography.baseCss
+    : previousResponsiveHasEntries(pageTypography.renderedResponsive)
+      ? ""
+      : typeof pageTypography.css === "string"
+        ? pageTypography.css
+        : "";
+  const liveResponsiveCss = responsiveLiveCss(previousResponsive);
+
+  hero.props = {
+    ...hero.props,
+    [PROP_KEY]: current,
+    pageTypographyRepair: {
+      ...pageTypography,
+      version: 1,
+      baseCss,
+      renderedResponsive: previousResponsive,
+      css: [baseCss, liveResponsiveCss].filter((value) => value.trim()).join("\n"),
+    },
+  };
   return siteSchema.parse(next);
 }
 
@@ -49,6 +75,23 @@ export function hasPersistedRenderedTypographyRepair(
   path = "/",
 ): boolean {
   return Boolean(persistedRenderedTypographyRepairCss(site, viewport, path));
+}
+
+function responsiveLiveCss(repairs: RepairMap): string {
+  const cssFor = (viewport: RenderedTypographyRepairViewport) => (repairs[viewport]?.css ?? "")
+    .replaceAll("[data-mi-rendered-typography-repair='1']", "[data-mi-page-typography-repair='1']");
+  const mobile = cssFor("mobile");
+  const tablet = cssFor("tablet");
+  const desktop = cssFor("desktop");
+  return [
+    mobile ? `@media (max-width:430px){${mobile}}` : "",
+    tablet ? `@media (min-width:431px) and (max-width:1024px){${tablet}}` : "",
+    desktop ? `@media (min-width:1025px){${desktop}}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function previousResponsiveHasEntries(value: unknown): boolean {
+  return Object.keys(readRepairMap(value)).length > 0;
 }
 
 function readRepairMap(value: unknown): RepairMap {

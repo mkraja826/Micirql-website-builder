@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { siteSchema, type Site } from "@micirql/schema";
 import type { DesignPreferenceProfile } from "@micirql/design-engine";
 import type { SupabaseSession } from "./auth-client";
@@ -8,6 +8,7 @@ import { RendererPreview } from "./renderer-preview";
 import { CompareDesigns } from "./compare-designs";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
 import { buildCertifiedDentalReviewDirections, isDentalReviewProfile } from "./dental-review-directions";
+import { DentalReviewRenderCertifier } from "./dental-review-render-certifier";
 import type { OnboardingProfile } from "./preset-ranking";
 import styles from "./first-build-review.module.css";
 
@@ -31,12 +32,16 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [activeId, setActiveId] = useState<string>();
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
-  const pool = useMemo(() => {
+  const [certifiedDentalPool, setCertifiedDentalPool] = useState<ReviewDirection[]>();
+  const dentalReview = isDentalReviewProfile(profile);
+  const rawPool = useMemo(() => {
     if (!draft || !preferenceLoaded) return [];
-    return isDentalReviewProfile(profile)
+    return dentalReview
       ? buildCertifiedDentalReviewDirections(draft.snapshot, profile, 8, preferenceProfile)
       : buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
-  }, [draft, profile, preferenceLoaded, preferenceProfile]);
+  }, [dentalReview, draft, profile, preferenceLoaded, preferenceProfile]);
+  const rawPoolSignature = useMemo(() => rawPool.map((item) => `${item.id}:${item.designScore.total}`).join("|"), [rawPool]);
+  const pool = dentalReview ? (certifiedDentalPool ?? []) : rawPool;
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
   const visible = useMemo(() => visibleIds.map((id) => byId.get(id)).filter((item): item is ReviewDirection => Boolean(item)), [visibleIds, byId]);
   const active = activeId ? byId.get(activeId) : undefined;
@@ -75,6 +80,27 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     })();
     return () => { cancelled = true; };
   }, [session.access_token, workspaceId, siteId]);
+
+  useEffect(() => {
+    if (!dentalReview) return;
+    setCertifiedDentalPool(undefined);
+    setVisibleIds([]);
+    setCompareIds([]);
+    setActiveId(undefined);
+  }, [dentalReview, rawPoolSignature]);
+
+  const handleDentalCertification = useCallback((results: Array<{ direction: ReviewDirection; passed: boolean; repaired: boolean; failures: string[] }>) => {
+    const passed = results
+      .filter((result) => result.passed)
+      .map((result) => ({
+        ...result.direction,
+        reasons: [
+          ...result.direction.reasons,
+          result.repaired ? "rendered mobile + desktop certified after bounded repair" : "rendered mobile + desktop certified",
+        ],
+      }));
+    setCertifiedDentalPool(passed);
+  }, []);
 
   useEffect(() => {
     if (pool.length && visibleIds.length === 0) setVisibleIds(pool.map((item) => item.id));
@@ -159,6 +185,19 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   }
 
   if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing distinct design directions and learning from your previous choices…"}</p></div></main>;
+
+  if (dentalReview && rawPool.length && certifiedDentalPool === undefined) return <main className={styles.shell}>
+    <DentalReviewRenderCertifier directions={rawPool} onComplete={handleDentalCertification} />
+    <div className={styles.header}>
+      <span>MiCirql design review</span>
+      <h1>Certifying your strongest directions.</h1>
+      <p>Checking the real mobile and desktop first screen, applying one bounded responsive repair where needed, and withholding anything that still fails.</p>
+    </div>
+  </main>;
+
+  if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>The review is failing closed rather than showing an unverified design. Run the rendered dental certification/recovery flow and try again.</p></div></main>;
+
+  if (dentalReview && certifiedDentalPool && certifiedDentalPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>These directions did not pass rendered review.</h1><p>MiCirql withheld the candidates because their mobile or desktop first screen still failed after the single allowed repair.</p></div></main>;
 
   const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
 

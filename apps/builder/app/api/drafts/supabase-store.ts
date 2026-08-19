@@ -26,8 +26,13 @@ function config() {
 }
 
 function serviceRoleKey() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const key = process.env.MICIRQL_SUPABASE_SECRET_KEY?.trim()
+    || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   return key || undefined;
+}
+
+export function hasTrustedSupabaseServerKey() {
+  return Boolean(serviceRoleKey());
 }
 
 export function usesSupabaseDraftStore() {

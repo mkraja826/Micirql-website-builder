@@ -20,6 +20,13 @@ on:
       - 'packages/schema/**'
       - 'packages/sections/**'
       - 'packages/workspace/**'
+      - 'qa/dental-top20-visual-evidence.spec.ts'
+      - 'qa/dental-top20-premium-gate.spec.ts'
+      - 'qa/dental-top20-geometry-gate.spec.ts'
+      - 'qa/dental-runtime-css-parity.spec.ts'
+      - 'qa/certify-dental-top20-visual.mjs'
+      - 'playwright.dental-visual.config.ts'
+      - 'package.json'
       - '.github/workflows/deploy-builder.yml'
 
 permissions:
@@ -62,10 +69,29 @@ jobs:
           test -n "$PEXELS_API_KEY" || { echo "Missing PEXELS_API_KEY"; exit 1; }
 
       - run: pnpm install --no-frozen-lockfile
+
+      - name: Install Chromium for premium visual certification
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Certify Dental Top-20 rendered output
+        run: pnpm qa:dental-visual
+
+      - name: Verify runtime Dental certification allowlist
+        shell: bash
+        run: |
+          test -n "$MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS" || { echo "Rendered Dental certification did not produce a runtime allowlist"; exit 1; }
+          count=$(printf '%s' "$MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS" | tr ',' '\n' | sed '/^$/d' | wc -l | tr -d ' ')
+          test "$count" = "20" || { echo "Expected 20 rendered-certified Dental layouts, got $count"; exit 1; }
+
       - run: pnpm --filter @micirql/builder typecheck
 
       - name: Build and deploy builder
         run: pnpm --filter @micirql/builder run deploy
+
+      - name: Upload rendered Dental certification allowlist to Builder Worker
+        working-directory: apps/builder
+        shell: bash
+        run: printf '%s' "$MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS" | pnpm exec wrangler secret put MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS
 
       - name: Upload Supabase server secret to Builder Worker
         working-directory: apps/builder
@@ -82,3 +108,13 @@ jobs:
         working-directory: apps/builder
         shell: bash
         run: printf '%s' "$PEXELS_API_KEY" | pnpm exec wrangler secret put PEXELS_API_KEY
+
+      - name: Upload premium certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-builder-production-certification
+          path: |
+            test-results/dental-top20-visual-evidence
+            test-results/dental-visual-comparison
+          retention-days: 30

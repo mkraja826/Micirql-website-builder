@@ -2,12 +2,15 @@ import { siteSchema, type Site } from "@micirql/schema";
 import {
   buildContentEnrichmentContract,
   enforceContentEnrichmentIntegrity,
+  evaluateWebsiteContent,
   groundSiteContent,
   type GroundingFacts,
 } from "@micirql/design-engine";
 import { executeRoutedTask, type ModelExecutor, type ModelExecutorRegistry } from "./model-executor";
 import type { ModelProfile } from "./model-routing";
 import type { PlannerModel } from "./planner-adapter";
+
+const MIN_GENERATED_CONTENT_SCORE = 82;
 
 export type ContentGenerationInput = {
   site: Site;
@@ -31,6 +34,7 @@ export type ContentGenerationResult = {
   restoredChanges: string[];
   groundingIssues: ReturnType<typeof groundSiteContent>["issues"];
   structureIntact: boolean;
+  contentQuality: ReturnType<typeof evaluateWebsiteContent>;
 };
 
 /** Adapts any JSON-capable MiCirql text provider into the routed content executor interface. */
@@ -84,6 +88,8 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
         "Authority adjectives such as expert, experienced, renowned, highly skilled, trusted, leading or best must not be used unless directly supported by supplied facts.",
         "Write to the existing visual geometry: hero headings <= 12 words, ordinary section headings <= 10 words, eyebrows <= 5 words, CTA labels <= 4 words, item titles <= 6 words, hero supporting copy <= 40 words, ordinary section body copy <= 48 words, and item descriptions <= 24 words.",
         "Prefer one strong sentence over two weak sentences. Avoid filler, repeated claims, stacked adjectives, long comma chains and generic marketing phrases.",
+        "Avoid weak CTAs such as Learn more, Explore, Discover, Get started or Click here. Use a concrete next action appropriate to the page.",
+        "Do not repeat the same claim across multiple sections. Each visible section must contribute a distinct idea.",
         "Keep copy concise enough for the limits and guidance in each contract entry.",
       ],
     },
@@ -99,6 +105,15 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
   const integrity = enforceContentEnrichmentIntegrity(before, candidate.data);
   const grounded = groundSiteContent(integrity.site, input.facts);
   const finalSite = siteSchema.parse(grounded.site);
+  const contentQuality = evaluateWebsiteContent(finalSite);
+  const contentErrors = contentQuality.issues.filter((issue) => issue.severity === "error");
+
+  if (contentErrors.length || contentQuality.score < MIN_GENERATED_CONTENT_SCORE) {
+    const summary = contentErrors.length
+      ? contentErrors.slice(0, 3).map((issue) => `${issue.code}: ${issue.message}`).join(" | ")
+      : `score ${contentQuality.score}/${MIN_GENERATED_CONTENT_SCORE}`;
+    throw new Error(`CONTENT_QUALITY_REJECTED: ${summary}`);
+  }
 
   return {
     site: finalSite,
@@ -107,5 +122,6 @@ export async function generateGuardedSiteContent(input: ContentGenerationInput):
     restoredChanges: integrity.restoredChanges,
     groundingIssues: grounded.issues,
     structureIntact: integrity.structureIntact,
+    contentQuality,
   };
 }

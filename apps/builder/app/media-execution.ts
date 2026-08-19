@@ -56,16 +56,16 @@ function bestAsset(d:SectionVisualDecision,assets:MediaAsset[],usedIds:Set<strin
 }
 function visualSignature(asset:MediaAsset):VisualSignature{
  const generic=new Set(["dental","dentistry","dentist","clinic","healthcare","medical","image","photo","photography","hero","services","service","about","gallery","team","wide","portrait","landscape","4:3","3:2","16:9","1:1"]);
- const raw=[...asset.tags,asset.name??"",asset.alt??""] .join(" ").toLowerCase().split(/[^a-z0-9-]+/).filter(token=>token.length>=4&&!generic.has(token));
+ const raw=[...asset.tags,asset.name??"",asset.alt??""].join(" ").toLowerCase().split(/[^a-z0-9-]+/).filter(token=>token.length>=4&&!generic.has(token));
  return{tokens:new Set(raw),aspect:asset.aspect};
 }
 function maxVisualSimilarity(signature:VisualSignature,used:VisualSignature[]){let max=0;for(const prior of used)max=Math.max(max,signatureSimilarity(signature,prior));return max;}
 function signatureSimilarity(a:VisualSignature,b:VisualSignature){
- if(!a.tokens.size||!b.tokens.size)return a.aspect&&b.aspect&&a.aspect===b.aspect?.12:0;
+ if(!a.tokens.size||!b.tokens.size)return a.aspect&&b.aspect&&a.aspect===b.aspect?0.12:0;
  let intersection=0;for(const token of a.tokens)if(b.tokens.has(token))intersection++;
  const union=new Set([...a.tokens,...b.tokens]).size;
  const lexical=union?intersection/union:0;
- const aspectBoost=a.aspect&&b.aspect&&a.aspect===b.aspect?.08:0;
+ const aspectBoost=a.aspect&&b.aspect&&a.aspect===b.aspect?0.08:0;
  return Math.min(1,lexical+aspectBoost);
 }
 function aspectScore(assetAspect:string|undefined,desired:VisualAspect){

@@ -8,11 +8,16 @@ export type ContentIntegrityResult = {
   structureIntact: boolean;
 };
 
+type FitBudget = { maxChars: number; maxWords: number };
+
 /**
  * Treats the pre-enrichment Site as authoritative and copies back only fields
  * explicitly granted by the content enrichment contract. This means a model or
  * provider cannot change layout, components, routes, navigation, media geometry,
  * bindings, actions, item counts or theme even if it ignores the prompt.
+ *
+ * Editable copy is also fitted to conservative section-family budgets so a
+ * verbose provider cannot accidentally break premium typography/geometry.
  */
 export function enforceContentEnrichmentIntegrity(before: Site, after: Site): ContentIntegrityResult {
   const result = structuredClone(before);
@@ -28,11 +33,11 @@ export function enforceContentEnrichmentIntegrity(before: Site, after: Site): Co
     if (!targetPage || !sourcePage) continue;
 
     if (typeof sourcePage.seo?.title === "string" && sourcePage.seo.title.trim()) {
-      targetPage.seo.title = sourcePage.seo.title.slice(0, pageContract.seo.titleMax);
+      targetPage.seo.title = fitText(sourcePage.seo.title, { maxChars: pageContract.seo.titleMax, maxWords: 12 });
       appliedFields++;
     }
     if (typeof sourcePage.seo?.description === "string" && sourcePage.seo.description.trim()) {
-      targetPage.seo.description = sourcePage.seo.description.slice(0, pageContract.seo.descriptionMax);
+      targetPage.seo.description = fitText(sourcePage.seo.description, { maxChars: pageContract.seo.descriptionMax, maxWords: 26 });
       appliedFields++;
     }
 
@@ -42,7 +47,7 @@ export function enforceContentEnrichmentIntegrity(before: Site, after: Site): Co
       const sourceSection = sourceSections.get(sectionContract.sectionId);
       if (!targetSection || !sourceSection) continue;
       for (const path of sectionContract.editable) {
-        appliedFields += copyAllowedPath(targetSection, sourceSection, path);
+        appliedFields += copyAllowedPath(targetSection, sourceSection, path, sectionContract.family);
       }
     }
   }
@@ -55,7 +60,8 @@ export function enforceContentEnrichmentIntegrity(before: Site, after: Site): Co
   };
 }
 
-function copyAllowedPath(target: SiteSection, source: SiteSection, path: string): number {
+function copyAllowedPath(target: SiteSection, source: SiteSection, path: string, family: string): number {
+  const budget = fitBudget(family, path);
   if (path.startsWith("items[].")) {
     const field = path.slice("items[].".length);
     const targetItems = Array.isArray(target.props.items) ? target.props.items : [];
@@ -67,7 +73,7 @@ function copyAllowedPath(target: SiteSection, source: SiteSection, path: string)
       if (!isRecord(targetItem) || !isRecord(sourceItem)) continue;
       const value = sourceItem[field];
       if (typeof value !== "string" || !value.trim()) continue;
-      targetItem[field] = value;
+      targetItem[field] = fitText(value, budget);
       count++;
     }
     return count;
@@ -76,7 +82,45 @@ function copyAllowedPath(target: SiteSection, source: SiteSection, path: string)
   const parts = path.split(".");
   const sourceValue = readPath(source.props, parts);
   if (typeof sourceValue !== "string" || !sourceValue.trim()) return 0;
-  return writePath(target.props, parts, sourceValue) ? 1 : 0;
+  return writePath(target.props, parts, fitText(sourceValue, budget)) ? 1 : 0;
+}
+
+function fitBudget(family: string, path: string): FitBudget {
+  if (path === "primaryAction.label") return { maxChars: 24, maxWords: 4 };
+  if (path === "eyebrow") return { maxChars: 34, maxWords: 5 };
+  if (path === "items[].title") return { maxChars: family === "process" ? 36 : 42, maxWords: family === "process" ? 5 : 6 };
+  if (path === "items[].description") return { maxChars: 150, maxWords: 24 };
+  if (path === "title" || path === "heading") {
+    if (family === "hero") return { maxChars: 78, maxWords: 12 };
+    if (family === "cta") return { maxChars: 64, maxWords: 9 };
+    if (family === "footer" || family === "navbar") return { maxChars: 44, maxWords: 7 };
+    return { maxChars: 68, maxWords: 10 };
+  }
+  if (path === "description" || path === "body") {
+    if (family === "hero") return { maxChars: 250, maxWords: 40 };
+    if (family === "cta" || family === "contact") return { maxChars: 220, maxWords: 34 };
+    if (family === "footer") return { maxChars: 180, maxWords: 28 };
+    if (family === "testimonials") return { maxChars: 260, maxWords: 42 };
+    return { maxChars: 300, maxWords: 48 };
+  }
+  return { maxChars: 220, maxWords: 36 };
+}
+
+function fitText(value: string, budget: FitBudget): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return normalized;
+  const words = normalized.split(" ");
+  const limitedWords = words.slice(0, budget.maxWords).join(" ");
+  if (limitedWords.length <= budget.maxChars) return cleanEnding(limitedWords, normalized.length > limitedWords.length);
+
+  const withinChars = limitedWords.slice(0, budget.maxChars + 1);
+  const safe = withinChars.slice(0, Math.max(withinChars.lastIndexOf(" "), 1)).trim();
+  return cleanEnding(safe, true);
+}
+
+function cleanEnding(value: string, truncated: boolean): string {
+  if (!truncated) return value;
+  return value.replace(/[,:;\-–—]+$/g, "").replace(/[.!?]+$/g, "").trim();
 }
 
 function detectProtectedChanges(before: Site, after: Site): string[] {

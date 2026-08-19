@@ -16,7 +16,7 @@ permissions:
 jobs:
   live-dental-model:
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 30
     env:
       CI: "1"
       MI_LIVE_SAMPLE_COUNT: ${{ inputs.sample_count }}
@@ -27,9 +27,10 @@ jobs:
       MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION: ${{ secrets.MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION || '0' }}
       MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION: ${{ secrets.MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION || '0' }}
       MICIRQL_TEXT_MODEL_TEMPERATURE: "0.2"
-      MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS: "900"
+      MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS: "8000"
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,7 +49,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Provider preflight
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Provider and media preflight
         shell: bash
         run: |
           if [[ -z "$MICIRQL_TEXT_MODEL_API_KEY" && -z "$GEMINI_API_KEY" ]]; then
@@ -59,8 +63,12 @@ jobs:
             echo "::error::MICIRQL_TEXT_MODEL_API_KEY is present but endpoint/model secrets are incomplete."
             exit 1
           fi
+          if [[ -z "$PEXELS_API_KEY" ]]; then
+            echo "::error::PEXELS_API_KEY is required for live generated-site visual QA."
+            exit 1
+          fi
 
-      - name: Run live dental copy sampling
+      - name: Run live Dental content and generated-site visual sampling
         run: pnpm qa:live-model-dental
 
       - name: Run live autonomous composition sampling
@@ -76,14 +84,18 @@ jobs:
             echo "## Live model dental copy sampling" >> "$GITHUB_STEP_SUMMARY"
             echo "No copy report was produced." >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [[ -f test-results/live-generated-dental-visual/summary.md ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat test-results/live-generated-dental-visual/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "## Live generated Dental visual QA" >> "$GITHUB_STEP_SUMMARY"
+            echo "No generated-site visual report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [[ -f test-results/live-autonomous-composition/report.json ]]; then
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
-            node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("test-results/live-autonomous-composition/report.json","utf8"));console.log(`- Model: **${r.modelId}**\n- AI acceptance: **${Math.round(r.acceptanceRate*100)}%** (${r.aiAccepted}/${r.scenarios})\n- Composition pass rate: **${Math.round(r.passRate*100)}%**`)' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "## Autonomous composition sampling" >> "$GITHUB_STEP_SUMMARY"
-            echo "No composition report was produced." >> "$GITHUB_STEP_SUMMARY"
+            node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("test-results/live-autonomous-composition/report.json","utf8"));console.log(`- Model: **${r.modelId}**\n- AI acceptance: **${Math.round(r.acceptanceRate*100)}%** (${r.aiAccepted}/${r.scenarios})\n- Composition pass rate: **${Math.round(r.passRate*100)}%`)' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload live model evidence
@@ -93,6 +105,7 @@ jobs:
           name: micirql-live-dental-model-${{ github.run_number }}
           path: |
             test-results/live-model-dental/
+            test-results/live-generated-dental-visual/
             test-results/live-autonomous-composition/
           if-no-files-found: warn
           retention-days: 14

@@ -84,6 +84,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
         notes: value.notes,
         logoUrl: value.logoUrl,
         brandColors: value.brandColors,
+        selectedLayoutId: value.selectedLayoutId,
       };
       const response = await fetch("/api/onboarding", {
         method: "POST",
@@ -92,6 +93,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
       });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
+      if (value.selectedLayoutId && payload?.selectedLayout?.id !== value.selectedLayoutId) throw new Error("The generated website did not preserve the reviewed design match. Please analyze the brief again.");
 
       setBuildStage("designing");
       try {

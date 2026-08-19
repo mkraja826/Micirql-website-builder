@@ -1,0 +1,123 @@
+/* Dental 13 — Implant Results refinement
+ * Keep evidence and clinical planning dominant while removing the repeated
+ * sales-card treatment that can make implant pages feel promotional.
+ */
+
+/* Evidence metrics behave as a clinical evidence rail, not dashboard tiles. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics{
+  gap:0;
+  border-top:1px solid rgba(255,255,255,.16);
+  border-bottom:1px solid rgba(255,255,255,.16);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article{
+  padding:1rem clamp(.65rem,1.5vw,1.15rem);
+  border:0;
+  border-right:1px solid rgba(255,255,255,.16);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article:last-child{border-right:0}
+
+/* Case imagery should feel like documented evidence, not image cards. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-mosaic .mi-gallery-card{
+  border-radius:.35rem;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card img{
+  border-radius:.35rem;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-gallery-card figcaption strong{
+  padding:0 0 .4rem;
+  border:0;
+  border-radius:0;
+  border-bottom:2px solid var(--mi-color-primary);
+  background:transparent;
+}
+
+/* Implant choices become a restrained clinical index. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight{
+  gap:0 clamp(2rem,4vw,4rem);
+  border-top:1px solid var(--mi-implant-line);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child{
+  min-height:0;
+  padding:1.45rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-implant-line);
+  border-radius:0;
+  background:transparent;
+  color:var(--mi-implant-ink);
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child p{color:var(--mi-color-text-muted)}
+
+/* Patient journey reads as one clinical pathway. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-timeline{
+  gap:0;
+  border-top:1px solid var(--mi-implant-line);
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-node{
+  min-width:0;
+  padding:1.3rem 1rem 1.3rem 0;
+  border:0;
+  border-bottom:1px solid var(--mi-implant-line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Implant clinician is presented as authority, not another card. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Patient quote becomes editorial evidence. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--quote blockquote{
+  padding:0 0 0 clamp(1.2rem,2.4vw,2rem);
+  border:0;
+  border-left:2px solid var(--mi-color-primary);
+  background:transparent;
+  box-shadow:none;
+}
+
+/* Closing consultation is a confident band, never a sales panel. */
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split{
+  background:var(--mi-implant-navy);
+  color:#f4fbf8;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article:last-child{
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.14);
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article:last-child{border-bottom:0}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight{display:block}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-services-spotlight .mi-service-item:first-child{
+    width:100%;
+    padding:1.2rem 0;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-timeline{display:block}
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-process--timeline .mi-process-node{
+    width:100%;
+    padding:1.1rem 0;
+  }
+}

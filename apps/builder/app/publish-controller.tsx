@@ -4,12 +4,14 @@ import { useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { RendererPreview } from "./renderer-preview";
 import { publishReadiness } from "./publish-readiness";
+import { evaluateFunctionalPublishGate } from "./functional-publish-gate";
 import { useOnboardingProfile } from "./onboarding-profile-context";
 
 export type PublishSuccess = { versionId: string; liveUrl?: string };
 
 type Issue = { code?: string; message: string; pagePath?: string };
 type PreviewViewport = "mobile" | "tablet" | "desktop";
+type ReviewBlocker = { id: string; label: string; detail: string; blocking: true; ok: false };
 
 export function PublishController({ site, disabled, ensureSaved }: {
   site: Site;
@@ -25,7 +27,17 @@ export function PublishController({ site, disabled, ensureSaved }: {
   const [viewport, setViewport] = useState<PreviewViewport>("desktop");
   const [pagePath, setPagePath] = useState(site.pages[0]?.path ?? "/");
   const readiness = useMemo(() => publishReadiness(site), [site]);
-  const blockers = readiness.checks.filter((check) => check.blocking && !check.ok);
+  const functionalReadiness = useMemo(() => evaluateFunctionalPublishGate(site), [site]);
+  const readinessBlockers = readiness.checks.filter((check) => check.blocking && !check.ok);
+  const functionalBlockers: ReviewBlocker[] = functionalReadiness.issues.map((issue, index) => ({
+    id: `functional-${issue.code}-${index}`,
+    label: issue.code === "BROKEN_INTERNAL_LINK" ? "Broken internal link" : issue.code === "INVALID_ACTION" ? "Invalid action" : issue.code === "MISSING_CONTACT_PATH" ? "Contact path" : "Conversion path",
+    detail: `${issue.pagePath ? `${issue.pagePath}: ` : ""}${issue.message}`,
+    blocking: true,
+    ok: false,
+  }));
+  const blockers = [...readinessBlockers, ...functionalBlockers];
+  const launchReady = readiness.ready && functionalReadiness.ready;
   const destination = site.domains.find((domain) => domain.primary) ?? site.domains[0];
 
   function openReview() {
@@ -36,6 +48,13 @@ export function PublishController({ site, disabled, ensureSaved }: {
 
   async function publish() {
     if (disabled || state === "publishing") return;
+    if (!launchReady) {
+      setIssues(functionalReadiness.issues.length
+        ? functionalReadiness.issues.map((issue) => ({ code: issue.code, message: issue.message, ...(issue.pagePath ? { pagePath: issue.pagePath } : {}) }))
+        : [{ message: "Resolve all launch blockers before publishing." }]);
+      setState("error");
+      return;
+    }
     setIssues([]);
     setState("publishing");
     const saved = await ensureSaved();
@@ -113,13 +132,13 @@ export function PublishController({ site, disabled, ensureSaved }: {
           </div>
         </section>
         <aside className="publish-review-summary">
-          <div className={`publish-review-status ${readiness.ready ? "is-ready" : "is-blocked"}`}><span>{readiness.ready ? "Ready to launch" : `${blockers.length} blocker${blockers.length === 1 ? "" : "s"}`}</span><strong>{readiness.ready ? "Everything required is complete." : "Finish these items before publishing."}</strong></div>
+          <div className={`publish-review-status ${launchReady ? "is-ready" : "is-blocked"}`}><span>{launchReady ? "Ready to launch" : `${blockers.length} blocker${blockers.length === 1 ? "" : "s"}`}</span><strong>{launchReady ? "Everything required is complete." : "Finish these items before publishing."}</strong></div>
           <div className="publish-review-destination"><span>Goes live at</span><strong>{destination?.hostname ?? "MiCirql hosted URL"}</strong><small>{destination ? (destination.status === "active" && destination.sslStatus === "active" ? "Domain and SSL are active." : "Domain connection is still being completed.") : "You can connect a custom domain later."}</small></div>
-          {blockers.length ? <div className="publish-review-blockers"><span>Launch blockers</span>{blockers.map((check) => <div key={check.id}><b>!</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}</div> : <div className="publish-review-passed"><span>Launch checks</span>{readiness.checks.filter((check) => check.blocking).map((check) => <div key={check.id}><b>✓</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}</div>}
+          {blockers.length ? <div className="publish-review-blockers"><span>Launch blockers</span>{blockers.map((check) => <div key={check.id}><b>!</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}</div> : <div className="publish-review-passed"><span>Launch checks</span>{readiness.checks.filter((check) => check.blocking).map((check) => <div key={check.id}><b>✓</b><p><strong>{check.label}</strong><small>{check.detail}</small></p></div>)}<div><b>✓</b><p><strong>Functional journey</strong><small>Primary actions, contact paths and internal destinations are valid.</small></p></div></div>}
           {state === "error" && issues.length ? <div className="publish-review-error" role="alert"><strong>Could not publish</strong>{issues.map((issue, index) => <span key={`${issue.code ?? "issue"}-${index}`}>{issue.pagePath ? `${issue.pagePath}: ` : ""}{issue.message}</span>)}</div> : null}
           {state === "success" && current ? <div className="publish-review-success" role="status"><strong>Website published</strong><span>Version {current.versionId}</span>{current.liveUrl ? <a href={current.liveUrl} target="_blank" rel="noreferrer">Open live website</a> : null}</div> : null}
-          <div className="publish-review-actions"><button type="button" className="publish-review-secondary" onClick={() => setReviewOpen(false)}>Back to editor</button><button type="button" className="publish-review-primary" disabled={disabled || !readiness.ready || state === "publishing"} onClick={() => void publish()}>{state === "publishing" ? "Publishing…" : "Publish website"}</button></div>
-          {!readiness.ready ? <small className="publish-review-hint">Return to the editor and open Publish to fix the blockers shown above.</small> : null}
+          <div className="publish-review-actions"><button type="button" className="publish-review-secondary" onClick={() => setReviewOpen(false)}>Back to editor</button><button type="button" className="publish-review-primary" disabled={disabled || !launchReady || state === "publishing"} onClick={() => void publish()}>{state === "publishing" ? "Publishing…" : "Publish website"}</button></div>
+          {!launchReady ? <small className="publish-review-hint">Return to the editor and open Publish to fix the blockers shown above.</small> : null}
         </aside>
       </div>
     </div> : null}

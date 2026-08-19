@@ -31,6 +31,7 @@ type LayoutRecommendation = {
   reasons: string[];
   archetype?: string;
   styleTags?: string[];
+  preferredSubindustry?: string;
 };
 
 type ApiPayload = Record<string, unknown> & { error?: string };
@@ -115,7 +116,7 @@ export function GuidedOnboarding({ session, workspaceId, siteId, building, error
         context,
         businessName: asText(profile.businessName) || "My Business",
         industry: asText(profile.industry) || "other",
-        subindustry: asText(profile.subindustry),
+        subindustry: recommendation?.preferredSubindustry || asText(profile.subindustry),
         location: asText(profile.location),
         services: asList(profile.services).join(", "),
         goals: asList(profile.goals),
@@ -193,7 +194,7 @@ function asLayoutRecommendation(value: unknown): LayoutRecommendation | null {
   const id = asText(item.id), name = asText(item.name), description = asText(item.description);
   const score = Number(item.score);
   if (!id || !name || !Number.isFinite(score)) return null;
-  return { id, name, description, score, reasons: asList(item.reasons), archetype: asText(item.archetype) || undefined, styleTags: asList(item.styleTags) };
+  return { id, name, description, score, reasons: asList(item.reasons), archetype: asText(item.archetype) || undefined, styleTags: asList(item.styleTags), preferredSubindustry: asText(item.preferredSubindustry) || undefined };
 }
 function asText(value: unknown) { return typeof value === "string" ? value.trim() : ""; }
 function asList(value: unknown) { return Array.isArray(value) ? value.map(asText).filter(Boolean) : []; }

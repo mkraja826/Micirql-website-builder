@@ -33,9 +33,17 @@ export function buildCertifiedDentalReviewDirections(
   const goals = profileGoals(profile);
   const briefSignals = profileSignals(profile);
   const candidates: ReviewDirection[] = [];
+  const renderedCertifiedIds = runtimeRenderedCertifiedDentalIds();
+
+  // Production Design Review must fail closed exactly like production layout
+  // recommendation. If rendered certification is missing, no dental direction is
+  // customer-visible. Development/test can still exercise the full library.
+  if (process.env.NODE_ENV === "production" && renderedCertifiedIds.size === 0) return [];
 
   for (let index = 0; index < DENTAL_LAYOUT_BLUEPRINTS.length; index += 1) {
     const blueprint = DENTAL_LAYOUT_BLUEPRINTS[index]!;
+    if (process.env.NODE_ENV === "production" && !renderedCertifiedIds.has(blueprint.id)) continue;
+
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
     const normalizedSite = normalizeWebsiteContent(repaired.site);
@@ -72,7 +80,7 @@ export function buildCertifiedDentalReviewDirections(
       name: blueprint.name,
       description: blueprint.description,
       reasons: [
-        "certified dental design system",
+        "rendered-certified dental design system",
         blueprint.archetype.replace(/-/g, " "),
         `${blueprint.design.imageStyle} imagery`,
         `${blueprint.design.sectionRhythm} section rhythm`,
@@ -96,6 +104,11 @@ export function buildCertifiedDentalReviewDirections(
   const top = ranked[0];
   if (!top) return selected;
   return [top, ...selected.filter((candidate) => candidate.id !== top.id)].slice(0, Math.min(REVIEW_LIMIT, count));
+}
+
+export function runtimeRenderedCertifiedDentalIds(): Set<string> {
+  const raw = process.env.MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS ?? "";
+  return new Set(raw.split(",").map((value) => value.trim()).filter(Boolean));
 }
 
 function blueprintFitBonus(

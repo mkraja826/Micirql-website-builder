@@ -116,30 +116,60 @@ export async function POST(request: NextRequest) {
     }
 
     stage = "quality";
-    const finalDraft = await getSupabaseDraft(request, workspaceId, siteId);
+    let finalDraft = await getSupabaseDraft(request, workspaceId, siteId);
     if (!finalDraft) throw new Error("GENERATED_SITE_QUALITY_FAILED: final draft unavailable");
-    const generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
+    let generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
     if (!generatedQuality.ready) {
       const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
       throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
     }
 
     let dentalContentQuality: DentalContentQualityResult | null = null;
+    let dentalRepairApplied = false;
+    let dentalRepairCodes: string[] = [];
+    const dentalProfile = {
+      business_name: businessName,
+      industry,
+      subindustry: facts.subindustry,
+      location: facts.location,
+      services: facts.services,
+      goals: facts.goals,
+      required_capabilities: requiredCapabilities,
+      notes: facts.notes,
+    };
+
     if (isDentalBrief(facts)) {
-      dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, {
-        business_name: businessName,
-        industry,
-        subindustry: facts.subindustry,
-        location: facts.location,
-        services: facts.services,
-        goals: facts.goals,
-        required_capabilities: requiredCapabilities,
-        notes: facts.notes,
-      });
-      const dentalErrors = dentalContentQuality.issues.filter((item) => item.severity === "error");
-      if (dentalErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE) {
-        const codes = [...new Set((dentalErrors.length ? dentalErrors : dentalContentQuality.issues).map((item) => item.code))];
-        throw new Error(`GENERATED_DENTAL_CONTENT_QUALITY_FAILED: ${codes.join(", ") || `score ${dentalContentQuality.score}/${MIN_DENTAL_CONTENT_SCORE}`}`);
+      dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, dentalProfile);
+      if (dentalContentNeedsRepair(dentalContentQuality)) {
+        dentalRepairCodes = dentalIssueCodes(dentalContentQuality);
+        stage = "dental-content-repair";
+        try {
+          content = await runGuardedContentGeneration(request, {
+            workspaceId,
+            siteId,
+            expectedRevision: finalDraft.revision,
+            facts,
+            repairRules: dentalContentRepairRules(dentalContentQuality),
+          });
+          dentalRepairApplied = true;
+        } catch (error) {
+          throw new Error(`DENTAL_CONTENT_REPAIR_FAILED: ${error instanceof Error ? error.message : "targeted repair failed"}`);
+        }
+
+        stage = "quality";
+        finalDraft = await getSupabaseDraft(request, workspaceId, siteId);
+        if (!finalDraft) throw new Error("GENERATED_SITE_QUALITY_FAILED: repaired draft unavailable");
+        generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
+        if (!generatedQuality.ready) {
+          const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
+          throw new Error(`GENERATED_SITE_QUALITY_FAILED_AFTER_DENTAL_REPAIR: ${codes.join(", ")}`);
+        }
+        dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, dentalProfile);
+      }
+
+      if (dentalContentNeedsRepair(dentalContentQuality)) {
+        const codes = dentalIssueCodes(dentalContentQuality);
+        throw new Error(`GENERATED_DENTAL_CONTENT_QUALITY_FAILED_AFTER_REPAIR: ${codes.join(", ") || `score ${dentalContentQuality.score}/${MIN_DENTAL_CONTENT_SCORE}`}`);
       }
     }
 
@@ -150,7 +180,8 @@ export async function POST(request: NextRequest) {
     }
 
     const fallbackCount = content?.recovery?.failedProviders ?? 0;
-    const recoveryReason = contentWarning || mediaWarning || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
+    const dentalRecoveryReason = dentalRepairApplied ? `Dental specialty content auto-repaired: ${dentalRepairCodes.join(", ")}` : null;
+    const recoveryReason = contentWarning || mediaWarning || dentalRecoveryReason || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
     const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100);
     await safeRecordBuildObservability(request, {
@@ -164,10 +195,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,
@@ -181,6 +212,28 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed.", buildId }, { status: 500 });
   }
+}
+
+function dentalContentNeedsRepair(result: DentalContentQualityResult): boolean {
+  return result.issues.some((item) => item.severity === "error") || result.score < MIN_DENTAL_CONTENT_SCORE;
+}
+
+function dentalIssueCodes(result: DentalContentQualityResult): string[] {
+  const errors = result.issues.filter((item) => item.severity === "error");
+  return [...new Set((errors.length ? errors : result.issues).map((item) => item.code))];
+}
+
+function dentalContentRepairRules(result: DentalContentQualityResult): string[] {
+  const issues = result.issues.slice(0, 10);
+  return [
+    "This is a targeted dental specialty quality-repair pass. Preserve all copy that already works and change only content needed to resolve the supplied dental QA failures.",
+    "Keep the existing page structure, component choices, media, links, bindings, section order and item counts unchanged.",
+    "Make the clinic's supplied primary treatments unmistakable in the homepage hero and treatment copy without keyword stuffing.",
+    "Use concrete dental next steps such as Book consultation, Book appointment, Check availability, Call clinic or WhatsApp only when compatible with the existing action target.",
+    "Where process language is missing, describe neutral consultation, assessment, planning, treatment or review steps without inventing scanners, guided surgery, same-day treatment, sedation, implant brands or other technology not supplied in the facts.",
+    "Do not invent outcomes, guarantees, painless claims, success rates, patient counts, credentials, testimonials, before/after cases or clinical proof.",
+    ...issues.map((issue, index) => `Dental QA ${index + 1} — ${issue.code}: ${issue.message}`),
+  ];
 }
 
 function isDentalBrief(facts: { industry: string; subindustry: string | null; services: string[]; notes: string | null }) {

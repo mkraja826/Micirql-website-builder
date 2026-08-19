@@ -26,7 +26,7 @@ export async function materializeGeneratedMedia(input:{
    const response=await fetch(new URL("/api/assets/generate",input.request.url),{
     method:"POST",
     headers:{authorization,"content-type":"application/json"},
-    body:JSON.stringify({workspaceId:input.workspaceId,siteId:input.siteId,sectionId:assignment.sectionId,pagePath:assignment.pagePath,family:media.family,domain:input.domain??"general",prompt:media.generationPrompt})
+    body:JSON.stringify({workspaceId:input.workspaceId,siteId:input.siteId,sectionId:assignment.sectionId,pagePath:assignment.pagePath,family:media.family,domain:input.domain??"general",prompt:media.generationPrompt,desiredAspect:media.desiredAspect,preferredTags:media.preferredTags??[]})
    });
    if(!response.ok){const body=await response.text();throw new Error(body||`Image generation failed (${response.status}).`);}
    const payload=await response.json() as{asset?:{id?:string;originalUrl?:string;url?:string;tags?:string[];alt?:string;aspectRatio?:number;orientation?:string}};

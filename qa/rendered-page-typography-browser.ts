@@ -1,4 +1,7 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { planRenderedPageTypographyRepair } from "../apps/builder/app/rendered-page-typography-repair";
+
+const RENDERED_TYPOGRAPHY_STYLE_ID = "mi-rendered-typography-repair-style";
 
 export type RenderedTypographyIssue = {
   code: string;
@@ -23,11 +26,7 @@ export type RenderedTypographyMetrics = {
   passed: boolean;
 };
 
-/**
- * Measures typography as rendered by the browser. This intentionally checks
- * geometry rather than source-string length so responsive wrapping, loaded font
- * metrics, and real component widths are represented in certification.
- */
+/** Measures typography as rendered by the browser, not by source-string length. */
 export async function measureRenderedPageTypography(rootLocator: Locator, width: number): Promise<RenderedTypographyMetrics> {
   return rootLocator.evaluate((element, targetWidth) => {
     const root = element as HTMLElement;
@@ -56,7 +55,6 @@ export async function measureRenderedPageTypography(rootLocator: Locator, width:
     const lastRenderedLineRatio = (node: Element) => {
       const text = (node.textContent ?? "").trim().replace(/\s+/g, " ");
       if (!text || text.split(" ").length < 3) return 1;
-      const words = text.split(" ");
       const range = document.createRange();
       const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
       const textNodes: Text[] = [];
@@ -175,4 +173,44 @@ export async function measureRenderedPageTypography(rootLocator: Locator, width:
       passed: errorCount === 0 && warningCount <= (mobile ? 4 : 5),
     };
   }, width);
+}
+
+export async function clearRenderedPageTypographyRepair(page: Page, root: Locator) {
+  await root.evaluate((element) => {
+    element.removeAttribute("data-mi-rendered-typography-repair");
+    element.removeAttribute("data-mi-rendered-typography-repair-attempt");
+  });
+  await page.evaluate((id) => document.getElementById(id)?.remove(), RENDERED_TYPOGRAPHY_STYLE_ID);
+}
+
+export async function runRenderedPageTypographyRepairCycle(page: Page, root: Locator, width: number) {
+  const before = await measureRenderedPageTypography(root, width);
+  const plan = planRenderedPageTypographyRepair({ width, issues: before.issues, attempt: 0 });
+  if (before.passed || !plan.required || !plan.css) {
+    return { metrics: before, plan, attempted: false, repaired: false, rejectedAfterRepair: !before.passed, before, after: before };
+  }
+
+  await root.evaluate((element) => {
+    element.setAttribute("data-mi-rendered-typography-repair", "1");
+    element.setAttribute("data-mi-rendered-typography-repair-attempt", "1");
+  });
+  await page.evaluate(({ id, css }) => {
+    document.getElementById(id)?.remove();
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }, { id: RENDERED_TYPOGRAPHY_STYLE_ID, css: plan.css });
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+
+  const after = await measureRenderedPageTypography(root, width);
+  return {
+    metrics: after,
+    plan,
+    attempted: true,
+    repaired: !before.passed && after.passed,
+    rejectedAfterRepair: !after.passed,
+    before,
+    after,
+  };
 }

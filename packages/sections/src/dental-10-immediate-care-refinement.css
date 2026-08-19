@@ -1,0 +1,118 @@
+/* Dental 10 — Immediate Care refinement
+ * Preserve fast scanning and same-day conversion while removing repeated
+ * emergency-card framing. Urgency comes from hierarchy, contrast and action
+ * placement rather than visual clutter.
+ */
+
+/* Reassurance becomes a compact information rail. */
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics{
+  gap:0;
+  border-top:1px solid rgba(255,255,255,.16);
+  border-bottom:1px solid rgba(255,255,255,.16);
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article{
+  padding:1rem 1.05rem;
+  border:0;
+  border-right:1px solid rgba(255,255,255,.14);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article:last-child{
+  border-right:0;
+}
+
+/* Urgent reasons become a triage-style list instead of service tiles. */
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight{
+  gap:0;
+  border-top:1px solid var(--mi-urgent-line);
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight .mi-service-item,
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight .mi-service-item:first-child{
+  grid-column:auto;
+  padding:1.15rem .25rem;
+  border:0;
+  border-bottom:1px solid var(--mi-urgent-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight .mi-service-item h3{
+  font-size:clamp(1.15rem,1.8vw,1.5rem);
+}
+
+/* Patient pathway is linear and calm, not another card grid. */
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-process--timeline .mi-process-timeline{
+  gap:0;
+  border-top:1px solid var(--mi-urgent-line);
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-process--timeline .mi-process-node{
+  padding:1.1rem .25rem 1.2rem;
+  border:0;
+  border-bottom:1px solid var(--mi-urgent-line);
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-process--timeline .mi-process-node>span{
+  width:1.9rem;
+  height:1.9rem;
+  border-radius:.45rem;
+}
+
+/* Clinician reassurance should feel human rather than promotional. */
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-team--featured .mi-team-card--lead{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-team--featured .mi-team-card--lead img,
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+  border-radius:.55rem;
+}
+
+/* Final action is a clear emergency band rather than another floating card. */
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-conv-cta--split{
+  background:var(--mi-color-primary);
+  color:var(--mi-color-primary-contrast);
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-conv-cta--split .mi-cta-split{
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-conv-cta--split .mi-conv-heading,
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-conv-cta--split .mi-conv-heading h2,
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-conv-cta--split .mi-conv-heading p{
+  color:inherit;
+}
+[data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-contact-form{
+  border:1px solid var(--mi-urgent-line);
+  border-radius:.65rem;
+  box-shadow:none;
+}
+
+@media(max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article{
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.14);
+    padding:1rem 0;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics article:last-child{
+    border-bottom:0;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-process--timeline .mi-process-timeline{
+    display:block;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-services-spotlight .mi-service-item:first-child,
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-process--timeline .mi-process-node{
+    width:100%;
+    padding-left:0;
+    padding-right:0;
+  }
+}

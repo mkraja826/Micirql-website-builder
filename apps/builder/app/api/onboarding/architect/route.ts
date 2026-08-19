@@ -6,17 +6,23 @@ import { materializeGeneratedMedia } from "../../../materialize-media-execution"
 import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
+import { safeRecordBuildObservability } from "../../../build-observability";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
 import { loadMediaPools } from "../media-assets";
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const buildId = crypto.randomUUID();
+  let stage = "planning";
+  let workspaceId = "";
+  let siteId = "";
   try {
     const authorization = request.headers.get("authorization");
     if (!authorization?.startsWith("Bearer ")) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
     const body = await request.json() as Record<string, unknown>;
-    const workspaceId = text(body.workspaceId);
-    const siteId = text(body.siteId);
+    workspaceId = text(body.workspaceId);
+    siteId = text(body.siteId);
     const businessName = text(body.businessName);
     const industry = text(body.industry);
     if (!workspaceId || !siteId || !businessName || !industry) return NextResponse.json({ error: "workspaceId, siteId, businessName and industry are required" }, { status: 400 });
@@ -42,12 +48,14 @@ export async function POST(request: NextRequest) {
       requiredCapabilities: list(body.requiredCapabilities),
       notes: facts.notes,
     });
+    stage = "designing";
     let architecturalSite = applyPageArchitecture(draft.snapshot, plan);
 
     let mediaExecution = null;
     let mediaWarning: string | null = null;
     let generatedMediaCount = 0;
     let customerAssets: MediaAsset[] = [];
+    stage = "media";
     try {
       const mediaPlan = planPageMedia(architecturalSite, industry);
       const pools = await loadMediaPools(workspaceId);
@@ -65,8 +73,9 @@ export async function POST(request: NextRequest) {
 
     const saved = await saveSupabaseDraft(request, { snapshot: architecturalSite, expectedRevision: draft.revision });
 
-    let content = null;
+    let content: Awaited<ReturnType<typeof runGuardedContentGeneration>> | null = null;
     let contentWarning: string | null = null;
+    stage = "content";
     try {
       content = await runGuardedContentGeneration(request, { workspaceId, siteId, expectedRevision: saved.revision, facts });
     } catch (error) {
@@ -75,6 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     let exactPlacement = { placed: 0, pairedCases: 0, unmatched: [] as string[] };
+    stage = "asset-placement";
     try {
       const current = await getSupabaseDraft(request, workspaceId, siteId);
       if (current && customerAssets.length) {
@@ -87,6 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     let functionalBindings = { bound: [] as string[] };
+    stage = "functions";
     try {
       const current = await getSupabaseDraft(request, workspaceId, siteId);
       if (current) {
@@ -98,9 +109,36 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql functional binding pass failed; keeping generated content and media.", error);
     }
 
-    return NextResponse.json({ ok: true, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning });
+    const fallbackCount = content?.recovery?.failedProviders ?? 0;
+    const recoveryReason = contentWarning || mediaWarning || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
+    const outcome = recoveryReason ? "recovered" as const : "success" as const;
+    await safeRecordBuildObservability(request, {
+      workspaceId,
+      siteId,
+      buildId,
+      outcome,
+      durationMs: Date.now() - startedAt,
+      provider: content?.model.provider ?? null,
+      model: content?.model.model ?? null,
+      fallbackCount,
+      qualityScore: content?.audit.contentQuality.score ?? null,
+      recoveryReason,
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning },
+    });
+
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed." }, { status: 500 });
+    if (workspaceId && siteId) await safeRecordBuildObservability(request, {
+      workspaceId,
+      siteId,
+      buildId,
+      outcome: "failed",
+      failedStage: stage,
+      durationMs: Date.now() - startedAt,
+      recoveryReason: error instanceof Error ? error.message : "Unknown build failure",
+      details: { stage },
+    });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Page architecture failed.", buildId }, { status: 500 });
   }
 }
 

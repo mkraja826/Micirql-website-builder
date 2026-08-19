@@ -5,7 +5,7 @@ const REQUIRED_VIEWPORTS = [360, 390, 430, 768, 1024, 1440] as const;
 
 /**
  * This gate complements dental-top20-visual-evidence.spec.ts.
- * The evidence test exercises the production renderer at 360/390/430/768/1440.
+ * The evidence test exercises the production renderer at 360/390/430/768/1024/1440.
  * This contract prevents future blueprint edits from weakening the geometry rules
  * that the runtime visual gate relies on.
  */

@@ -11,6 +11,7 @@ export * from "./model-executor";
 export * from "./usage";
 export * from "./metered-executor";
 export * from "./build-orchestrator";
+export * from "./build-watchdog";
 export * from "./materializers";
 export * from "./image-generation";
 export * from "./image-provider";

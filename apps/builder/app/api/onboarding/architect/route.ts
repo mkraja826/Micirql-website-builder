@@ -9,12 +9,14 @@ import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
 import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
 import { evaluateDentalContentQuality, type DentalContentQualityResult } from "../../../dental-content-quality";
+import { evaluateHeroCoherence } from "../../../hero-coherence-quality";
 import { safeRecordBuildObservability } from "../../../build-observability";
 import { getSupabaseDraft, saveSupabaseDraft } from "../../drafts/supabase-store";
 import { runGuardedContentGeneration } from "../../generate-content/service";
 import { loadMediaPools } from "../media-assets";
 
 const MIN_DENTAL_CONTENT_SCORE = 82;
+const MIN_HERO_COHERENCE_SCORE = 82;
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
@@ -178,6 +180,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const heroCoherence = evaluateHeroCoherence(finalDraft.snapshot, mediaExecution, dentalProfile);
+    const heroErrors = heroCoherence.issues.filter((item) => item.severity === "error");
+    if (heroErrors.length || heroCoherence.score < MIN_HERO_COHERENCE_SCORE) {
+      const codes = [...new Set((heroErrors.length ? heroErrors : heroCoherence.issues).map((item) => item.code))];
+      throw new Error(`GENERATED_HERO_COHERENCE_FAILED: ${codes.join(", ") || `score ${heroCoherence.score}/${MIN_HERO_COHERENCE_SCORE}`}`);
+    }
+
     const visualQuality = evaluateSiteVisualQuality(finalDraft.snapshot);
     if (!visualQuality.ready) {
       const codes = [...new Set(visualQuality.issues.map((item) => item.code))];
@@ -188,7 +197,7 @@ export async function POST(request: NextRequest) {
     const dentalRecoveryReason = dentalRepairApplied ? `Dental specialty content auto-repaired: ${dentalRepairCodes.join(", ")}` : null;
     const recoveryReason = contentWarning || mediaWarning || dentalRecoveryReason || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
-    const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100);
+    const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100, heroCoherence.score);
     await safeRecordBuildObservability(request, {
       workspaceId,
       siteId,
@@ -200,10 +209,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

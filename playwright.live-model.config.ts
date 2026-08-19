@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:live-model-dental-sampling|live-generated-dental-visual|live-dental-media-materialization|live-dental-production-intelligence)\.spec\.ts/,
+  testMatch: /(?:live-model-dental-sampling|live-generated-dental-visual|live-dental-media-materialization|live-dental-production-intelligence|live-dental-customer-path)\.spec\.ts/,
   timeout: 300_000,
   fullyParallel: false,
   workers: 1,

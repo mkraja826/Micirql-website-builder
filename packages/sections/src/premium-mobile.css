@@ -22,6 +22,13 @@
 .mi-section-variant--4 .mi-section__heading{padding-left:1rem}
 .mi-section-variant--5 .mi-section:not(.mi-hero--immersive)::before{width:12rem;height:12rem;opacity:.7}
 
+/* Mobile navigation is a certified requirement for every premium blueprint. */
+.mi-shell-navbar .mi-mobile-nav{display:block!important;visibility:visible!important;opacity:1!important;margin-left:auto;flex:0 0 auto}
+.mi-shell-navbar .mi-burger{display:flex!important;visibility:visible!important;opacity:1!important;width:44px!important;height:44px!important;min-width:44px;min-height:44px;color:inherit;pointer-events:auto}
+.mi-shell-navbar .mi-burger span{display:block!important;width:18px!important;height:2px!important;background:currentColor!important;opacity:1}
+.mi-shell-navbar .mi-mobile-nav[open]>.mi-burger span:nth-child(2){opacity:0!important}
+.mi-shell-navbar .mi-mobile-drawer{visibility:visible;opacity:1}
+
 /* Mobile section layouts must be deliberate single-column compositions. */
 :is(.mi-services-card-grid,.mi-services-spotlight,.mi-services-band-grid,.mi-services-editorial-grid,.mi-about-split,.mi-about-story,.mi-about-editorial,.mi-about-statement-bottom,.mi-proof-card-grid,.mi-proof-wall,.mi-proof-dark,.mi-proof-dark-grid,.mi-contact-split,.mi-team-grid,.mi-gallery-grid,.mi-process-grid){grid-template-columns:minmax(0,1fr)!important;min-width:0;max-width:100%}
 :is(.mi-service-item,.mi-section__card,.mi-team-card,.mi-gallery-card,.mi-process-card,.mi-contact-card,.mi-proof-card-grid blockquote,.mi-proof-wall blockquote,.mi-proof-dark-grid article){width:100%;max-width:100%;min-width:0;box-sizing:border-box}

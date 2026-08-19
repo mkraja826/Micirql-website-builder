@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { RendererPreview } from "./renderer-preview";
 import { publishReadiness } from "./publish-readiness";
+import { useOnboardingProfile } from "./onboarding-profile-context";
 
 export type PublishSuccess = { versionId: string; liveUrl?: string };
 
@@ -15,6 +16,7 @@ export function PublishController({ site, disabled, ensureSaved }: {
   disabled: boolean;
   ensureSaved(): Promise<boolean>;
 }) {
+  const profile = useOnboardingProfile();
   const [state, setState] = useState<"idle" | "publishing" | "success" | "error" | "rolling-back">("idle");
   const [issues, setIssues] = useState<Issue[]>([]);
   const [current, setCurrent] = useState<PublishSuccess | undefined>();
@@ -27,8 +29,6 @@ export function PublishController({ site, disabled, ensureSaved }: {
   const destination = site.domains.find((domain) => domain.primary) ?? site.domains[0];
 
   function openReview() {
-    // Never carry an old success/error popover into the final-review surface.
-    // Preview & publish should open one clean full-screen review, not a second popup below the button.
     if (state === "success" || state === "error") setState("idle");
     setIssues([]);
     setReviewOpen(true);
@@ -48,7 +48,19 @@ export function PublishController({ site, disabled, ensureSaved }: {
       const response = await fetch("/api/publish", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ site, createdBy: "workspace-user" }),
+        body: JSON.stringify({
+          site,
+          createdBy: "workspace-user",
+          groundingFacts: {
+            businessName: profile?.business_name ?? site.name,
+            industry: profile?.industry ?? site.subtype ?? null,
+            subindustry: profile?.subindustry ?? site.subtype ?? null,
+            location: profile?.location ?? site.seoBlueprint.targetLocations[0] ?? null,
+            services: profile?.services ?? site.seoBlueprint.priorityTopics,
+            goals: profile?.goals ?? [],
+            notes: profile?.notes ?? null,
+          },
+        }),
       });
       const payload = await response.json() as { ok?: boolean; version?: { versionId: string }; liveUrl?: string; previousVersionId?: string; issues?: Issue[] };
       if (!response.ok || !payload.ok || !payload.version) {

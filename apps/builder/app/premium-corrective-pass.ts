@@ -41,10 +41,15 @@ export function applyPremiumCorrectivePass(site: Site): PremiumCorrectionResult 
   return { site: parsed, before, after, corrected: corrections.length > 0, corrections };
 }
 
+function isVisualLocked(section: SiteSection): boolean {
+  return section.props?.layoutVisualLocked === true && typeof section.props?.layoutBlueprintId === "string";
+}
+
 function normalizeSurfaceRhythm(sections: SiteSection[], corrections: string[]) {
   const rhythm: PaletteRole[] = ["background", "surface", "background", "secondary", "surface", "background"];
   let changed = false;
   sections.forEach((section, index) => {
+    if (isVisualLocked(section)) return;
     const family = familyFromId(section.component.componentId);
     const desired: PaletteRole = family === "cta" ? "primary" : rhythm[index % rhythm.length]!;
     if (section.props?.paletteRole !== desired) {
@@ -57,13 +62,14 @@ function normalizeSurfaceRhythm(sections: SiteSection[], corrections: string[]) 
       changed = true;
     }
   });
-  if (changed) corrections.push("normalized premium surface rhythm");
+  if (changed) corrections.push("normalized premium surface rhythm outside blueprint-locked sections");
 }
 
 function diversifyRepeatedComponents(sections: SiteSection[], themeFamily: ThemeFamily, corrections: string[]) {
   const seen = new Map<string, number>();
   let changed = false;
   for (const section of sections) {
+    if (isVisualLocked(section)) continue;
     const family = familyFromId(section.component.componentId);
     if (!family || family === "navbar" || family === "footer") continue;
     const key = section.component.componentId;
@@ -75,7 +81,7 @@ function diversifyRepeatedComponents(sections: SiteSection[], themeFamily: Theme
     section.component = { ...section.component, componentId: sectionDesignId(themeFamily, family, variant) };
     changed = true;
   }
-  if (changed) corrections.push("diversified repeated section layouts");
+  if (changed) corrections.push("diversified repeated section layouts outside blueprint locks");
 }
 
 function reinforceConversionFlow(sections: SiteSection[], corrections: string[]) {

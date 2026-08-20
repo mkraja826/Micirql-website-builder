@@ -92,6 +92,47 @@
   box-shadow:none;
 }
 
+/* At the lower tablet boundary, the desktop split squeezes the CTA tray into a
+ * narrow copy column. Stack the hero through 832px so both normal and implant
+ * conversion labels remain fully inside the certified preview. */
+@media(min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered>.mi-container{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.75rem!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-hero__copy{
+    width:100%!important;
+    max-width:43rem!important;
+    min-width:0!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-section__actions{
+    width:min(100%,34rem)!important;
+    max-width:100%!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-section__action{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-section__action span{
+    max-width:100%!important;
+    overflow:visible!important;
+    white-space:nowrap!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-section__media{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-hero--centered .mi-section__media img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:32rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+}
+
 @media(max-width:47.99rem){
   [data-mi-layout-blueprint="dental-10-emergency-trust"] .mi-proof--metrics .mi-proof-metrics{
     display:block;

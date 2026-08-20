@@ -9,7 +9,8 @@ import { StructuralFeatures, StructuralGallery, StructuralTeam } from "./media-s
 import { StructuralFaq } from "./faq-sections";
 
 type Action = { label: string; href: string };
-type Item = { title: string; description?: string; image?: string };
+type Item = { title: string; description?: string; image?: string; href?: string };
+type BreadcrumbItem = { label: string; href?: string };
 export type PaletteRole = "background" | "surface" | "primary" | "secondary" | "accent";
 export type ImageSlotMode = "none" | "section" | "items" | "both";
 export type ImageRatio = "1:1" | "4:5" | "3:2" | "4:3" | "16:10" | "16:9" | "21:9";
@@ -33,6 +34,7 @@ export type UniversalSectionProps = {
   primaryAction?: Action;
   secondaryAction?: Action;
   items?: Item[];
+  breadcrumbs?: BreadcrumbItem[];
   image?: { src: string; alt: string };
   logo?: LogoPresentation;
   formAction?: string;
@@ -82,8 +84,14 @@ function NavbarSection(props: VariantProps) {
   return <StructuralNavbar {...props} />;
 }
 
+function Breadcrumbs({ items = [] }: { items?: BreadcrumbItem[] }) {
+  const valid = items.filter((item) => item && item.label?.trim());
+  if (valid.length < 2) return null;
+  return <nav className="mi-breadcrumbs" aria-label="Breadcrumb"><ol>{valid.map((item, index) => <li key={`${item.label}-${index}`}>{index > 0 ? <span className="mi-breadcrumbs__separator" aria-hidden="true">/</span> : null}{item.href && index < valid.length - 1 ? <a href={item.href}><InlineField path={`breadcrumbs.${index}.label`}>{item.label}</InlineField></a> : <span aria-current={index === valid.length - 1 ? "page" : undefined}><InlineField path={`breadcrumbs.${index}.label`}>{item.label}</InlineField></span>}</li>)}</ol></nav>;
+}
+
 function HeroCopy(props: UniversalSectionProps) {
-  return <Stack gap="md" className="mi-hero__copy">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h1" variant="display"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}<Actions {...props} /></Stack>;
+  return <Stack gap="md" className="mi-hero__copy"><Breadcrumbs items={props.breadcrumbs} />{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h1" variant="display"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}<Actions {...props} /></Stack>;
 }
 
 function HeroMedia(props: UniversalSectionProps) {

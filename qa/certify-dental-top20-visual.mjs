@@ -6,12 +6,34 @@ const root = process.cwd();
 const evidenceDirectory = path.join(root, "test-results", "dental-top20-visual-evidence");
 const evidencePath = path.join(evidenceDirectory, "report.json");
 const certificationPath = path.join(evidenceDirectory, "certification.json");
+const interactionCertificationPath = path.join(evidenceDirectory, "interaction-certification.json");
 const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
+const requiredInteractionContract = "shared-dental-rendered-interaction-v1";
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
 const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
 const failures = [];
+let interactionCertification = null;
+
+try {
+  interactionCertification = JSON.parse(await readFile(interactionCertificationPath, "utf8"));
+} catch {
+  failures.push("Rendered Dental interaction certification is missing; runtime allowlist cannot be emitted.");
+}
+
+if (interactionCertification) {
+  if (interactionCertification.certified !== true) failures.push("Rendered Dental interaction certification did not pass.");
+  if (interactionCertification.sourceCommit !== currentSha) {
+    failures.push(`Rendered Dental interaction certification is stale (${interactionCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
+  }
+  if (interactionCertification.contract !== requiredInteractionContract) {
+    failures.push(`Unexpected rendered interaction contract ${interactionCertification.contract ?? "missing"}.`);
+  }
+  if (!Array.isArray(interactionCertification.requiredChecks) || interactionCertification.requiredChecks.length < 8) {
+    failures.push("Rendered Dental interaction certification is incomplete.");
+  }
+}
 
 if (evidence.layouts !== 20 || !Array.isArray(evidence.report) || evidence.report.length !== 20) {
   failures.push(`Expected 20 rendered Dental layouts, received ${evidence.report?.length ?? 0}.`);
@@ -56,15 +78,17 @@ if (failures.length) {
 const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
 const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
   evidenceFile: "test-results/dental-top20-visual-evidence/report.json",
+  interactionEvidenceFile: "test-results/dental-top20-visual-evidence/interaction-certification.json",
   requiredViewports,
+  requiredInteractionContract,
   runtimeEnvironmentKey: "MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS",
   certifiedLayoutIds,
-  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true })),
+  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true, interactionCertified: true })),
   hardGates: [
     "no document overflow",
     "no child escape",
@@ -75,10 +99,15 @@ const certification = {
     "no wrapped CTA labels",
     "mobile touch targets >= 44px",
     "no abnormally tall mobile sections",
+    "rendered interaction contract certified for the same source commit",
+    "visible keyboard focus treatment",
+    "restrained pointer feedback without layout-jank transitions",
+    "operable viewport-contained mobile navigation",
+    "prefers-reduced-motion removes meaningful movement",
   ],
 };
 
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus the rendered interaction contract for ${currentSha}.`);

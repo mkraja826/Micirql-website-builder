@@ -18,6 +18,8 @@ on:
       - 'qa/gallery-lightbox-certification.spec.ts'
       - 'qa/faq-accordion-certification.spec.ts'
       - 'qa/faq-structured-data-parity.spec.ts'
+      - 'qa/dental-breadcrumb-structured-data.spec.ts'
+      - 'qa/dental-multipage-live-routing.spec.ts'
       - 'playwright.dental-visual.config.ts'
       - 'package.json'
       - '.github/workflows/deploy-live.yml'
@@ -62,8 +64,8 @@ jobs:
       - name: Install Chromium for published interaction certification
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify published live interaction, forms, gallery, FAQ and FAQPage parity
-        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/faq-structured-data-parity.spec.ts
+      - name: Certify published live interaction, FAQ semantics, breadcrumbs and multi-page routing
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/faq-structured-data-parity.spec.ts qa/dental-breadcrumb-structured-data.spec.ts qa/dental-multipage-live-routing.spec.ts
 
       - run: pnpm --filter @micirql/live typecheck
       - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build

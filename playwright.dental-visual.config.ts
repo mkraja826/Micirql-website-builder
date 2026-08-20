@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:dental-visual-comparison|dental-top20-premium-gate|dental-top20-visual-evidence|dental-flagship-visual-evidence|dental-flagship-mobile-navigation|dental-top20-geometry-gate|dental-runtime-css-parity|dental-production-certification-gate|dental-rendered-interaction-certification|live-rendered-interaction-parity|live-functional-interaction-certification|gallery-lightbox-certification|faq-accordion-certification|dental-interaction-allowlist-gate)\.spec\.ts/,
+  testMatch: /(?:dental-visual-comparison|dental-top20-premium-gate|dental-top20-visual-evidence|dental-flagship-visual-evidence|dental-flagship-mobile-navigation|dental-top20-geometry-gate|dental-runtime-css-parity|dental-production-certification-gate|dental-rendered-interaction-certification|live-rendered-interaction-parity|live-functional-interaction-certification|gallery-lightbox-certification|faq-accordion-certification|dental-faq-generation-intelligence|faq-structured-data-parity|dental-interaction-allowlist-gate)\.spec\.ts/,
   timeout: 240_000,
   fullyParallel: false,
   workers: 1,

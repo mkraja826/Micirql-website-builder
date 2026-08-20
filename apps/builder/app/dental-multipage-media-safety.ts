@@ -1,20 +1,26 @@
 import { siteSchema, type Site } from "@micirql/schema";
+import { applyDentalMultipageLayoutIdentity } from "./dental-multipage-layout-identity";
 
 export type DentalMultipageMediaSafetyResult = {
   site: Site;
   changed: boolean;
   reusedQualifiedHero: number;
   removedEmptyHeroSlots: number;
+  preservedBlueprintIdentity: boolean;
+  layoutIdentityPages: number;
 };
 
 /**
  * Treatment pages are composed before the rendered browser certification pass.
- * Reuse an already-selected homepage hero only when it is a real image. If no
- * qualified image exists, remove the empty media slot instead of publishing an
- * "Add hero photo" placeholder. Browser image QA remains the final authority.
+ * First preserve the certified homepage blueprint identity across secondary
+ * pages, then reuse an already-selected homepage hero only when it is a real
+ * image. If no qualified image exists, remove the empty media slot instead of
+ * publishing an "Add hero photo" placeholder. Browser image QA remains the
+ * final authority.
  */
 export function applyDentalMultipageMediaSafety(site: Site): DentalMultipageMediaSafetyResult {
-  const next = structuredClone(site);
+  const identity = applyDentalMultipageLayoutIdentity(site);
+  const next = structuredClone(identity.site);
   const home = next.pages.find((page) => page.path === "/") ?? next.pages[0];
   const homeHero = home?.sections.find((section) => !section.hidden && isHero(section.component.componentId));
   const homeImage = validImage(homeHero?.props.image);
@@ -45,8 +51,15 @@ export function applyDentalMultipageMediaSafety(site: Site): DentalMultipageMedi
     }
   }
 
-  const changed = reusedQualifiedHero > 0 || removedEmptyHeroSlots > 0;
-  return { site: changed ? siteSchema.parse(next) : site, changed, reusedQualifiedHero, removedEmptyHeroSlots };
+  const changed = identity.applied || reusedQualifiedHero > 0 || removedEmptyHeroSlots > 0;
+  return {
+    site: changed ? siteSchema.parse(next) : site,
+    changed,
+    reusedQualifiedHero,
+    removedEmptyHeroSlots,
+    preservedBlueprintIdentity: identity.applied,
+    layoutIdentityPages: identity.pagesUpdated,
+  };
 }
 
 function validImage(value: unknown): { src: string; alt: string } | undefined {

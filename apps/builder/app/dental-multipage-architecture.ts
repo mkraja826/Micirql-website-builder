@@ -382,9 +382,9 @@ function shellClone(home: SitePage, family: "navbar" | "footer", id: string): Si
 
 function familyFromId(componentId: string): SectionFamily | undefined {
   const value = componentId.toLowerCase();
-  const families: SectionFamily[] = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "team", "faq", "pricing", "cta", "contact", "footer"];
+  const families: SectionFamily[] = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "team", "faq", "cta", "contact", "footer"];
   for (const family of families) if (value === `${family}.placeholder` || value.startsWith(`${family}.`)) return family;
-  const codes: Partial<Record<SectionFamily, string>> = { navbar: "nav", hero: "hero", about: "about", services: "serv", features: "feat", process: "proc", testimonials: "test", gallery: "gall", team: "team", faq: "faq", pricing: "pricing", cta: "cta", contact: "cont", footer: "foot" };
+  const codes: Partial<Record<SectionFamily, string>> = { navbar: "nav", hero: "hero", about: "about", services: "serv", features: "feat", process: "proc", testimonials: "test", gallery: "gall", team: "team", faq: "faq", cta: "cta", contact: "cont", footer: "foot" };
   return families.find((family) => codes[family] && value.includes(`-${codes[family]}-`));
 }
 

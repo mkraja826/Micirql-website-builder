@@ -163,16 +163,19 @@ test("pages without visible valid FAQ pairs do not emit FAQPage structured data"
   expect(faqSchema(rendered)).toBeUndefined();
 });
 
-test("FAQ renderer and FAQPage use the same complete-pair eligibility contract", async () => {
+test("FAQ renderer and FAQPage use the same complete-pair and first-question eligibility contract", async () => {
   const [sectionSource, seoSource] = await Promise.all([
     readFile("packages/sections/src/faq-sections.tsx", "utf8"),
     readFile("packages/renderer/src/seo.ts", "utf8"),
   ]);
 
   expect(sectionSource).toContain(".filter((entry) => entry.question && entry.answer)");
+  expect(sectionSource).toContain("const seenQuestions = new Set<string>();");
+  expect(sectionSource).toContain("if (seenQuestions.has(entry.question)) return false;");
   expect(sectionSource).not.toContain("Contact us and we will explain the next step clearly.");
   expect(sectionSource).toContain("text(item.title)");
   expect(sectionSource).toContain("text(item.description)");
+  expect(seoSource).toContain("const seenQuestions = new Set<string>();");
   expect(seoSource).toContain("if (!question || !answer || seenQuestions.has(question)) continue;");
   expect(seoSource).toContain("if (section.hidden || !isFaqComponent(section.component.componentId)) continue;");
 });

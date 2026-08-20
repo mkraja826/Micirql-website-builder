@@ -314,7 +314,7 @@ test("render Dental Implants across all 20 certified layouts and six production 
     await expect(preview).toBeVisible();
     await expect(preview).toHaveAttribute("data-mi-layout-blueprint", layout.id);
     await expect(preview).toHaveAttribute("data-mi-layout-archetype", /.+/);
-    await expect(preview.getByRole("heading", { level: 1, name: /Dental implant care begins with careful assessment and planning/i })).toBeVisible();
+    await expect(preview.locator('[data-mi-section-id="implant-hero"] h1')).toHaveText(/Dental implant care begins with careful assessment and planning/i);
     await page.addStyleTag({ content: CAPTURE_STYLES });
 
     const viewportResults: Record<string, unknown> = {};

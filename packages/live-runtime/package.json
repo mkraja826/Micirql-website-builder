@@ -12,6 +12,7 @@
   "dependencies": {
     "@micirql/renderer": "workspace:*",
     "@micirql/schema": "workspace:*",
+    "@micirql/sections": "workspace:*",
     "react": "latest",
     "react-dom": "latest"
   },

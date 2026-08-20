@@ -217,3 +217,59 @@
     font-size:clamp(2.35rem,10.6vw,3.35rem)!important;
   }
 }
+
+/* Final 768px hardening from rendered certification. The shared Spotlight V2
+ * primitive makes its first card span two columns on desktop; once tablet safety
+ * intentionally collapses the grid to one column that span must also be reset,
+ * otherwise an implicit second track lets later service copy collide. */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-services--spotlight .mi-service-item:first-child{
+    grid-column:auto!important;
+  }
+
+  /* Family Care's desktop media-first hero keeps a 36rem CTA tray beside a
+   * 22rem minimum media column. At the exact 768px boundary that combination can
+   * leave the inline CTA labels outside the page even when the anchor box itself
+   * remains constrained. Use a deliberate tablet stack and size actions to the
+   * available copy column. */
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__split{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:clamp(1.5rem,4vw,2.5rem)!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__media img{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:0!important;
+    max-height:36rem;
+    aspect-ratio:16/10;
+    object-fit:cover;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    display:flex;
+    flex-wrap:wrap;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action{
+    flex:1 1 12rem!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action span{
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:clip;
+  }
+}

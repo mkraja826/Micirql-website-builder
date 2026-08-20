@@ -34,15 +34,40 @@ export function createProductionSectionRendererRegistry(): RendererRegistry {
 
   const components: Record<string, ComponentType<Record<string, unknown>>> = Object.fromEntries(
     seedSectionCatalog.map((seed) => {
-      const Component: ComponentType<Record<string, unknown>> = (props) => createElement(Section, {
-        family: seed.family,
-        variant: seed.variant,
-        props: props as UniversalSectionProps,
-      });
+      const Component: ComponentType<Record<string, unknown>> = (props) => {
+        const sectionId = stringProp(props, "data-mi-section-id");
+        const componentId = stringProp(props, "data-mi-component-id");
+        const componentVersion = stringProp(props, "data-mi-component-version");
+        const sectionProps = { ...props };
+        delete sectionProps["data-mi-section-id"];
+        delete sectionProps["data-mi-component-id"];
+        delete sectionProps["data-mi-component-version"];
+
+        return createElement(
+          "div",
+          {
+            ...(sectionId ? { "data-mi-section-id": sectionId } : {}),
+            ...(componentId ? { "data-mi-component-id": componentId } : {}),
+            ...(componentVersion ? { "data-mi-component-version": componentVersion } : {}),
+            "data-mi-live-section": "built-in",
+            style: { display: "contents" },
+          },
+          createElement(Section, {
+            family: seed.family,
+            variant: seed.variant,
+            props: sectionProps as UniversalSectionProps,
+          }),
+        );
+      };
       Component.displayName = `LiveSection_${seed.id.replace(/-/g, "_")}`;
       return [seed.id, Component];
     }),
   );
 
   return createStaticRendererRegistry({ entries, components });
+}
+
+function stringProp(props: Record<string, unknown>, key: string): string | undefined {
+  const value = props[key];
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

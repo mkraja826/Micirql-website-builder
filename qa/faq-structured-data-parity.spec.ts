@@ -134,7 +134,23 @@ test("FAQPage JSON-LD uses the exact trimmed visible questions and answers", () 
   expect(serialized).not.toContain("Question without an answer");
 });
 
-test("duplicate visible questions are represented once using the first visible answer", () => {
+test("repeated questions inside one visible accordion use the first visible answer", () => {
+  const page = pageWithFaq();
+  const faq = page.sections[0]!;
+  const items = faq.props.items as Array<Record<string, unknown>>;
+  items.splice(2, 0, {
+    title: "How are treatment stages explained?",
+    description: "A conflicting duplicate inside the same accordion must not render or enter structured data.",
+  });
+
+  const rendered = buildRenderedSeo(site(page), page, "https://aurelia.example");
+  const entities = (faqSchema(rendered)?.mainEntity ?? []) as Array<Record<string, unknown>>;
+  const matches = entities.filter((entry) => entry.name === "How are treatment stages explained?");
+  expect(matches).toHaveLength(1);
+  expect(JSON.stringify(matches[0])).toContain("Your clinician can outline the recommended stages after assessment.");
+});
+
+test("the same question intentionally shown in two FAQ sections remains represented twice", () => {
   const page = pageWithFaq();
   page.sections.splice(1, 0, {
     id: "faq-second-visible",
@@ -144,7 +160,7 @@ test("duplicate visible questions are represented once using the first visible a
     props: {
       title: "More questions",
       items: [
-        { title: "How are treatment stages explained?", description: "A conflicting duplicate answer that must not replace visible source order." },
+        { title: "How are treatment stages explained?", description: "This second visible FAQ section provides its own visible treatment-stage answer." },
         { title: "Can I ask questions before deciding?", description: "Yes. The consultation is an opportunity to discuss the proposed plan before proceeding." },
       ],
     },
@@ -152,7 +168,7 @@ test("duplicate visible questions are represented once using the first visible a
 
   const rendered = buildRenderedSeo(site(page), page, "https://aurelia.example");
   const entities = (faqSchema(rendered)?.mainEntity ?? []) as Array<Record<string, unknown>>;
-  expect(entities.filter((entry) => entry.name === "How are treatment stages explained?")).toHaveLength(1);
+  expect(entities.filter((entry) => entry.name === "How are treatment stages explained?")).toHaveLength(2);
   expect(entities.map((entry) => entry.name)).toContain("Can I ask questions before deciding?");
 });
 
@@ -163,7 +179,7 @@ test("pages without visible valid FAQ pairs do not emit FAQPage structured data"
   expect(faqSchema(rendered)).toBeUndefined();
 });
 
-test("FAQ renderer and FAQPage use the same complete-pair and first-question eligibility contract", async () => {
+test("FAQ renderer and FAQPage use the same complete-pair and section-scoped duplicate contract", async () => {
   const [sectionSource, seoSource] = await Promise.all([
     readFile("packages/sections/src/faq-sections.tsx", "utf8"),
     readFile("packages/renderer/src/seo.ts", "utf8"),
@@ -175,7 +191,8 @@ test("FAQ renderer and FAQPage use the same complete-pair and first-question eli
   expect(sectionSource).not.toContain("Contact us and we will explain the next step clearly.");
   expect(sectionSource).toContain("text(item.title)");
   expect(sectionSource).toContain("text(item.description)");
-  expect(seoSource).toContain("const seenQuestions = new Set<string>();");
+  expect(seoSource).toContain("for (const section of page.sections)");
+  expect(seoSource.indexOf("const seenQuestions = new Set<string>();")).toBeGreaterThan(seoSource.indexOf("for (const section of page.sections)"));
   expect(seoSource).toContain("if (!question || !answer || seenQuestions.has(question)) continue;");
   expect(seoSource).toContain("if (section.hidden || !isFaqComponent(section.component.componentId)) continue;");
 });

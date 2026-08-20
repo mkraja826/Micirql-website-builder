@@ -1,0 +1,83 @@
+name: Dental Published Live Interaction Certification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/live/app/__micirql/runtime.css/route.ts'
+      - 'apps/live/generated/runtime-css.ts'
+      - 'apps/live/scripts/build-runtime-css.mjs'
+      - 'apps/live/live-runtime.ts'
+      - 'packages/live-runtime/**'
+      - 'packages/primitives/**'
+      - 'packages/components/**'
+      - 'packages/sections/**'
+      - 'qa/live-rendered-interaction-parity.spec.ts'
+      - 'qa/dental-rendered-interaction-certification.spec.ts'
+      - 'qa/certify-dental-live-interactions.mjs'
+      - 'qa/certify-dental-top20-visual.mjs'
+      - 'qa/dental-interaction-allowlist-gate.spec.ts'
+      - 'playwright.dental-visual.config.ts'
+      - 'package.json'
+      - '.github/workflows/dental-live-interaction.yml'
+      - '.github/workflows/deploy-builder.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/live/app/__micirql/runtime.css/route.ts'
+      - 'apps/live/generated/runtime-css.ts'
+      - 'apps/live/scripts/build-runtime-css.mjs'
+      - 'apps/live/live-runtime.ts'
+      - 'packages/live-runtime/**'
+      - 'packages/primitives/**'
+      - 'packages/components/**'
+      - 'packages/sections/**'
+      - 'qa/live-rendered-interaction-parity.spec.ts'
+      - 'qa/dental-rendered-interaction-certification.spec.ts'
+      - 'qa/certify-dental-live-interactions.mjs'
+      - 'qa/certify-dental-top20-visual.mjs'
+      - 'qa/dental-interaction-allowlist-gate.spec.ts'
+      - 'playwright.dental-visual.config.ts'
+      - 'package.json'
+      - '.github/workflows/dental-live-interaction.yml'
+      - '.github/workflows/deploy-builder.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify-live-interactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Certify published live interaction behavior
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
+
+      - name: Materialize same-commit live interaction certificate
+        run: node qa/certify-dental-live-interactions.mjs
+
+      - name: Upload live interaction evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: micirql-dental-published-live-interactions
+          path: test-results/dental-top20-visual-evidence/live-interaction-certification.json
+          retention-days: 30

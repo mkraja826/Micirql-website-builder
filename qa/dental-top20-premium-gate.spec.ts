@@ -45,11 +45,13 @@ type VisualCertification = {
   certified: boolean;
   sourceCommit: string;
   requiredViewports: string[];
+  requiredLiveInteractionContract?: string;
   requiredMultipageContract?: string;
   requiredTreatmentVisualContract?: string;
   layouts: Array<{
     layoutId: string;
     passed: boolean;
+    liveImplantRenderCertified?: boolean;
     multipageCertified?: boolean;
     implantTreatmentVisualCertified?: boolean;
   }>;
@@ -64,7 +66,7 @@ function currentCommit(): string {
   return process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 }
 
-test("all 20 certified dental layouts are backed by current homepage, multi-page and implant treatment rendered evidence", async () => {
+test("all 20 certified dental layouts are backed by current homepage, multi-page, implant treatment and published-live evidence", async () => {
   const certification = await loadVisualCertification();
   const ids = DENTAL_LAYOUT_BLUEPRINTS.map((layout) => layout.id);
   expect(ids).toHaveLength(20);
@@ -72,15 +74,17 @@ test("all 20 certified dental layouts are backed by current homepage, multi-page
   expect(ids).toEqual(EXPECTED_LAYOUT_IDS);
   expect(PREMIUM_PROMOTION_FLOOR).toBeGreaterThan(ENGINEERING_FLOOR);
 
-  expect(certification.schemaVersion).toBe(10);
+  expect(certification.schemaVersion).toBe(11);
   expect(certification.certified, "Rendered visual certification must pass before Top-20 promotion").toBe(true);
   expect(certification.sourceCommit, "Rendered evidence is stale and does not belong to the current commit").toBe(currentCommit());
   expect(certification.requiredViewports).toEqual(REQUIRED_RENDERED_VIEWPORTS);
+  expect(certification.requiredLiveInteractionContract).toBe("published-live-functional-gallery-faq-implant-render-v6");
   expect(certification.requiredMultipageContract).toBe("dental-multipage-architecture-v1");
   expect(certification.requiredTreatmentVisualContract).toBe("dental-top20-implant-treatment-six-viewport-v1");
   expect(certification.layouts).toHaveLength(20);
   expect(new Set(certification.layouts.map((entry) => entry.layoutId))).toEqual(new Set(EXPECTED_LAYOUT_IDS));
   expect(certification.layouts.every((entry) => entry.passed), "Every Dental Top-20 layout must pass rendered homepage geometry certification").toBe(true);
+  expect(certification.layouts.every((entry) => entry.liveImplantRenderCertified === true), "Published runtime must render the certified Dental Implants journey before Top-20 promotion").toBe(true);
   expect(certification.layouts.every((entry) => entry.multipageCertified === true), "Every Dental Top-20 layout must pass the same-commit multi-page architecture contract").toBe(true);
   expect(certification.layouts.every((entry) => entry.implantTreatmentVisualCertified === true), "Every Dental Top-20 layout must render the Dental Implants treatment page across all six required viewports").toBe(true);
 

@@ -78,7 +78,10 @@ test("runtime allowlist certifier fails closed without same-commit interaction, 
   expect(source).toContain("multipageCertification.sourceCommit !== currentSha");
   expect(source).toContain("multipageCertification.schemaVersion !== 2");
   expect(source).toContain("multipageCertification.requiredChecks.length < 14");
+  expect(source).toContain("implantTreatmentVisualCertification.schemaVersion !== 2");
   expect(source).toContain("implantTreatmentVisualCertification.sourceCommit !== currentSha");
+  expect(source).toContain('implantTreatmentVisualCertification.sourceTest !== "qa/dental-top20-implant-treatment-visual-evidence.spec.ts"');
+  expect(source).toContain("implantTreatmentVisualCertification.requiredChecks.length < 15");
   expect(source).toContain("Dental multi-page architecture certification is missing; runtime allowlist cannot be emitted.");
   expect(source).toContain("Dental Implants six-viewport treatment visual certification is missing; runtime allowlist cannot be emitted.");
   expect(source).toContain("interactionCertified: true");
@@ -91,6 +94,12 @@ test("runtime allowlist certifier fails closed without same-commit interaction, 
   expect(source).toContain("implantTreatmentVisualCertified: true");
   expect(source).toContain("schemaVersion: 10");
   expect(source.indexOf("if (failures.length)")).toBeLessThan(source.indexOf("const runtimeAllowlist"));
+});
+
+test("the 120-render implant evidence has a bounded CI budget rather than the generic visual timeout", async () => {
+  const source = await text("qa/dental-top20-implant-treatment-visual-evidence.spec.ts");
+  expect(source).toContain("test.setTimeout(1_200_000)");
+  expect(source).toContain("20 layouts x 6 viewports");
 });
 
 test("published FAQ and breadcrumb structured data derive from the same visible renderer content", async () => {

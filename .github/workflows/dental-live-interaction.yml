@@ -13,6 +13,7 @@ on:
       - 'packages/components/**'
       - 'packages/sections/**'
       - 'qa/live-rendered-interaction-parity.spec.ts'
+      - 'qa/live-functional-interaction-certification.spec.ts'
       - 'qa/dental-rendered-interaction-certification.spec.ts'
       - 'qa/certify-dental-live-interactions.mjs'
       - 'qa/certify-dental-top20-visual.mjs'
@@ -33,6 +34,7 @@ on:
       - 'packages/components/**'
       - 'packages/sections/**'
       - 'qa/live-rendered-interaction-parity.spec.ts'
+      - 'qa/live-functional-interaction-certification.spec.ts'
       - 'qa/dental-rendered-interaction-certification.spec.ts'
       - 'qa/certify-dental-live-interactions.mjs'
       - 'qa/certify-dental-top20-visual.mjs'
@@ -69,13 +71,13 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify published live interaction behavior
-        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
+      - name: Certify published live interaction and functional behavior
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
 
-      - name: Materialize same-commit live interaction certificate
+      - name: Materialize same-commit live functional interaction certificate
         run: node qa/certify-dental-live-interactions.mjs
 
-      - name: Upload live interaction evidence
+      - name: Upload live functional interaction evidence
         uses: actions/upload-artifact@v4
         with:
           name: micirql-dental-published-live-interactions

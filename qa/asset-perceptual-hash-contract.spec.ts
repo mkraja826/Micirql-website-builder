@@ -18,7 +18,8 @@ test("business upload path computes, sends and persists perceptual fingerprints"
   expect(hash).toContain("^[0-9a-f]{16}$");
 
   expect(onboarding).toContain("computeImageDHash(file)");
-  expect(onboarding).toContain("perceptualHash });");
+  expect(onboarding).toContain('fetchJsonWithRetry<ApiPayload>("/api/assets/upload"');
+  expect(onboarding).toContain("body: JSON.stringify({ workspaceId, name: file.name, dataUrl, width: dimensions.width, height: dimensions.height, perceptualHash })");
 
   expect(uploadRoute).toContain("perceptualHash?: string");
   expect(uploadRoute).toContain("Invalid image perceptual fingerprint");

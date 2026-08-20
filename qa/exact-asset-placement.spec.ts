@@ -32,6 +32,9 @@ test("before and after case assets remain paired and adjacent", () => {
 });
 
 test("exact placement runs after grounded content generation", () => {
-  expect(route.indexOf("runGuardedContentGeneration")).toBeLessThan(route.indexOf("applyExactAssetPlacement"));
+  const generationCall = route.indexOf("content = await runGuardedContentGeneration");
+  const placementCall = route.indexOf("const placed = applyExactAssetPlacement");
+  expect(generationCall).toBeGreaterThanOrEqual(0);
+  expect(placementCall).toBeGreaterThan(generationCall);
   expect(route).toContain("exactPlacement");
 });

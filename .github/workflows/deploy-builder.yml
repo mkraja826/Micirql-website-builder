@@ -41,6 +41,8 @@ on:
       - 'qa/dental-multipage-layout-identity.spec.ts'
       - 'qa/dental-breadcrumb-structured-data.spec.ts'
       - 'qa/dental-multipage-live-routing.spec.ts'
+      - 'qa/dental-content-auto-repair.spec.ts'
+      - 'qa/dental-review-ranking.spec.ts'
       - 'qa/certify-dental-interactions.mjs'
       - 'qa/certify-dental-live-interactions.mjs'
       - 'qa/certify-dental-multipage.mjs'

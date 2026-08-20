@@ -50,10 +50,13 @@ function safeStructuredData(type: string, site: Site, origin: string): Record<st
 
 function visibleFaqStructuredData(page: SitePage): Record<string, unknown> | undefined {
   const mainEntity: Record<string, unknown>[] = [];
-  const seenQuestions = new Set<string>();
 
   for (const section of page.sections) {
     if (section.hidden || !isFaqComponent(section.component.componentId)) continue;
+    // StructuralFaq collapses repeated questions within one accordion, but two
+    // separate visible FAQ sections remain separate visible content. Mirror that
+    // exact boundary here instead of deduplicating across the whole page.
+    const seenQuestions = new Set<string>();
     const items = Array.isArray(section.props.items) ? section.props.items : [];
     for (const item of items) {
       if (!item || typeof item !== "object" || Array.isArray(item)) continue;

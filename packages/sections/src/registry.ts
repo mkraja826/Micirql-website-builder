@@ -20,6 +20,7 @@ const FAMILY_DOMAIN_BONUS: Partial<Record<SectionFamily, Partial<Record<Domain, 
   services: { clinic: 100, corporate: 98, construction: 98, hospitality: 94, education: 92 },
   features: { saas: 100, corporate: 96, education: 92, clinic: 90 },
   process: { construction: 100, clinic: 96, corporate: 94, education: 92 },
+  faq: { clinic: 100, saas: 98, education: 98, hospitality: 96, corporate: 94, "real-estate": 94 },
   testimonials: { clinic: 100, hospitality: 98, "real-estate": 96, restaurant: 94, education: 94 },
   gallery: { hospitality: 100, restaurant: 100, "real-estate": 98, portfolio: 98, clinic: 92 },
   team: { clinic: 100, corporate: 98, education: 98, "real-estate": 94 },
@@ -72,6 +73,11 @@ const FAMILY_CONTENT: Record<SectionFamily, DesignRegistryEntry["contentSchema"]
     { key: "title", type: "string", required: true, recommendedMaxCharacters: 64 },
     { key: "items", type: "list", required: true },
   ],
+  faq: [
+    { key: "title", type: "string", required: true, recommendedMaxCharacters: 64 },
+    { key: "description", type: "rich-text", required: false, recommendedMaxCharacters: 180 },
+    { key: "items", type: "list", required: true },
+  ],
   testimonials: [
     { key: "title", type: "string", required: true, recommendedMaxCharacters: 64 },
     { key: "items", type: "list", required: true },
@@ -109,8 +115,8 @@ function capabilities(family: SectionFamily): Record<string, boolean> {
   return {
     headline: family !== "navbar" && family !== "footer",
     description: !["navbar", "features", "process", "testimonials", "gallery", "team"].includes(family),
-    primaryCTA: ["navbar", "hero", "cta", "contact"].includes(family),
-    secondaryCTA: family === "hero",
+    primaryCTA: ["navbar", "hero", "cta", "contact", "faq"].includes(family),
+    secondaryCTA: family === "hero" || family === "faq",
     image: ["hero", "about", "services", "gallery", "team", "testimonials"].includes(family),
     list: !["hero", "cta", "contact"].includes(family),
     functionalBinding: family === "contact" || family === "navbar" || family === "cta",
@@ -156,15 +162,16 @@ function intelligence(family: SectionFamily, variant: SectionVariant): NonNullab
     case "navbar": return { ...base, conversionGoals: ["navigation", "conversion"], placementRoles: ["opening"], aiPriority: 95, mobileSuitability: 98, contentDensity: "low", imageRequirement: "none", idealSuccessors: ["hero"] };
     case "hero": return { ...base, conversionGoals: ["lead-generation", "appointments", "sales", "awareness"], placementRoles: ["opening"], aiPriority: 100, imageRequirement: variant >= 2 ? "recommended" : "optional", preferredImageRatios: ["16:9", "4:3"], idealSuccessors: ["testimonials", "features", "services", "about"], avoidAdjacent: ["cta"], contentCapacity: { headlineMaxWords: 12, bodyMaxWords: 38, maxItems: 2 } };
     case "about": return { ...base, conversionGoals: ["trust", "authority", "education"], placementRoles: ["core-content", "early-proof"], aiPriority: 72, imageRequirement: variant === 2 || variant === 5 ? "recommended" : "optional", preferredImageRatios: ["4:5", "3:2"], idealPredecessors: ["hero", "services", "features"], idealSuccessors: ["team", "services", "process"], contentCapacity: { headlineMaxWords: 10, bodyMaxWords: 90, maxItems: 4 } };
-    case "services": return { ...base, conversionGoals: ["sales", "appointments", "education", "discovery"], placementRoles: ["core-content"], aiPriority: 94, imageRequirement: variant >= 4 ? "recommended" : "optional", preferredImageRatios: ["4:3", "1:1"], idealPredecessors: ["hero", "features", "about"], idealSuccessors: ["process", "gallery", "testimonials"], avoidAdjacent: ["features"], contentCapacity: { headlineMaxWords: 9, bodyMaxWords: 34, minItems: 3, maxItems: 8 } };
+    case "services": return { ...base, conversionGoals: ["sales", "appointments", "education", "discovery"], placementRoles: ["core-content"], aiPriority: 94, imageRequirement: variant >= 4 ? "recommended" : "optional", preferredImageRatios: ["4:3", "1:1"], idealPredecessors: ["hero", "features", "about"], idealSuccessors: ["process", "gallery", "testimonials", "faq"], avoidAdjacent: ["features"], contentCapacity: { headlineMaxWords: 9, bodyMaxWords: 34, minItems: 3, maxItems: 8 } };
     case "features": return { ...base, conversionGoals: ["trust", "differentiation", "education"], placementRoles: ["early-proof", "decision-support"], aiPriority: 84, imageRequirement: "none", idealPredecessors: ["hero", "about"], idealSuccessors: ["services", "process", "testimonials"], avoidAdjacent: ["services"], contentCapacity: { headlineMaxWords: 9, minItems: 3, maxItems: 6 } };
-    case "process": return { ...base, conversionGoals: ["education", "trust", "appointments"], placementRoles: ["decision-support", "core-content"], aiPriority: 80, imageRequirement: "none", idealPredecessors: ["services", "about"], idealSuccessors: ["testimonials", "cta", "contact"], contentCapacity: { headlineMaxWords: 9, minItems: 3, maxItems: 6 } };
-    case "testimonials": return { ...base, conversionGoals: ["trust", "appointments", "sales"], placementRoles: ["early-proof", "decision-support"], aiPriority: 91, imageRequirement: variant >= 4 ? "recommended" : "optional", preferredImageRatios: ["1:1"], idealPredecessors: ["hero", "services", "process", "gallery"], idealSuccessors: ["services", "cta", "contact"], avoidAdjacent: ["team"], contentCapacity: { headlineMaxWords: 8, minItems: 2, maxItems: 6 } };
-    case "gallery": return { ...base, conversionGoals: ["trust", "portfolio", "visual-proof", "sales"], placementRoles: ["visual-break", "decision-support"], aiPriority: 86, imageRequirement: "required", preferredImageRatios: ["4:3", "3:2", "1:1"], idealPredecessors: ["services", "process", "about"], idealSuccessors: ["testimonials", "cta", "contact"], avoidAdjacent: ["gallery"], contentCapacity: { headlineMaxWords: 8, minItems: 4, maxItems: 12 } };
-    case "team": return { ...base, conversionGoals: ["trust", "authority", "appointments"], placementRoles: ["early-proof", "core-content"], aiPriority: 80, imageRequirement: "recommended", preferredImageRatios: ["4:5", "1:1"], idealPredecessors: ["about", "services"], idealSuccessors: ["testimonials", "cta", "contact"], avoidAdjacent: ["testimonials"], contentCapacity: { headlineMaxWords: 8, minItems: 1, maxItems: 8 } };
-    case "cta": return { ...base, conversionGoals: ["lead-generation", "appointments", "sales", "signup"], placementRoles: ["conversion", "closing"], aiPriority: 96, contentDensity: "low", imageRequirement: variant === 5 ? "recommended" : "none", idealPredecessors: ["testimonials", "process", "gallery", "services"], idealSuccessors: ["contact", "footer"], avoidAdjacent: ["hero", "cta"], contentCapacity: { headlineMaxWords: 10, bodyMaxWords: 28 } };
-    case "contact": return { ...base, conversionGoals: ["lead-generation", "appointments", "enquiries"], placementRoles: ["conversion", "closing"], aiPriority: 98, imageRequirement: "none", idealPredecessors: ["cta", "testimonials", "process"], idealSuccessors: ["footer"], avoidAdjacent: ["contact"], contentCapacity: { headlineMaxWords: 8, bodyMaxWords: 30 } };
-    case "footer": return { ...base, conversionGoals: ["navigation", "trust"], placementRoles: ["closing"], aiPriority: 100, mobileSuitability: 98, contentDensity: "medium", imageRequirement: "none", idealPredecessors: ["contact", "cta"], contentCapacity: { bodyMaxWords: 28, maxItems: 12 } };
+    case "process": return { ...base, conversionGoals: ["education", "trust", "appointments"], placementRoles: ["decision-support", "core-content"], aiPriority: 80, imageRequirement: "none", idealPredecessors: ["services", "about"], idealSuccessors: ["testimonials", "faq", "cta", "contact"], contentCapacity: { headlineMaxWords: 9, minItems: 3, maxItems: 6 } };
+    case "faq": return { ...base, conversionGoals: ["education", "trust", "objection-handling", "appointments"], placementRoles: ["decision-support", "closing"], aiPriority: 89, imageRequirement: "none", idealPredecessors: ["services", "process", "testimonials", "gallery"], idealSuccessors: ["cta", "contact", "footer"], avoidAdjacent: ["faq"], contentCapacity: { headlineMaxWords: 9, bodyMaxWords: 34, minItems: 3, maxItems: 8 } };
+    case "testimonials": return { ...base, conversionGoals: ["trust", "appointments", "sales"], placementRoles: ["early-proof", "decision-support"], aiPriority: 91, imageRequirement: variant >= 4 ? "recommended" : "optional", preferredImageRatios: ["1:1"], idealPredecessors: ["hero", "services", "process", "gallery"], idealSuccessors: ["services", "faq", "cta", "contact"], avoidAdjacent: ["team"], contentCapacity: { headlineMaxWords: 8, minItems: 2, maxItems: 6 } };
+    case "gallery": return { ...base, conversionGoals: ["trust", "portfolio", "visual-proof", "sales"], placementRoles: ["visual-break", "decision-support"], aiPriority: 86, imageRequirement: "required", preferredImageRatios: ["4:3", "3:2", "1:1"], idealPredecessors: ["services", "process", "about"], idealSuccessors: ["testimonials", "faq", "cta", "contact"], avoidAdjacent: ["gallery"], contentCapacity: { headlineMaxWords: 8, minItems: 4, maxItems: 12 } };
+    case "team": return { ...base, conversionGoals: ["trust", "authority", "appointments"], placementRoles: ["early-proof", "core-content"], aiPriority: 80, imageRequirement: "recommended", preferredImageRatios: ["4:5", "1:1"], idealPredecessors: ["about", "services"], idealSuccessors: ["testimonials", "faq", "cta", "contact"], avoidAdjacent: ["testimonials"], contentCapacity: { headlineMaxWords: 8, minItems: 1, maxItems: 8 } };
+    case "cta": return { ...base, conversionGoals: ["lead-generation", "appointments", "sales", "signup"], placementRoles: ["conversion", "closing"], aiPriority: 96, contentDensity: "low", imageRequirement: variant === 5 ? "recommended" : "none", idealPredecessors: ["testimonials", "process", "gallery", "services", "faq"], idealSuccessors: ["contact", "footer"], avoidAdjacent: ["hero", "cta"], contentCapacity: { headlineMaxWords: 10, bodyMaxWords: 28 } };
+    case "contact": return { ...base, conversionGoals: ["lead-generation", "appointments", "enquiries"], placementRoles: ["conversion", "closing"], aiPriority: 98, imageRequirement: "none", idealPredecessors: ["cta", "testimonials", "process", "faq"], idealSuccessors: ["footer"], avoidAdjacent: ["contact"], contentCapacity: { headlineMaxWords: 8, bodyMaxWords: 30 } };
+    case "footer": return { ...base, conversionGoals: ["navigation", "trust"], placementRoles: ["closing"], aiPriority: 100, mobileSuitability: 98, contentDensity: "medium", imageRequirement: "none", idealPredecessors: ["contact", "cta", "faq"], contentCapacity: { bodyMaxWords: 28, maxItems: 12 } };
   }
 }
 
@@ -192,7 +199,7 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
     ...(["hero", "cta", "contact"].includes(seed.family) ? { conversion: 0 } : {}),
   },
   technical: {
-    clientJavascript: seed.family === "navbar" || seed.family === "contact" ? "low" : "none",
+    clientJavascript: ["navbar", "contact", "gallery", "faq"].includes(seed.family) ? "low" : "none",
     animationCost: seed.variant === 5 ? "low" : "none",
     requiresBackend: seed.family === "contact",
     requiresThirdParty: false,

@@ -8,10 +8,13 @@ const architectRoute = fs.readFileSync(path.join(root, "apps/builder/app/api/onb
 test("architect success is gated by dental specialty content quality", () => {
   expect(architectRoute).toContain('evaluateDentalContentQuality');
   expect(architectRoute).toContain('MIN_DENTAL_CONTENT_SCORE = 82');
-  expect(architectRoute).toContain('GENERATED_DENTAL_CONTENT_QUALITY_FAILED');
-  expect(architectRoute).toContain('dentalErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE');
+  expect(architectRoute).toContain('function dentalContentNeedsRepair');
+  expect(architectRoute).toContain('result.issues.some((item) => item.severity === "error") || result.score < MIN_DENTAL_CONTENT_SCORE');
+  expect(architectRoute).toContain('dentalContentNeedsRepair(dentalContentQuality)');
+  expect(architectRoute).toContain('GENERATED_DENTAL_CONTENT_QUALITY_FAILED_AFTER_REPAIR');
   expect(architectRoute).toContain('dentalContentQuality?.score ?? 100');
-  expect(architectRoute).toContain('dentalContentQuality, visualQuality');
+  expect(architectRoute).toContain('dentalContentQuality');
+  expect(architectRoute).toContain('visualQuality');
 });
 
 test("architect only applies the specialty gate to dental briefs", () => {

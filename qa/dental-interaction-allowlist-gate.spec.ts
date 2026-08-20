@@ -79,6 +79,7 @@ test("runtime allowlist certifier fails closed without same-commit live registry
   expect(source).toContain("dental-multipage-architecture-v1");
   expect(source).toContain("dental-top20-implant-treatment-six-viewport-v1");
   expect(source).toContain("liveInteractionCertification.schemaVersion !== 6");
+  expect(source).toContain("qa/live-rendered-interaction-parity.spec.ts");
   expect(source).toContain("qa/live-production-section-registry.spec.ts");
   expect(source).toContain("qa/live-implant-treatment-render-parity.spec.ts");
   expect(source).toContain("liveInteractionCertification.requiredChecks.length < 34");
@@ -175,12 +176,13 @@ test("live Cloudflare deployment cannot run before registry and generated implan
   expect(deployIndex).toBeGreaterThan(certifyIndex);
 });
 
-test("Playwright config cannot silently filter implant, live registry or blueprint identity evidence named by Dental QA", async () => {
+test("Playwright config cannot silently filter implant contract, live registry or blueprint identity evidence named by Dental QA", async () => {
   const visualConfig = await text("playwright.dental-visual.config.ts");
   const blueprintConfig = await text("playwright.dental-blueprint.config.ts");
 
   for (const stem of [
     "dental-top20-implant-treatment-visual-evidence",
+    "dental-top20-implant-treatment-visual-evidence-contract",
     "live-production-section-registry",
     "live-implant-treatment-render-parity",
     "dental-rendered-interaction-certification",

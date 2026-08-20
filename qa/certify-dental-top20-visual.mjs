@@ -63,6 +63,7 @@ if (liveInteractionCertification) {
     failures.push(`Unexpected published interaction surface ${liveInteractionCertification.surface ?? "missing"}.`);
   }
   const requiredLiveTests = [
+    "qa/live-rendered-interaction-parity.spec.ts",
     "qa/live-functional-interaction-certification.spec.ts",
     "qa/live-production-section-registry.spec.ts",
     "qa/live-implant-treatment-render-parity.spec.ts",
@@ -266,7 +267,7 @@ const certification = {
     "operable viewport-contained mobile navigation",
     "keyboard-operable desktop dropdown navigation with safe destinations",
     "appointment forms enforce required fields before POST",
-    "valid appointment forms submit the required action payload",
+    "valid appointment forms submit the required functional payload",
     "success and validation-error responses are announced via aria-live status",
     "gallery lightboxes are keyboard operable with ArrowLeft/ArrowRight and Escape",
     "gallery close restores focus to the invoking image trigger",

@@ -9,11 +9,13 @@ const certificationPath = path.join(evidenceDirectory, "certification.json");
 const interactionCertificationPath = path.join(evidenceDirectory, "interaction-certification.json");
 const liveInteractionCertificationPath = path.join(evidenceDirectory, "live-interaction-certification.json");
 const multipageCertificationPath = path.join(evidenceDirectory, "multipage-certification.json");
+const implantTreatmentVisualCertificationPath = path.join(evidenceDirectory, "implant-treatment-visual-certification.json");
 const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
 const requiredInteractionContract = "shared-dental-rendered-interaction-v1";
 const requiredLiveInteractionContract = "published-live-functional-gallery-faq-structured-data-v5";
 const requiredMultipageContract = "dental-multipage-architecture-v1";
+const requiredTreatmentVisualContract = "dental-top20-implant-treatment-six-viewport-v1";
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
 const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
@@ -21,6 +23,7 @@ const failures = [];
 let interactionCertification = null;
 let liveInteractionCertification = null;
 let multipageCertification = null;
+let implantTreatmentVisualCertification = null;
 
 try {
   interactionCertification = JSON.parse(await readFile(interactionCertificationPath, "utf8"));
@@ -108,6 +111,37 @@ if (multipageCertification) {
   }
 }
 
+try {
+  implantTreatmentVisualCertification = JSON.parse(await readFile(implantTreatmentVisualCertificationPath, "utf8"));
+} catch {
+  failures.push("Dental Implants six-viewport treatment visual certification is missing; runtime allowlist cannot be emitted.");
+}
+
+if (implantTreatmentVisualCertification) {
+  if (implantTreatmentVisualCertification.certified !== true) failures.push("Dental Implants treatment visual certification did not pass.");
+  if (implantTreatmentVisualCertification.sourceCommit !== currentSha) {
+    failures.push(`Dental Implants treatment visual certification is stale (${implantTreatmentVisualCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
+  }
+  if (implantTreatmentVisualCertification.contract !== requiredTreatmentVisualContract) {
+    failures.push(`Unexpected Dental Implants treatment visual contract ${implantTreatmentVisualCertification.contract ?? "missing"}.`);
+  }
+  if (implantTreatmentVisualCertification.surface !== "builder-preview-treatment-page") {
+    failures.push(`Unexpected Dental Implants visual certification surface ${implantTreatmentVisualCertification.surface ?? "missing"}.`);
+  }
+  if (implantTreatmentVisualCertification.treatmentPath !== "/treatments/dental-implants") {
+    failures.push(`Unexpected certified Dental treatment path ${implantTreatmentVisualCertification.treatmentPath ?? "missing"}.`);
+  }
+  if (!Array.isArray(implantTreatmentVisualCertification.requiredViewports) || requiredViewports.some((viewport) => !implantTreatmentVisualCertification.requiredViewports.includes(viewport))) {
+    failures.push("Dental Implants treatment visual certification does not cover all six required viewports.");
+  }
+  if (!Array.isArray(implantTreatmentVisualCertification.certifiedLayoutIds) || implantTreatmentVisualCertification.certifiedLayoutIds.length !== 20) {
+    failures.push("Dental Implants treatment visual certification does not contain all 20 layouts.");
+  }
+  if (!Array.isArray(implantTreatmentVisualCertification.requiredChecks) || implantTreatmentVisualCertification.requiredChecks.length < 14) {
+    failures.push("Dental Implants treatment visual certification is incomplete.");
+  }
+}
+
 if (evidence.layouts !== 20 || !Array.isArray(evidence.report) || evidence.report.length !== 20) {
   failures.push(`Expected 20 rendered Dental layouts, received ${evidence.report?.length ?? 0}.`);
 }
@@ -142,6 +176,10 @@ for (const layout of evidence.report ?? []) {
 
 const uniqueIds = new Set((evidence.report ?? []).map((entry) => entry.layoutId));
 if (uniqueIds.size !== 20) failures.push(`Expected 20 unique rendered layout IDs, received ${uniqueIds.size}.`);
+if (implantTreatmentVisualCertification?.certifiedLayoutIds) {
+  const implantIds = new Set(implantTreatmentVisualCertification.certifiedLayoutIds);
+  for (const layoutId of uniqueIds) if (!implantIds.has(layoutId)) failures.push(`${layoutId}: missing Dental Implants treatment visual certification.`);
+}
 
 if (failures.length) {
   console.error("Dental Top-20 rendered certification failed:\n" + failures.map((failure) => `- ${failure}`).join("\n"));
@@ -151,7 +189,7 @@ if (failures.length) {
 const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
 const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 9,
+  schemaVersion: 10,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -159,10 +197,12 @@ const certification = {
   interactionEvidenceFile: "test-results/dental-top20-visual-evidence/interaction-certification.json",
   liveInteractionEvidenceFile: "test-results/dental-top20-visual-evidence/live-interaction-certification.json",
   multipageEvidenceFile: "test-results/dental-top20-visual-evidence/multipage-certification.json",
+  treatmentVisualEvidenceFile: "test-results/dental-top20-visual-evidence/implant-treatment-visual-certification.json",
   requiredViewports,
   requiredInteractionContract,
   requiredLiveInteractionContract,
   requiredMultipageContract,
+  requiredTreatmentVisualContract,
   runtimeEnvironmentKey: "MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS",
   certifiedLayoutIds,
   layouts: certifiedLayoutIds.map((layoutId) => ({
@@ -175,6 +215,7 @@ const certification = {
     faqInteractionCertified: true,
     faqStructuredDataCertified: true,
     multipageCertified: true,
+    implantTreatmentVisualCertified: true,
   })),
   hardGates: [
     "no document overflow",
@@ -189,6 +230,10 @@ const certification = {
     "rendered interaction contract certified for the same source commit",
     "published live functional/gallery/FAQ/structured-data contract certified for the same source commit",
     "Dental multi-page architecture contract certified for the same source commit",
+    "Dental Implants treatment page rendered across all 20 layouts and six required viewports for the same source commit",
+    "Dental Implants treatment page has no overflow, clipped copy, section overlap or malformed controls",
+    "Dental Implants treatment page has safe imagery and no empty hero media placeholder",
+    "Dental Implants visible breadcrumb, FAQ and consultation routes survive rendered output",
     "only explicitly requested Dental treatments create dedicated pages",
     "general-only Dental briefs remain single-page",
     "treatment routes and contact route are unique and idempotent",
@@ -224,4 +269,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus Builder, published-live and multi-page architecture contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live and multi-page architecture contracts for ${currentSha}.`);

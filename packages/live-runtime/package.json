@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./production-section-registry": "./src/production-section-registry.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

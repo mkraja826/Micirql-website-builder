@@ -17,10 +17,6 @@ function durationMs(value: string): number {
   }, 0);
 }
 
-function expectPreviewResponse(response: Awaited<ReturnType<Parameters<typeof test>[1]>> extends never ? never : never) {
-  return response;
-}
-
 test.describe("Dental rendered interaction certification", () => {
   test("desktop CTA exposes visible focus and restrained pointer feedback", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });

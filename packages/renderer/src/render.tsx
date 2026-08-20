@@ -1,4 +1,4 @@
-import { Fragment, createElement } from "react";
+import React, { Fragment, createElement } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { PreparedPage } from "./types";
 

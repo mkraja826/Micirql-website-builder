@@ -47,6 +47,35 @@
   }
 }
 
+/* Shared tablet conversion geometry. At 768px the desktop split CTA primitive
+ * can compress perfectly ordinary labels into two lines. Keep controls readable
+ * and let the conversion block use the available width before desktop resumes. */
+@media (min-width:48rem) and (max-width:63.99rem){
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__actions,.mi-conv-actions){
+    min-width:0;
+    max-width:100%;
+    flex-wrap:wrap;
+  }
+  [data-mi-layout-blueprint^="dental-"] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta){
+    max-width:100%;
+    white-space:nowrap;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-conv-cta--split .mi-cta-split{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-conv-cta--split .mi-conv-actions{
+    justify-content:flex-start;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-services--spotlight .mi-services-spotlight{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  [data-mi-layout-blueprint^="dental-"] .mi-services--spotlight .mi-services-spotlight>*{
+    min-width:0;
+    max-width:100%;
+  }
+}
+
 /* Immediate Care keeps four reassurance cards on desktop, but at the exact
  * 768px certification boundary the four-column matrix leaves the last card
  * wider than the available content box. Use a deliberate 2x2 tablet matrix.

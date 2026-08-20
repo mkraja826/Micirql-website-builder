@@ -93,13 +93,27 @@ let runtimeCss = "";
 let feedbackScript = "";
 
 test.beforeAll(async () => {
-  [runtimeCss, feedbackScript] = await Promise.all([
+  const [generatedCss, publishedFeedback, functionalFormSource, shellSource] = await Promise.all([
     generatedLiveRuntimeCss(),
     publishedFormFeedbackScript(),
+    readFile(path.join(repoRoot, "packages/sections/src/functional-form.tsx"), "utf8"),
+    readFile(path.join(repoRoot, "packages/sections/src/shell-sections.tsx"), "utf8"),
   ]);
+  runtimeCss = generatedCss;
+  feedbackScript = publishedFeedback;
+
   expect(runtimeCss).toContain("packages/sections/src/interaction-polish.css");
   expect(feedbackScript).toContain("data-mi-form-status");
   expect(feedbackScript).toContain("formError");
+
+  // Keep the browser fixture tied to the actual generated-section contracts so
+  // the functional certificate fails if production markup changes underneath it.
+  expect(shellSource).toContain('details className="mi-shell-dropdown"');
+  expect(shellSource).toContain('className="mi-shell-dropdown__panel"');
+  expect(functionalFormSource).toContain('data-mi-action-id={actionId}');
+  expect(functionalFormSource).toContain('{ name: "service", label: "Treatment / service", required: true }');
+  expect(functionalFormSource).toContain('name="consent" value="true" required');
+  expect(functionalFormSource).toContain('data-mi-form-status aria-live="polite"');
 });
 
 test.describe("published live functional interaction certification", () => {
@@ -181,7 +195,7 @@ test.describe("published live functional interaction certification", () => {
     expect(payload.get("service")).toBe("All-on-4 implants");
     expect(payload.get("consent")).toBe("true");
     expect(payload.get("website")).toBe("");
-    expect(interceptedPosts).toBe(1);
+    await expect.poll(() => interceptedPosts).toBe(1);
   });
 
   test("published feedback script announces successful submissions through the aria-live status", async ({ page }) => {

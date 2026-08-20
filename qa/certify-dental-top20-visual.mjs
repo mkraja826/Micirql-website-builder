@@ -120,6 +120,9 @@ try {
 }
 
 if (implantTreatmentVisualCertification) {
+  if (implantTreatmentVisualCertification.schemaVersion !== 2) {
+    failures.push(`Unexpected Dental Implants treatment visual certification schema ${implantTreatmentVisualCertification.schemaVersion ?? "missing"}.`);
+  }
   if (implantTreatmentVisualCertification.certified !== true) failures.push("Dental Implants treatment visual certification did not pass.");
   if (implantTreatmentVisualCertification.sourceCommit !== currentSha) {
     failures.push(`Dental Implants treatment visual certification is stale (${implantTreatmentVisualCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
@@ -133,13 +136,16 @@ if (implantTreatmentVisualCertification) {
   if (implantTreatmentVisualCertification.treatmentPath !== "/treatments/dental-implants") {
     failures.push(`Unexpected certified Dental treatment path ${implantTreatmentVisualCertification.treatmentPath ?? "missing"}.`);
   }
+  if (implantTreatmentVisualCertification.sourceTest !== "qa/dental-top20-implant-treatment-visual-evidence.spec.ts") {
+    failures.push(`Unexpected Dental Implants visual source test ${implantTreatmentVisualCertification.sourceTest ?? "missing"}.`);
+  }
   if (!Array.isArray(implantTreatmentVisualCertification.requiredViewports) || requiredViewports.some((viewport) => !implantTreatmentVisualCertification.requiredViewports.includes(viewport))) {
     failures.push("Dental Implants treatment visual certification does not cover all six required viewports.");
   }
   if (!Array.isArray(implantTreatmentVisualCertification.certifiedLayoutIds) || implantTreatmentVisualCertification.certifiedLayoutIds.length !== 20) {
     failures.push("Dental Implants treatment visual certification does not contain all 20 layouts.");
   }
-  if (!Array.isArray(implantTreatmentVisualCertification.requiredChecks) || implantTreatmentVisualCertification.requiredChecks.length < 14) {
+  if (!Array.isArray(implantTreatmentVisualCertification.requiredChecks) || implantTreatmentVisualCertification.requiredChecks.length < 15) {
     failures.push("Dental Implants treatment visual certification is incomplete.");
   }
 }

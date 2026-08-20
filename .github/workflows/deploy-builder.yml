@@ -7,12 +7,14 @@ on:
     branches: [main]
     paths:
       - 'apps/builder/**'
+      - 'apps/live/**'
       - 'packages/ai/**'
       - 'packages/assets/**'
       - 'packages/components/**'
       - 'packages/design-engine/**'
       - 'packages/domains/**'
       - 'packages/functions/**'
+      - 'packages/live-runtime/**'
       - 'packages/primitives/**'
       - 'packages/publisher/**'
       - 'packages/registry/**'
@@ -25,7 +27,10 @@ on:
       - 'qa/dental-top20-geometry-gate.spec.ts'
       - 'qa/dental-runtime-css-parity.spec.ts'
       - 'qa/dental-rendered-interaction-certification.spec.ts'
+      - 'qa/live-rendered-interaction-parity.spec.ts'
       - 'qa/certify-dental-interactions.mjs'
+      - 'qa/certify-dental-live-interactions.mjs'
+      - 'qa/dental-interaction-allowlist-gate.spec.ts'
       - 'qa/dental-media-execution.spec.ts'
       - 'qa/site-visual-quality.spec.ts'
       - 'qa/perceptual-hash-upload-contract.spec.ts'
@@ -99,10 +104,11 @@ jobs:
           if (certification.certified !== true) throw new Error('Dental certification artifact is not certified');
           if (certification.sourceCommit !== process.env.GITHUB_SHA) throw new Error(`Dental certification is stale: ${certification.sourceCommit} != ${process.env.GITHUB_SHA}`);
           if (certification.requiredInteractionContract !== 'shared-dental-rendered-interaction-v1') throw new Error('Rendered interaction contract is missing from final certification');
+          if (certification.requiredLiveInteractionContract !== 'published-live-rendered-interaction-v1') throw new Error('Published live interaction contract is missing from final certification');
           if (!Array.isArray(certification.layouts) || certification.layouts.length !== 20) throw new Error('Final certification does not contain all 20 layouts');
-          const failed = certification.layouts.filter((entry) => entry.passed !== true || entry.interactionCertified !== true);
-          if (failed.length) throw new Error(`Layouts missing interaction certification: ${failed.map((entry) => entry.layoutId).join(', ')}`);
-          console.log('All 20 runtime Dental layouts are interaction-certified for this commit.');
+          const failed = certification.layouts.filter((entry) => entry.passed !== true || entry.interactionCertified !== true || entry.liveInteractionCertified !== true);
+          if (failed.length) throw new Error(`Layouts missing Builder/live interaction certification: ${failed.map((entry) => entry.layoutId).join(', ')}`);
+          console.log('All 20 runtime Dental layouts are Builder + published-live interaction-certified for this commit.');
           NODE
 
       - run: pnpm --filter @micirql/builder typecheck

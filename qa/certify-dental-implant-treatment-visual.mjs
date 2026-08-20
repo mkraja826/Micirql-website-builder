@@ -35,6 +35,12 @@ for (const layout of evidence.report ?? []) {
       failures.push(`${layout.layoutId}: missing implant treatment evidence for ${viewportId}.`);
       continue;
     }
+    if (metrics.layoutBlueprintId !== layout.layoutId) {
+      failures.push(`${layout.layoutId}/${viewportId}: rendered blueprint identity ${metrics.layoutBlueprintId ?? "missing"} does not match the certified layout.`);
+    }
+    if (typeof metrics.layoutArchetype !== "string" || !metrics.layoutArchetype.trim()) {
+      failures.push(`${layout.layoutId}/${viewportId}: rendered layout archetype is missing.`);
+    }
     const zeroMetrics = [
       ["overflowCount", metrics.overflowCount],
       ["clippedTextCount", metrics.clippedTextCount],
@@ -98,4 +104,4 @@ const certification = {
 };
 
 await writeFile(destinationPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Certified Dental Implants rendered treatment pages with exact blueprint identity for ${ids.size} Top-20 layouts across six viewports at ${currentSha}.`);
+console.log(`Certified Dental Implants rendered treatment pages with recorded exact blueprint identity for ${ids.size} Top-20 layouts across six viewports at ${currentSha}.`);

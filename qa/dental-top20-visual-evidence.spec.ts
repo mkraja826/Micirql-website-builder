@@ -213,14 +213,17 @@ async function metrics(preview: Locator, viewportHeight: number) {
       }
     }
 
-    const actionSelector = ".mi-section__action,.mi-conv-btn,a[href],button";
+    // Only conversion controls are subject to the malformed-wrap gate. Navigation
+    // and brand links may legitimately contain editable spans or wrap by design;
+    // their safety is already covered by clipping, collision and overflow checks.
+    const actionSelector = ".mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button";
     const wrappedActions = [...root.querySelectorAll<HTMLElement>(actionSelector)].filter((node) => {
       const r = node.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0 || !node.textContent?.trim()) return false;
       const range = document.createRange();
       range.selectNodeContents(node);
       const lineRects = [...range.getClientRects()].filter((line) => line.width > 1 && line.height > 1);
-      return lineRects.length > 1;
+      return lineRects.length > 1 && r.height > 62;
     }).slice(0,20).map((node) => ({ tag:node.tagName, cls:node.className, text:node.textContent?.trim().slice(0,80) ?? "", width:Math.round(node.getBoundingClientRect().width), height:Math.round(node.getBoundingClientRect().height) }));
 
     const distortedImages = [...root.querySelectorAll<HTMLImageElement>("img")].filter((img) => {

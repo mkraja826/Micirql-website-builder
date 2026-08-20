@@ -263,6 +263,8 @@ async function treatmentMetrics(preview: Locator, viewportHeight: number) {
     const placeholderCount = hero?.querySelectorAll(".mi-image-slot-placeholder").length ?? 0;
 
     return {
+      layoutBlueprintId: root.dataset.miLayoutBlueprint ?? "",
+      layoutArchetype: root.dataset.miLayoutArchetype ?? "",
       scrollWidth: root.scrollWidth,
       clientWidth: root.clientWidth,
       overflowCount: overflowers.length,
@@ -322,6 +324,8 @@ test("render Dental Implants across all 20 certified layouts and six production 
       await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       const measured = await treatmentMetrics(preview, viewport.height);
 
+      expect(measured.layoutBlueprintId, `${layout.id} implant page lost its blueprint identity at ${viewport.width}px`).toBe(layout.id);
+      expect(measured.layoutArchetype, `${layout.id} implant page lost its layout archetype at ${viewport.width}px`).not.toBe("");
       expect(measured.scrollWidth, `${layout.id} implant page overflowed at ${viewport.width}px`).toBeLessThanOrEqual(measured.clientWidth + 1);
       expect(measured.overflowCount, `${layout.id} implant page has child escape at ${viewport.width}px: ${JSON.stringify(measured.overflowers)}`).toBe(0);
       expect(measured.clippedTextCount, `${layout.id} implant page has clipped text at ${viewport.width}px: ${JSON.stringify(measured.clippedText)}`).toBe(0);
@@ -364,7 +368,7 @@ test("render Dental Implants across all 20 certified layouts and six production 
     `- Layouts captured: **${report.length}/20**`,
     `- Viewports per layout: **${VIEWPORTS.length}**`,
     `- Total screenshots: **${report.length * VIEWPORTS.length}**`,
-    "- Hard gates: exact certified blueprint identity, no document overflow, no child escape, no clipped text, no malformed/wrapped actions, no failed/distorted/out-of-bounds imagery, no section overlaps, no empty hero placeholder, exact breadcrumb current page, correct consultation/treatment links, three FAQ disclosures, mobile touch targets >=44px and no abnormally tall content sections",
+    "- Hard gates: recorded exact certified blueprint identity and archetype, no document overflow, no child escape, no clipped text, no malformed/wrapped actions, no failed/distorted/out-of-bounds imagery, no section overlaps, no empty hero placeholder, exact breadcrumb current page, correct consultation/treatment links, three FAQ disclosures, mobile touch targets >=44px and no abnormally tall content sections",
     "",
     ...report.map((entry) => `- ${entry.layoutId}: PASS`),
     "",

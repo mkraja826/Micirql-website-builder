@@ -33,8 +33,13 @@ on:
       - 'qa/faq-accordion-certification.spec.ts'
       - 'qa/dental-faq-generation-intelligence.spec.ts'
       - 'qa/faq-structured-data-parity.spec.ts'
+      - 'qa/dental-multipage-architecture.spec.ts'
+      - 'qa/dental-multipage-media-safety.spec.ts'
+      - 'qa/dental-breadcrumb-structured-data.spec.ts'
+      - 'qa/dental-multipage-live-routing.spec.ts'
       - 'qa/certify-dental-interactions.mjs'
       - 'qa/certify-dental-live-interactions.mjs'
+      - 'qa/certify-dental-multipage.mjs'
       - 'qa/dental-interaction-allowlist-gate.spec.ts'
       - 'qa/dental-media-execution.spec.ts'
       - 'qa/site-visual-quality.spec.ts'
@@ -110,10 +115,11 @@ jobs:
           if (certification.sourceCommit !== process.env.GITHUB_SHA) throw new Error(`Dental certification is stale: ${certification.sourceCommit} != ${process.env.GITHUB_SHA}`);
           if (certification.requiredInteractionContract !== 'shared-dental-rendered-interaction-v1') throw new Error('Rendered interaction contract is missing from final certification');
           if (certification.requiredLiveInteractionContract !== 'published-live-functional-gallery-faq-structured-data-v5') throw new Error('Published live functional/gallery/FAQ/structured-data contract is missing from final certification');
+          if (certification.requiredMultipageContract !== 'dental-multipage-architecture-v1') throw new Error('Dental multi-page architecture contract is missing from final certification');
           if (!Array.isArray(certification.layouts) || certification.layouts.length !== 20) throw new Error('Final certification does not contain all 20 layouts');
-          const failed = certification.layouts.filter((entry) => entry.passed !== true || entry.interactionCertified !== true || entry.liveInteractionCertified !== true || entry.liveFunctionalInteractionCertified !== true || entry.galleryInteractionCertified !== true || entry.faqInteractionCertified !== true || entry.faqStructuredDataCertified !== true);
-          if (failed.length) throw new Error(`Layouts missing Builder/live functional/gallery/FAQ/structured-data certification: ${failed.map((entry) => entry.layoutId).join(', ')}`);
-          console.log('All 20 runtime Dental layouts are Builder + published-live functional/gallery/FAQ/structured-data certified for this commit.');
+          const failed = certification.layouts.filter((entry) => entry.passed !== true || entry.interactionCertified !== true || entry.liveInteractionCertified !== true || entry.liveFunctionalInteractionCertified !== true || entry.galleryInteractionCertified !== true || entry.faqInteractionCertified !== true || entry.faqStructuredDataCertified !== true || entry.multipageCertified !== true);
+          if (failed.length) throw new Error(`Layouts missing Builder/live/FAQ/structured-data/multi-page certification: ${failed.map((entry) => entry.layoutId).join(', ')}`);
+          console.log('All 20 runtime Dental layouts are Builder + published-live + multi-page architecture certified for this commit.');
           NODE
 
       - run: pnpm --filter @micirql/builder typecheck

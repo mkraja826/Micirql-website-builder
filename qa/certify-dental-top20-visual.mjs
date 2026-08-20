@@ -64,6 +64,7 @@ if (liveInteractionCertification) {
   }
   const requiredLiveTests = [
     "qa/live-functional-interaction-certification.spec.ts",
+    "qa/live-production-section-registry.spec.ts",
     "qa/live-implant-treatment-render-parity.spec.ts",
     "qa/gallery-lightbox-certification.spec.ts",
     "qa/faq-accordion-certification.spec.ts",
@@ -74,8 +75,8 @@ if (liveInteractionCertification) {
       failures.push(`Published live Dental test evidence is missing: ${sourceTest}.`);
     }
   }
-  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 33) {
-    failures.push("Published live Dental functional/gallery/FAQ/structured-data/implant-render certification is incomplete.");
+  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 34) {
+    failures.push("Published live Dental functional/gallery/FAQ/structured-data/registry/implant-render certification is incomplete.");
   }
 }
 
@@ -238,8 +239,9 @@ const certification = {
     "mobile touch targets >= 44px",
     "no abnormally tall mobile sections",
     "rendered interaction contract certified for the same source commit",
-    "published live functional/gallery/FAQ/structured-data/implant-render contract certified for the same source commit",
+    "published live functional/gallery/FAQ/structured-data/registry/implant-render contract certified for the same source commit",
     "published live host resolves built-in generated section components instead of failing COMPONENT_NOT_FOUND",
+    "published live built-in registry remains fail-closed for unknown IDs and unsupported versions",
     "published Dental Implants runtime retains blueprint identity section identity canonical SEO breadcrumbs FAQ and conversion routes",
     "Dental multi-page architecture contract certified for the same source commit",
     "certified homepage blueprint identity remains authoritative across generated treatment and contact pages",
@@ -284,4 +286,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live implant rendering and cross-page blueprint-identity contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live registry/implant rendering and cross-page blueprint-identity contracts for ${currentSha}.`);

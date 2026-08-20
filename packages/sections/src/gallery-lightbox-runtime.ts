@@ -1,6 +1,4 @@
-export function installGalleryLightboxes(root: ParentNode = document): () => void {
-  const host = root as ParentNode & { ownerDocument?: Document };
-  const doc = root instanceof Document ? root : host.ownerDocument ?? document;
+export function installGalleryLightboxes(root: ParentNode & Node = document): () => void {
   const dialogs = Array.from(root.querySelectorAll<HTMLDialogElement>("[data-mi-gallery-lightbox]"));
   const lastTrigger = new WeakMap<HTMLDialogElement, HTMLElement>();
   const activeIndex = new WeakMap<HTMLDialogElement, number>();

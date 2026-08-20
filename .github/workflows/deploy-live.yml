@@ -16,6 +16,7 @@ on:
       - 'qa/live-rendered-interaction-parity.spec.ts'
       - 'qa/live-functional-interaction-certification.spec.ts'
       - 'qa/gallery-lightbox-certification.spec.ts'
+      - 'qa/faq-accordion-certification.spec.ts'
       - 'playwright.dental-visual.config.ts'
       - 'package.json'
       - '.github/workflows/deploy-live.yml'
@@ -60,8 +61,8 @@ jobs:
       - name: Install Chromium for published interaction certification
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify published live interaction, forms and gallery behavior
-        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts
+      - name: Certify published live interaction, forms, gallery and FAQ behavior
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts
 
       - run: pnpm --filter @micirql/live typecheck
       - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build

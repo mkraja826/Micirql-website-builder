@@ -11,19 +11,20 @@ const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "
 // parity suites succeed. The allowlist certifier verifies this certificate
 // belongs to the exact source commit being deployed.
 const certification = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
   sourceTests: [
     "qa/live-rendered-interaction-parity.spec.ts",
     "qa/live-functional-interaction-certification.spec.ts",
+    "qa/live-implant-treatment-render-parity.spec.ts",
     "qa/gallery-lightbox-certification.spec.ts",
     "qa/faq-accordion-certification.spec.ts",
     "qa/faq-structured-data-parity.spec.ts",
   ],
   surface: "published-live-runtime",
-  contract: "published-live-functional-gallery-faq-structured-data-v5",
+  contract: "published-live-functional-gallery-faq-implant-render-v6",
   requiredChecks: [
     "generated live runtime CSS contains the shared interaction layer",
     "published CTA pointer feedback is visible and restrained",
@@ -39,6 +40,13 @@ const certification = {
     "appointment forms block incomplete native submissions",
     "valid appointment forms POST the required functional payload",
     "published success and validation-error states are announced through the aria-live form status",
+    "published live host resolves built-in catalog sections even when no external component registry entry is present",
+    "published Dental Implants page retains the exact certified layout blueprint and archetype",
+    "published Dental Implants page preserves section identity used by repair and parity selectors",
+    "published Dental Implants page keeps breadcrumb FAQ and consultation routes intact",
+    "published Dental Implants page emits canonical BreadcrumbList and FAQPage semantics",
+    "published Dental Implants page remains overflow-safe at 390 768 and 1440 widths",
+    "published Dental Implants mobile controls remain at least 44px",
     "gallery images open an accessible native dialog from keyboard or pointer input",
     "gallery ArrowLeft and ArrowRight navigation updates image context and live position",
     "gallery Escape and explicit close restore focus to the invoking image trigger",
@@ -56,4 +64,4 @@ const certification = {
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Published live Dental functional + gallery + FAQ + structured-data contract certified for ${currentSha}.`);
+console.log(`Published live Dental functional + gallery + FAQ + structured-data + implant-render contract certified for ${currentSha}.`);

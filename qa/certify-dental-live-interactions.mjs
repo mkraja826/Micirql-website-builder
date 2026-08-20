@@ -18,6 +18,7 @@ const certification = {
   sourceTests: [
     "qa/live-rendered-interaction-parity.spec.ts",
     "qa/live-functional-interaction-certification.spec.ts",
+    "qa/live-production-section-registry.spec.ts",
     "qa/live-implant-treatment-render-parity.spec.ts",
     "qa/gallery-lightbox-certification.spec.ts",
     "qa/faq-accordion-certification.spec.ts",
@@ -41,6 +42,7 @@ const certification = {
     "valid appointment forms POST the required functional payload",
     "published success and validation-error states are announced through the aria-live form status",
     "published live host resolves built-in catalog sections even when no external component registry entry is present",
+    "published built-in registry fails closed for unknown component IDs and unsupported versions",
     "published Dental Implants page retains the exact certified layout blueprint and archetype",
     "published Dental Implants page preserves section identity used by repair and parity selectors",
     "published Dental Implants page keeps breadcrumb FAQ and consultation routes intact",

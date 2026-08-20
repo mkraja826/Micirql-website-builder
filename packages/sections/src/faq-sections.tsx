@@ -29,12 +29,12 @@ function FaqList({ props, variant }: { props: UniversalSectionProps; variant: Se
   // Keep visible FAQ pairs and FAQPage JSON-LD on one content contract: a
   // disclosure only exists when both the question and answer are present.
   const items = (props.items ?? [])
-    .map((item: Item, sourceIndex) => ({ item, sourceIndex, question: text(item.title), answer: text(item.description) }))
+    .map((item: Item, sourceIndex) => ({ sourceIndex, question: text(item.title), answer: text(item.description) }))
     .filter((entry) => entry.question && entry.answer);
   const mode = props.faqMode ?? (variant === 2 || variant === 4 ? "multi" : "single");
   const groupId = `faq-${slug(props.title)}-${variant}`;
   return <div className="mi-faq-list" data-mi-faq data-mi-faq-mode={mode} data-mi-faq-group={groupId}>
-    {items.map(({ item, sourceIndex, question, answer }, visibleIndex) => {
+    {items.map(({ sourceIndex, question, answer }, visibleIndex) => {
       const itemId = `${groupId}-${slug(question)}-${visibleIndex + 1}`;
       const questionId = `${itemId}-question`;
       const answerId = `${itemId}-answer`;

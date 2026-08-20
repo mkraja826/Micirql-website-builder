@@ -11,7 +11,7 @@ const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "
 // succeed. The allowlist certifier verifies this certificate belongs to the
 // exact source commit being deployed.
 const certification = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -19,9 +19,10 @@ const certification = {
     "qa/live-rendered-interaction-parity.spec.ts",
     "qa/live-functional-interaction-certification.spec.ts",
     "qa/gallery-lightbox-certification.spec.ts",
+    "qa/faq-accordion-certification.spec.ts",
   ],
   surface: "published-live-runtime",
-  contract: "published-live-functional-gallery-interaction-v3",
+  contract: "published-live-functional-gallery-faq-interaction-v4",
   requiredChecks: [
     "generated live runtime CSS contains the shared interaction layer",
     "published CTA pointer feedback is visible and restrained",
@@ -42,9 +43,14 @@ const certification = {
     "gallery Escape and explicit close restore focus to the invoking image trigger",
     "gallery lightbox controls meet the 44px mobile target minimum and stay viewport-contained",
     "gallery swipe navigation requires a deliberate horizontal gesture and ignores vertical-dominant movement",
+    "FAQ disclosures synchronize native open state with aria-expanded",
+    "single FAQ mode closes sibling disclosures while multi mode preserves independent answers",
+    "FAQ ArrowUp ArrowDown Home and End provide deterministic summary focus navigation",
+    "FAQ deep links open the addressed answer without violating single-mode state",
+    "FAQ mobile summaries meet the touch target minimum and reduced-motion removes icon animation",
   ],
 };
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Published live Dental functional + gallery interaction contract certified for ${currentSha}.`);
+console.log(`Published live Dental functional + gallery + FAQ interaction contract certified for ${currentSha}.`);

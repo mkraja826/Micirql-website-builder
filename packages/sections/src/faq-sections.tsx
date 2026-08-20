@@ -13,6 +13,10 @@ function slug(value: string) {
   return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 56) || "question";
 }
 
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function Heading(props: UniversalSectionProps) {
   return <Stack gap="sm" className="mi-faq-heading">
     {props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}
@@ -22,21 +26,25 @@ function Heading(props: UniversalSectionProps) {
 }
 
 function FaqList({ props, variant }: { props: UniversalSectionProps; variant: SectionVariant }) {
-  const items = props.items ?? [];
+  // Keep visible FAQ pairs and FAQPage JSON-LD on one content contract: a
+  // disclosure only exists when both the question and answer are present.
+  const items = (props.items ?? [])
+    .map((item: Item, sourceIndex) => ({ item, sourceIndex, question: text(item.title), answer: text(item.description) }))
+    .filter((entry) => entry.question && entry.answer);
   const mode = props.faqMode ?? (variant === 2 || variant === 4 ? "multi" : "single");
   const groupId = `faq-${slug(props.title)}-${variant}`;
   return <div className="mi-faq-list" data-mi-faq data-mi-faq-mode={mode} data-mi-faq-group={groupId}>
-    {items.map((item: Item, index) => {
-      const itemId = `${groupId}-${slug(item.title)}-${index + 1}`;
+    {items.map(({ item, sourceIndex, question, answer }, visibleIndex) => {
+      const itemId = `${groupId}-${slug(question)}-${visibleIndex + 1}`;
       const questionId = `${itemId}-question`;
       const answerId = `${itemId}-answer`;
-      return <details id={itemId} className="mi-faq-item" data-mi-faq-item key={`${item.title}-${index}`}>
+      return <details id={itemId} className="mi-faq-item" data-mi-faq-item key={`${question}-${sourceIndex}`}>
         <summary id={questionId} className="mi-faq-summary" data-mi-faq-summary aria-controls={answerId} aria-expanded="false">
-          <span className="mi-faq-question"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></span>
+          <span className="mi-faq-question"><InlineField path={`items.${sourceIndex}.title`}>{question}</InlineField></span>
           <span className="mi-faq-icon" aria-hidden="true">+</span>
         </summary>
         <div id={answerId} className="mi-faq-answer" data-mi-faq-panel role="region" aria-labelledby={questionId}>
-          <p><InlineField path={`items.${index}.description`}>{item.description ?? "Contact us and we will explain the next step clearly."}</InlineField></p>
+          <p><InlineField path={`items.${sourceIndex}.description`}>{answer}</InlineField></p>
         </div>
       </details>;
     })}

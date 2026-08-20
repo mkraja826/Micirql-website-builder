@@ -7,7 +7,7 @@ async function text(path: string) {
   return readFile(`${root}/${path}`, "utf8");
 }
 
-test("dental visual certification runs Builder and published-live functional/gallery/FAQ interactions before emitting runtime allowlist", async () => {
+test("dental visual certification runs Builder and published-live functional/gallery/FAQ/structured-data checks before emitting runtime allowlist", async () => {
   const pkg = JSON.parse(await text("package.json"));
   const command = String(pkg.scripts?.["qa:dental-visual"] ?? "");
   const interactionSpec = "qa/dental-rendered-interaction-certification.spec.ts";
@@ -15,6 +15,8 @@ test("dental visual certification runs Builder and published-live functional/gal
   const liveFunctionalSpec = "qa/live-functional-interaction-certification.spec.ts";
   const gallerySpec = "qa/gallery-lightbox-certification.spec.ts";
   const faqSpec = "qa/faq-accordion-certification.spec.ts";
+  const faqGenerationSpec = "qa/dental-faq-generation-intelligence.spec.ts";
+  const faqStructuredDataSpec = "qa/faq-structured-data-parity.spec.ts";
   const interactionMaterializer = "node qa/certify-dental-interactions.mjs";
   const liveInteractionMaterializer = "node qa/certify-dental-live-interactions.mjs";
   const allowlistCertifier = "node qa/certify-dental-top20-visual.mjs";
@@ -24,6 +26,8 @@ test("dental visual certification runs Builder and published-live functional/gal
   expect(command).toContain(liveFunctionalSpec);
   expect(command).toContain(gallerySpec);
   expect(command).toContain(faqSpec);
+  expect(command).toContain(faqGenerationSpec);
+  expect(command).toContain(faqStructuredDataSpec);
   expect(command).toContain(interactionMaterializer);
   expect(command).toContain(liveInteractionMaterializer);
   expect(command).toContain(allowlistCertifier);
@@ -32,20 +36,22 @@ test("dental visual certification runs Builder and published-live functional/gal
   expect(command.indexOf(liveFunctionalSpec)).toBeLessThan(command.indexOf(liveInteractionMaterializer));
   expect(command.indexOf(gallerySpec)).toBeLessThan(command.indexOf(liveInteractionMaterializer));
   expect(command.indexOf(faqSpec)).toBeLessThan(command.indexOf(liveInteractionMaterializer));
+  expect(command.indexOf(faqStructuredDataSpec)).toBeLessThan(command.indexOf(liveInteractionMaterializer));
   expect(command.indexOf(interactionMaterializer)).toBeLessThan(command.indexOf(allowlistCertifier));
   expect(command.indexOf(liveInteractionMaterializer)).toBeLessThan(command.indexOf(allowlistCertifier));
 });
 
-test("runtime allowlist certifier fails closed without same-commit Builder and live functional/gallery/FAQ interaction evidence", async () => {
+test("runtime allowlist certifier fails closed without same-commit Builder and live functional/gallery/FAQ/structured-data evidence", async () => {
   const source = await text("qa/certify-dental-top20-visual.mjs");
 
   expect(source).toContain("interaction-certification.json");
   expect(source).toContain("live-interaction-certification.json");
   expect(source).toContain("shared-dental-rendered-interaction-v1");
-  expect(source).toContain("published-live-functional-gallery-faq-interaction-v4");
+  expect(source).toContain("published-live-functional-gallery-faq-structured-data-v5");
   expect(source).toContain("qa/live-functional-interaction-certification.spec.ts");
   expect(source).toContain("qa/gallery-lightbox-certification.spec.ts");
   expect(source).toContain("qa/faq-accordion-certification.spec.ts");
+  expect(source).toContain("qa/faq-structured-data-parity.spec.ts");
   expect(source).toContain("interactionCertification.sourceCommit !== currentSha");
   expect(source).toContain("liveInteractionCertification.sourceCommit !== currentSha");
   expect(source).toContain("Published live Dental interaction certification is missing; runtime allowlist cannot be emitted.");
@@ -54,16 +60,19 @@ test("runtime allowlist certifier fails closed without same-commit Builder and l
   expect(source).toContain("liveFunctionalInteractionCertified: true");
   expect(source).toContain("galleryInteractionCertified: true");
   expect(source).toContain("faqInteractionCertified: true");
+  expect(source).toContain("faqStructuredDataCertified: true");
   expect(source.indexOf("if (failures.length)")).toBeLessThan(source.indexOf("const runtimeAllowlist"));
 });
 
-test("published gallery and FAQ certification use shared runtimes and generated live CSS", async () => {
+test("published gallery and FAQ certification use shared runtimes while FAQPage derives from visible renderer content", async () => {
   const interactionSpec = await text("qa/live-rendered-interaction-parity.spec.ts");
   const functionalSpec = await text("qa/live-functional-interaction-certification.spec.ts");
   const gallerySpec = await text("qa/gallery-lightbox-certification.spec.ts");
   const faqSpec = await text("qa/faq-accordion-certification.spec.ts");
+  const faqStructuredDataSpec = await text("qa/faq-structured-data-parity.spec.ts");
   const galleryRuntime = await text("packages/sections/src/gallery-lightbox-runtime.ts");
   const faqRuntime = await text("packages/sections/src/faq-accordion-runtime.ts");
+  const rendererSeo = await text("packages/renderer/src/seo.ts");
   const liveRuntime = await text("packages/live-runtime/src/index.ts");
   const preview = await text("apps/builder/app/renderer-preview.tsx");
   const generator = await text("apps/live/scripts/build-runtime-css.mjs");
@@ -87,6 +96,10 @@ test("published gallery and FAQ certification use shared runtimes and generated 
   expect(faqRuntime).toContain("installFaqAccordions");
   expect(faqRuntime).toContain("aria-expanded");
   expect(faqRuntime).toContain("hashchange");
+  expect(faqStructuredDataSpec).toContain("exact trimmed visible questions and answers");
+  expect(rendererSeo).toContain("visibleFaqStructuredData(page)");
+  expect(rendererSeo).toContain('"@type": "FAQPage"');
+  expect(rendererSeo).toContain("section.hidden || !isFaqComponent");
   expect(liveRuntime).toContain("galleryLightboxRuntimeScript()");
   expect(liveRuntime).toContain("faqAccordionRuntimeScript()");
   expect(preview).toContain("installGalleryLightboxes(root)");
@@ -96,17 +109,18 @@ test("published gallery and FAQ certification use shared runtimes and generated 
   expect(route).toContain("MICIRQL_RUNTIME_CSS");
 });
 
-test("production deployment verifies all 20 layouts are Builder and live functional/gallery/FAQ interaction-certified before secret upload", async () => {
+test("production deployment verifies all 20 layouts are Builder and live functional/gallery/FAQ/structured-data certified before secret upload", async () => {
   const workflow = await text(".github/workflows/deploy-builder.yml");
 
   expect(workflow).toContain("certification.requiredInteractionContract !== 'shared-dental-rendered-interaction-v1'");
-  expect(workflow).toContain("certification.requiredLiveInteractionContract !== 'published-live-functional-gallery-faq-interaction-v4'");
+  expect(workflow).toContain("certification.requiredLiveInteractionContract !== 'published-live-functional-gallery-faq-structured-data-v5'");
   expect(workflow).toContain("entry.interactionCertified !== true");
   expect(workflow).toContain("entry.liveInteractionCertified !== true");
   expect(workflow).toContain("entry.liveFunctionalInteractionCertified !== true");
   expect(workflow).toContain("entry.galleryInteractionCertified !== true");
   expect(workflow).toContain("entry.faqInteractionCertified !== true");
-  expect(workflow).toContain("All 20 runtime Dental layouts are Builder + published-live functional/gallery/FAQ-interaction certified for this commit.");
+  expect(workflow).toContain("entry.faqStructuredDataCertified !== true");
+  expect(workflow).toContain("All 20 runtime Dental layouts are Builder + published-live functional/gallery/FAQ/structured-data certified for this commit.");
 
   const verifyIndex = workflow.indexOf("Verify runtime Dental certification allowlist");
   const uploadIndex = workflow.indexOf("Upload rendered Dental certification allowlist to Builder Worker");
@@ -114,19 +128,20 @@ test("production deployment verifies all 20 layouts are Builder and live functio
   expect(uploadIndex).toBeGreaterThan(verifyIndex);
 });
 
-test("live Cloudflare deployment cannot run before published interaction, gallery and FAQ browser certification", async () => {
+test("live Cloudflare deployment cannot run before FAQ behavior and FAQPage parity certification", async () => {
   const workflow = await text(".github/workflows/deploy-live.yml");
   expect(workflow).toContain("qa/live-rendered-interaction-parity.spec.ts");
   expect(workflow).toContain("qa/live-functional-interaction-certification.spec.ts");
   expect(workflow).toContain("qa/gallery-lightbox-certification.spec.ts");
   expect(workflow).toContain("qa/faq-accordion-certification.spec.ts");
-  const certifyIndex = workflow.indexOf("Certify published live interaction, forms, gallery and FAQ behavior");
+  expect(workflow).toContain("qa/faq-structured-data-parity.spec.ts");
+  const certifyIndex = workflow.indexOf("Certify published live interaction, forms, gallery, FAQ and FAQPage parity");
   const deployIndex = workflow.indexOf("Deploy micirql-live");
   expect(certifyIndex).toBeGreaterThanOrEqual(0);
   expect(deployIndex).toBeGreaterThan(certifyIndex);
 });
 
-test("Playwright configs cannot silently filter the interaction files named by Dental QA", async () => {
+test("Playwright configs cannot silently filter the interaction and FAQ intelligence files named by Dental QA", async () => {
   const visualConfig = await text("playwright.dental-visual.config.ts");
   const blueprintConfig = await text("playwright.dental-blueprint.config.ts");
 
@@ -136,6 +151,8 @@ test("Playwright configs cannot silently filter the interaction files named by D
     "live-functional-interaction-certification",
     "gallery-lightbox-certification",
     "faq-accordion-certification",
+    "dental-faq-generation-intelligence",
+    "faq-structured-data-parity",
     "dental-interaction-allowlist-gate",
   ]) expect(visualConfig).toContain(stem);
 

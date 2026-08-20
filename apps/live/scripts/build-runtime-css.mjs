@@ -14,6 +14,7 @@ const coreSources = [
   "packages/sections/src/content-sections.css",
   "packages/sections/src/conversion-styles.css",
   "packages/sections/src/media-sections.css",
+  "packages/sections/src/gallery-lightbox.css",
   "packages/sections/src/palette-runtime.css",
   "packages/sections/src/image-slots.css",
   "packages/sections/src/premium-mobile.css",

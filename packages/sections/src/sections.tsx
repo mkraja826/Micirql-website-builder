@@ -35,6 +35,7 @@ export type UniversalSectionProps = {
   secondaryAction?: Action;
   items?: Item[];
   breadcrumbs?: BreadcrumbItem[];
+  sectionAnchor?: string;
   image?: { src: string; alt: string };
   logo?: LogoPresentation;
   formAction?: string;

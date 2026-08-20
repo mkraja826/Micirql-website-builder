@@ -120,6 +120,7 @@ function buildSite(layout: WebsiteLayoutBlueprint): Site {
   expect(implant?.sections.map((section) => section.id)).toEqual([
     "implant-nav", "implant-hero", "implant-assessment", "implant-journey", "implant-faq", "implant-cta", "implant-footer",
   ]);
+  expect(implant?.sections.every((section) => section.props.layoutBlueprintId === layout.id), `${layout.id} was not inherited by every implant section`).toBe(true);
   return mediaSafe.site;
 }
 
@@ -306,6 +307,8 @@ test("render Dental Implants across all 20 certified layouts and six production 
     await implantPageButton.click();
     const preview = page.locator(`.renderer-preview-document[data-mi-page="${TREATMENT_PAGE_ID}"]`);
     await expect(preview).toBeVisible();
+    await expect(preview).toHaveAttribute("data-mi-layout-blueprint", layout.id);
+    await expect(preview).toHaveAttribute("data-mi-layout-archetype", /.+/);
     await expect(preview.getByRole("heading", { level: 1, name: /Dental implant care begins with careful assessment and planning/i })).toBeVisible();
     await page.addStyleTag({ content: CAPTURE_STYLES });
 
@@ -358,7 +361,7 @@ test("render Dental Implants across all 20 certified layouts and six production 
     `- Layouts captured: **${report.length}/20**`,
     `- Viewports per layout: **${VIEWPORTS.length}**`,
     `- Total screenshots: **${report.length * VIEWPORTS.length}**`,
-    "- Hard gates: no document overflow, no child escape, no clipped text, no malformed/wrapped actions, no failed/distorted/out-of-bounds imagery, no section overlaps, no empty hero placeholder, exact breadcrumb current page, correct consultation/treatment links, three FAQ disclosures, mobile touch targets >=44px and no abnormally tall content sections",
+    "- Hard gates: exact certified blueprint identity, no document overflow, no child escape, no clipped text, no malformed/wrapped actions, no failed/distorted/out-of-bounds imagery, no section overlaps, no empty hero placeholder, exact breadcrumb current page, correct consultation/treatment links, three FAQ disclosures, mobile touch targets >=44px and no abnormally tall content sections",
     "",
     ...report.map((entry) => `- ${entry.layoutId}: PASS`),
     "",

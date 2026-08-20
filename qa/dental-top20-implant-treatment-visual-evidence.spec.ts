@@ -217,7 +217,10 @@ async function treatmentMetrics(preview: Locator, viewportHeight: number) {
       return rect.width < 44 || rect.height < 44;
     }).slice(0, 20).map((node) => ({ tag: node.tagName, text: node.textContent?.trim().slice(0, 70) ?? "", width: Math.round(node.getBoundingClientRect().width), height: Math.round(node.getBoundingClientRect().height) }));
 
-    const wrappedActions = [...root.querySelectorAll<HTMLElement>(".mi-section__action,.mi-shell-cta,a[href],button,summary")].filter((node) => {
+    // Long FAQ summaries and navigation labels may legitimately wrap. The
+    // malformed-wrap gate is intentionally limited to button-like conversion
+    // controls; general text wrapping is covered by the clipping/overflow gates.
+    const wrappedActions = [...root.querySelectorAll<HTMLElement>(".mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button")].filter((node) => {
       if (!visible(node) || !node.textContent?.trim()) return false;
       const range = document.createRange();
       range.selectNodeContents(node);
@@ -298,7 +301,7 @@ test("render Dental Implants across all 20 certified layouts and six production 
     await page.getByRole("button", { name: "Open editor" }).first().click();
     await expect(page.getByText(site.name).first()).toBeVisible();
 
-    const implantPageButton = page.locator('.page-switcher button').filter({ hasText: /^Dental Implants$/ });
+    const implantPageButton = page.locator(".page-switcher button").filter({ hasText: /^Dental Implants$/ });
     await expect(implantPageButton).toHaveCount(1);
     await implantPageButton.click();
     const preview = page.locator(`.renderer-preview-document[data-mi-page="${TREATMENT_PAGE_ID}"]`);

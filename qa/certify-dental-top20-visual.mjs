@@ -8,16 +8,19 @@ const evidencePath = path.join(evidenceDirectory, "report.json");
 const certificationPath = path.join(evidenceDirectory, "certification.json");
 const interactionCertificationPath = path.join(evidenceDirectory, "interaction-certification.json");
 const liveInteractionCertificationPath = path.join(evidenceDirectory, "live-interaction-certification.json");
+const multipageCertificationPath = path.join(evidenceDirectory, "multipage-certification.json");
 const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
 const requiredInteractionContract = "shared-dental-rendered-interaction-v1";
 const requiredLiveInteractionContract = "published-live-functional-gallery-faq-structured-data-v5";
+const requiredMultipageContract = "dental-multipage-architecture-v1";
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
 const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
 const failures = [];
 let interactionCertification = null;
 let liveInteractionCertification = null;
+let multipageCertification = null;
 
 try {
   interactionCertification = JSON.parse(await readFile(interactionCertificationPath, "utf8"));
@@ -72,6 +75,39 @@ if (liveInteractionCertification) {
   }
 }
 
+try {
+  multipageCertification = JSON.parse(await readFile(multipageCertificationPath, "utf8"));
+} catch {
+  failures.push("Dental multi-page architecture certification is missing; runtime allowlist cannot be emitted.");
+}
+
+if (multipageCertification) {
+  if (multipageCertification.certified !== true) failures.push("Dental multi-page architecture certification did not pass.");
+  if (multipageCertification.sourceCommit !== currentSha) {
+    failures.push(`Dental multi-page architecture certification is stale (${multipageCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
+  }
+  if (multipageCertification.contract !== requiredMultipageContract) {
+    failures.push(`Unexpected Dental multi-page contract ${multipageCertification.contract ?? "missing"}.`);
+  }
+  if (multipageCertification.surface !== "generated-site-architecture") {
+    failures.push(`Unexpected Dental multi-page certification surface ${multipageCertification.surface ?? "missing"}.`);
+  }
+  const requiredMultipageTests = [
+    "qa/dental-multipage-architecture.spec.ts",
+    "qa/dental-multipage-media-safety.spec.ts",
+    "qa/dental-breadcrumb-structured-data.spec.ts",
+    "qa/dental-multipage-live-routing.spec.ts",
+  ];
+  for (const sourceTest of requiredMultipageTests) {
+    if (!Array.isArray(multipageCertification.sourceTests) || !multipageCertification.sourceTests.includes(sourceTest)) {
+      failures.push(`Dental multi-page test evidence is missing: ${sourceTest}.`);
+    }
+  }
+  if (!Array.isArray(multipageCertification.requiredChecks) || multipageCertification.requiredChecks.length < 11) {
+    failures.push("Dental multi-page architecture certification is incomplete.");
+  }
+}
+
 if (evidence.layouts !== 20 || !Array.isArray(evidence.report) || evidence.report.length !== 20) {
   failures.push(`Expected 20 rendered Dental layouts, received ${evidence.report?.length ?? 0}.`);
 }
@@ -115,19 +151,31 @@ if (failures.length) {
 const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
 const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
   evidenceFile: "test-results/dental-top20-visual-evidence/report.json",
   interactionEvidenceFile: "test-results/dental-top20-visual-evidence/interaction-certification.json",
   liveInteractionEvidenceFile: "test-results/dental-top20-visual-evidence/live-interaction-certification.json",
+  multipageEvidenceFile: "test-results/dental-top20-visual-evidence/multipage-certification.json",
   requiredViewports,
   requiredInteractionContract,
   requiredLiveInteractionContract,
+  requiredMultipageContract,
   runtimeEnvironmentKey: "MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS",
   certifiedLayoutIds,
-  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true, interactionCertified: true, liveInteractionCertified: true, liveFunctionalInteractionCertified: true, galleryInteractionCertified: true, faqInteractionCertified: true, faqStructuredDataCertified: true })),
+  layouts: certifiedLayoutIds.map((layoutId) => ({
+    layoutId,
+    passed: true,
+    interactionCertified: true,
+    liveInteractionCertified: true,
+    liveFunctionalInteractionCertified: true,
+    galleryInteractionCertified: true,
+    faqInteractionCertified: true,
+    faqStructuredDataCertified: true,
+    multipageCertified: true,
+  })),
   hardGates: [
     "no document overflow",
     "no child escape",
@@ -140,6 +188,17 @@ const certification = {
     "no abnormally tall mobile sections",
     "rendered interaction contract certified for the same source commit",
     "published live functional/gallery/FAQ/structured-data contract certified for the same source commit",
+    "Dental multi-page architecture contract certified for the same source commit",
+    "only explicitly requested Dental treatments create dedicated pages",
+    "general-only Dental briefs remain single-page",
+    "treatment routes and contact route are unique and idempotent",
+    "treatment pages have canonical indexable treatment-specific SEO metadata",
+    "homepage service cards and global navigation link to generated treatment pages",
+    "treatment pages link to the consultation page and stable homepage treatment anchor",
+    "visible treatment breadcrumbs mirror BreadcrumbList structured data",
+    "empty treatment hero media slots cannot reach production",
+    "published runtime resolves generated page paths without homepage fallback",
+    "published sitemap includes every indexable generated Site page",
     "visible keyboard focus treatment",
     "restrained pointer feedback without layout-jank transitions",
     "operable viewport-contained mobile navigation",
@@ -165,4 +224,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus Builder and published-live functional/gallery/FAQ/structured-data contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus Builder, published-live and multi-page architecture contracts for ${currentSha}.`);

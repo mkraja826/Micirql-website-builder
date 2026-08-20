@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { sectionDesignId } from "@micirql/sections";
 
-const designs = ["DENTAL-NAV-01", "DENTAL-HERO-01", "DENTAL-CTA-01", "DENTAL-CONTACT-01"] as const;
+const NAV_DESIGN = sectionDesignId("corporate", "navbar", 1);
+const HERO_DESIGN = sectionDesignId("corporate", "hero", 1);
+const CTA_DESIGN = sectionDesignId("corporate", "cta", 1);
+const CONTACT_DESIGN = sectionDesignId("corporate", "contact", 1);
+const designs = [NAV_DESIGN, HERO_DESIGN, CTA_DESIGN, CONTACT_DESIGN] as const;
 const PREVIEW_ORIGIN = "http://localhost:3001";
 
 function durationMs(value: string): number {
@@ -12,13 +17,17 @@ function durationMs(value: string): number {
   }, 0);
 }
 
+function expectPreviewResponse(response: Awaited<ReturnType<Parameters<typeof test>[1]>> extends never ? never : never) {
+  return response;
+}
+
 test.describe("Dental rendered interaction certification", () => {
   test("desktop CTA exposes visible focus and restrained pointer feedback", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    const response = await page.goto(`${PREVIEW_ORIGIN}/library/DENTAL-HERO-01`, { waitUntil: "networkidle" });
-    expect(response?.ok()).toBeTruthy();
+    const response = await page.goto(`${PREVIEW_ORIGIN}/library/${HERO_DESIGN}`, { waitUntil: "networkidle" });
+    expect(response?.ok(), `Preview ${HERO_DESIGN} returned ${response?.status() ?? "no response"}`).toBeTruthy();
 
-    const root = page.locator('[data-mi-preview-id="DENTAL-HERO-01"]');
+    const root = page.locator(`[data-mi-preview-id="${HERO_DESIGN}"]`);
     await expect(root).toBeVisible();
     const action = root.locator(".mi-section__action, .mi-conv-btn, .mi-shell-cta").first();
     await expect(action).toBeVisible();
@@ -55,10 +64,10 @@ test.describe("Dental rendered interaction certification", () => {
 
   test("mobile navigation opens as a usable viewport-contained drawer", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    const response = await page.goto(`${PREVIEW_ORIGIN}/library/DENTAL-NAV-01`, { waitUntil: "networkidle" });
-    expect(response?.ok()).toBeTruthy();
+    const response = await page.goto(`${PREVIEW_ORIGIN}/library/${NAV_DESIGN}`, { waitUntil: "networkidle" });
+    expect(response?.ok(), `Preview ${NAV_DESIGN} returned ${response?.status() ?? "no response"}`).toBeTruthy();
 
-    const root = page.locator('[data-mi-preview-id="DENTAL-NAV-01"]');
+    const root = page.locator(`[data-mi-preview-id="${NAV_DESIGN}"]`);
     await expect(root).toBeVisible();
     const menu = root.locator("details.mi-mobile-nav");
     const trigger = menu.locator("summary.mi-burger");
@@ -111,10 +120,10 @@ test.describe("Dental rendered interaction certification", () => {
   test("reduced motion collapses generated interaction movement", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 1000 });
-    const response = await page.goto(`${PREVIEW_ORIGIN}/library/DENTAL-HERO-01`, { waitUntil: "networkidle" });
-    expect(response?.ok()).toBeTruthy();
+    const response = await page.goto(`${PREVIEW_ORIGIN}/library/${HERO_DESIGN}`, { waitUntil: "networkidle" });
+    expect(response?.ok(), `Preview ${HERO_DESIGN} returned ${response?.status() ?? "no response"}`).toBeTruthy();
 
-    const root = page.locator('[data-mi-preview-id="DENTAL-HERO-01"]');
+    const root = page.locator(`[data-mi-preview-id="${HERO_DESIGN}"]`);
     const action = root.locator(".mi-section__action, .mi-conv-btn, .mi-shell-cta").first();
     await expect(action).toBeVisible();
 
@@ -135,7 +144,7 @@ test.describe("Dental rendered interaction certification", () => {
     test(`${designId} has no sub-44px visible interactive target on mobile`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       const response = await page.goto(`${PREVIEW_ORIGIN}/library/${designId}`, { waitUntil: "networkidle" });
-      expect(response?.ok()).toBeTruthy();
+      expect(response?.ok(), `Preview ${designId} returned ${response?.status() ?? "no response"}`).toBeTruthy();
       const root = page.locator(`[data-mi-preview-id="${designId}"]`);
       await expect(root).toBeVisible();
 

@@ -13,7 +13,7 @@ const implantTreatmentVisualCertificationPath = path.join(evidenceDirectory, "im
 const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
 const requiredInteractionContract = "shared-dental-rendered-interaction-v1";
-const requiredLiveInteractionContract = "published-live-functional-gallery-faq-structured-data-v5";
+const requiredLiveInteractionContract = "published-live-functional-gallery-faq-implant-render-v6";
 const requiredMultipageContract = "dental-multipage-architecture-v1";
 const requiredTreatmentVisualContract = "dental-top20-implant-treatment-six-viewport-v1";
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
@@ -51,6 +51,7 @@ try {
 }
 
 if (liveInteractionCertification) {
+  if (liveInteractionCertification.schemaVersion !== 6) failures.push(`Unexpected published live certification schema ${liveInteractionCertification.schemaVersion ?? "missing"}.`);
   if (liveInteractionCertification.certified !== true) failures.push("Published live Dental interaction certification did not pass.");
   if (liveInteractionCertification.sourceCommit !== currentSha) {
     failures.push(`Published live Dental interaction certification is stale (${liveInteractionCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
@@ -61,20 +62,20 @@ if (liveInteractionCertification) {
   if (liveInteractionCertification.surface !== "published-live-runtime") {
     failures.push(`Unexpected published interaction surface ${liveInteractionCertification.surface ?? "missing"}.`);
   }
-  if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/live-functional-interaction-certification.spec.ts")) {
-    failures.push("Published live Dental functional interaction test evidence is missing.");
+  const requiredLiveTests = [
+    "qa/live-functional-interaction-certification.spec.ts",
+    "qa/live-implant-treatment-render-parity.spec.ts",
+    "qa/gallery-lightbox-certification.spec.ts",
+    "qa/faq-accordion-certification.spec.ts",
+    "qa/faq-structured-data-parity.spec.ts",
+  ];
+  for (const sourceTest of requiredLiveTests) {
+    if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes(sourceTest)) {
+      failures.push(`Published live Dental test evidence is missing: ${sourceTest}.`);
+    }
   }
-  if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/gallery-lightbox-certification.spec.ts")) {
-    failures.push("Published live Dental gallery interaction test evidence is missing.");
-  }
-  if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/faq-accordion-certification.spec.ts")) {
-    failures.push("Published live Dental FAQ interaction test evidence is missing.");
-  }
-  if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/faq-structured-data-parity.spec.ts")) {
-    failures.push("Published live Dental FAQPage structured-data parity evidence is missing.");
-  }
-  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 26) {
-    failures.push("Published live Dental functional/gallery/FAQ/structured-data certification is incomplete.");
+  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 33) {
+    failures.push("Published live Dental functional/gallery/FAQ/structured-data/implant-render certification is incomplete.");
   }
 }
 
@@ -197,7 +198,7 @@ if (failures.length) {
 const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
 const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 10,
+  schemaVersion: 11,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -219,6 +220,7 @@ const certification = {
     interactionCertified: true,
     liveInteractionCertified: true,
     liveFunctionalInteractionCertified: true,
+    liveImplantRenderCertified: true,
     galleryInteractionCertified: true,
     faqInteractionCertified: true,
     faqStructuredDataCertified: true,
@@ -236,7 +238,9 @@ const certification = {
     "mobile touch targets >= 44px",
     "no abnormally tall mobile sections",
     "rendered interaction contract certified for the same source commit",
-    "published live functional/gallery/FAQ/structured-data contract certified for the same source commit",
+    "published live functional/gallery/FAQ/structured-data/implant-render contract certified for the same source commit",
+    "published live host resolves built-in generated section components instead of failing COMPONENT_NOT_FOUND",
+    "published Dental Implants runtime retains blueprint identity section identity canonical SEO breadcrumbs FAQ and conversion routes",
     "Dental multi-page architecture contract certified for the same source commit",
     "certified homepage blueprint identity remains authoritative across generated treatment and contact pages",
     "Builder Preview exposes the same layout identity root used by published rendering",
@@ -280,4 +284,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live and cross-page blueprint-identity contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live implant rendering and cross-page blueprint-identity contracts for ${currentSha}.`);

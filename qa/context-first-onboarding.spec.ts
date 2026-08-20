@@ -57,7 +57,7 @@ test("onboarding accepts a batch of business photos and persists them before gen
   expect(onboarding).toContain("Business photos");
   expect(onboarding).toContain("multiple");
   expect(onboarding).toContain("uploadBusinessAssets");
-  expect(onboarding).toContain('fetch("/api/assets/upload"');
+  expect(onboarding).toContain('fetchJsonWithRetry<ApiPayload>("/api/assets/upload"');
   expect(onboarding).toContain("slice(0, 12)");
 });
 

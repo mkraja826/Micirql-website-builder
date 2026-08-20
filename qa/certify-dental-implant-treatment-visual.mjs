@@ -67,7 +67,7 @@ if (failures.length) {
 
 await mkdir(destinationDirectory, { recursive: true });
 const certification = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -80,6 +80,7 @@ const certification = {
   certifiedLayoutIds: [...ids].sort(),
   requiredChecks: [
     "20 certified Dental layout IDs render the generated Dental Implants page",
+    "each implant Preview root exposes the exact certified layoutBlueprintId being captured",
     "implant page is measured at 360, 390, 430, 768, 1024 and 1440 widths",
     "no document overflow or child escape",
     "no clipped treatment-page typography",
@@ -97,4 +98,4 @@ const certification = {
 };
 
 await writeFile(destinationPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Certified Dental Implants rendered treatment pages for ${ids.size} Top-20 layouts across six viewports at ${currentSha}.`);
+console.log(`Certified Dental Implants rendered treatment pages with exact blueprint identity for ${ids.size} Top-20 layouts across six viewports at ${currentSha}.`);

@@ -43,6 +43,8 @@
 .site-preview.viewport-mobile .mi-burger{display:flex!important}
 .site-preview.viewport-mobile .mi-shell-navbar--centered .mi-nav-centered{display:flex;justify-content:space-between}
 .site-preview.viewport-mobile .mi-shell-brand{min-width:0;max-width:calc(100% - 60px);white-space:normal;overflow-wrap:anywhere;line-height:1.2}
-.site-preview.viewport-mobile .mi-mobile-nav[open]>.mi-burger{position:absolute;top:.75rem;right:.75rem}
-.site-preview.viewport-mobile .mi-mobile-drawer{position:absolute;inset:0 0 auto 0;width:100%;max-width:100%;height:100svh;max-height:100svh;box-sizing:border-box;overflow-y:auto}
+.site-preview.viewport-mobile .mi-mobile-nav[open]>.mi-burger{position:absolute;top:.75rem;right:.75rem;z-index:2147483647!important;pointer-events:auto!important}
+.site-preview.viewport-mobile .mi-mobile-drawer{position:absolute;inset:0 0 auto 0;z-index:10000;width:100%;max-width:100%;height:100svh;max-height:100svh;box-sizing:border-box;overflow-y:auto}
+.site-preview.viewport-mobile .mi-mobile-drawer__head{padding-right:3.5rem}
+.site-preview.viewport-mobile .mi-mobile-drawer__head>span{display:none!important}
 .site-preview.viewport-mobile .mi-mobile-drawer>.mi-shell-cta{display:flex!important;width:100%;min-width:44px;min-height:44px}

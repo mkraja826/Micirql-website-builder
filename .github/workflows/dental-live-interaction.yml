@@ -9,6 +9,7 @@ on:
       - 'apps/live/scripts/build-runtime-css.mjs'
       - 'apps/live/live-runtime.ts'
       - 'packages/live-runtime/**'
+      - 'packages/renderer/**'
       - 'packages/primitives/**'
       - 'packages/components/**'
       - 'packages/sections/**'
@@ -16,6 +17,7 @@ on:
       - 'qa/live-functional-interaction-certification.spec.ts'
       - 'qa/gallery-lightbox-certification.spec.ts'
       - 'qa/faq-accordion-certification.spec.ts'
+      - 'qa/faq-structured-data-parity.spec.ts'
       - 'qa/dental-rendered-interaction-certification.spec.ts'
       - 'qa/certify-dental-live-interactions.mjs'
       - 'qa/certify-dental-top20-visual.mjs'
@@ -32,6 +34,7 @@ on:
       - 'apps/live/scripts/build-runtime-css.mjs'
       - 'apps/live/live-runtime.ts'
       - 'packages/live-runtime/**'
+      - 'packages/renderer/**'
       - 'packages/primitives/**'
       - 'packages/components/**'
       - 'packages/sections/**'
@@ -39,6 +42,7 @@ on:
       - 'qa/live-functional-interaction-certification.spec.ts'
       - 'qa/gallery-lightbox-certification.spec.ts'
       - 'qa/faq-accordion-certification.spec.ts'
+      - 'qa/faq-structured-data-parity.spec.ts'
       - 'qa/dental-rendered-interaction-certification.spec.ts'
       - 'qa/certify-dental-live-interactions.mjs'
       - 'qa/certify-dental-top20-visual.mjs'
@@ -75,8 +79,8 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify published live interaction, functional, gallery and FAQ behavior
-        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
+      - name: Certify published live interaction, functional, gallery, FAQ and FAQPage parity
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/faq-structured-data-parity.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
 
       - name: Materialize same-commit live functional/gallery/FAQ interaction certificate
         run: node qa/certify-dental-live-interactions.mjs

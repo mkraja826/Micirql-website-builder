@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { GroundingFacts } from "@micirql/design-engine";
 import { contentRulesForFacts } from "../packages/ai/src/content-generation-pipeline";
 
-const architectSource = readFileSync(new URL("../apps/builder/app/api/onboarding/architect/route.ts", import.meta.url), "utf8");
-const serviceSource = readFileSync(new URL("../apps/builder/app/api/generate-content/service.ts", import.meta.url), "utf8");
+const architectSource = readFileSync(resolve(process.cwd(), "apps/builder/app/api/onboarding/architect/route.ts"), "utf8");
+const serviceSource = readFileSync(resolve(process.cwd(), "apps/builder/app/api/generate-content/service.ts"), "utf8");
 
 function dentalFacts(): GroundingFacts {
   return {

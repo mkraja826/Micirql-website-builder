@@ -151,3 +151,12 @@ test("FAQ generation waits until the page has both decision support and conversi
   expect(result.applied).toBe(false);
   expect(result.reason).toBe("page-journey-not-ready-for-faq");
 });
+
+test("a footer by itself is not treated as a conversion stage", () => {
+  const site = baseSite();
+  site.pages[0]!.sections = site.pages[0]!.sections.filter((entry) => !/-CTA-|-CONT-/.test(entry.component.componentId));
+  const result = applyDentalFaqIntelligence(site, profile());
+  expect(result.applied).toBe(false);
+  expect(result.reason).toBe("page-journey-not-ready-for-faq");
+  expect(faqSection(result.site)).toBeUndefined();
+});

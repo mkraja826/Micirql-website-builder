@@ -1,6 +1,6 @@
 import { preparePage, type FunctionBindingResolver, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
 import { siteSchema, type Site } from "@micirql/schema";
-import { galleryLightboxRuntimeScript } from "@micirql/sections";
+import { faqAccordionRuntimeScript, galleryLightboxRuntimeScript } from "@micirql/sections";
 import { liveResponsiveCompositionRepair, type LiveResponsiveCompositionRepair } from "./responsive-composition-repair";
 
 export type PublishedSiteRecord = {
@@ -170,7 +170,7 @@ function pageDocument(
   const compositionStyle = compositionRepair.enabled ? `<style data-mi-persisted-responsive-composition-repair>${compositionRepair.css}</style>` : "";
   const repairAttribute = firstScreenRepair.enabled ? ' data-mi-first-screen-repair="1"' : "";
   const typographyAttribute = typographyRepair.enabled ? ' data-mi-page-typography-repair="1"' : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}${typographyStyle}${compositionStyle}</head><body${repairAttribute}${typographyAttribute}>${body}${formFeedbackScript()}${galleryLightboxRuntimeScript()}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${icon}${social}${structured}${repairStyle}${typographyStyle}${compositionStyle}</head><body${repairAttribute}${typographyAttribute}>${body}${formFeedbackScript()}${galleryLightboxRuntimeScript()}${faqAccordionRuntimeScript()}</body></html>`;
 }
 
 function formFeedbackScript() {

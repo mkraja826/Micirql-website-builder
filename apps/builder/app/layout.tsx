@@ -54,6 +54,7 @@ import "@micirql/sections/dental-flagship-hero-compositions.css";
 import "@micirql/sections/dental-flagship-body-compositions.css";
 import "@micirql/sections/dental-flagship-conversion-compositions.css";
 import "@micirql/sections/dental-flagship-typography.css";
+import "@micirql/sections/dental-99-tablet-certification-refinement.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

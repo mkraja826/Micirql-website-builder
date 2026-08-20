@@ -11,6 +11,7 @@ import {
 } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
+import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
 import { evaluatePageTypographyQuality } from "./page-typography-quality";
@@ -52,7 +53,8 @@ export function buildCertifiedDentalReviewDirections(
 
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
-    const normalizedSite = normalizeWebsiteContent(repaired.site);
+    const faqIntelligence = applyDentalFaqIntelligence(repaired.site, profile);
+    const normalizedSite = normalizeWebsiteContent(faqIntelligence.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     const dentalContentQuality = evaluateDentalContentQuality(normalizedSite, profile);
     const dentalContentErrors = dentalContentQuality.issues.filter((issue) => issue.severity === "error");
@@ -138,6 +140,7 @@ export function buildCertifiedDentalReviewDirections(
         `${blueprint.design.sectionRhythm} section rhythm`,
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
+        ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
         ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),

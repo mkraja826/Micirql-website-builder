@@ -12,6 +12,8 @@ import {
 import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
 import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
+import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
+import { evaluateDentalMultipageQuality } from "./dental-multipage-quality";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
 import { evaluatePageTypographyQuality } from "./page-typography-quality";
@@ -24,6 +26,7 @@ import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
 const MIN_DENTAL_CONTENT_SCORE = 82;
+const MIN_DENTAL_MULTIPAGE_SCORE = 90;
 const MIN_PAGE_RHYTHM_SCORE = 78;
 const MIN_PAGE_TYPOGRAPHY_SCORE = 82;
 const MIN_MEDIA_ART_DIRECTION_SCORE = 80;
@@ -54,12 +57,15 @@ export function buildCertifiedDentalReviewDirections(
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
     const faqIntelligence = applyDentalFaqIntelligence(repaired.site, profile);
-    const normalizedSite = normalizeWebsiteContent(faqIntelligence.site);
+    const multipageArchitecture = applyDentalMultipageArchitecture(faqIntelligence.site, profile);
+    const normalizedSite = normalizeWebsiteContent(multipageArchitecture.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     const dentalContentQuality = evaluateDentalContentQuality(normalizedSite, profile);
     const dentalContentErrors = dentalContentQuality.issues.filter((issue) => issue.severity === "error");
+    const multipageQuality = evaluateDentalMultipageQuality(normalizedSite, profile);
 
     if (dentalContentErrors.length || dentalContentQuality.score < MIN_DENTAL_CONTENT_SCORE) continue;
+    if (!multipageQuality.ready || multipageQuality.score < MIN_DENTAL_MULTIPAGE_SCORE) continue;
 
     let candidateSite = normalizedSite;
     let pageRhythmQuality = evaluatePageRhythmQuality(candidateSite);
@@ -114,7 +120,7 @@ export function buildCertifiedDentalReviewDirections(
     const baseScore = scoreDesign({
       site: candidateSite,
       readinessScore: repaired.readiness.score,
-      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, pageRhythmQuality.score, pageTypographyQuality.score, mediaArtDirection.score),
+      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, multipageQuality.score, pageRhythmQuality.score, pageTypographyQuality.score, mediaArtDirection.score),
       archetypeFitScore: industryFit.score,
     });
     const fitBonus = blueprintFitBonus(
@@ -141,10 +147,12 @@ export function buildCertifiedDentalReviewDirections(
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
+        ...(multipageArchitecture.treatmentPages.length ? [`multi-page treatment architecture: ${multipageArchitecture.treatmentPages.length} treatment page${multipageArchitecture.treatmentPages.length === 1 ? "" : "s"}`] : []),
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
         ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
         `dental content ${dentalContentQuality.score}/100`,
+        `multi-page architecture ${multipageQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
         `page typography ${pageTypographyQuality.score}/100`,
         `media art direction ${mediaArtDirection.score}/100`,

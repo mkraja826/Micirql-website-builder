@@ -11,7 +11,7 @@ const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "
 // Dental allowlist certifier verifies that this evidence belongs to the exact
 // source commit being deployed.
 const certification = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -20,6 +20,7 @@ const certification = {
   sourceTests: [
     "qa/dental-multipage-architecture.spec.ts",
     "qa/dental-multipage-media-safety.spec.ts",
+    "qa/dental-multipage-layout-identity.spec.ts",
     "qa/dental-breadcrumb-structured-data.spec.ts",
     "qa/dental-multipage-live-routing.spec.ts",
   ],
@@ -31,7 +32,10 @@ const certification = {
     "treatment pages contain navigation hero assessment process FAQ conversion and footer stages",
     "homepage treatment cards and global navigation link to generated treatment pages",
     "treatment pages link to the consultation page and the stable homepage treatment anchor",
+    "certified homepage blueprint identity is authoritative across generated treatment and contact pages",
+    "Builder Preview exposes the same layout blueprint identity attributes as published rendering",
     "visible hero breadcrumbs mirror BreadcrumbList structured data without hidden or invented entries",
+    "mobile breadcrumb links remain at least 44px touch targets",
     "empty treatment hero media slots are removed unless an already-qualified hero asset can be reused",
     "published live routing resolves the requested page path and returns PAGE_NOT_FOUND for unknown paths",
     "published sitemap enumerates every indexable Site page and robots advertises that sitemap",
@@ -40,4 +44,4 @@ const certification = {
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Dental multi-page architecture certified for ${currentSha}.`);
+console.log(`Dental multi-page architecture and cross-page blueprint identity certified for ${currentSha}.`);

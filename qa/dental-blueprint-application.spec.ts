@@ -136,7 +136,7 @@ test("the production planner layout remains the single source of truth through c
   const candidate = composition.layoutCandidate;
   expect(candidate?.layout.id).toBe("dental-02-implant-luxury");
   expect(candidate?.layout.status).toBe("certified");
-  expect(candidate?.reasons).toContain("planner-locked certified layout");
+  expect(candidate?.reasons).toContain("planner-locked rendered-certified layout");
   if (!candidate) throw new Error("Planner-locked Dental layout was not preserved.");
 
   const expectedContentFamilies = candidate.layout.sections

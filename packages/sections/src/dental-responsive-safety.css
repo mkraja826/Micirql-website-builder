@@ -58,7 +58,11 @@
   }
   [data-mi-layout-blueprint^="dental-"] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta){
     max-width:100%;
-    white-space:nowrap;
+    min-height:52px!important;
+    padding-block:.7rem!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+    box-sizing:border-box;
   }
   [data-mi-layout-blueprint^="dental-"] .mi-conv-cta--split .mi-cta-split{
     grid-template-columns:minmax(0,1fr)!important;
@@ -100,12 +104,23 @@
 }
 
 /* Boutique Cosmetic uses a desktop fashion-spread hero. Keep the same visual
- * dominance without a negative right margin that deliberately escapes the
+ * dominance while ensuring its image track and placeholder never leave the
  * production preview/document boundary. */
 @media (min-width:64.01rem){
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__editorial-grid{
+    grid-template-columns:minmax(2.5rem,.08fr) minmax(0,.62fr) minmax(0,1.3fr)!important;
+  }
   [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media{
-    margin-right:0!important;
-    max-width:min(39rem,100%)!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    justify-self:stretch!important;
+    margin:0!important;
+    box-sizing:border-box;
+  }
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media>*{
+    max-width:100%!important;
+    box-sizing:border-box;
   }
 }
 

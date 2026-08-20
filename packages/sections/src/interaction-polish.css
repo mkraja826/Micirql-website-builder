@@ -50,6 +50,7 @@
   transition:color var(--mi-interaction-base) var(--mi-interaction-ease),opacity var(--mi-interaction-base) var(--mi-interaction-ease);
 }
 [data-mi-site] .mi-shell-dropdown[open]>summary{color:var(--mi-color-primary)}
+[data-mi-site] .mi-mobile-nav:not([open])>.mi-mobile-drawer{display:none!important}
 
 /* Generated-site controls must keep a visible keyboard focus indicator in the
  * Builder preview and in the published runtime. Using :focus as well as

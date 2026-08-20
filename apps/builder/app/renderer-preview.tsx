@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
-import { SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
+import { installGalleryLightboxes, SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { persistedFirstScreenRepairCss } from "./persisted-first-screen-repair";
 
 type PreviewSection = {
@@ -58,6 +58,7 @@ export function RendererPreview({
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
   const [dropIndex, setDropIndex] = useState<number>();
   const requestId = useRef(0);
+  const previewRoot = useRef<HTMLElement>(null);
   const repairCss = persistedFirstScreenRepairCss(site, viewport, path);
 
   useEffect(() => {
@@ -89,9 +90,16 @@ export function RendererPreview({
     return () => window.clearTimeout(timer);
   }, [site, path]);
 
+  useEffect(() => {
+    const root = previewRoot.current;
+    if (!root) return;
+    return installGalleryLightboxes(root);
+  }, [preview]);
+
   function handleSectionClick(event: MouseEvent<HTMLDivElement>, sectionId: string) {
     const target = event.target as HTMLElement;
     if (target.closest("[data-mi-canvas-action]")) return;
+    if (target.closest("[data-mi-gallery-open],[data-mi-gallery-lightbox]")) return;
     const inline = target.closest<HTMLElement>("[data-mi-prop-path]");
     const image = target.closest<HTMLElement>("[data-mi-image-field]");
     if (inline && onInlineTextChange) {
@@ -134,7 +142,7 @@ export function RendererPreview({
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
       {status === "ready" && preview?.sections ? (
-        <main className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} data-mi-first-screen-repair={repairCss ? "1" : undefined} style={(preview.themeStyle ?? {}) as CSSProperties}>
+        <main ref={previewRoot} className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} data-mi-first-screen-repair={repairCss ? "1" : undefined} style={(preview.themeStyle ?? {}) as CSSProperties}>
           {repairCss ? <style data-mi-persisted-first-screen-repair>{repairCss}</style> : null}
           {insertionZone(undefined, 0)}
           {preview.sections.map((section, index) => {

@@ -125,3 +125,19 @@ test("live Cloudflare deployment cannot run before published interaction, galler
   expect(certifyIndex).toBeGreaterThanOrEqual(0);
   expect(deployIndex).toBeGreaterThan(certifyIndex);
 });
+
+test("Playwright configs cannot silently filter the interaction files named by Dental QA", async () => {
+  const visualConfig = await text("playwright.dental-visual.config.ts");
+  const blueprintConfig = await text("playwright.dental-blueprint.config.ts");
+
+  for (const stem of [
+    "dental-rendered-interaction-certification",
+    "live-rendered-interaction-parity",
+    "live-functional-interaction-certification",
+    "gallery-lightbox-certification",
+    "faq-accordion-certification",
+    "dental-interaction-allowlist-gate",
+  ]) expect(visualConfig).toContain(stem);
+
+  expect(blueprintConfig).toContain("testMatch: /.*\\.spec\\.ts/");
+});

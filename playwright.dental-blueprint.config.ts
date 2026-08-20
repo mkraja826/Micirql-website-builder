@@ -2,7 +2,10 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /dental-layout-blueprint(?:-\d+)?\.spec\.ts/,
+  // qa:dental-blueprint passes an explicit file list. Keep the config broad so
+  // those quality layers are not silently filtered out by an older filename-only
+  // match rule as the certification pipeline grows.
+  testMatch: /.*\.spec\.ts/,
   // The first three legacy specs pre-date the shared exact-viewport harness.
   // Their coverage now lives in dental-layout-blueprint-00.spec.ts so all 20
   // layouts are certified through the same viewport and evidence pipeline.

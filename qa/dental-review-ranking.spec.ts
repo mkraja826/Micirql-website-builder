@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { buildCertifiedDentalReviewDirections } from "../apps/builder/app/dental-review-directions";
-import { siteSchema } from "@micirql/schema";
+import { SCHEMA_VERSION, siteSchema } from "@micirql/schema";
 
 const baseSite = siteSchema.parse({
+  schemaVersion: SCHEMA_VERSION,
   siteId: "aurelia-ranking-test",
+  workspaceId: "qa-dental-ranking",
   name: "Aurelia Dental",
-  version: 1,
+  domain: "clinic",
   theme: {
     family: "corporate",
     modifiers: [],
@@ -19,6 +21,9 @@ const baseSite = siteSchema.parse({
         textPrimary: "#111827",
         textSecondary: "#5b6470",
         border: "#d9dde3",
+        success: "#16794b",
+        warning: "#a16207",
+        error: "#b42318",
       },
       typography: { display: "Inter", body: "Inter", ui: "Inter" },
       density: "comfortable",
@@ -26,10 +31,28 @@ const baseSite = siteSchema.parse({
       motion: "subtle",
     },
   },
+  seoBlueprint: {
+    primaryGoal: "Book dental implant consultations",
+    targetLocations: ["Hyderabad"],
+    priorityTopics: ["dental implants", "smile design"],
+    audiences: ["implant patients"],
+    languages: ["en"],
+    localSeo: true,
+    servicePages: true,
+    locationPages: false,
+    blog: false,
+  },
   pages: [{
     id: "home",
     path: "/",
-    title: "Home",
+    name: "Home",
+    seo: {
+      title: "Aurelia Dental | Premium Implant Dentistry",
+      description: "Premium dental implants, cosmetic dentistry and smile transformation in Hyderabad.",
+      canonicalPath: "/",
+      indexable: true,
+      structuredDataTypes: ["Dentist"],
+    },
     sections: [
       { id: "nav", hidden: false, component: { componentId: "ORG-NAV-001", version: "1" }, props: { title: "Aurelia Dental" } },
       { id: "hero", hidden: false, component: { componentId: "ORG-HERO-001", version: "1" }, props: { title: "Premium implant dentistry in Hyderabad", description: "Dental implants, cosmetic dentistry and full-mouth rehabilitation." } },
@@ -43,6 +66,11 @@ const baseSite = siteSchema.parse({
       { id: "footer", hidden: false, component: { componentId: "ORG-FOOT-001", version: "1" }, props: { title: "Aurelia Dental" } },
     ],
   }],
+  navigation: [
+    { label: "Home", href: "/" },
+    { label: "Treatments", href: "/#treatments" },
+    { label: "Contact", href: "/#contact" },
+  ],
 });
 
 test("Aurelia premium implant brief ranks Implant Atelier first", () => {

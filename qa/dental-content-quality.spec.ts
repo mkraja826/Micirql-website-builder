@@ -37,7 +37,7 @@ function siteWith(heroTitle: string, heroDescription: string, ctaLabel: string, 
         { id: "services", component: { componentId: "luxury-serv-01", version: "1" }, props: { title: "Treatments", items: [{ title: "Dental implants", description: serviceCopy }, { title: "Smile design", description: "Cosmetic planning for veneers and smile improvement." }] } },
         { id: "process", component: { componentId: "luxury-proc-01", version: "1" }, props: { title: "Your treatment plan", description: "Consultation, scan, planning, treatment and follow-up are explained before care begins.", items: [{ title: "Assessment", description: "Clinical assessment and imaging." }] } },
         { id: "testimonials", component: { componentId: "luxury-test-01", version: "1" }, props: { title: "Patient stories", description: "Review verified cases, before-and-after outcomes and patient feedback.", items: [{ title: "Case review", description: "Verified treatment result." }] } },
-        { id: "contact", component: { componentId: "luxury-cont-01", version: "1" }, props: { title: "Book a consultation", description: "Request an appointment with the clinic.", primaryAction: { label: "Book consultation", href: "#" } } },
+        { id: "contact", component: { componentId: "luxury-cont-01", version: "1" }, props: { title: "Book a consultation", description: "Request an appointment with the clinic.", primaryAction: { label: ctaLabel, href: "#" } } },
       ],
     }],
   } as any;

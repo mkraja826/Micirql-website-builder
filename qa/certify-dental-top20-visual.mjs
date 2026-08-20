@@ -11,7 +11,7 @@ const liveInteractionCertificationPath = path.join(evidenceDirectory, "live-inte
 const runtimeEnvPath = path.join(evidenceDirectory, "runtime-certification.env");
 const requiredViewports = ["mobile-360", "mobile-390", "mobile-430", "tablet-768", "desktop-1024", "desktop-1440"];
 const requiredInteractionContract = "shared-dental-rendered-interaction-v1";
-const requiredLiveInteractionContract = "published-live-functional-gallery-faq-interaction-v4";
+const requiredLiveInteractionContract = "published-live-functional-gallery-faq-structured-data-v5";
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
 const evidence = JSON.parse(await readFile(evidencePath, "utf8"));
@@ -64,8 +64,11 @@ if (liveInteractionCertification) {
   if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/faq-accordion-certification.spec.ts")) {
     failures.push("Published live Dental FAQ interaction test evidence is missing.");
   }
-  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 24) {
-    failures.push("Published live Dental functional/gallery/FAQ interaction certification is incomplete.");
+  if (!Array.isArray(liveInteractionCertification.sourceTests) || !liveInteractionCertification.sourceTests.includes("qa/faq-structured-data-parity.spec.ts")) {
+    failures.push("Published live Dental FAQPage structured-data parity evidence is missing.");
+  }
+  if (!Array.isArray(liveInteractionCertification.requiredChecks) || liveInteractionCertification.requiredChecks.length < 26) {
+    failures.push("Published live Dental functional/gallery/FAQ/structured-data certification is incomplete.");
   }
 }
 
@@ -112,7 +115,7 @@ if (failures.length) {
 const certifiedLayoutIds = (evidence.report ?? []).map((entry) => entry.layoutId).sort();
 const runtimeAllowlist = certifiedLayoutIds.join(",");
 const certification = {
-  schemaVersion: 7,
+  schemaVersion: 8,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -124,7 +127,7 @@ const certification = {
   requiredLiveInteractionContract,
   runtimeEnvironmentKey: "MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS",
   certifiedLayoutIds,
-  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true, interactionCertified: true, liveInteractionCertified: true, liveFunctionalInteractionCertified: true, galleryInteractionCertified: true, faqInteractionCertified: true })),
+  layouts: certifiedLayoutIds.map((layoutId) => ({ layoutId, passed: true, interactionCertified: true, liveInteractionCertified: true, liveFunctionalInteractionCertified: true, galleryInteractionCertified: true, faqInteractionCertified: true, faqStructuredDataCertified: true })),
   hardGates: [
     "no document overflow",
     "no child escape",
@@ -136,7 +139,7 @@ const certification = {
     "mobile touch targets >= 44px",
     "no abnormally tall mobile sections",
     "rendered interaction contract certified for the same source commit",
-    "published live functional/gallery/FAQ interaction contract certified for the same source commit",
+    "published live functional/gallery/FAQ/structured-data contract certified for the same source commit",
     "visible keyboard focus treatment",
     "restrained pointer feedback without layout-jank transitions",
     "operable viewport-contained mobile navigation",
@@ -153,6 +156,8 @@ const certification = {
     "FAQ summaries support ArrowUp/ArrowDown/Home/End focus navigation",
     "FAQ deep links open the addressed answer",
     "FAQ summaries remain touch-sized, overflow-safe and reduced-motion compliant",
+    "FAQPage JSON-LD exactly mirrors valid visible FAQ questions and answers",
+    "hidden malformed and duplicate FAQ entries cannot create misleading structured data",
     "prefers-reduced-motion removes meaningful movement in preview and published runtime",
   ],
 };
@@ -160,4 +165,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus Builder and published-live functional/gallery/FAQ interaction contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against six rendered viewports plus Builder and published-live functional/gallery/FAQ/structured-data contracts for ${currentSha}.`);

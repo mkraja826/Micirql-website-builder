@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
-import { installGalleryLightboxes, SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
+import { installFaqAccordions, installGalleryLightboxes, SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { persistedFirstScreenRepairCss } from "./persisted-first-screen-repair";
 
 type PreviewSection = {
@@ -93,13 +93,15 @@ export function RendererPreview({
   useEffect(() => {
     const root = previewRoot.current;
     if (!root) return;
-    return installGalleryLightboxes(root);
+    const disposeGallery = installGalleryLightboxes(root);
+    const disposeFaq = installFaqAccordions(root);
+    return () => { disposeFaq(); disposeGallery(); };
   }, [preview]);
 
   function handleSectionClick(event: MouseEvent<HTMLDivElement>, sectionId: string) {
     const target = event.target as HTMLElement;
     if (target.closest("[data-mi-canvas-action]")) return;
-    if (target.closest("[data-mi-gallery-open],[data-mi-gallery-lightbox]")) return;
+    if (target.closest("[data-mi-gallery-open],[data-mi-gallery-lightbox],[data-mi-faq-summary]")) return;
     const inline = target.closest<HTMLElement>("[data-mi-prop-path]");
     const image = target.closest<HTMLElement>("[data-mi-image-field]");
     if (inline && onInlineTextChange) {
@@ -224,7 +226,7 @@ function localPreview(site: Site, path: string): PreviewPayload {
 
 function legacyFamily(componentId: string): SectionFamily | undefined {
   const value = componentId.toLowerCase();
-  const families: SectionFamily[] = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "team", "cta", "contact", "footer"];
+  const families: SectionFamily[] = ["navbar", "hero", "about", "services", "features", "process", "faq", "testimonials", "gallery", "team", "cta", "contact", "footer"];
   return families.find((family) => value === `${family}.placeholder` || value.startsWith(`${family}.`));
 }
 

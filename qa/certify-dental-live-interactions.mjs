@@ -7,11 +7,11 @@ const outputDirectory = path.join(root, "test-results", "dental-top20-visual-evi
 const outputPath = path.join(outputDirectory, "live-interaction-certification.json");
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
-// This materializer must only run after all published-live browser suites
-// succeed. The allowlist certifier verifies this certificate belongs to the
-// exact source commit being deployed.
+// This materializer must only run after all published-live browser and semantic
+// parity suites succeed. The allowlist certifier verifies this certificate
+// belongs to the exact source commit being deployed.
 const certification = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
@@ -20,9 +20,10 @@ const certification = {
     "qa/live-functional-interaction-certification.spec.ts",
     "qa/gallery-lightbox-certification.spec.ts",
     "qa/faq-accordion-certification.spec.ts",
+    "qa/faq-structured-data-parity.spec.ts",
   ],
   surface: "published-live-runtime",
-  contract: "published-live-functional-gallery-faq-interaction-v4",
+  contract: "published-live-functional-gallery-faq-structured-data-v5",
   requiredChecks: [
     "generated live runtime CSS contains the shared interaction layer",
     "published CTA pointer feedback is visible and restrained",
@@ -48,9 +49,11 @@ const certification = {
     "FAQ ArrowUp ArrowDown Home and End provide deterministic summary focus navigation",
     "FAQ deep links open the addressed answer without violating single-mode state",
     "FAQ mobile summaries meet the touch target minimum and reduced-motion removes icon animation",
+    "FAQPage JSON-LD is derived from the exact visible FAQ questions and answers",
+    "hidden malformed and duplicate FAQ entries cannot create misleading structured data",
   ],
 };
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Published live Dental functional + gallery + FAQ interaction contract certified for ${currentSha}.`);
+console.log(`Published live Dental functional + gallery + FAQ + structured-data contract certified for ${currentSha}.`);

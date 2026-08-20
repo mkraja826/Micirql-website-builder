@@ -1,0 +1,110 @@
+/* Final rendered-certification tablet hardening.
+ *
+ * These rules intentionally sit at the end of the Dental refinement cascade.
+ * They only address deterministic 768-1024px containment defects found by the
+ * production visual gate; they do not relax or bypass any certification checks.
+ */
+
+@media (min-width:48rem) and (max-width:64rem){
+  /* Family Care: the previous hardening constrained the editable label span with
+   * overflow:hidden. At 768px the label can be a few pixels wider than its span,
+   * which the certification gate correctly reports as clipped text. The action
+   * container is already width-safe, so allow the label to size naturally. */
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action{
+    flex:1 1 14rem!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding-inline:1rem!important;
+  }
+  [data-mi-layout-blueprint="dental-04-family-care"] .mi-hero--media-first .mi-section__action span{
+    display:inline-block!important;
+    width:auto!important;
+    max-width:none!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    white-space:nowrap!important;
+  }
+
+  /* Doctor Signature: its desktop hero and nested team grids both contain hard
+   * minimum tracks (22rem / 18rem / 17rem). Exactly at 768px those tracks become
+   * active before the phone stack does, producing deterministic horizontal
+   * overflow. Use a deliberate tablet stack through 1024px while preserving the
+   * desktop composition above that breakpoint. */
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-hero__split{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:clamp(1.5rem,4vw,2.5rem)!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-section__media,
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-hero__copy{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-section__media::after{
+    display:none!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-section__media img{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-height:36rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-type--display{
+    max-width:min(11ch,100%)!important;
+    font-size:clamp(3rem,7vw,4.75rem)!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-section__actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    flex-wrap:wrap!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-hero--media-first .mi-section__action{
+    flex:1 1 12rem!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:minmax(0,1fr)!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:clamp(1.25rem,3vw,2rem)!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-featured>*,
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-card--lead>*{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] .mi-team--featured :is(h2,h3,p,span,a){
+    min-width:0!important;
+    max-width:100%!important;
+    overflow-wrap:anywhere;
+  }
+
+  [data-mi-layout-blueprint="dental-06-doctor-brand"] :is(.mi-container,.mi-section__layout,.mi-content-heading,.mi-proof-metrics,.mi-services-spotlight,.mi-gallery-mosaic,.mi-cta-split,.mi-contact-split){
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+}

@@ -26,10 +26,11 @@ function Actions({ primaryAction, secondaryAction }: UniversalSectionProps) {
 }
 
 function ServiceItem({ item, index, numbered = false }: { item: Item; index: number; numbered?: boolean }) {
-  return <article className="mi-service-item">
+  const detail = <div><Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</div>;
+  return <article className={`mi-service-item${item.href ? " mi-service-item--linked" : ""}`}>
     {numbered ? <span className="mi-service-index">{String(index + 1).padStart(2, "0")}</span> : null}
     {item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}
-    <div><Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</div>
+    {item.href ? <a className="mi-service-item__link" href={item.href} aria-label={`Learn more about ${item.title}`}>{detail}<span className="mi-service-item__arrow" aria-hidden="true">→</span></a> : detail}
   </article>;
 }
 

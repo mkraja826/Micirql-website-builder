@@ -15,6 +15,8 @@ on:
       - 'packages/sections/**'
       - 'qa/live-rendered-interaction-parity.spec.ts'
       - 'qa/live-functional-interaction-certification.spec.ts'
+      - 'qa/live-production-section-registry.spec.ts'
+      - 'qa/live-implant-treatment-render-parity.spec.ts'
       - 'qa/gallery-lightbox-certification.spec.ts'
       - 'qa/faq-accordion-certification.spec.ts'
       - 'qa/faq-structured-data-parity.spec.ts'
@@ -26,6 +28,7 @@ on:
       - 'package.json'
       - '.github/workflows/dental-live-interaction.yml'
       - '.github/workflows/deploy-builder.yml'
+      - '.github/workflows/deploy-live.yml'
   push:
     branches: [main]
     paths:
@@ -40,6 +43,8 @@ on:
       - 'packages/sections/**'
       - 'qa/live-rendered-interaction-parity.spec.ts'
       - 'qa/live-functional-interaction-certification.spec.ts'
+      - 'qa/live-production-section-registry.spec.ts'
+      - 'qa/live-implant-treatment-render-parity.spec.ts'
       - 'qa/gallery-lightbox-certification.spec.ts'
       - 'qa/faq-accordion-certification.spec.ts'
       - 'qa/faq-structured-data-parity.spec.ts'
@@ -51,6 +56,7 @@ on:
       - 'package.json'
       - '.github/workflows/dental-live-interaction.yml'
       - '.github/workflows/deploy-builder.yml'
+      - '.github/workflows/deploy-live.yml'
 
 permissions:
   contents: read
@@ -58,7 +64,7 @@ permissions:
 jobs:
   certify-live-interactions:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,16 +82,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Typecheck published runtime boundary
+        run: |
+          pnpm --filter @micirql/live-runtime typecheck
+          pnpm --filter @micirql/live typecheck
+
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Certify published live interaction, functional, gallery, FAQ and FAQPage parity
-        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/faq-structured-data-parity.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
+      - name: Certify published live registry, interaction, functional, implant render, gallery, FAQ and FAQPage parity
+        run: pnpm exec playwright test --config=playwright.dental-visual.config.ts qa/live-rendered-interaction-parity.spec.ts qa/live-functional-interaction-certification.spec.ts qa/live-production-section-registry.spec.ts qa/live-implant-treatment-render-parity.spec.ts qa/gallery-lightbox-certification.spec.ts qa/faq-accordion-certification.spec.ts qa/faq-structured-data-parity.spec.ts qa/dental-interaction-allowlist-gate.spec.ts
 
-      - name: Materialize same-commit live functional/gallery/FAQ interaction certificate
+      - name: Materialize same-commit live functional/gallery/FAQ/implant-render certificate
         run: node qa/certify-dental-live-interactions.mjs
 
-      - name: Upload live functional/gallery/FAQ interaction evidence
+      - name: Upload live functional/gallery/FAQ/implant-render evidence
         uses: actions/upload-artifact@v4
         with:
           name: micirql-dental-published-live-interactions

@@ -96,3 +96,14 @@ test("production deployment verifies all 20 layouts are Builder and live functio
   expect(verifyIndex).toBeGreaterThanOrEqual(0);
   expect(uploadIndex).toBeGreaterThan(verifyIndex);
 });
+
+test("live Cloudflare deployment cannot run before published interaction and gallery browser certification", async () => {
+  const workflow = await text(".github/workflows/deploy-live.yml");
+  expect(workflow).toContain("qa/live-rendered-interaction-parity.spec.ts");
+  expect(workflow).toContain("qa/live-functional-interaction-certification.spec.ts");
+  expect(workflow).toContain("qa/gallery-lightbox-certification.spec.ts");
+  const certifyIndex = workflow.indexOf("Certify published live interaction, forms and gallery behavior");
+  const deployIndex = workflow.indexOf("Deploy micirql-live");
+  expect(certifyIndex).toBeGreaterThanOrEqual(0);
+  expect(deployIndex).toBeGreaterThan(certifyIndex);
+});

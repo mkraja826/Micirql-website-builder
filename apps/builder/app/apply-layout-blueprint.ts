@@ -137,9 +137,9 @@ function toneForArchetype(archetype: string): NonNullable<Site["theme"]["brand"]
   const value = archetype.toLowerCase();
   if (/editorial|brand-led/.test(value)) return "editorial";
   if (/minimal-premium|visual-image-led/.test(value)) return "premium";
-  if (/modern-experimental/.test(value)) return "innovative";
-  if (/conversion/.test(value)) return "professional";
-  return "professional";
+  if (/modern-experimental/.test(value)) return "bold";
+  if (/conversion/.test(value)) return "corporate";
+  return "corporate";
 }
 
 function buttonStyleFor(archetype: string, radius: WebsiteLayoutBlueprint["design"]["radius"]): NonNullable<Site["theme"]["brand"]["intelligence"]>["buttonStyle"] {

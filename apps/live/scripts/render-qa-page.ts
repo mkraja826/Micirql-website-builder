@@ -11,18 +11,25 @@ type Input = {
   origin: string;
 };
 
-const input = JSON.parse(readFileSync(0, "utf8")) as Input;
-const prepared = await preparePage({
-  site: input.site,
-  path: input.path,
-  origin: input.origin,
-  registry: createProductionSectionRendererRegistry(),
-  functions: createFunctionBindingResolver({ actionIds: nativeFunctionCatalog.map((item) => item.id) }),
-  mode: "production",
-});
+async function main() {
+  const input = JSON.parse(readFileSync(0, "utf8")) as Input;
+  const prepared = await preparePage({
+    site: input.site,
+    path: input.path,
+    origin: input.origin,
+    registry: createProductionSectionRendererRegistry(),
+    functions: createFunctionBindingResolver({ actionIds: nativeFunctionCatalog.map((item) => item.id) }),
+    mode: "production",
+  });
 
-if (!prepared.ok) {
-  throw new Error(`Unable to prepare isolated live QA page: ${prepared.issues.map((issue) => `${issue.code}: ${issue.message}`).join(" | ")}`);
+  if (!prepared.ok) {
+    throw new Error(`Unable to prepare isolated live QA page: ${prepared.issues.map((issue) => `${issue.code}: ${issue.message}`).join(" | ")}`);
+  }
+
+  process.stdout.write(renderToStaticMarkup(renderPreparedPage(prepared.value)));
 }
 
-process.stdout.write(renderToStaticMarkup(renderPreparedPage(prepared.value)));
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

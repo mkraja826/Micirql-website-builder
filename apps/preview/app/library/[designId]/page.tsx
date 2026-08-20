@@ -42,6 +42,7 @@ export default async function DesignPreviewPage({ params }: { params: Promise<{ 
 
   return (
     <main
+      data-mi-site="section-preview"
       data-mi-preview-id={entry.id}
       data-mi-theme={entry.theme}
       data-mi-family={entry.family}

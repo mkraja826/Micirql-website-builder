@@ -47,10 +47,10 @@
   }
 }
 
-/* Shared tablet conversion geometry. At 768px the desktop split CTA primitive
- * can compress perfectly ordinary labels into two lines. Keep controls readable
+/* Shared tablet conversion geometry. At 768-1024px the desktop split CTA
+ * primitive can compress ordinary labels into two lines. Keep controls readable
  * and let the conversion block use the available width before desktop resumes. */
-@media (min-width:48rem) and (max-width:63.99rem){
+@media (min-width:48rem) and (max-width:64rem){
   [data-mi-layout-blueprint^="dental-"] :is(.mi-section__actions,.mi-conv-actions){
     min-width:0;
     max-width:100%;
@@ -73,6 +73,39 @@
   [data-mi-layout-blueprint^="dental-"] .mi-services--spotlight .mi-services-spotlight>*{
     min-width:0;
     max-width:100%;
+  }
+
+  /* Implant Atelier's featured doctor composition is intentionally wide on
+   * desktop. At tablet width the lead portrait/copy pair must stack so the
+   * clinician label and copy stay inside the certified preview boundary. */
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-featured,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:minmax(0,1fr)!important;
+    min-width:0;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead>*{
+    min-width:0;
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    width:100%;
+    min-height:0;
+    max-height:34rem;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead :is(h3,p,span){
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
+/* Boutique Cosmetic uses a desktop fashion-spread hero. Keep the same visual
+ * dominance without a negative right margin that deliberately escapes the
+ * production preview/document boundary. */
+@media (min-width:64.01rem){
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media{
+    margin-right:0!important;
+    max-width:min(39rem,100%)!important;
   }
 }
 

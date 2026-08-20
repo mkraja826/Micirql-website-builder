@@ -4,10 +4,9 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { nativeFunctionCatalog } from "@micirql/functions";
 import { DENTAL_LAYOUT_BLUEPRINTS } from "@micirql/design-engine";
-import { createFunctionBindingResolver, renderPreparedPage, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
+import { createFunctionBindingResolver, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
 import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import { sectionDesignId, type SectionFamily } from "@micirql/sections";
-import { prerender } from "react-dom/static";
 import { applyDentalMultipageArchitecture } from "../apps/builder/app/dental-multipage-architecture";
 import { applyDentalMultipageMediaSafety } from "../apps/builder/app/dental-multipage-media-safety";
 import { applyWebsiteLayoutBlueprint, layoutCoverage } from "../apps/builder/app/apply-layout-blueprint";
@@ -181,16 +180,18 @@ async function generatedLiveRuntimeCss(): Promise<string> {
   return JSON.parse(match[1]) as string;
 }
 
-async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let output = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    output += decoder.decode(value, { stream: true });
-  }
-  return output + decoder.decode();
+function renderPreparedPageIsolated(prepared: PreparedPage): string {
+  return execFileSync(
+    pnpm,
+    ["--filter", "@micirql/live", "exec", "tsx", "scripts/render-qa-page.ts"],
+    {
+      cwd: repoRoot,
+      env: process.env,
+      encoding: "utf8",
+      input: JSON.stringify({ site: prepared.site, path: prepared.page.path, origin: ORIGIN }),
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  );
 }
 
 async function installPublishedRoutes(page: Page) {
@@ -246,8 +247,7 @@ test.beforeAll(async () => {
     registry: emptyExternalRegistry,
     functions: createFunctionBindingResolver({ actionIds: nativeFunctionCatalog.map((item) => item.id) }),
     async renderPage(prepared: PreparedPage) {
-      const { prelude } = await prerender(renderPreparedPage(prepared));
-      return streamToString(prelude);
+      return renderPreparedPageIsolated(prepared);
     },
     cacheTtlSeconds: 0,
   });

@@ -6,6 +6,7 @@ import { StructuralFooter, StructuralNavbar } from "./shell-sections";
 import { StructuralAbout, StructuralProof, StructuralServices } from "./content-sections";
 import { StructuralContact, StructuralCta, StructuralProcess } from "./conversion-sections";
 import { StructuralFeatures, StructuralGallery, StructuralTeam } from "./media-sections";
+import { StructuralFaq } from "./faq-sections";
 
 type Action = { label: string; href: string };
 type Item = { title: string; description?: string; image?: string };
@@ -35,6 +36,7 @@ export type UniversalSectionProps = {
   image?: { src: string; alt: string };
   logo?: LogoPresentation;
   formAction?: string;
+  faqMode?: "single" | "multi";
   paletteRole?: PaletteRole;
   cardPaletteRole?: PaletteRole;
   ctaPaletteRole?: PaletteRole;
@@ -118,6 +120,7 @@ export function Section({ family, variant, props }: { family: SectionFamily; var
   if (family === "services") return <StructuralServices {...variantProps} />;
   if (family === "features") return <StructuralFeatures {...variantProps} />;
   if (family === "process") return <StructuralProcess {...variantProps} />;
+  if (family === "faq") return <StructuralFaq {...variantProps} />;
   if (family === "gallery") return <StructuralGallery {...variantProps} />;
   if (family === "team") return <StructuralTeam {...variantProps} />;
   if (family === "testimonials") return <StructuralProof {...variantProps} />;

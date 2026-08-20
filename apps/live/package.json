@@ -27,6 +27,7 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "tsx": "latest",
     "typescript": "latest",
     "wrangler": "latest"
   }

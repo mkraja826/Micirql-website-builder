@@ -3,6 +3,7 @@ import { nativeFunctionCatalog } from "@micirql/functions";
 import { createProductionSectionRendererRegistry } from "@micirql/live-runtime/production-section-registry";
 import { createFunctionBindingResolver, preparePage, renderPreparedPage } from "@micirql/renderer";
 import type { Site } from "@micirql/schema";
+import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 type Input = {
@@ -10,6 +11,13 @@ type Input = {
   path: string;
   origin: string;
 };
+
+/* The QA harness executes workspace TSX directly through tsx. Some dependency
+ * files can be emitted with the classic JSX factory even though production
+ * Next builds use the automatic runtime. Expose React on the Node global so
+ * those classic factory references remain deterministic inside this isolated
+ * certification process without changing published application behavior. */
+(globalThis as typeof globalThis & { React?: typeof React }).React = React;
 
 async function main() {
   const input = JSON.parse(readFileSync(0, "utf8")) as Input;

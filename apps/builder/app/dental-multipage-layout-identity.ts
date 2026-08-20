@@ -25,6 +25,9 @@ export type DentalMultipageLayoutIdentityResult = {
  * Section-specific layout IDs/patterns are intentionally not copied: treatment
  * sections have their own semantic role, while the site-level blueprint still
  * owns typography, rhythm, palette, radius and responsive art direction.
+ *
+ * Homepage identity is authoritative so switching a certified layout also
+ * updates any secondary page metadata left from an earlier design selection.
  */
 export function applyDentalMultipageLayoutIdentity(site: Site): DentalMultipageLayoutIdentityResult {
   const next = structuredClone(site);
@@ -46,10 +49,10 @@ export function applyDentalMultipageLayoutIdentity(site: Site): DentalMultipageL
     if (page.path === "/") continue;
     let pageChanged = false;
     page.sections = page.sections.map((section) => {
-      const missingIdentity = Object.keys(identity).some((key) => section.props[key] === undefined);
-      if (!missingIdentity) return section;
+      const staleIdentity = Object.entries(identity).some(([key, value]) => !sameValue(section.props[key], value));
+      if (!staleIdentity) return section;
       pageChanged = true;
-      return { ...section, props: { ...identity, ...section.props } };
+      return { ...section, props: { ...section.props, ...structuredClone(identity) } };
     });
     if (pageChanged) pagesUpdated += 1;
   }
@@ -60,4 +63,10 @@ export function applyDentalMultipageLayoutIdentity(site: Site): DentalMultipageL
     layoutBlueprintId,
     pagesUpdated,
   };
+}
+
+function sameValue(left: unknown, right: unknown): boolean {
+  if (left === right) return true;
+  try { return JSON.stringify(left) === JSON.stringify(right); }
+  catch { return false; }
 }

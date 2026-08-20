@@ -45,14 +45,45 @@ export function StructuralTeam(props: VariantProps) {
 }
 
 function GalleryItem({ item, index, mode }: { item: Item; index: number; mode: string }) {
-  return <figure className={`mi-gallery-card mi-gallery-card--${mode}`}>{item.image ? <img src={item.image} alt={item.title} loading="lazy" data-mi-image-field={`items.${index}.image`} /> : <div className="mi-gallery-placeholder" />}<figcaption><strong><InlineField path={`items.${index}.title`}>{item.title}</InlineField></strong>{item.description ? <span><InlineField path={`items.${index}.description`}>{item.description}</InlineField></span> : null}</figcaption></figure>;
+  const label = item.title || `Gallery image ${index + 1}`;
+  return <figure className={`mi-gallery-card mi-gallery-card--${mode}`} data-mi-gallery-item>
+    {item.image ? <button
+      type="button"
+      className="mi-gallery-trigger"
+      data-mi-gallery-open
+      data-mi-gallery-src={item.image}
+      data-mi-gallery-alt={label}
+      data-mi-gallery-title={label}
+      data-mi-gallery-description={item.description ?? ""}
+      aria-label={`Open ${label} image`}
+    ><img src={item.image} alt={label} loading="lazy" data-mi-image-field={`items.${index}.image`} /></button> : <div className="mi-gallery-placeholder" />}
+    <figcaption><strong><InlineField path={`items.${index}.title`}>{item.title}</InlineField></strong>{item.description ? <span><InlineField path={`items.${index}.description`}>{item.description}</InlineField></span> : null}</figcaption>
+  </figure>;
+}
+
+function GalleryLightbox() {
+  return <dialog className="mi-gallery-lightbox" data-mi-gallery-lightbox aria-label="Gallery image viewer">
+    <div className="mi-gallery-lightbox__surface">
+      <button type="button" className="mi-gallery-lightbox__close" data-mi-gallery-close aria-label="Close image viewer">×</button>
+      <button type="button" className="mi-gallery-lightbox__nav mi-gallery-lightbox__nav--prev" data-mi-gallery-prev aria-label="Previous image">←</button>
+      <figure className="mi-gallery-lightbox__figure">
+        <img data-mi-gallery-lightbox-image src="" alt="" />
+        <figcaption>
+          <strong data-mi-gallery-lightbox-title />
+          <span data-mi-gallery-lightbox-description />
+          <small data-mi-gallery-lightbox-position aria-live="polite" />
+        </figcaption>
+      </figure>
+      <button type="button" className="mi-gallery-lightbox__nav mi-gallery-lightbox__nav--next" data-mi-gallery-next aria-label="Next image">→</button>
+    </div>
+  </dialog>;
 }
 
 export function StructuralGallery(props: VariantProps) {
   const items = props.items ?? [];
-  if (props.variant === 2) return <section className="mi-section mi-gallery-section mi-gallery-section--mosaic"><Container><Heading {...props} /><div className="mi-gallery-mosaic">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode={index % 4 === 0 ? "large" : "small"} />)}</div></Container></section>;
-  if (props.variant === 3) return <section className="mi-section mi-gallery-section mi-gallery-section--rail"><Container><Heading {...props} /><div className="mi-gallery-rail">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="rail" />)}</div></Container></section>;
-  if (props.variant === 4) return <section className="mi-section mi-gallery-section mi-gallery-section--editorial"><Container><div className="mi-gallery-editorial"><Heading {...props} /><div>{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="editorial" />)}</div></div></Container></section>;
-  if (props.variant === 5) return <section className="mi-section mi-gallery-section mi-gallery-section--full"><div className="mi-gallery-full">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="full" />)}</div></section>;
-  return <section className="mi-section mi-gallery-section mi-gallery-section--grid"><Container><Stack gap="xl"><Heading {...props} /><div className="mi-gallery-struct-grid">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="grid" />)}</div></Stack></Container></section>;
+  if (props.variant === 2) return <section className="mi-section mi-gallery-section mi-gallery-section--mosaic"><Container><Heading {...props} /><div className="mi-gallery-mosaic">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode={index % 4 === 0 ? "large" : "small"} />)}</div></Container><GalleryLightbox /></section>;
+  if (props.variant === 3) return <section className="mi-section mi-gallery-section mi-gallery-section--rail"><Container><Heading {...props} /><div className="mi-gallery-rail">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="rail" />)}</div></Container><GalleryLightbox /></section>;
+  if (props.variant === 4) return <section className="mi-section mi-gallery-section mi-gallery-section--editorial"><Container><div className="mi-gallery-editorial"><Heading {...props} /><div>{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="editorial" />)}</div></div></Container><GalleryLightbox /></section>;
+  if (props.variant === 5) return <section className="mi-section mi-gallery-section mi-gallery-section--full"><div className="mi-gallery-full">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="full" />)}</div><GalleryLightbox /></section>;
+  return <section className="mi-section mi-gallery-section mi-gallery-section--grid"><Container><Stack gap="xl"><Heading {...props} /><div className="mi-gallery-struct-grid">{items.map((item, index) => <GalleryItem key={`${item.title}-${index}`} item={item} index={index} mode="grid" />)}</div></Stack></Container><GalleryLightbox /></section>;
 }

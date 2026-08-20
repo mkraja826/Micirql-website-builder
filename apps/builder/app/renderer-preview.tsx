@@ -60,6 +60,8 @@ export function RendererPreview({
   const requestId = useRef(0);
   const previewRoot = useRef<HTMLElement>(null);
   const repairCss = persistedFirstScreenRepairCss(site, viewport, path);
+  const layoutBlueprintId = sectionStringProp(preview.sections, "layoutBlueprintId");
+  const layoutArchetype = sectionStringProp(preview.sections, "layoutArchetype");
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -144,7 +146,17 @@ export function RendererPreview({
       {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
       {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
       {status === "ready" && preview?.sections ? (
-        <main ref={previewRoot} className="renderer-preview-document" data-mi-site={preview.siteId} data-mi-page={preview.pageId} data-mi-theme={preview.theme} data-mi-first-screen-repair={repairCss ? "1" : undefined} style={(preview.themeStyle ?? {}) as CSSProperties}>
+        <main
+          ref={previewRoot}
+          className="renderer-preview-document"
+          data-mi-site={preview.siteId}
+          data-mi-page={preview.pageId}
+          data-mi-theme={preview.theme}
+          data-mi-layout-blueprint={layoutBlueprintId}
+          data-mi-layout-archetype={layoutArchetype}
+          data-mi-first-screen-repair={repairCss ? "1" : undefined}
+          style={(preview.themeStyle ?? {}) as CSSProperties}
+        >
           {repairCss ? <style data-mi-persisted-first-screen-repair>{repairCss}</style> : null}
           {insertionZone(undefined, 0)}
           {preview.sections.map((section, index) => {
@@ -222,6 +234,14 @@ function localPreview(site: Site, path: string): PreviewPayload {
     },
     sections,
   };
+}
+
+function sectionStringProp(sections: PreviewSection[] | undefined, key: string): string | undefined {
+  for (const section of sections ?? []) {
+    const value = section.props[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return undefined;
 }
 
 function legacyFamily(componentId: string): SectionFamily | undefined {

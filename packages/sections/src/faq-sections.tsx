@@ -27,10 +27,17 @@ function Heading(props: UniversalSectionProps) {
 
 function FaqList({ props, variant }: { props: UniversalSectionProps; variant: SectionVariant }) {
   // Keep visible FAQ pairs and FAQPage JSON-LD on one content contract: a
-  // disclosure only exists when both the question and answer are present.
+  // disclosure only exists when both the question and answer are present, and
+  // the first visible occurrence of a repeated question is authoritative.
+  const seenQuestions = new Set<string>();
   const items = (props.items ?? [])
     .map((item: Item, sourceIndex) => ({ sourceIndex, question: text(item.title), answer: text(item.description) }))
-    .filter((entry) => entry.question && entry.answer);
+    .filter((entry) => entry.question && entry.answer)
+    .filter((entry) => {
+      if (seenQuestions.has(entry.question)) return false;
+      seenQuestions.add(entry.question);
+      return true;
+    });
   const mode = props.faqMode ?? (variant === 2 || variant === 4 ? "multi" : "single");
   const groupId = `faq-${slug(props.title)}-${variant}`;
   return <div className="mi-faq-list" data-mi-faq data-mi-faq-mode={mode} data-mi-faq-group={groupId}>

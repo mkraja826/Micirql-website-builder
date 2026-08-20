@@ -85,6 +85,7 @@ try {
 }
 
 if (multipageCertification) {
+  if (multipageCertification.schemaVersion !== 2) failures.push(`Unexpected Dental multi-page certification schema ${multipageCertification.schemaVersion ?? "missing"}.`);
   if (multipageCertification.certified !== true) failures.push("Dental multi-page architecture certification did not pass.");
   if (multipageCertification.sourceCommit !== currentSha) {
     failures.push(`Dental multi-page architecture certification is stale (${multipageCertification.sourceCommit ?? "unknown"}); expected ${currentSha}.`);
@@ -98,6 +99,7 @@ if (multipageCertification) {
   const requiredMultipageTests = [
     "qa/dental-multipage-architecture.spec.ts",
     "qa/dental-multipage-media-safety.spec.ts",
+    "qa/dental-multipage-layout-identity.spec.ts",
     "qa/dental-breadcrumb-structured-data.spec.ts",
     "qa/dental-multipage-live-routing.spec.ts",
   ];
@@ -106,8 +108,8 @@ if (multipageCertification) {
       failures.push(`Dental multi-page test evidence is missing: ${sourceTest}.`);
     }
   }
-  if (!Array.isArray(multipageCertification.requiredChecks) || multipageCertification.requiredChecks.length < 11) {
-    failures.push("Dental multi-page architecture certification is incomplete.");
+  if (!Array.isArray(multipageCertification.requiredChecks) || multipageCertification.requiredChecks.length < 14) {
+    failures.push("Dental multi-page architecture/blueprint-identity certification is incomplete.");
   }
 }
 
@@ -230,6 +232,8 @@ const certification = {
     "rendered interaction contract certified for the same source commit",
     "published live functional/gallery/FAQ/structured-data contract certified for the same source commit",
     "Dental multi-page architecture contract certified for the same source commit",
+    "certified homepage blueprint identity remains authoritative across generated treatment and contact pages",
+    "Builder Preview exposes the same layout identity root used by published rendering",
     "Dental Implants treatment page rendered across all 20 layouts and six required viewports for the same source commit",
     "Dental Implants treatment page has no overflow, clipped copy, section overlap or malformed controls",
     "Dental Implants treatment page has safe imagery and no empty hero media placeholder",
@@ -241,6 +245,7 @@ const certification = {
     "homepage service cards and global navigation link to generated treatment pages",
     "treatment pages link to the consultation page and stable homepage treatment anchor",
     "visible treatment breadcrumbs mirror BreadcrumbList structured data",
+    "mobile treatment breadcrumbs remain genuine touch targets",
     "empty treatment hero media slots cannot reach production",
     "published runtime resolves generated page paths without homepage fallback",
     "published sitemap includes every indexable generated Site page",
@@ -269,4 +274,4 @@ const certification = {
 await writeFile(certificationPath, JSON.stringify(certification, null, 2), "utf8");
 await writeFile(runtimeEnvPath, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS=${runtimeAllowlist}\n`, "utf8");
-console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live and multi-page architecture contracts for ${currentSha}.`);
+console.log(`Certified ${certifiedLayoutIds.length} Dental layouts against homepage and Dental Implants six-viewport rendering plus Builder, published-live and cross-page blueprint-identity contracts for ${currentSha}.`);

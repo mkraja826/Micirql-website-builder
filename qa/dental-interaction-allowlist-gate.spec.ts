@@ -7,7 +7,7 @@ async function text(path: string) {
   return readFile(`${root}/${path}`, "utf8");
 }
 
-test("dental visual certification runs interaction, multi-page and implant treatment rendering before emitting runtime allowlist", async () => {
+test("dental visual certification runs interaction, multi-page identity and implant treatment rendering before emitting runtime allowlist", async () => {
   const pkg = JSON.parse(await text("package.json"));
   const command = String(pkg.scripts?.["qa:dental-visual"] ?? "");
   const interactionSpec = "qa/dental-rendered-interaction-certification.spec.ts";
@@ -20,6 +20,7 @@ test("dental visual certification runs interaction, multi-page and implant treat
   const multipageSpecs = [
     "qa/dental-multipage-architecture.spec.ts",
     "qa/dental-multipage-media-safety.spec.ts",
+    "qa/dental-multipage-layout-identity.spec.ts",
     "qa/dental-breadcrumb-structured-data.spec.ts",
     "qa/dental-multipage-live-routing.spec.ts",
   ];
@@ -52,7 +53,7 @@ test("dental visual certification runs interaction, multi-page and implant treat
   expect(command.indexOf(implantTreatmentVisualMaterializer)).toBeLessThan(command.indexOf(allowlistCertifier));
 });
 
-test("runtime allowlist certifier fails closed without same-commit interaction, multi-page and implant treatment visual evidence", async () => {
+test("runtime allowlist certifier fails closed without same-commit interaction, blueprint identity and implant treatment visual evidence", async () => {
   const source = await text("qa/certify-dental-top20-visual.mjs");
 
   expect(source).toContain("interaction-certification.json");
@@ -69,11 +70,14 @@ test("runtime allowlist certifier fails closed without same-commit interaction, 
   expect(source).toContain("qa/faq-structured-data-parity.spec.ts");
   expect(source).toContain("qa/dental-multipage-architecture.spec.ts");
   expect(source).toContain("qa/dental-multipage-media-safety.spec.ts");
+  expect(source).toContain("qa/dental-multipage-layout-identity.spec.ts");
   expect(source).toContain("qa/dental-breadcrumb-structured-data.spec.ts");
   expect(source).toContain("qa/dental-multipage-live-routing.spec.ts");
   expect(source).toContain("interactionCertification.sourceCommit !== currentSha");
   expect(source).toContain("liveInteractionCertification.sourceCommit !== currentSha");
   expect(source).toContain("multipageCertification.sourceCommit !== currentSha");
+  expect(source).toContain("multipageCertification.schemaVersion !== 2");
+  expect(source).toContain("multipageCertification.requiredChecks.length < 14");
   expect(source).toContain("implantTreatmentVisualCertification.sourceCommit !== currentSha");
   expect(source).toContain("Dental multi-page architecture certification is missing; runtime allowlist cannot be emitted.");
   expect(source).toContain("Dental Implants six-viewport treatment visual certification is missing; runtime allowlist cannot be emitted.");
@@ -183,7 +187,7 @@ test("live Cloudflare deployment cannot run before FAQ, breadcrumb and multi-pag
   expect(deployIndex).toBeGreaterThan(certifyIndex);
 });
 
-test("Playwright config cannot silently filter the implant treatment visual evidence file named by Dental QA", async () => {
+test("Playwright config cannot silently filter the implant treatment and blueprint identity evidence files named by Dental QA", async () => {
   const visualConfig = await text("playwright.dental-visual.config.ts");
   const blueprintConfig = await text("playwright.dental-blueprint.config.ts");
 
@@ -198,6 +202,7 @@ test("Playwright config cannot silently filter the implant treatment visual evid
     "faq-structured-data-parity",
     "dental-multipage-architecture",
     "dental-multipage-media-safety",
+    "dental-multipage-layout-identity",
     "dental-breadcrumb-structured-data",
     "dental-multipage-live-routing",
     "dental-interaction-allowlist-gate",

@@ -97,7 +97,8 @@ export function canGenerate(d:SectionVisualDecision){
  const dental=/dental|dentist|dentistry|orthodont|endodont|implant|smile-design|root-canal|scanner|scanning|restorative/.test(context);
  if(!dental)return false;
  if(requiresCustomerIdentityMedia(d)||requiresCustomerEvidenceMedia(d))return false;
- if(/before[- ]?and[- ]?after|before[- ]?after|treatment result|patient outcome|real patient|verified case|actual clinic|clinic interior supplied|real clinic|specific equipment|credentials/.test(context))return false;
+ const claimContext=context.replace(/not (?:the )?actual clinic/g,"").replace(/unless real clinic media is supplied/g,"");
+ if(/before[- ]?and[- ]?after|before[- ]?after|treatment result|patient outcome|real patient|verified case|actual clinic|clinic interior supplied|real clinic|specific equipment|credentials/.test(claimContext))return false;
  if(d.role==="abstract"||d.role==="illustration"||d.role==="texture"||d.role==="product-ui")return true;
  const safeGeneric=/generic|non-identifying|context|concept|without|avoid implying|no synthetic|calm|non-graphic|truthful|supporting visual/.test(subject);
  if(!safeGeneric)return false;

@@ -1,6 +1,8 @@
 import { handleLiveRequest, type LiveRuntimeDependencies } from "@micirql/live-runtime";
+import { createProductionSectionRendererRegistry } from "@micirql/live-runtime/production-section-registry";
 
 let dependencies: LiveRuntimeDependencies | undefined;
+const builtInRegistry = createProductionSectionRendererRegistry();
 const RUNTIME_STYLESHEET = '<link rel="stylesheet" href="/__micirql/runtime.css">';
 
 export function configureLiveHostRuntime(next: LiveRuntimeDependencies) {
@@ -15,7 +17,16 @@ export async function serveLiveRequest(request: Request) {
     });
   }
 
-  const response = await handleLiveRequest(request, dependencies);
+  const configured = dependencies;
+  const response = await handleLiveRequest(request, {
+    ...configured,
+    registry: {
+      async resolve(componentId, version) {
+        return await configured.registry.resolve(componentId, version)
+          ?? builtInRegistry.resolve(componentId, version);
+      },
+    },
+  });
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("text/html") || request.method.toUpperCase() === "HEAD") return response;
 

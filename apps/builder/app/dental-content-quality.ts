@@ -1,5 +1,6 @@
 import type { Site } from "@micirql/schema";
 import type { OnboardingProfile } from "./preset-ranking";
+import { requestedDentalTreatments } from "./dental-specialty";
 
 export type DentalContentIssue = {
   code: string;
@@ -15,15 +16,6 @@ export type DentalContentQualityResult = {
   issues: DentalContentIssue[];
 };
 
-const TREATMENT_TERMS: Array<{ id: string; pattern: RegExp }> = [
-  { id: "implant", pattern: /\bimplant(?:s| dentistry)?\b|full[- ]arch|all[- ]on[- ](?:4|6)/i },
-  { id: "cosmetic", pattern: /cosmetic dentistry|smile design|smile makeover|veneer(?:s)?/i },
-  { id: "rehabilitation", pattern: /full[- ]mouth rehabilitation|mouth rehabilitation|bite rehabilitation/i },
-  { id: "crowns", pattern: /\bcrown(?:s)?\b|ceramic restoration/i },
-  { id: "orthodontics", pattern: /orthodont|aligner|braces/i },
-  { id: "endodontics", pattern: /root canal|endodont/i },
-];
-
 const CLINICAL_PROCESS_TERMS = /consultation|assessment|scan|imaging|planning|treatment plan|review|follow[- ]up/i;
 const PROOF_TERMS = /before.?after|case|result|testimonial|patient stor|doctor|dentist|clinician/i;
 const ACTION_TERMS = /book|consultation|appointment|whatsapp|call|check availability|request/i;
@@ -38,7 +30,7 @@ const GENERIC_DENTAL_HEADLINES = [
 export function evaluateDentalContentQuality(site: Site, profile: OnboardingProfile): DentalContentQualityResult {
   const issues: DentalContentIssue[] = [];
   const text = siteText(site);
-  const requested = requestedTreatments(profile);
+  const requested = requestedDentalTreatments(profile);
 
   for (const treatment of requested.slice(0, 5)) {
     if (!treatment.pattern.test(text)) {
@@ -87,11 +79,6 @@ export function evaluateDentalContentQuality(site: Site, profile: OnboardingProf
   return { score: Math.max(0, 100 - errors * 18 - warnings * 5), issues };
 }
 
-function requestedTreatments(profile: OnboardingProfile) {
-  const input = [profile.industry, profile.subindustry, ...(profile.services ?? []), ...(profile.goals ?? []), profile.notes].filter(Boolean).join(" ");
-  return TREATMENT_TERMS.filter((term) => term.pattern.test(input));
-}
-
 function siteText(site: Site) {
   return site.pages.flatMap((page) => page.sections.filter((section) => !section.hidden).map((section) => sectionText(section.props))).join(" ");
 }
@@ -114,6 +101,6 @@ function value(input: unknown): string {
 
 function family(componentId: string): string | undefined {
   const id = componentId.toLowerCase();
-  if (id.startsWith("hero." ) || id.includes("-hero-")) return "hero";
+  if (id.startsWith("hero.") || id.includes("-hero-")) return "hero";
   return undefined;
 }

@@ -7,20 +7,21 @@ const outputDirectory = path.join(root, "test-results", "dental-top20-visual-evi
 const outputPath = path.join(outputDirectory, "live-interaction-certification.json");
 const currentSha = process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 
-// This materializer must only run after both published-live browser suites
+// This materializer must only run after all published-live browser suites
 // succeed. The allowlist certifier verifies this certificate belongs to the
 // exact source commit being deployed.
 const certification = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   certified: true,
   sourceCommit: currentSha,
   generatedAt: new Date().toISOString(),
   sourceTests: [
     "qa/live-rendered-interaction-parity.spec.ts",
     "qa/live-functional-interaction-certification.spec.ts",
+    "qa/gallery-lightbox-certification.spec.ts",
   ],
   surface: "published-live-runtime",
-  contract: "published-live-functional-interaction-v2",
+  contract: "published-live-functional-gallery-interaction-v3",
   requiredChecks: [
     "generated live runtime CSS contains the shared interaction layer",
     "published CTA pointer feedback is visible and restrained",
@@ -36,9 +37,14 @@ const certification = {
     "appointment forms block incomplete native submissions",
     "valid appointment forms POST the required functional payload",
     "published success and validation-error states are announced through the aria-live form status",
+    "gallery images open an accessible native dialog from keyboard or pointer input",
+    "gallery ArrowLeft and ArrowRight navigation updates image context and live position",
+    "gallery Escape and explicit close restore focus to the invoking image trigger",
+    "gallery lightbox controls meet the 44px mobile target minimum and stay viewport-contained",
+    "gallery swipe navigation requires a deliberate horizontal gesture and ignores vertical-dominant movement",
   ],
 };
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(outputPath, JSON.stringify(certification, null, 2), "utf8");
-console.log(`Published live Dental functional interaction contract certified for ${currentSha}.`);
+console.log(`Published live Dental functional + gallery interaction contract certified for ${currentSha}.`);

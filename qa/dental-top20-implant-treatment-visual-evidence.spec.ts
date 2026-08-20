@@ -43,7 +43,10 @@ const baseProfile: OnboardingProfile = {
   services: ["dental implants", "cosmetic dentistry", "root canal treatment"],
 };
 
-test.setTimeout(480_000);
+// This one evidence case intentionally captures 20 layouts x 6 viewports.
+// Keep the ceiling below the workflow timeout while allowing cold CI runners
+// enough room to start Next.js, switch pages and persist 120 screenshots.
+test.setTimeout(1_200_000);
 
 function buildSite(layout: WebsiteLayoutBlueprint): Site {
   const name = layout.id.replace(/^dental-\d+-/, "").replace(/-/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());

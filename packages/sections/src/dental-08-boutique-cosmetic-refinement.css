@@ -1,0 +1,26 @@
+/* Dental 08 — Boutique Cosmetic exact desktop-boundary refinement.
+ *
+ * The production viewport suite certifies 1024px exactly (64rem). The shared
+ * Boutique desktop containment previously began at 64.01rem, leaving that one
+ * boundary on the wider editorial media geometry. Keep the existing art
+ * direction and apply the same contained tracks from 64rem upward.
+ */
+@media (min-width:64rem){
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-hero__editorial-grid{
+    grid-template-columns:minmax(2.5rem,.08fr) minmax(0,.62fr) minmax(0,1.3fr)!important;
+  }
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    justify-self:stretch!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-08-boutique-cosmetic"] .mi-hero--editorial .mi-section__media>*{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}

@@ -13,6 +13,7 @@ import "@micirql/sections/image-slots.css";
 import "@micirql/sections/premium-mobile.css";
 import "@micirql/sections/premium-output-system.css";
 import "@micirql/sections/premium-geometry.css";
+import "@micirql/sections/interaction-polish.css";
 
 export const metadata: Metadata = {
   title: "MiCirql Preview",

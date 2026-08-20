@@ -93,7 +93,8 @@ const FAQ_DEFINITIONS: Record<Exclude<DentalTreatmentId, "general">, FaqDefiniti
 };
 
 const DECISION_SUPPORT_FAMILIES = new Set(["services", "features", "about", "process", "testimonials", "gallery", "team"]);
-const CONVERSION_FAMILIES = new Set(["cta", "contact", "footer", "lead-capture", "form"]);
+const CONVERSION_FAMILIES = new Set(["cta", "contact", "lead-capture", "form"]);
+const TRAILING_CONVERSION_FAMILIES = new Set([...CONVERSION_FAMILIES, "footer"]);
 
 export function applyDentalFaqIntelligence(site: Site, profile: OnboardingProfile): DentalFaqIntelligenceResult {
   if (!isDentalProfileSignal(profile)) return { site, applied: false, reason: "profile-is-not-dental" };
@@ -156,7 +157,7 @@ function decisionStageInsertionIndex(sections: SiteSection[]): number {
   let index = boundary;
   while (index > 0) {
     const family = familyFromId(sections[index - 1]!.component.componentId);
-    if (!family || !CONVERSION_FAMILIES.has(family)) break;
+    if (!family || !TRAILING_CONVERSION_FAMILIES.has(family)) break;
     index -= 1;
   }
   return index;

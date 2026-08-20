@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import type { Site, SitePage } from "@micirql/schema";
 import { buildRenderedSeo } from "@micirql/renderer";
@@ -160,4 +161,18 @@ test("pages without visible valid FAQ pairs do not emit FAQPage structured data"
   page.sections = page.sections.map((section) => section.component.componentId.includes("-FAQ-") ? { ...section, hidden: true } : section);
   const rendered = buildRenderedSeo(site(page), page, "https://aurelia.example");
   expect(faqSchema(rendered)).toBeUndefined();
+});
+
+test("FAQ renderer and FAQPage use the same complete-pair eligibility contract", async () => {
+  const [sectionSource, seoSource] = await Promise.all([
+    readFile("packages/sections/src/faq-sections.tsx", "utf8"),
+    readFile("packages/renderer/src/seo.ts", "utf8"),
+  ]);
+
+  expect(sectionSource).toContain(".filter((entry) => entry.question && entry.answer)");
+  expect(sectionSource).not.toContain("Contact us and we will explain the next step clearly.");
+  expect(sectionSource).toContain("text(item.title)");
+  expect(sectionSource).toContain("text(item.description)");
+  expect(seoSource).toContain("if (!question || !answer || seenQuestions.has(question)) continue;");
+  expect(seoSource).toContain("if (section.hidden || !isFaqComponent(section.component.componentId)) continue;");
 });

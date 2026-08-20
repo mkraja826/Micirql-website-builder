@@ -51,6 +51,29 @@
 }
 [data-mi-site] .mi-shell-dropdown[open]>summary{color:var(--mi-color-primary)}
 
+/* Generated-site controls must keep a visible keyboard focus indicator in the
+ * Builder preview and in the published runtime. Using :focus as well as
+ * :focus-visible keeps programmatic focus (used by accessibility tooling) just
+ * as observable as keyboard focus. */
+[data-mi-site] :is(
+  .mi-section__action,
+  .mi-conv-btn,
+  .mi-shell-cta,
+  .mi-section__form button,
+  .mi-link--button,
+  .mi-burger,
+  .mi-mobile-drawer__head button,
+  .mi-shell-links a,
+  .mi-footer-links a,
+  .mi-footer-groups a,
+  .mi-mobile-drawer nav a,
+  .mi-shell-dropdown>summary,
+  .mi-shell-dropdown__panel a
+):focus{
+  outline:2px solid color-mix(in srgb,var(--mi-color-accent) 72%,currentColor);
+  outline-offset:3px;
+}
+
 @media (hover:hover) and (pointer:fine){
   [data-mi-site] :is(.mi-section__action,.mi-conv-btn,.mi-shell-cta,.mi-section__form button,.mi-link--button):hover{
     transform:translateY(-1px);

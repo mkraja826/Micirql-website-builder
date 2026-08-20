@@ -27,3 +27,22 @@
  .editor-v2 .viewport-switcher button{min-width:34px;padding-inline:5px;font-size:.58rem}
  .editor-v2 .mobile-editor-bar{grid-template-columns:repeat(7,56px)}
 }
+
+/* The Builder's viewport switcher changes the preview canvas width without
+ * changing the browser viewport. Mirror the generated site's mobile shell
+ * rules from the preview mode itself so Desktop Builder sessions still render
+ * a truthful 360-430px navigation state. Keep the drawer contained by the
+ * preview instead of the outer browser viewport. */
+.site-preview.viewport-mobile{position:relative;overflow-x:hidden}
+.site-preview.viewport-mobile .mi-shell-links,
+.site-preview.viewport-mobile .mi-nav-actions>.mi-shell-cta,
+.site-preview.viewport-mobile .mi-nav-centered>.mi-shell-links,
+.site-preview.viewport-mobile .mi-nav-centered__action>.mi-shell-cta,
+.site-preview.viewport-mobile .mi-nav-minimal-copy{display:none!important}
+.site-preview.viewport-mobile .mi-mobile-nav{display:block!important;margin-left:auto}
+.site-preview.viewport-mobile .mi-burger{display:flex!important}
+.site-preview.viewport-mobile .mi-shell-navbar--centered .mi-nav-centered{display:flex;justify-content:space-between}
+.site-preview.viewport-mobile .mi-shell-brand{min-width:0;max-width:calc(100% - 60px);white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+.site-preview.viewport-mobile .mi-mobile-nav[open]>.mi-burger{position:absolute;top:.75rem;right:.75rem}
+.site-preview.viewport-mobile .mi-mobile-drawer{position:absolute;inset:0 0 auto 0;width:100%;max-width:100%;height:100svh;max-height:100svh;box-sizing:border-box;overflow-y:auto}
+.site-preview.viewport-mobile .mi-mobile-drawer>.mi-shell-cta{display:flex!important;width:100%;min-width:44px;min-height:44px}

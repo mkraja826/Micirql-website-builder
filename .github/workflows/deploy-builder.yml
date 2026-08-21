@@ -96,6 +96,27 @@ jobs:
           test -n "$MICIRQL_SUPABASE_SECRET_KEY" || { echo "Missing MICIRQL_SUPABASE_SECRET_KEY"; exit 1; }
           test -n "$PEXELS_API_KEY" || { echo "Missing PEXELS_API_KEY"; exit 1; }
 
+      - name: Verify live Pexels API
+        shell: bash
+        run: |
+          status=$(curl --silent --show-error --output /tmp/pexels-smoke.json --write-out '%{http_code}' \
+            --header "Authorization: $PEXELS_API_KEY" \
+            'https://api.pexels.com/v1/search?query=dental%20clinic&orientation=landscape&size=large&per_page=1&page=1')
+          if [ "$status" != "200" ]; then
+            echo "Pexels API smoke test failed with HTTP $status"
+            head -c 300 /tmp/pexels-smoke.json || true
+            exit 1
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/pexels-smoke.json', 'utf8'));
+          const photo = Array.isArray(payload.photos) ? payload.photos[0] : null;
+          if (!photo?.id || !photo?.src || !(photo.src.large2x || photo.src.large || photo.src.original)) {
+            throw new Error('Pexels API returned HTTP 200 but no usable image result.');
+          }
+          console.log(`Pexels live smoke check passed (photo ${photo.id}).`);
+          NODE
+
       - run: pnpm install --no-frozen-lockfile
 
       - name: Typecheck Builder before certification

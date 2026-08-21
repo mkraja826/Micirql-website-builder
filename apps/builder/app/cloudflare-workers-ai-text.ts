@@ -43,6 +43,11 @@ export function createWorkersAiJsonPlannerModel(options?: { onUsage?: TextProvid
   return {
     id: CLOUDFLARE_CONTENT_PROFILE_ID,
     async generate(request: PlannerModelRequest): Promise<unknown> {
+      // This FP8 model is not on Cloudflare's JSON-Mode supported-model list.
+      // Passing response_format causes inference to fail before a response/usage
+      // payload is returned. The MiCirql content contract already asks for JSON-only
+      // output and parseWorkersAiResponse enforces valid JSON locally, so keep the
+      // provider request in normal text-generation mode for this model.
       const payload = await ai.run(CLOUDFLARE_CONTENT_MODEL, {
         messages: [
           { role: "system", content: request.system },
@@ -50,7 +55,6 @@ export function createWorkersAiJsonPlannerModel(options?: { onUsage?: TextProvid
         ],
         temperature: 0.28,
         max_tokens: options?.maxOutputTokens ?? 8_000,
-        ...(request.responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
       }) as WorkersAiResponse;
 
       const usage = normalizeUsage(payload.usage);

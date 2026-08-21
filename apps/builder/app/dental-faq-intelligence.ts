@@ -6,7 +6,7 @@ import { isDentalProfileSignal, primaryDentalTreatment, type DentalTreatmentId }
 export type DentalFaqIntelligenceResult = {
   site: Site;
   applied: boolean;
-  specialty?: DentalTreatmentId;
+  specialty?: DentalTreatmentId | undefined;
   sectionId?: string;
   reason: string;
 };

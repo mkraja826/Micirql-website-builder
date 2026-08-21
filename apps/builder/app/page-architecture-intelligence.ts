@@ -161,7 +161,7 @@ function composePageSections(existingSections: Site["pages"][number]["sections"]
   return fallback;
 }
 
-function isLibraryFamily(family: SectionFamily): family is LibrarySectionFamily {
+function isLibraryFamily(family: SectionFamily): family is Extract<LibrarySectionFamily, SectionFamily> {
   return Object.prototype.hasOwnProperty.call(FAMILY_CODES, family);
 }
 

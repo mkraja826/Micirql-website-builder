@@ -13,11 +13,11 @@ export type MediaArtDirectionIssue = {
 export type MediaArtDirectionResult = {
   score: number;
   issues: MediaArtDirectionIssue[];
-  dominant: { style?: string; temperature?: string; lighting?: string };
+  dominant: { style?: string | undefined; temperature?: string | undefined; lighting?: string | undefined };
   samples: number;
 };
 
-export type MediaArtDirectionSignature = { style?: string; temperature?: string; lighting?: string };
+export type MediaArtDirectionSignature = { style?: string | undefined; temperature?: string | undefined; lighting?: string | undefined };
 
 /**
  * Site-level art-direction QA. This intentionally scores the selected media set

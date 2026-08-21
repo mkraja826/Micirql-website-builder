@@ -30,9 +30,10 @@ export async function POST(request: NextRequest) {
       }, { status: 422 });
     }
 
+    const industry = body.groundingFacts?.industry?.trim() || publishSite.subtype;
     const groundingFacts: GroundingFacts = {
       businessName: body.groundingFacts?.businessName?.trim() || publishSite.name,
-      industry: body.groundingFacts?.industry?.trim() || publishSite.subtype,
+      ...(industry ? { industry } : {}),
       subindustry: body.groundingFacts?.subindustry ?? publishSite.subtype ?? null,
       location: body.groundingFacts?.location ?? publishSite.seoBlueprint.targetLocations[0] ?? null,
       services: cleanArray(body.groundingFacts?.services).length ? cleanArray(body.groundingFacts?.services) : publishSite.seoBlueprint.priorityTopics,

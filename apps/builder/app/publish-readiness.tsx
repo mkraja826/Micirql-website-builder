@@ -64,7 +64,7 @@ export function PublishReadinessManager({ site, onFactsSaved }: { site: Site; on
   </div>;
 }
 
-function BusinessFactsEditor({ site, onFactsSaved }: { site: Site; onFactsSaved?: () => void }) {
+function BusinessFactsEditor({ site, onFactsSaved }: { site: Site; onFactsSaved?: (() => void) | undefined }) {
   const [facts, setFacts] = useState<BusinessFacts>(EMPTY_FACTS);
   const [state, setState] = useState<"loading" | "ready" | "saving" | "saved" | "error">("loading");
   const [message, setMessage] = useState("");

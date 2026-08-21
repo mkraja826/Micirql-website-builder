@@ -8,7 +8,7 @@ export type MediaExecutionInput={plan:VisualMediaPlan;customerAssets?:MediaAsset
 export type MediaRequest={family:SectionFamily;pagePath?:string;source:MediaSource;asset?:MediaAsset;qualifiedAlternates?:QualifiedMediaAlternate[];generationPrompt?:string;desiredAspect?:VisualAspect;preferredTags?:string[];alt:string;reason:string};
 export type MediaExecutionPlan={requests:MediaRequest[];generationCount:number;rules:string[]};
 
-type VisualSignature={tokens:Set<string>;aspect?:string;perceptualHash?:string};
+type VisualSignature={tokens:Set<string>;aspect?:string|undefined;perceptualHash?:string|undefined};
 
 export function executeMediaPlan(input:MediaExecutionInput):MediaExecutionPlan{
  const usedIds=new Set<string>(),usedUrls=new Set<string>(),usedSignatures:VisualSignature[]=[];let generationCount=0;
@@ -77,7 +77,7 @@ function signatureSimilarity(a:VisualSignature,b:VisualSignature){
 export function perceptualSimilarity(a?:string,b?:string){
  if(!a||!b||!/^[0-9a-f]{16}$/i.test(a)||!/^[0-9a-f]{16}$/i.test(b))return null;
  let distance=0;
- for(let i=0;i<16;i++){let value=parseInt(a[i],16)^parseInt(b[i],16);while(value){distance+=value&1;value>>=1;}}
+ for(let i=0;i<16;i++){let value=parseInt(a[i]!,16)^parseInt(b[i]!,16);while(value){distance+=value&1;value>>=1;}}
  return 1-distance/64;
 }
 function aspectScore(assetAspect:string|undefined,desired:VisualAspect){
@@ -99,11 +99,11 @@ export function canGenerate(d:SectionVisualDecision){
  if(requiresCustomerIdentityMedia(d)||requiresCustomerEvidenceMedia(d))return false;
  const claimContext=context.replace(/not (?:the )?actual clinic/g,"").replace(/unless real clinic media is supplied/g,"");
  if(/before[- ]?and[- ]?after|before[- ]?after|treatment result|patient outcome|real patient|verified case|actual clinic|clinic interior supplied|real clinic|specific equipment|credentials/.test(claimContext))return false;
- if(d.role==="abstract"||d.role==="illustration"||d.role==="texture"||d.role==="product-ui")return true;
+ if(d.role==="abstract"||d.role==="texture"||d.role==="product-ui")return true;
  const safeGeneric=/generic|non-identifying|context|concept|without|avoid implying|no synthetic|calm|non-graphic|truthful|supporting visual/.test(subject);
  if(!safeGeneric)return false;
  if(d.family==="hero"&&d.role==="hero-photo")return true;
- if(d.family==="features"&&(d.role==="illustration"||d.role==="hero-photo"))return true;
+ if(d.family==="features"&&d.role==="hero-photo")return true;
  if(d.family==="process"&&d.role==="process")return true;
  if(d.family==="services"&&d.role==="hero-photo")return true;
  if(d.family==="about"&&d.role==="place")return /generic|non-identifying|context|concept/.test(subject)&&!/clinic interior|reception|treatment room|real team environment/.test(subject);

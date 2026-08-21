@@ -10,6 +10,7 @@ import {
   type DesignPreferenceProfile,
 } from "@micirql/design-engine";
 import { applyWebsiteLayoutBlueprint } from "./apply-layout-blueprint";
+import { repairExistingDentalContactPage } from "./dental-contact-page-repair";
 import { evaluateDentalContentQuality } from "./dental-content-quality";
 import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
@@ -59,7 +60,8 @@ export function buildCertifiedDentalReviewDirections(
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
     const faqIntelligence = applyDentalFaqIntelligence(repaired.site, profile);
     const multipageArchitecture = applyDentalMultipageArchitecture(faqIntelligence.site, profile);
-    const multipageMediaSafety = applyDentalMultipageMediaSafety(multipageArchitecture.site);
+    const contactPageRepair = repairExistingDentalContactPage(multipageArchitecture.site);
+    const multipageMediaSafety = applyDentalMultipageMediaSafety(contactPageRepair.site);
     const normalizedSite = normalizeWebsiteContent(multipageMediaSafety.site);
     const contentQuality = evaluateWebsiteContent(normalizedSite);
     const dentalContentQuality = evaluateDentalContentQuality(normalizedSite, profile);
@@ -150,6 +152,7 @@ export function buildCertifiedDentalReviewDirections(
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
         ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
         ...(multipageArchitecture.treatmentPages.length ? [`multi-page treatment architecture: ${multipageArchitecture.treatmentPages.length} treatment page${multipageArchitecture.treatmentPages.length === 1 ? "" : "s"}`] : []),
+        ...(contactPageRepair.repaired ? ["auto-repaired dedicated contact conversion section"] : []),
         ...(multipageMediaSafety.reusedQualifiedHero ? [`reused qualified hero media on ${multipageMediaSafety.reusedQualifiedHero} treatment page${multipageMediaSafety.reusedQualifiedHero === 1 ? "" : "s"}`] : []),
         ...(multipageMediaSafety.removedEmptyHeroSlots ? [`removed ${multipageMediaSafety.removedEmptyHeroSlots} empty treatment hero media slot${multipageMediaSafety.removedEmptyHeroSlots === 1 ? "" : "s"}`] : []),
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),

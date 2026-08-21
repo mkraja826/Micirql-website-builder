@@ -141,7 +141,7 @@ function normalizeFacts(value: Partial<GroundingFacts> | undefined, site: { name
   };
 }
 
-function lockedFactsFromNotes(notes: string | null): Pick<GroundingFacts, "people" | "credentials" | "proofClaims" | "prices"> {
+function lockedFactsFromNotes(notes: string | null): Required<Pick<GroundingFacts, "people" | "credentials" | "proofClaims" | "prices">> {
   if (!notes) return { people: [], credentials: [], proofClaims: [], prices: [] };
   return {
     people: labelledFacts(notes, "People/team"),

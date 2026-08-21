@@ -25,6 +25,17 @@ test("context interpretation uses Workers AI with a deterministic fallback", () 
   expect(route).toContain("interpretOnboardingBrief(context)");
 });
 
+test("interpret route preserves explicit 'Business Name is a business in Location' identity", () => {
+  expect(route).toContain("repairExplicitIdentity");
+  expect(route).toContain("explicitBusinessNameFromBrief");
+  expect(route).toContain("explicitLocationFromBrief");
+  expect(route).toContain("replaceGroundingLine");
+  expect(route).toContain('replaceGroundingLine(notes, "Business name", explicitBusinessName)');
+  expect(route).toContain('replaceGroundingLine(notes, "Location", explicitLocation)');
+  expect(route).toContain("\\s+is\\s+");
+  expect(route).toContain("focused|speciali[sz]");
+});
+
 test("context interpretation preserves the existing structured generation contract", () => {
   for (const field of ["businessName", "industry", "subindustry", "location", "services", "goals", "styleTags", "requiredCapabilities", "languages", "notes"]) expect(interpreter).toContain(field);
 });

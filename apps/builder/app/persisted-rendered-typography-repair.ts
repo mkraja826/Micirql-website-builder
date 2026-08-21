@@ -34,7 +34,7 @@ export function persistRenderedTypographyRepair(site: Site, plan: RenderedTypogr
     ? { ...(rawPageTypography as Record<string, unknown>) }
     : {};
   const previousResponsive = readRepairMap(pageTypography.renderedResponsive);
-  previousResponsive[plan.viewport] = current[plan.viewport];
+  previousResponsive[plan.viewport] = current[plan.viewport]!;
   const baseCss = typeof pageTypography.baseCss === "string"
     ? pageTypography.baseCss
     : previousResponsiveHasEntries(pageTypography.renderedResponsive)

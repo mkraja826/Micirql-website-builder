@@ -11,12 +11,12 @@ export function applyExactAssetPlacement(site: Site, customerAssets: MediaAsset[
 
   for (const page of next.pages) {
     for (const section of page.sections) {
-      const family = family(section.component.componentId);
-      if (!family || !["team", "services", "gallery"].includes(family)) continue;
+      const sectionFamily = family(section.component.componentId);
+      if (!sectionFamily || !["team", "services", "gallery"].includes(sectionFamily)) continue;
       const items = Array.isArray(section.props.items) ? section.props.items as Array<Record<string, unknown>> : [];
       if (!items.length) continue;
 
-      if (family === "gallery") {
+      if (sectionFamily === "gallery") {
         const resultAssets = [...unused.values()].filter((asset) => asset.tags.includes("results"));
         const grouped = caseGroups(resultAssets);
         for (const group of grouped) {
@@ -39,7 +39,7 @@ export function applyExactAssetPlacement(site: Site, customerAssets: MediaAsset[
         const item = items[index]!;
         if (item.image) continue;
         const title = typeof item.title === "string" ? item.title : "";
-        const candidates = [...unused.values()].filter((asset) => familyCompatible(asset, family));
+        const candidates = [...unused.values()].filter((asset) => familyCompatible(asset, sectionFamily));
         const best = bestExactMatch(title, candidates);
         if (!best) continue;
         items[index] = { ...item, image: best.url, imageAssetId: best.id };

@@ -20,8 +20,8 @@ type PexelsPhoto = {
 
 type PexelsSearchResponse = { photos?: PexelsPhoto[] };
 
-const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
-const MAX_ATTEMPTS = 3;
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 526, 527]);
+const MAX_ATTEMPTS = 4;
 const BASE_DELAY_MS = 350;
 const MAX_DELAY_MS = 5_000;
 
@@ -140,7 +140,7 @@ function retryDelayMs(retryAfter: string | null, attempt: number): number {
 
 function isRetryableNetworkError(error: unknown): boolean {
   if (error instanceof DOMException && error.name === "AbortError") return false;
-  return error instanceof TypeError || (error instanceof Error && /network|fetch failed|socket|timeout|timed out|connection|econn/i.test(error.message));
+  return error instanceof TypeError || (error instanceof Error && /network|fetch failed|socket|timeout|timed out|connection|econn|error code:\s*52[0-7]/i.test(error.message));
 }
 
 async function discardBody(response: Response): Promise<void> {

@@ -21,6 +21,7 @@ export type GenerationRecoveryFailure = {
   model: string;
   kind: GenerationFailureKind;
   message: string;
+  reason: string;
 };
 
 export type GenerationRecoveryResult<TResult, TProfile> = {
@@ -61,12 +62,14 @@ export async function runGenerationRecovery<TResult, TProfile>(
       };
     } catch (error) {
       lastError = error;
+      const message = errorMessage(error);
       failures.push({
         profileId: attempt.profileId,
         provider: attempt.provider,
         model: attempt.model,
         kind: classifyGenerationFailure(error),
-        message: errorMessage(error),
+        message,
+        reason: message,
       });
     }
   }

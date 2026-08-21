@@ -17,6 +17,7 @@ const FAMILY_META: Record<Exclude<SectionFamily, "navbar" | "footer">, { descrip
   testimonials: { description: "Reviews, quotes and customer proof", icon: "❞" },
   gallery: { description: "Cases, portfolio, spaces or visual work", icon: "▧" },
   team: { description: "Doctors, team members or leadership", icon: "◎" },
+  faq: { description: "Common questions and clear decision-support answers", icon: "?" },
   cta: { description: "Focused conversion call-to-action", icon: "↗" },
   contact: { description: "Contact details, forms and next steps", icon: "@" },
 };

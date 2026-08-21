@@ -8,6 +8,11 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
+  // Keep disposable Playwright runner artifacts separate from MiCirql's durable
+  // certification evidence under test-results/. The qa:dental-visual script invokes
+  // Playwright twice; sharing test-results as outputDir causes the second invocation
+  // to delete certification.json immediately before the premium gate reads it.
+  outputDir: "playwright-results/dental-visual",
   use: {
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",

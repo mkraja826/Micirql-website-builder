@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Site } from "@micirql/schema";
+import { repairExistingDentalContactPage } from "../apps/builder/app/dental-contact-page-repair";
 import { applyDentalMultipageArchitecture } from "../apps/builder/app/dental-multipage-architecture";
 import { evaluateDentalMultipageQuality } from "../apps/builder/app/dental-multipage-quality";
 import type { OnboardingProfile } from "../apps/builder/app/preset-ranking";
@@ -114,6 +115,32 @@ test("whole-site Dental quality gate certifies canonical, breadcrumb, structure 
   const brokenQuality = evaluateDentalMultipageQuality(broken, profile());
   expect(brokenQuality.ready).toBe(false);
   expect(brokenQuality.issues.some((issue) => issue.code === "PAGE_SEO_INCOMPLETE")).toBe(true);
+});
+
+test("existing contact route without a contact section is repaired before Dental review QA", () => {
+  const base = site();
+  base.pages.push({
+    id: "contact-existing",
+    path: "/contact",
+    name: "Book Appointment",
+    seo: { title: "Book Appointment | Aurelia Dental", description: "Request a dental consultation with Aurelia Dental.", canonicalPath: "/contact", indexable: true, structuredDataTypes: [] },
+    sections: [
+      section("contact-nav", "MIN-NAV-001", { title: "Aurelia Dental" }),
+      section("contact-hero", "MIN-HERO-001", { title: "Arrange your consultation", description: "Start with an individual dental consultation." }),
+      section("contact-cta", "MIN-CTA-001", { title: "Book consultation", description: "Request the next available appointment." }),
+      section("contact-footer", "MIN-FOOT-001", { title: "Aurelia Dental" }),
+    ],
+  });
+
+  const multipage = applyDentalMultipageArchitecture(base, profile()).site;
+  const repaired = repairExistingDentalContactPage(multipage);
+  expect(repaired.repaired).toBe(true);
+  const contact = repaired.site.pages.find((page) => page.path === "/contact")!;
+  expect(contact.sections.some((entry) => entry.component.componentId.includes("-CONT-"))).toBe(true);
+
+  const quality = evaluateDentalMultipageQuality(repaired.site, profile());
+  expect(quality.issues.some((issue) => issue.code === "CONTACT_PAGE_MISSING")).toBe(false);
+  expect(quality.ready).toBe(true);
 });
 
 test("general-only Dental briefs and disabled service-page blueprints stay single-page", () => {

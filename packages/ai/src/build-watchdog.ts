@@ -50,8 +50,8 @@ export function inspectBuildCompleteness(site: Site, plan?: SitePlan): BuildWatc
 
 export async function runBuildWithWatchdog<T extends { site: Site; plan?: SitePlan }>(input: {
   execute: () => Promise<T>;
-  timeoutMs?: number;
-  lastKnownGood?: Site;
+  timeoutMs?: number | undefined;
+  lastKnownGood?: Site | undefined;
 }): Promise<BuildWatchdogResult<T>> {
   const timeoutMs = Math.max(1_000, input.timeoutMs ?? 90_000);
   const startedAt = Date.now();

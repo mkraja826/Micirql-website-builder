@@ -1,0 +1,57 @@
+/* Final responsive certification hardening discovered by the production Top-20 gate.
+ * Keep this layer after the earlier Dental 99 refinements so Builder preview and
+ * published Live runtime share the same narrow-phone and narrow-tablet geometry.
+ * These rules fix rendering defects only; no certification threshold is relaxed.
+ */
+
+/* Smile Studio closing conversion: at 360px the full-width CTA has enough
+ * horizontal room for `Request consultation`, but inherited text wrapping can
+ * still split the editable label and turn the control into a 66px two-line CTA.
+ * Preserve the intended single-line control at compact-phone widths. */
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn>*{
+    white-space:nowrap!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:50px!important;
+    height:auto!important;
+    padding-inline:.9rem!important;
+    box-sizing:border-box!important;
+  }
+}
+
+/* Smile Campaign narrow-tablet navigation: the hero already stacks from 768px
+ * through 832px in the earlier final refinement, but the shared shell switches
+ * back to its desktop navigation at exactly 48rem. Brand + links + CTA can then
+ * exceed the 768px preview width. Use the existing mobile menu in this narrow
+ * tablet window while preserving the desktop navigation above 832px. */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-shell-links,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-nav-actions>.mi-shell-cta{
+    display:none!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-mobile-nav{
+    display:block!important;
+    margin-left:auto!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-burger{
+    display:flex!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-shell-brand{
+    min-width:0!important;
+    max-width:calc(100% - 60px)!important;
+    overflow-wrap:anywhere!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-nav-row,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-shell-navbar .mi-nav-actions{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+}

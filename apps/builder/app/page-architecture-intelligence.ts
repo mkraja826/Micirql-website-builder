@@ -145,9 +145,9 @@ function composePageSections(existingSections: Site["pages"][number]["sections"]
   }
   const selected = PAGE_RECIPES[role]
     .map((family) => ({ family, section: byFamily.get(family) }))
-    .filter((entry): entry is { family: SectionFamily; section: Site["pages"][number]["sections"][number] } => Boolean(entry.section))
+    .filter((entry) => Boolean(entry.section))
     .map(({ family, section }) => {
-      const next = structuredClone(section);
+      const next = structuredClone(section!);
       const variant = PAGE_VARIANTS[role][family];
       if (variant && isLibraryFamily(family)) {
         next.component = { componentId: sectionDesignId(themeFamily, family, variant), version: next.component.version };

@@ -30,9 +30,9 @@ type LayoutRecommendation = {
   description: string;
   score: number;
   reasons: string[];
-  archetype?: string;
+  archetype?: string | undefined;
   styleTags?: string[];
-  preferredSubindustry?: string;
+  preferredSubindustry?: string | undefined;
 };
 
 type ApiPayload = Record<string, unknown> & { error?: string };

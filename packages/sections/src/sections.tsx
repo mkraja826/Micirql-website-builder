@@ -85,7 +85,7 @@ function NavbarSection(props: VariantProps) {
   return <StructuralNavbar {...props} />;
 }
 
-function Breadcrumbs({ items = [] }: { items?: BreadcrumbItem[] }) {
+function Breadcrumbs({ items = [] }: { items?: BreadcrumbItem[] | undefined }) {
   const valid = items.filter((item) => item && item.label?.trim());
   if (valid.length < 2) return null;
   return <nav className="mi-breadcrumbs" aria-label="Breadcrumb"><ol>{valid.map((item, index) => <li key={`${item.label}-${index}`}>{index > 0 ? <span className="mi-breadcrumbs__separator" aria-hidden="true">/</span> : null}{item.href && index < valid.length - 1 ? <a href={item.href}><InlineField path={`breadcrumbs.${index}.label`}>{item.label}</InlineField></a> : <span aria-current={index === valid.length - 1 ? "page" : undefined}><InlineField path={`breadcrumbs.${index}.label`}>{item.label}</InlineField></span>}</li>)}</ol></nav>;

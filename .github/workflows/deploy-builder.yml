@@ -62,7 +62,7 @@ permissions:
 
 concurrency:
   group: micirql-builder-production
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -98,6 +98,9 @@ jobs:
 
       - run: pnpm install --no-frozen-lockfile
 
+      - name: Typecheck Builder before certification
+        run: pnpm --filter @micirql/builder typecheck
+
       - name: Install Chromium for premium visual certification
         run: pnpm exec playwright install --with-deps chromium
 
@@ -130,8 +133,6 @@ jobs:
           if (failed.length) throw new Error(`Layouts missing Builder/live/multi-page/implant-treatment certification: ${failed.map((entry) => entry.layoutId).join(', ')}`);
           console.log('All 20 runtime Dental layouts are homepage + published-live implant render + multi-page + six-viewport Dental Implants certified for this commit.');
           NODE
-
-      - run: pnpm --filter @micirql/builder typecheck
 
       - name: Build and deploy builder
         run: pnpm --filter @micirql/builder run deploy

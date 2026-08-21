@@ -79,12 +79,13 @@ async function loadGroundingFacts(request: NextRequest, site: Site): Promise<Gro
  const profile=rows[0]??{};
  const notes=text(profile.notes)||null;
  const locked=lockedFactsFromNotes(notes);
+ const industry=text(profile.industry)||site.subtype;
  return {
   businessName:text(profile.business_name)||site.name,
-  industry:text(profile.industry)||site.subtype,
+  ...(industry?{industry}:{}),
   subindustry:text(profile.subindustry)||site.subtype||null,
   location:text(profile.location)||site.seoBlueprint.targetLocations[0]||null,
-  services=list(profile.services).length?list(profile.services):site.seoBlueprint.priorityTopics,
+  services:list(profile.services).length?list(profile.services):site.seoBlueprint.priorityTopics,
   goals:list(profile.goals),
   notes,
   people:locked.people,
@@ -94,7 +95,7 @@ async function loadGroundingFacts(request: NextRequest, site: Site): Promise<Gro
  };
 }
 
-function lockedFactsFromNotes(notes:string|null):Pick<GroundingFacts,"people"|"credentials"|"proofClaims"|"prices"> {
+function lockedFactsFromNotes(notes:string|null):Required<Pick<GroundingFacts,"people"|"credentials"|"proofClaims"|"prices">> {
  if(!notes)return{people:[],credentials:[],proofClaims:[],prices:[]};
  return{people:labelledFacts(notes,"People/team"),credentials:labelledFacts(notes,"Credentials"),proofClaims:labelledFacts(notes,"Claims/statistics/guarantees"),prices:labelledFacts(notes,"Prices")};
 }

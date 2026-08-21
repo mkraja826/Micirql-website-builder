@@ -135,3 +135,24 @@
     gap:1rem;
   }
 }
+
+/* The compact-phone shared conversion typography may wrap this short primary CTA
+ * even though the button has ample width. Keep the label single-line and let the
+ * control retain its normal touch-safe height. */
+@media(max-width:27rem){
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-conv-cta--split .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-conv-cta--split .mi-conv-btn>*{
+    white-space:nowrap!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  [data-mi-layout-blueprint="dental-18-proof-first"] .mi-conv-cta--split .mi-conv-btn{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:50px!important;
+    height:auto!important;
+    padding-inline:.9rem!important;
+    box-sizing:border-box!important;
+  }
+}

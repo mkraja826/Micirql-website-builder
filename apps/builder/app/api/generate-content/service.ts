@@ -15,6 +15,7 @@ import {
   CLOUDFLARE_CONTENT_PROFILE_ID,
   createWorkersAiJsonPlannerModel,
 } from "../../cloudflare-workers-ai-text";
+import { prepareContentScaffold } from "../../content-scaffold-preparation";
 import { runGenerationRecovery } from "../../generation-recovery";
 import { getSupabaseDraft, saveSupabaseDraft, supabaseConfig, supabaseTrustedHeaders } from "../drafts/supabase-store";
 
@@ -35,6 +36,16 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
   if (current.revision !== input.expectedRevision) {
     const error = new Error("REVISION_CONFLICT") as Error & { status?: number; currentRevision?: number };
     error.status = 409; error.currentRevision = current.revision; throw error;
+  }
+
+  const facts = normalizeFacts(input.facts, { name: current.snapshot.name, subtype: current.snapshot.subtype, seoBlueprint: current.snapshot.seoBlueprint });
+  const prepared = prepareContentScaffold(current.snapshot, facts);
+  let workingDraft = current;
+  if (prepared.changed) {
+    workingDraft = await saveSupabaseDraft(request, {
+      snapshot: prepared.site,
+      expectedRevision: current.revision,
+    });
   }
 
   const attempts: ContentAttempt[] = [];
@@ -65,14 +76,13 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
 
   if (!attempts.length) { const error = new Error("TEXT_MODEL_NOT_CONFIGURED") as Error & { status?: number }; error.status = 503; throw error; }
 
-  const facts = normalizeFacts(input.facts, { name: current.snapshot.name, subtype: current.snapshot.subtype, seoBlueprint: current.snapshot.seoBlueprint });
   const repairRules = cleanArray(input.repairRules).slice(0, 16);
   const recovery = await runGenerationRecovery(
     attempts.map((attempt) => ({ profile: attempt, profileId: attempt.profile.id, provider: attempt.profile.provider, model: attempt.profile.model })),
     async ({ profile: attempt }) => {
       try {
         return await generateGuardedSiteContent({
-          site: current.snapshot,
+          site: workingDraft.snapshot,
           facts,
           profiles: [attempt.profile],
           executors: createModelExecutorRegistry([createJsonContentExecutor(attempt.planner)]),
@@ -87,7 +97,7 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
 
   const generated = recovery.result;
   const selectedProfile = recovery.selectedProfile.profile;
-  const saved = await saveSupabaseDraft(request, { snapshot: generated.site, expectedRevision: current.revision });
+  const saved = await saveSupabaseDraft(request, { snapshot: generated.site, expectedRevision: workingDraft.revision });
   const selectedUsage = usageByProfile.get(selectedProfile.id);
   return {
     draft: saved,
@@ -99,9 +109,20 @@ export async function runGuardedContentGeneration(request: NextRequest, input: G
       failedProviders: recovery.failures.length,
       failures: recovery.failures,
       originalDraftRevision: current.revision,
+      scaffoldDraftRevision: workingDraft.revision,
       savedDraftRevision: saved.revision,
     },
-    audit: { appliedFields: generated.appliedFields, structureIntact: generated.structureIntact, restoredChanges: generated.restoredChanges, groundingIssueCount: generated.groundingIssues.length, groundingIssues: generated.groundingIssues, contentQuality: generated.contentQuality, repairRuleCount: repairRules.length },
+    audit: {
+      appliedFields: generated.appliedFields,
+      structureIntact: generated.structureIntact,
+      restoredChanges: generated.restoredChanges,
+      groundingIssueCount: generated.groundingIssues.length,
+      groundingIssues: generated.groundingIssues,
+      contentQuality: generated.contentQuality,
+      repairRuleCount: repairRules.length,
+      scaffoldPrepared: prepared.changed,
+      scaffoldRepairs: prepared.repairs,
+    },
   };
 }
 

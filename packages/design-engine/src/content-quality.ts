@@ -24,7 +24,7 @@ const GENERIC_AI_PATTERNS: Array<{pattern:RegExp;label:string}> = [
 const WEAK_CTA_PATTERNS = [/^(learn more|read more|click here|submit|continue|next|get started|explore|discover|find out more)$/i,/^(contact us|reach out)$/i];
 const STOP_WORDS = new Set(["a","an","and","are","as","at","be","by","for","from","in","is","it","of","on","or","our","that","the","their","this","to","we","with","you","your"]);
 
-type SemanticEntry = { text:string; pageId:string; sectionId:string; path:string; family?:string };
+type SemanticEntry = { text:string; pageId:string; sectionId:string; path:string; family?:string|undefined };
 
 export function normalizeWebsiteContent(site: Site): Site {
   const next = structuredClone(site);

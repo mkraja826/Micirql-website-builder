@@ -10,7 +10,7 @@ export function assetConfig(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/,"");
  const serviceKey=process.env.MICIRQL_SUPABASE_SECRET_KEY??process.env.SUPABASE_SERVICE_ROLE_KEY??process.env.SUPABASE_SECRET_KEY;
  if(!url||!serviceKey)throw new Error("Server asset storage configuration is missing.");
- return{url,serviceKey,bucket:process.env.SUPABASE_ASSET_BUCKET||"site-assets"};
+ return{url,serviceKey,bucket:process.env.SUPABASE_ASSET_BUCKET||"public-assets"};
 }
 export function serverHeaders(){const{serviceKey}=assetConfig();return{apikey:serviceKey,authorization:`Bearer ${serviceKey}`};}
 export async function assertWorkspaceAccess(request:Request,workspaceId:string){

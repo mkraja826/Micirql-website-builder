@@ -39,7 +39,7 @@ export default function WorkspaceClient({session,workspaceId,siteId}:{session:Su
  const [persistedRevision,setPersistedRevision]=useState(0);
  const [conflictDraft,setConflictDraft]=useState<DraftApiRecord>();
  const [canvasInsert,setCanvasInsert]=useState<{afterSectionId?:string}>();
- const blockedSaveRef=useRef<{snapshot:Site;editorRevision:number}>();
+ const blockedSaveRef=useRef<{snapshot:Site;editorRevision:number}|undefined>(undefined);
  const loaded=useRef(false);
  const state=history.present;
  const selection=state.selected;
@@ -72,4 +72,4 @@ function sectionVariantFromComponentId(componentId:string):SectionVariant{const 
 function saveLabel(s:SaveState){return s==="loading"?"Loading…":s==="saving"?"Saving…":s==="unsaved"?"Unsaved":s==="conflict"?"Conflict":s==="error"?"Save error":"Saved"}
 function viewportLabel(v:EditorViewport){return v==="mobile"?"Mobile":v==="tablet"?"Tablet":"Desktop"}
 function sectionDisplayName(componentId:string){const family=sectionFamilyFromComponentId(componentId);if(family)return family.charAt(0).toUpperCase()+family.slice(1);return componentId.split(".")[0]?.replace(/[-_]/g," ")||"Section"}
-function modeIcon(mode:Mode){return mode==="content"?"✎":mode==="images"?"▧":mode==="design"?"◐":mode==="pages"?"▤":mode==="seo"?"⌕":mode==="functions"?"⚡":"↑"}
+function modeIcon(mode:Mode){return mode==="content"?"Aa":mode==="images"?"▧":mode==="design"?"◈":mode==="pages"?"☷":mode==="seo"?"⌕":mode==="functions"?"⚡":"↗"}

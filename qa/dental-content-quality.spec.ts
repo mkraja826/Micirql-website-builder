@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { evaluateWebsiteContent } from "@micirql/design-engine";
 import { evaluateDentalContentQuality } from "../apps/builder/app/dental-content-quality";
 
 const profile = {
@@ -58,6 +59,34 @@ test("accepts implant-specific premium dental copy", () => {
     siteWith("Dental implants planned around your smile", "Implant dentistry, smile design and restorative planning with a clear consultation-first approach.", "Book consultation", "Implant treatment planned from assessment and scan through restoration and review."),
     profile as any,
   );
+  expect(result.issues.filter((issue) => issue.severity === "error")).toHaveLength(0);
+  expect(result.score).toBeGreaterThanOrEqual(82);
+});
+
+test("central content quality accepts heading and body section aliases", () => {
+  const site = siteWith(
+    "Dental implants planned around your smile",
+    "Implant dentistry, smile design and restorative planning with a clear consultation-first approach.",
+    "Book consultation",
+    "Implant treatment planned from assessment and scan through restoration and review.",
+  );
+
+  for (const page of site.pages) {
+    for (const section of page.sections) {
+      const props = section.props as Record<string, unknown>;
+      if (typeof props.title === "string") {
+        props.heading = props.title;
+        delete props.title;
+      }
+      if (typeof props.description === "string") {
+        props.body = props.description;
+        delete props.description;
+      }
+    }
+  }
+
+  const result = evaluateWebsiteContent(site as any);
+  expect(result.issues.filter((issue) => issue.code === "MISSING_SECTION_TITLE")).toHaveLength(0);
   expect(result.issues.filter((issue) => issue.severity === "error")).toHaveLength(0);
   expect(result.score).toBeGreaterThanOrEqual(82);
 });

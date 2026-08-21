@@ -1,0 +1,99 @@
+/* Final narrow certification fixes discovered after the Top-20 gate advanced
+ * beyond the earlier tablet blockers. Keep these rules after the shared tablet
+ * certification layer so Builder and Live runtime use the same final geometry.
+ */
+
+/* Implant Results: treatment-page eyebrow copy is intentionally descriptive, but
+ * the layout's desktop `width:max-content` eyebrow can escape the copy track at
+ * exactly 1024px. Let that text wrap inside the available hero column without
+ * changing CTA behavior or the desktop composition above the tablet boundary. */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__copy{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--eyebrow{
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--eyebrow>span{
+    display:block!important;
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+  }
+}
+
+/* Smile Campaign: the campaign-poster hero starts its desktop three-track layout
+ * at 768px (index + copy + a 25rem media minimum). At that exact boundary the copy
+ * track collapses to only a few pixels, producing 38-40px CTA controls. Stack the
+ * hero only through 832px so controls remain normal-sized while the 1024px+ poster
+ * composition is preserved. */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial>.mi-container{
+    width:100%!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    min-height:0!important;
+    gap:0!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__index{
+    display:none!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__copy{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    padding:clamp(2.5rem,5vw,4rem)!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:34rem!important;
+    min-width:0!important;
+    gap:.65rem!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__action{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:52px!important;
+    box-sizing:border-box!important;
+    white-space:nowrap!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__action span{
+    display:inline-block!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media img{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+}

@@ -72,6 +72,7 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
     case "testimonials": return { heading: "What customers say", body: "Add verified customer feedback here.", items: [] };
     case "gallery": return { heading: "Gallery", body: "Showcase your work, space or products.", items: [] };
     case "team": return { heading: "Meet the team", body: "Introduce the people behind the business.", items: [] };
+    case "faq": return { heading: "Frequently asked questions", body: "Answer the common questions visitors need before taking the next step.", items: [] };
     case "cta": return { heading: "Ready to get started?", body: "Give visitors one clear next step.", ctaLabel: "Get started" };
     case "contact": return { heading: "Contact us", body: "Make it easy for visitors to reach your team.", ctaLabel: "Contact us" };
     case "navbar": return {};
@@ -81,10 +82,10 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
 
 function labelFor(section: SiteSection): string {
   const componentId = section.component.componentId;
-  const codeMatch = componentId.match(/^[A-Z]{3}-(?:NAV|HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT|FOOT)-/);
+  const codeMatch = componentId.match(/^[A-Z]{3}-(?:NAV|HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|FAQ|CTA|CONT|FOOT)-/);
   if (codeMatch) {
     const familyCode = componentId.split("-")[1] ?? "";
-    const names: Record<string, string> = { NAV: "Navbar", HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", CTA: "Call to action", CONT: "Contact", FOOT: "Footer" };
+    const names: Record<string, string> = { NAV: "Navbar", HERO: "Hero", ABOUT: "About", SERV: "Services", FEAT: "Features", PROC: "Process", TEST: "Testimonials", GALL: "Gallery", TEAM: "Team", FAQ: "FAQ", CTA: "Call to action", CONT: "Contact", FOOT: "Footer" };
     return names[familyCode] ?? componentId;
   }
   return title(componentId.split(".")[0] || section.id);

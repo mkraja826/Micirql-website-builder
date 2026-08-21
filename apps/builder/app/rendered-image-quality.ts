@@ -7,8 +7,8 @@ export type RenderedImageQualityIssue = {
     | "IMAGE_REUSED_TOO_OFTEN";
   severity: "warning" | "error";
   detail: string;
-  sectionId?: string;
-  src?: string;
+  sectionId?: string | undefined;
+  src?: string | undefined;
 };
 
 /**

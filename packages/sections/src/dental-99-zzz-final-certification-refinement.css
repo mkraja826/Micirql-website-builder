@@ -97,3 +97,20 @@
     object-fit:cover!important;
   }
 }
+
+/* Photo Story: the immersive hero body is capped by the shared compact-phone
+ * typography safety layer. At 360px the paragraph is 97px tall but the cap leaves
+ * only 73px visible. The hero has enough vertical space, so let this one narrative
+ * paragraph grow naturally instead of clipping homepage and treatment copy. */
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-17-photo-story"] .mi-hero--immersive .mi-type--body{
+    display:block!important;
+    height:auto!important;
+    max-height:none!important;
+    min-height:0!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    -webkit-line-clamp:unset!important;
+    -webkit-box-orient:initial!important;
+  }
+}

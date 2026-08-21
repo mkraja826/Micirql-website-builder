@@ -18,7 +18,7 @@ export function CompareDesigns({
 }: {
   directions: ReviewDirection[];
   viewport: Viewport;
-  savingId?: string;
+  savingId?: string | undefined;
   onViewportChange(viewport: Viewport): void;
   onClose(): void;
   onChoose(direction: ReviewDirection): void;

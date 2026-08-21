@@ -3,7 +3,7 @@ import { createOpenAiCompatibleJsonPlannerModel, type OpenAiCompatibleTextProvid
 export type TextProviderEnvironment = Record<string, string | undefined>;
 
 const GEMINI_OPENAI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 export function textProviderConfigFromEnvironment(env: TextProviderEnvironment): OpenAiCompatibleTextProviderConfig | undefined {
   const endpoint = clean(env.MICIRQL_TEXT_MODEL_ENDPOINT);
@@ -20,11 +20,11 @@ export function textProviderConfigFromEnvironment(env: TextProviderEnvironment):
       apiKey: geminiApiKey,
       model: clean(env.GEMINI_MODEL) ?? DEFAULT_GEMINI_MODEL,
       pricing: {
-        inputUsdPerMillionTokens: 0,
-        outputUsdPerMillionTokens: 0,
+        inputUsdPerMillionTokens: 0.25,
+        outputUsdPerMillionTokens: 1.5,
       },
       temperature: optionalNumber(env.MICIRQL_TEXT_MODEL_TEMPERATURE, "MICIRQL_TEXT_MODEL_TEMPERATURE") ?? 0.2,
-      maxOutputTokens: optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS") ?? 1200,
+      maxOutputTokens: optionalInteger(env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS, "MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS") ?? 8_000,
     };
   }
 

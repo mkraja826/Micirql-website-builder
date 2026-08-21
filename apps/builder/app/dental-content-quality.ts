@@ -6,9 +6,9 @@ export type DentalContentIssue = {
   code: string;
   severity: "error" | "warning";
   message: string;
-  pageId?: string;
-  sectionId?: string;
-  path?: string;
+  pageId?: string | undefined;
+  sectionId?: string | undefined;
+  path?: string | undefined;
 };
 
 export type DentalContentQualityResult = {

@@ -109,20 +109,33 @@
   }
 }
 
-/* Narrow-tablet certification boundary: the shared tablet action system keeps
- * labels on one line, while these two editorial/media compositions still use
- * desktop-width tracks at exactly 768px. Protect only the 768-832px range so the
- * already-certified 1024px compositions remain unchanged. */
+/* Narrow-tablet certification boundary: several editorial/media heroes switch to
+ * desktop tracks at exactly 768px before their CTA copy has enough room. Stack
+ * only the 768-832px hero compositions so phone and 1024px+ art direction stays
+ * unchanged while action labels remain single-line and fully contained. */
 @media (min-width:48rem) and (max-width:52rem){
-  /* Dental Journal: give each hero action the full copy-column width. This keeps
-   * the editable label spans inside their anchors on both homepage and treatment
-   * pages without truncating or weakening the certification measurement. */
+  /* Dental Journal: stack the entire editorial hero. The previous workaround only
+   * widened actions inside the narrow desktop copy track and explicitly allowed
+   * label wrapping, which certification correctly rejected. */
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.75rem!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__index{
+    display:none!important;
+  }
   [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media,
   [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__actions{
     width:100%!important;
     max-width:100%!important;
     min-width:0!important;
     box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-hero__copy{
+    padding-bottom:0!important;
   }
   [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__actions{
     display:grid!important;
@@ -134,15 +147,26 @@
     max-width:100%!important;
     min-width:0!important;
     box-sizing:border-box!important;
+    white-space:nowrap!important;
   }
   [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__action span{
-    display:block!important;
-    width:100%!important;
+    display:inline-block!important;
+    width:auto!important;
     max-width:100%!important;
     min-width:0!important;
-    white-space:normal!important;
-    overflow-wrap:anywhere!important;
+    white-space:nowrap!important;
+    overflow-wrap:normal!important;
     text-align:center;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media{
+    transform:none!important;
+  }
+  [data-mi-layout-blueprint="dental-11-editorial-clinic"] .mi-hero--editorial .mi-section__media img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
   }
 
   /* Implant Results: the media-first desktop split begins at 768px and leaves the
@@ -173,5 +197,48 @@
     white-space:normal!important;
     overflow-wrap:anywhere!important;
     word-break:normal!important;
+  }
+
+  /* City Clinic: its 24rem media minimum squeezes the copy/actions at 768px.
+   * Stack the hero in the same narrow-tablet window and keep both CTA labels on
+   * one line inside full-width action controls. */
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__split{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.75rem!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media,
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:.65rem!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__action{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    white-space:nowrap!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__action span{
+    display:inline-block!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+  }
+  [data-mi-layout-blueprint="dental-14-city-clinic"] .mi-hero--media-first .mi-section__media img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
   }
 }

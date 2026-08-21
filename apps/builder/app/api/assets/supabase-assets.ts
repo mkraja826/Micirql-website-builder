@@ -38,8 +38,11 @@ export async function uploadAssetBinary(workspaceId:string,id:string,bytes:Uint8
 }
 export async function deleteAssetAndObject(id:string,storageKey:string){
  const{url,bucket}=assetConfig();
- const encodedKey=storageKey.split("/").map(part=>encodeURIComponent(part)).join("/");
- const storageResponse=await fetch(`${url}/storage/v1/object/${bucket}/${encodedKey}`,{method:"DELETE",headers:serverHeaders()});
+ const storageResponse=await fetch(`${url}/storage/v1/object/${bucket}`,{
+  method:"DELETE",
+  headers:{...serverHeaders(),"content-type":"application/json"},
+  body:JSON.stringify({prefixes:[storageKey]}),
+ });
  if(!storageResponse.ok&&storageResponse.status!==404)throw statusError(storageResponse.status,await storageResponse.text());
  const registryResponse=await fetch(`${url}/rest/v1/assets?id=eq.${encodeURIComponent(id)}`,{method:"DELETE",headers:{...serverHeaders(),Prefer:"return=minimal"}});
  if(!registryResponse.ok)throw statusError(registryResponse.status,await registryResponse.text());

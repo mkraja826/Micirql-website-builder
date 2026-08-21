@@ -21,6 +21,7 @@ export default defineConfig({
     "above-fold-composition-quality.spec.ts",
     "healthcare-story-flow-diversity.spec.ts",
     "context-first-onboarding.spec.ts",
+    "runtime-provider-resilience.spec.ts",
     "page-architecture-intelligence.spec.ts",
     "exact-asset-placement.spec.ts",
     "native-lead-pipeline.spec.ts",

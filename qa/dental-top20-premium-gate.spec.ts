@@ -28,16 +28,16 @@ const EXPECTED_LAYOUT_IDS = [
   "dental-08-boutique-cosmetic",
   "dental-09-ortho-journey",
   "dental-10-emergency-trust",
-  "dental-11-dental-journal",
+  "dental-11-editorial-clinic",
   "dental-12-wellness-calm",
   "dental-13-implant-results",
   "dental-14-city-clinic",
   "dental-15-smile-campaign",
-  "dental-16-multi-specialty-hub",
-  "dental-17-clinic-story",
+  "dental-16-multi-specialty",
+  "dental-17-photo-story",
   "dental-18-proof-first",
-  "dental-19-quiet-precision",
-  "dental-20-complete-signature",
+  "dental-19-minimal-white",
+  "dental-20-premium-complete",
 ] as const;
 
 type VisualCertification = {

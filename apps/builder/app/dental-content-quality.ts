@@ -46,18 +46,18 @@ export function evaluateDentalContentQuality(site: Site, profile: OnboardingProf
   if (homepage) {
     const visible = homepage.sections.filter((section) => !section.hidden);
     const hero = visible.find((section) => family(section.component.componentId) === "hero");
-    const heroTitle = value(hero?.props?.title);
-    const heroDescription = value(hero?.props?.description);
+    const heroTitle = firstValue(hero?.props, ["title", "heading"]);
+    const heroDescription = firstValue(hero?.props, ["description", "body"]);
     const heroCopy = `${heroTitle} ${heroDescription}`;
 
     if (!heroTitle) {
-      issues.push({ code: "DENTAL_HERO_MISSING", severity: "error", message: "Dental homepage needs a specific hero headline.", pageId: homepage.id, sectionId: hero?.id, path: "title" });
+      issues.push({ code: "DENTAL_HERO_MISSING", severity: "error", message: "Dental homepage needs a specific hero headline.", pageId: homepage.id, sectionId: hero?.id, path: "title/heading" });
     } else {
       if (GENERIC_DENTAL_HEADLINES.some((pattern) => pattern.test(heroTitle))) {
-        issues.push({ code: "GENERIC_DENTAL_HERO", severity: "error", message: "Dental hero headline is generic and does not communicate the clinic's treatment focus.", pageId: homepage.id, sectionId: hero?.id, path: "title" });
+        issues.push({ code: "GENERIC_DENTAL_HERO", severity: "error", message: "Dental hero headline is generic and does not communicate the clinic's treatment focus.", pageId: homepage.id, sectionId: hero?.id, path: "title/heading" });
       }
       if (requested.length && !requested.some((treatment) => treatment.pattern.test(heroCopy))) {
-        issues.push({ code: "HERO_MISSES_PRIMARY_TREATMENT", severity: "warning", message: "Homepage hero should mention or clearly imply one of the clinic's primary requested treatments.", pageId: homepage.id, sectionId: hero?.id, path: "title" });
+        issues.push({ code: "HERO_MISSES_PRIMARY_TREATMENT", severity: "warning", message: "Homepage hero should mention or clearly imply one of the clinic's primary requested treatments.", pageId: homepage.id, sectionId: hero?.id, path: "title/heading" });
       }
     }
 
@@ -85,14 +85,32 @@ function siteText(site: Site) {
 
 function sectionText(props: Record<string, unknown> | undefined): string {
   if (!props) return "";
-  const parts = [value(props.title), value(props.eyebrow), value(props.description), actionLabel(props.primaryAction), actionLabel(props.secondaryAction)];
-  if (Array.isArray(props.items)) for (const item of props.items) if (item && typeof item === "object") parts.push(value((item as Record<string, unknown>).title), value((item as Record<string, unknown>).description));
+  const parts = [
+    firstValue(props, ["title", "heading"]),
+    value(props.eyebrow),
+    firstValue(props, ["description", "body"]),
+    actionLabel(props.primaryAction),
+    actionLabel(props.secondaryAction),
+  ];
+  if (Array.isArray(props.items)) for (const item of props.items) if (item && typeof item === "object") {
+    const record = item as Record<string, unknown>;
+    parts.push(firstValue(record, ["title", "heading"]), firstValue(record, ["description", "body"]));
+  }
   return parts.filter(Boolean).join(" ");
 }
 
 function actionLabel(action: unknown): string {
   if (!action || typeof action !== "object") return "";
   return value((action as Record<string, unknown>).label);
+}
+
+function firstValue(record: Record<string, unknown> | undefined, keys: string[]): string {
+  if (!record) return "";
+  for (const key of keys) {
+    const next = value(record[key]);
+    if (next) return next;
+  }
+  return "";
 }
 
 function value(input: unknown): string {

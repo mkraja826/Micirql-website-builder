@@ -90,3 +90,52 @@
     top:1.6rem;
   }
 }
+
+/* The editor's 768px tablet mode leaves roughly a 500px rendered canvas after
+ * surrounding builder chrome. At that effective width the base desktop clinician
+ * and content grids still carry desktop minimum tracks. Collapse the major Quiet
+ * Precision compositions only through 832px so no intrinsic track can widen the
+ * rendered document while preserving the full desktop layout from 1024px upward. */
+@media(min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-container,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero__editorial-grid,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-cta-split,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-cta-split,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--lead,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-card--compact{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-services-spotlight>*,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-team-featured>*,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-mosaic>*,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-cta-split>*,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-split>*{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-gallery-card:nth-child(even){
+    margin-top:0!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-actions,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-contact-actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+}

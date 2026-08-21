@@ -77,6 +77,7 @@ export async function GET(request: Request) {
       photoId: result.photoId,
       query: result.query,
       contentType: result.contentType,
+      bytes: publicBytes,
       sourceBytes: result.bytes.byteLength,
       storedBytes: publicBytes,
       width: result.width,

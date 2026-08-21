@@ -114,3 +114,105 @@
     -webkit-box-orient:initial!important;
   }
 }
+
+/* Quiet Precision: the implant treatment hero inherits the desktop 5rem + copy +
+ * 24rem media tracks at exactly 768px. The longer treatment copy pushes that
+ * composition past the certified preview even though the homepage fits. Stack only
+ * the narrow-tablet hero while retaining the restrained desktop layout above 832px. */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.75rem!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-hero__index{
+    display:none!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:.65rem!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__action{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-hero--editorial .mi-section__media img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+}
+
+/* Quiet Precision closing conversion: compact-phone shared button sizing can let
+ * the editable `Request consultation` label wrap to two lines. The available
+ * control is wide enough, so preserve a single line rather than increasing height. */
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-btn,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-btn>*{
+    white-space:nowrap!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  [data-mi-layout-blueprint="dental-19-minimal-white"] .mi-conv-cta--split .mi-conv-btn{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:50px!important;
+    height:auto!important;
+    padding-inline:.9rem!important;
+    box-sizing:border-box!important;
+  }
+}
+
+/* Complete Signature: the desktop split and decorative media treatment begin at
+ * 768px, where the certified preview is only a few pixels narrower than the
+ * resulting composition. Use the same deliberate narrow-tablet stack as the other
+ * media-first flagships and contain all hero children inside the preview. */
+@media (min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__split{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.75rem!important;
+    align-items:stretch!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__media,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__actions{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__media{
+    overflow:hidden!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__media::before{
+    inset:0!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-hero--split .mi-section__media img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:16/10!important;
+    object-fit:cover!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] :is(.mi-proof--metrics,.mi-proof--metrics>.mi-container,.mi-services-spotlight,.mi-team-featured,.mi-features-split,.mi-process-timeline,.mi-cta-split,.mi-contact-split){
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+}

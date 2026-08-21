@@ -27,7 +27,7 @@ assert.equal(
 );
 
 for (const item of reviewQueue.queue ?? []) {
-  assert.equal(item.minimumScore, 80, `${item.designId}: premium visual threshold must remain 80/100`);
+  assert.equal(item.minimumScore, 90, `${item.designId}: premium visual threshold must remain 90/100`);
   assert.equal(item.requiredDesktopPreview, 1280, `${item.designId}: 1280px desktop preview is required`);
   assert.equal(item.requiredMobilePreview, 390, `${item.designId}: 390px mobile preview is required`);
   assert.ok(item.rubric?.mobilePolish, `${item.designId}: mobile polish rubric is required`);

@@ -21,8 +21,8 @@ export function evaluateHeroCoherence(site: Site, media: MediaExecutionPlan | nu
   const intent = primaryIntent(profile);
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
   const hero = home?.sections.find((section) => !section.hidden && heroFamily(section.component.componentId));
-  const title = text(hero?.props?.title);
-  const description = text(hero?.props?.description);
+  const title = firstText(hero?.props, ["heading", "title"]);
+  const description = firstText(hero?.props, ["body", "description"]);
   const copy = `${title} ${description}`.toLowerCase();
   const ctas = [actionLabel(hero?.props?.primaryAction), actionLabel(hero?.props?.secondaryAction)].filter(Boolean);
   const heroMedia = media?.requests.find((request) => request.family === "hero" && (request.pagePath === "/" || !request.pagePath));
@@ -58,6 +58,15 @@ function heroFamily(componentId: string): boolean {
 function actionLabel(action: unknown): string {
   if (!action || typeof action !== "object") return "";
   return text((action as Record<string, unknown>).label);
+}
+
+function firstText(props: Record<string, unknown> | undefined, keys: string[]): string {
+  if (!props) return "";
+  for (const key of keys) {
+    const value = text(props[key]);
+    if (value) return value;
+  }
+  return "";
 }
 
 function text(value: unknown): string {

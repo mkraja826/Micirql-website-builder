@@ -121,3 +121,59 @@
     padding:1.15rem 0;
   }
 }
+
+/* The Builder's 768px tablet mode leaves an effective rendered canvas around
+ * 450px after editor chrome. Dental 20's desktop clinician, technology and contact
+ * grids still carry 17-25rem minimum tracks at that breakpoint, so a first render
+ * can widen the document even though the hero is already stacked. Collapse every
+ * major flagship composition only through 832px; 1024px+ keeps the full desktop
+ * art direction unchanged. */
+@media(min-width:48rem) and (max-width:52rem){
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof-metrics,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-featured,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-features--split .mi-features-split,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-gallery-mosaic,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-timeline,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-cta-split,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-contact-split{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-proof-metrics>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-services-spotlight>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-featured>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-features--split .mi-features-split>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-gallery-mosaic>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-process-timeline>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-cta--split .mi-cta-split>*,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-contact-split>*{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-gallery-card:nth-child(n){
+    grid-column:auto!important;
+    margin:0!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-team-card--lead img{
+    width:100%!important;
+    min-height:0!important;
+    max-height:34rem!important;
+    aspect-ratio:4/3!important;
+    object-fit:cover!important;
+  }
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-conv-actions,
+  [data-mi-layout-blueprint="dental-20-premium-complete"] .mi-contact-actions{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+}

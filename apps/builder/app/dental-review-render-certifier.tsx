@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReviewDirection } from "./review-directions";
-import { RendererPreview } from "./renderer-preview";
+import { IsolatedRendererProbe, type IsolatedRendererProbeHandle } from "./isolated-renderer-probe";
 import { planRenderedFirstScreenRepair } from "./rendered-first-screen-repair";
 import { persistFirstScreenRepair } from "./persisted-first-screen-repair";
 import { planRenderedPageTypographyRepair } from "./rendered-page-typography-repair";
@@ -19,7 +19,7 @@ const TARGETS = [
   { viewport: "desktop" as const, width: 1440, foldHeight: 900 },
 ];
 
-type CertificationResult = {
+export type DentalReviewCertificationResult = {
   direction: ReviewDirection;
   passed: boolean;
   repaired: boolean;
@@ -33,7 +33,7 @@ export function DentalReviewRenderCertifier({
   onComplete,
 }: {
   directions: ReviewDirection[];
-  onComplete(results: CertificationResult[]): void;
+  onComplete(results: DentalReviewCertificationResult[]): void;
 }) {
   const signature = useMemo(() => directions.map((item) => item.id).join("|"), [directions]);
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -43,8 +43,9 @@ export function DentalReviewRenderCertifier({
   const [typographyAttempt, setTypographyAttempt] = useState<0 | 1>(0);
   const [compositionAttempt, setCompositionAttempt] = useState<0 | 1>(0);
   const [imageAttempt, setImageAttempt] = useState<0 | 1>(0);
-  const [results, setResults] = useState<CertificationResult[]>([]);
-  const probeRef = useRef<HTMLDivElement>(null);
+  const [results, setResults] = useState<DentalReviewCertificationResult[]>([]);
+  const [probeReady, setProbeReady] = useState(false);
+  const probeRef = useRef<IsolatedRendererProbeHandle>(null);
   const completedSignature = useRef("");
 
   useEffect(() => {
@@ -71,9 +72,9 @@ export function DentalReviewRenderCertifier({
   }, [candidateIndex, directions, onComplete, results, signature, working]);
 
   useEffect(() => {
-    if (!working || candidateIndex >= directions.length) return;
+    if (!working || candidateIndex >= directions.length || !probeReady) return;
     const timer = window.setTimeout(() => {
-      const documentRoot = probeRef.current?.querySelector<HTMLElement>(".renderer-preview-document");
+      const documentRoot = probeRef.current?.getDocumentRoot();
       if (!documentRoot) return;
       const target = TARGETS[targetIndex]!;
       const firstScreenFailures = measureFirstScreen(documentRoot, target.width, target.foldHeight);
@@ -154,11 +155,11 @@ export function DentalReviewRenderCertifier({
         return;
       }
       finishCandidate({ direction: working, passed: true, repaired: hasAnyRepair(working), failures: [] });
-    }, 260);
+    }, 360);
     return () => window.clearTimeout(timer);
-  }, [candidateIndex, compositionAttempt, directions.length, firstScreenAttempt, imageAttempt, targetIndex, typographyAttempt, working]);
+  }, [candidateIndex, compositionAttempt, directions.length, firstScreenAttempt, imageAttempt, probeReady, targetIndex, typographyAttempt, working]);
 
-  function finishCandidate(result: CertificationResult) {
+  function finishCandidate(result: DentalReviewCertificationResult) {
     const nextResults = [...results, result];
     const nextIndex = candidateIndex + 1;
     setResults(nextResults);
@@ -177,25 +178,21 @@ export function DentalReviewRenderCertifier({
 
   if (!working || candidateIndex >= directions.length) return null;
   const target = TARGETS[targetIndex]!;
-  return <div
+  return <IsolatedRendererProbe
     ref={probeRef}
-    aria-hidden="true"
-    data-mi-dental-review-certifier
-    style={{ position: "fixed", left: "-20000px", top: 0, width: target.width, maxWidth: target.width, opacity: 0, pointerEvents: "none" }}
-  >
-    <RendererPreview
-      site={working.site}
-      path={working.site.pages[0]?.path ?? "/"}
-      viewport={target.viewport}
-      onSelectSection={() => {}}
-    />
-  </div>;
+    site={working.site}
+    path={working.site.pages[0]?.path ?? "/"}
+    viewport={target.viewport}
+    width={target.width}
+    height={target.foldHeight}
+    onReadyChange={setProbeReady}
+  />;
 }
 
 function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number): string[] {
   const rootRect = root.getBoundingClientRect();
   const visible = (node: Element) => {
-    const style = getComputedStyle(node);
+    const style = computedStyle(node);
     const rect = node.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   };
@@ -213,7 +210,7 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
     return Boolean(label) && !/menu|navigation|close|previous|next/.test(label);
   }) : [];
   const cta = actions[0] ?? null;
-  const h1Style = h1 ? getComputedStyle(h1) : null;
+  const h1Style = h1 ? computedStyle(h1) : null;
   const fontPx = h1Style ? Number.parseFloat(h1Style.fontSize) || 0 : 0;
   const parsedLineHeight = h1Style ? Number.parseFloat(h1Style.lineHeight) : Number.NaN;
   const lineHeight = Number.isFinite(parsedLineHeight) ? parsedLineHeight : fontPx * 1.2;
@@ -250,12 +247,12 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
   const editor = "[data-mi-canvas-action],.mi-editor-insert-zone,.mi-editor-canvas-toolbar";
   const visible = (node: Element) => {
     if (node.closest(editor)) return false;
-    const style = getComputedStyle(node);
+    const style = computedStyle(node);
     const rect = node.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   };
   const lineHeight = (node: Element) => {
-    const style = getComputedStyle(node);
+    const style = computedStyle(node);
     const explicit = Number.parseFloat(style.lineHeight);
     const fontSize = Number.parseFloat(style.fontSize) || 16;
     return Number.isFinite(explicit) ? explicit : fontSize * 1.2;
@@ -287,6 +284,10 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
     if (Math.max(...heights) - Math.min(...heights) > 32) issues.push({ code: "CARD_TITLE_HEIGHT_VARIANCE", severity: "warning" });
   }
   return issues;
+}
+
+function computedStyle(node: Element): CSSStyleDeclaration {
+  return node.ownerDocument.defaultView?.getComputedStyle(node) ?? getComputedStyle(node);
 }
 
 function hasAnyRepair(direction: ReviewDirection): boolean {

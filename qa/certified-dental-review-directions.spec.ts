@@ -6,6 +6,7 @@ test("dental review uses server-certified blueprint systems instead of generic r
   const review = readFileSync("apps/builder/app/first-build-review.tsx", "utf8");
   const route = readFileSync("apps/builder/app/api/review-directions/dental/route.ts", "utf8");
   const helper = readFileSync("apps/builder/app/dental-review-directions.ts", "utf8");
+  const diagnostics = readFileSync("apps/builder/app/dental-review-diagnostics.ts", "utf8");
 
   expect(review).toContain("isDentalReviewProfile(profile)");
   expect(review).toContain('fetch("/api/review-directions/dental"');
@@ -14,6 +15,9 @@ test("dental review uses server-certified blueprint systems instead of generic r
 
   expect(route).toContain("getSupabaseDraft(request, workspaceId, siteId)");
   expect(route).toContain("buildCertifiedDentalReviewDirections(");
+  expect(route).toContain("diagnoseCertifiedDentalReviewDirections(draft.snapshot, profile)");
+  expect(route).toContain("summarizeDentalReviewDiagnostics(diagnostics)");
+  expect(route).toContain("{ status: 422 }");
   expect(route).toContain("draft.snapshot");
   expect(route).toContain("directions,");
 
@@ -21,6 +25,18 @@ test("dental review uses server-certified blueprint systems instead of generic r
   expect(helper).toContain("applyWebsiteLayoutBlueprint(site, blueprint)");
   expect(helper).toContain("const REVIEW_LIMIT = 8");
   expect(helper).toContain("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS");
+
+  expect(diagnostics).toContain('"dental-content"');
+  expect(diagnostics).toContain("multipage");
+  expect(diagnostics).toContain('"page-rhythm"');
+  expect(diagnostics).toContain("typography");
+  expect(diagnostics).toContain('"media-art-direction"');
+  expect(diagnostics).toContain("runtimeRenderedCertifiedDentalIds()");
+  expect(diagnostics).toContain("MIN_DENTAL_CONTENT_SCORE = 82");
+  expect(diagnostics).toContain("MIN_DENTAL_MULTIPAGE_SCORE = 90");
+  expect(diagnostics).toContain("MIN_PAGE_RHYTHM_SCORE = 78");
+  expect(diagnostics).toContain("MIN_PAGE_TYPOGRAPHY_SCORE = 82");
+  expect(diagnostics).toContain("MIN_MEDIA_ART_DIRECTION_SCORE = 80");
 
   const flagshipNames = DENTAL_LAYOUT_BLUEPRINTS.slice(0, 5).map((item) => item.name);
   expect(flagshipNames).toEqual([

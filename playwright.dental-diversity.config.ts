@@ -13,6 +13,7 @@ export default defineConfig({
     "certified-dental-review-directions.spec.ts",
     "dental-review-ranking.spec.ts",
     "dental-review-server-boundary.spec.ts",
+    "dental-duplicate-seo-repair.spec.ts",
     "dental-content-quality.spec.ts",
     "content-specialty-rules.spec.ts",
     "dental-architect-content-gate.spec.ts",

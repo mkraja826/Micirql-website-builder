@@ -1,4 +1,4 @@
 Production deploy trigger
 
-Triggered after green Dental production QA on 2026-08-21 19:25 IST.
-Expected parent certification commit: 8a27389c1231acd29ec02b0636dff04006f4bab7
+Fresh production deploy requested on 2026-08-22 08:55 IST.
+Expected parent production commit: 8ef0d40dec2af7a590d52b56c91d3f1910ae9990

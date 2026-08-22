@@ -6,7 +6,7 @@ test("dental review uses server-certified blueprint systems instead of generic r
   const review = readFileSync("apps/builder/app/first-build-review.tsx", "utf8");
   const route = readFileSync("apps/builder/app/api/review-directions/dental/route.ts", "utf8");
   const helper = readFileSync("apps/builder/app/dental-review-directions.ts", "utf8");
-  const diagnostics = readFileSync("apps/builder/app/dental-review-diagnostics.ts", "utf8");
+  const diagnostics = readFileSync("apps/builder/app/dental-review-diagnostics-lite.ts", "utf8");
 
   expect(review).toContain("isDentalReviewProfile(profile)");
   expect(review).toContain('fetch("/api/review-directions/dental"');
@@ -15,8 +15,8 @@ test("dental review uses server-certified blueprint systems instead of generic r
 
   expect(route).toContain("getSupabaseDraft(request, workspaceId, siteId)");
   expect(route).toContain("buildCertifiedDentalReviewDirections(");
-  expect(route).toContain("diagnoseCertifiedDentalReviewDirections(draft.snapshot, profile)");
-  expect(route).toContain("summarizeDentalReviewDiagnostics(diagnostics)");
+  expect(route).toContain("diagnoseCertifiedDentalReviewDirectionsLite(draft.snapshot, profile)");
+  expect(route).toContain("summarizeDentalReviewDiagnosticsLite(diagnostics)");
   expect(route).toContain("{ status: 422 }");
   expect(route).toContain("draft.snapshot");
   expect(route).toContain("directions,");
@@ -26,11 +26,13 @@ test("dental review uses server-certified blueprint systems instead of generic r
   expect(helper).toContain("const REVIEW_LIMIT = 8");
   expect(helper).toContain("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS");
 
-  expect(diagnostics).toContain('"dental-content"');
-  expect(diagnostics).toContain("multipage");
-  expect(diagnostics).toContain('"page-rhythm"');
-  expect(diagnostics).toContain("typography");
-  expect(diagnostics).toContain('"media-art-direction"');
+  expect(diagnostics).toContain("const DIAGNOSTIC_SAMPLE_LIMIT = 1");
+  expect(diagnostics).toContain("matching.slice(0, DIAGNOSTIC_SAMPLE_LIMIT)");
+  expect(diagnostics).toContain('failingStage: "dental-content"');
+  expect(diagnostics).toContain('failingStage: "multipage"');
+  expect(diagnostics).toContain('failingStage: "page-rhythm"');
+  expect(diagnostics).toContain('failingStage: "typography"');
+  expect(diagnostics).toContain('failingStage: "media-art-direction"');
   expect(diagnostics).toContain("runtimeRenderedCertifiedDentalIds()");
   expect(diagnostics).toContain("MIN_DENTAL_CONTENT_SCORE = 82");
   expect(diagnostics).toContain("MIN_DENTAL_MULTIPAGE_SCORE = 90");

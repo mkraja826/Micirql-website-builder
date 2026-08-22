@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { DesignPreferenceProfile } from "@micirql/design-engine";
 import {
-  diagnoseCertifiedDentalReviewDirections,
-  summarizeDentalReviewDiagnostics,
-} from "../../../dental-review-diagnostics";
+  diagnoseCertifiedDentalReviewDirectionsLite,
+  summarizeDentalReviewDiagnosticsLite,
+} from "../../../dental-review-diagnostics-lite";
 import { buildCertifiedDentalReviewDirections, isDentalReviewProfile } from "../../../dental-review-directions";
 import type { OnboardingProfile } from "../../../preset-ranking";
 import { getSupabaseDraft } from "../../drafts/supabase-store";
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     );
 
     if (!directions.length) {
-      const diagnostics = diagnoseCertifiedDentalReviewDirections(draft.snapshot, profile);
-      const error = summarizeDentalReviewDiagnostics(diagnostics);
+      const diagnostics = diagnoseCertifiedDentalReviewDirectionsLite(draft.snapshot, profile);
+      const error = summarizeDentalReviewDiagnosticsLite(diagnostics);
       console.warn("MiCirql Dental review certification produced no directions.", {
         workspaceId,
         siteId,

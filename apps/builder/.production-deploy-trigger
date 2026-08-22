@@ -1,4 +1,4 @@
 Production deploy trigger
 
-Fresh production deploy requested on 2026-08-22 23:39 IST.
-Expected parent production commit: 0908dbcc3aba05b0179842c69854e37b3ac4e8a9
+Fresh production deploy requested on 2026-08-22 after isolated Dental viewport QA.
+Expected parent production commit: 859d59c782c6603c167acd3ce9f52d18d8c895d3

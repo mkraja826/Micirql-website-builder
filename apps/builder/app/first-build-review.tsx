@@ -7,7 +7,6 @@ import type { SupabaseSession } from "./auth-client";
 import { RendererPreview } from "./renderer-preview";
 import { CompareDesigns } from "./compare-designs";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
-import { buildCertifiedDentalReviewDirections, isDentalReviewProfile } from "./dental-review-directions";
 import { DentalReviewRenderCertifier } from "./dental-review-render-certifier";
 import type { OnboardingProfile } from "./preset-ranking";
 import styles from "./first-build-review.module.css";
@@ -15,6 +14,12 @@ import styles from "./first-build-review.module.css";
 type DraftRecord = { workspaceId: string; siteId: string; revision: number; snapshot: Site };
 type Viewport = "desktop" | "mobile";
 type PreferenceSignal = "more_like_this" | "compare" | "regenerate" | "selected";
+
+type DentalDirectionsPayload = {
+  directions?: ReviewDirection[];
+  revision?: number;
+  error?: string;
+};
 
 export function FirstBuildReview({ session, workspaceId, siteId, profile, onComplete }: {
   session: SupabaseSession;
@@ -26,6 +31,8 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [draft, setDraft] = useState<DraftRecord>();
   const [preferenceProfile, setPreferenceProfile] = useState<DesignPreferenceProfile>();
   const [preferenceLoaded, setPreferenceLoaded] = useState(false);
+  const [serverDentalPool, setServerDentalPool] = useState<ReviewDirection[]>();
+  const [serverDentalPoolLoaded, setServerDentalPoolLoaded] = useState(false);
   const [savingId, setSavingId] = useState<string>();
   const [error, setError] = useState("");
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
@@ -34,12 +41,14 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [certifiedDentalPool, setCertifiedDentalPool] = useState<ReviewDirection[]>();
   const dentalReview = isDentalReviewProfile(profile);
+  const profileSignature = useMemo(() => JSON.stringify(profile), [profile]);
+  const preferenceSignature = useMemo(() => JSON.stringify(preferenceProfile ?? null), [preferenceProfile]);
   const rawPool = useMemo(() => {
     if (!draft || !preferenceLoaded) return [];
     return dentalReview
-      ? buildCertifiedDentalReviewDirections(draft.snapshot, profile, 8, preferenceProfile)
+      ? (serverDentalPool ?? [])
       : buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
-  }, [dentalReview, draft, profile, preferenceLoaded, preferenceProfile]);
+  }, [dentalReview, draft, preferenceLoaded, preferenceProfile, profile, serverDentalPool]);
   const rawPoolSignature = useMemo(() => rawPool.map((item) => `${item.id}:${item.designScore.total}`).join("|"), [rawPool]);
   const pool = dentalReview ? (certifiedDentalPool ?? []) : rawPool;
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
@@ -80,6 +89,59 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     })();
     return () => { cancelled = true; };
   }, [session.access_token, workspaceId, siteId]);
+
+  useEffect(() => {
+    if (!dentalReview) {
+      setServerDentalPool(undefined);
+      setServerDentalPoolLoaded(true);
+      return;
+    }
+    if (!draft || !preferenceLoaded) return;
+
+    let cancelled = false;
+    setServerDentalPool(undefined);
+    setServerDentalPoolLoaded(false);
+    setError("");
+
+    (async () => {
+      try {
+        const response = await fetch("/api/review-directions/dental", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            workspaceId,
+            siteId,
+            profile,
+            ...(preferenceProfile ? { preferenceProfile } : {}),
+          }),
+          cache: "no-store",
+        });
+        const payload = await response.json() as DentalDirectionsPayload;
+        if (!response.ok || !Array.isArray(payload.directions)) {
+          throw new Error(payload.error ?? "Could not prepare certified Dental review directions.");
+        }
+        const directions = payload.directions.map((direction) => ({
+          ...direction,
+          site: siteSchema.parse(direction.site),
+        }));
+        if (!cancelled) {
+          setServerDentalPool(directions);
+          setServerDentalPoolLoaded(true);
+        }
+      } catch (caught) {
+        if (!cancelled) {
+          setServerDentalPool([]);
+          setServerDentalPoolLoaded(true);
+          setError(caught instanceof Error ? caught.message : "Could not prepare certified Dental review directions.");
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [dentalReview, draft?.revision, preferenceLoaded, preferenceSignature, profileSignature, session.access_token, workspaceId, siteId]);
 
   useEffect(() => {
     if (!dentalReview) return;
@@ -186,6 +248,8 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
   if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing distinct design directions and learning from your previous choices…"}</p></div></main>;
 
+  if (dentalReview && !serverDentalPoolLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Preparing your certified Dental directions.</h1><p>Applying the production-certified layout allowlist and premium review gates on the server…</p></div></main>;
+
   if (dentalReview && rawPool.length && certifiedDentalPool === undefined) return <main className={styles.shell}>
     <DentalReviewRenderCertifier directions={rawPool} onComplete={handleDentalCertification} />
     <div className={styles.header}>
@@ -195,7 +259,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     </div>
   </main>;
 
-  if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>The review is failing closed rather than showing an unverified design. Run the rendered dental certification/recovery flow and try again.</p></div></main>;
+  if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>{error || "The server-side certification gate found no eligible direction for this draft. The review is failing closed rather than showing an unverified design."}</p></div></main>;
 
   if (dentalReview && certifiedDentalPool && certifiedDentalPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>These directions did not pass rendered review.</h1><p>MiCirql withheld the candidates because their mobile or desktop first screen still failed after the single allowed repair.</p></div></main>;
 
@@ -304,4 +368,12 @@ function sameDesign(a: Site, b: Site) {
   const componentsA = a.pages.flatMap((page) => page.sections.map((section) => section.component.componentId));
   const componentsB = b.pages.flatMap((page) => page.sections.map((section) => section.component.componentId));
   return JSON.stringify(componentsA) === JSON.stringify(componentsB);
+}
+
+function isDentalReviewProfile(profile: OnboardingProfile): boolean {
+  return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${cleanProfileSignal(profile.industry)} ${cleanProfileSignal(profile.subindustry)}`);
+}
+
+function cleanProfileSignal(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
 }

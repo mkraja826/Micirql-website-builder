@@ -24,7 +24,7 @@ export function measureResponsiveCompositionIssues(root: HTMLElement, width: num
   const editorSelector = "[data-mi-canvas-action],.mi-editor-insert-zone,.mi-editor-canvas-toolbar";
   const visible = (node: Element) => {
     if (node.closest(editorSelector)) return false;
-    const style = getComputedStyle(node);
+    const style = computedStyle(node);
     const rect = node.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && Number.parseFloat(style.opacity || "1") !== 0 && rect.width > 0 && rect.height > 0;
   };
@@ -56,7 +56,9 @@ export function measureResponsiveCompositionIssues(root: HTMLElement, width: num
     if (card.parentElement) cardParents.add(card.parentElement);
   }
   for (const parent of cardParents) {
-    const cards = [...parent.children].filter((child): child is HTMLElement => child instanceof HTMLElement && child.matches(cardSelector) && visible(child));
+    const cards = [...parent.children]
+      .filter((child) => child.nodeType === 1 && (child as Element).matches(cardSelector) && visible(child as Element))
+      .map((child) => child as HTMLElement);
     if (cards.length < 2) continue;
     const rows = groupRows(cards);
     const maxColumns = Math.max(...rows.map((row) => row.length));
@@ -108,6 +110,10 @@ export function measureResponsiveCompositionIssues(root: HTMLElement, width: num
   }
 
   return dedupeIssues(issues);
+}
+
+function computedStyle(node: Element): CSSStyleDeclaration {
+  return node.ownerDocument.defaultView?.getComputedStyle(node) ?? getComputedStyle(node);
 }
 
 function groupRows(nodes: HTMLElement[]): HTMLElement[][] {

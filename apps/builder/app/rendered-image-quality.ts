@@ -20,7 +20,7 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
   const editorSelector = "[data-mi-canvas-action],.mi-editor-insert-zone,.mi-editor-canvas-toolbar";
   const visible = (node: Element) => {
     if (node.closest(editorSelector)) return false;
-    const style = getComputedStyle(node);
+    const style = computedStyle(node);
     const rect = node.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && Number.parseFloat(style.opacity || "1") !== 0 && rect.width > 0 && rect.height > 0;
   };
@@ -64,7 +64,7 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
       });
     }
 
-    const style = getComputedStyle(image);
+    const style = computedStyle(image);
     if (style.objectFit === "cover" && rect.width > 0 && rect.height > 0) {
       const sourceRatio = image.naturalWidth / image.naturalHeight;
       const boxRatio = rect.width / rect.height;
@@ -99,6 +99,10 @@ export function measureRenderedImageQualityIssues(root: HTMLElement, width: numb
   }
 
   return dedupe(issues);
+}
+
+function computedStyle(node: Element): CSSStyleDeclaration {
+  return node.ownerDocument.defaultView?.getComputedStyle(node) ?? getComputedStyle(node);
 }
 
 function dedupe(issues: RenderedImageQualityIssue[]): RenderedImageQualityIssue[] {

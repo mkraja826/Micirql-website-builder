@@ -2,15 +2,25 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { DENTAL_LAYOUT_BLUEPRINTS } from "../packages/design-engine/src/dental-layout-blueprints";
 
-test("dental review uses certified blueprint systems instead of generic recipe mutations", () => {
+test("dental review uses server-certified blueprint systems instead of generic recipe mutations", () => {
   const review = readFileSync("apps/builder/app/first-build-review.tsx", "utf8");
+  const route = readFileSync("apps/builder/app/api/review-directions/dental/route.ts", "utf8");
   const helper = readFileSync("apps/builder/app/dental-review-directions.ts", "utf8");
 
   expect(review).toContain("isDentalReviewProfile(profile)");
-  expect(review).toContain("buildCertifiedDentalReviewDirections(draft.snapshot, profile, 8");
+  expect(review).toContain('fetch("/api/review-directions/dental"');
+  expect(review).not.toContain("buildCertifiedDentalReviewDirections(");
+  expect(review).not.toContain("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS");
+
+  expect(route).toContain("getSupabaseDraft(request, workspaceId, siteId)");
+  expect(route).toContain("buildCertifiedDentalReviewDirections(");
+  expect(route).toContain("draft.snapshot");
+  expect(route).toContain("directions,");
+
   expect(helper).toContain("DENTAL_LAYOUT_BLUEPRINTS");
   expect(helper).toContain("applyWebsiteLayoutBlueprint(site, blueprint)");
   expect(helper).toContain("const REVIEW_LIMIT = 8");
+  expect(helper).toContain("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS");
 
   const flagshipNames = DENTAL_LAYOUT_BLUEPRINTS.slice(0, 5).map((item) => item.name);
   expect(flagshipNames).toEqual([

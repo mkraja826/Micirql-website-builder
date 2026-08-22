@@ -27,11 +27,18 @@ import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
+const RUNTIME_EVALUATION_LIMIT = 4;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_DENTAL_MULTIPAGE_SCORE = 90;
 const MIN_PAGE_RHYTHM_SCORE = 78;
 const MIN_PAGE_TYPOGRAPHY_SCORE = 82;
 const MIN_MEDIA_ART_DIRECTION_SCORE = 80;
+
+type BlueprintEvaluationCandidate = {
+  blueprint: (typeof DENTAL_LAYOUT_BLUEPRINTS)[number];
+  index: number;
+  fitBonus: number;
+};
 
 export function isDentalReviewProfile(profile: OnboardingProfile): boolean {
   return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${clean(profile.industry)} ${clean(profile.subindustry)}`);
@@ -52,9 +59,32 @@ export function buildCertifiedDentalReviewDirections(
 
   if (process.env.NODE_ENV === "production" && renderedCertifiedIds.size === 0) return [];
 
-  for (let index = 0; index < DENTAL_LAYOUT_BLUEPRINTS.length; index += 1) {
-    const blueprint = DENTAL_LAYOUT_BLUEPRINTS[index]!;
-    if (process.env.NODE_ENV === "production" && !renderedCertifiedIds.has(blueprint.id)) continue;
+  const eligibleBlueprints: BlueprintEvaluationCandidate[] = DENTAL_LAYOUT_BLUEPRINTS
+    .map((blueprint, index) => ({
+      blueprint,
+      index,
+      fitBonus: blueprintFitBonus(
+        blueprint.fit.subindustryIds,
+        blueprint.fit.goals,
+        blueprint.fit.priorities,
+        blueprint.styleTags,
+        subindustry,
+        goals,
+        briefSignals,
+      ),
+    }))
+    .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
+
+  // The 20 Dental blueprints are already certified offline at deploy time. At runtime,
+  // rank those certified blueprints cheaply first, then run the full per-draft repair and
+  // quality pipeline only for the small set that can actually be presented to the user.
+  // Every returned direction still passes every existing quality threshold below.
+  const evaluationBlueprints = process.env.NODE_ENV === "production"
+    ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(1, count)))
+    : eligibleBlueprints;
+
+  for (const entry of evaluationBlueprints) {
+    const { blueprint, index, fitBonus } = entry;
 
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
@@ -127,15 +157,6 @@ export function buildCertifiedDentalReviewDirections(
       contentScore: Math.min(contentQuality.score, dentalContentQuality.score, multipageQuality.score, pageRhythmQuality.score, pageTypographyQuality.score, mediaArtDirection.score),
       archetypeFitScore: industryFit.score,
     });
-    const fitBonus = blueprintFitBonus(
-      blueprint.fit.subindustryIds,
-      blueprint.fit.goals,
-      blueprint.fit.priorities,
-      blueprint.styleTags,
-      subindustry,
-      goals,
-      briefSignals,
-    );
     const biased = applyPreferenceBias(baseScore, preferenceProfile);
     const designScore = { ...biased, total: Math.min(100, biased.total + fitBonus) };
 
@@ -185,6 +206,28 @@ export function buildCertifiedDentalReviewDirections(
 export function runtimeRenderedCertifiedDentalIds(): Set<string> {
   const raw = process.env.MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS ?? "";
   return new Set(raw.split(",").map((value) => value.trim()).filter(Boolean));
+}
+
+function selectBlueprintEvaluationSet(
+  entries: BlueprintEvaluationCandidate[],
+  limit: number,
+): BlueprintEvaluationCandidate[] {
+  if (entries.length <= limit) return entries;
+  const ranked = [...entries].sort((a, b) => b.fitBonus - a.fitBonus || a.index - b.index);
+  const selected: BlueprintEvaluationCandidate[] = [];
+  const usedArchetypes = new Set<string>();
+
+  for (const entry of ranked) {
+    if (selected.length >= limit) break;
+    if (usedArchetypes.has(entry.blueprint.archetype)) continue;
+    selected.push(entry);
+    usedArchetypes.add(entry.blueprint.archetype);
+  }
+  for (const entry of ranked) {
+    if (selected.length >= limit) break;
+    if (!selected.includes(entry)) selected.push(entry);
+  }
+  return selected;
 }
 
 function blueprintFitBonus(

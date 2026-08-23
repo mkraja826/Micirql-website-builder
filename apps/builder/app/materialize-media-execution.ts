@@ -1,6 +1,7 @@
 import type { Site } from "@micirql/schema";
 import { FAMILY_CODES, SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
 import type { MediaAsset, MediaExecutionPlan, MediaRequest } from "./media-execution";
+import { createPexelsAsset } from "./pexels-asset-service";
 
 export type MediaMaterializationResult={execution:MediaExecutionPlan;generated:number;warnings:string[]};
 
@@ -29,18 +30,23 @@ export async function materializeGeneratedMedia(input:{
   const media=assignment.request;
   if(media.source!=="generated"||!media.generationPrompt||!selectedGenerationIndexes.has(index)){requests.push(media);continue;}
   try{
-   const response=await fetch(new URL("/api/assets/generate",input.request.url),{
-    method:"POST",
-    headers:{authorization,"content-type":"application/json"},
-    body:JSON.stringify({workspaceId:input.workspaceId,siteId:input.siteId,sectionId:assignment.sectionId,pagePath:assignment.pagePath,family:media.family,domain:input.domain??"general",prompt:media.generationPrompt,desiredAspect:media.desiredAspect,preferredTags:media.preferredTags??[]})
+   const payload=await createPexelsAsset(input.request,{
+    workspaceId:input.workspaceId,
+    siteId:input.siteId,
+    sectionId:assignment.sectionId,
+    pagePath:assignment.pagePath,
+    family:media.family,
+    domain:input.domain??"general",
+    prompt:media.generationPrompt,
+    desiredAspect:media.desiredAspect,
+    preferredTags:media.preferredTags??[],
    });
-   if(!response.ok){const body=await response.text();throw new Error(body||`Image generation failed (${response.status}).`);}
-   const payload=await response.json() as{asset?:{id?:string;originalUrl?:string;url?:string;tags?:string[];alt?:string;aspectRatio?:number;orientation?:string}};
-   if(!payload.asset?.id)throw new Error("Generated image asset was not returned.");
-   const url=payload.asset.originalUrl??payload.asset.url;if(!url)throw new Error("Generated image URL was not returned.");
-   const aspect=aspectFromAsset(payload.asset.aspectRatio,payload.asset.orientation);
-   const asset:MediaAsset={id:payload.asset.id,url,source:"generated",tags:[...(payload.asset.tags??[]),media.family,"ai-generated"],...(payload.asset.alt?{alt:payload.asset.alt}:{}),...(aspect?{aspect}:{}),verified:true};
-   requests.push({...media,asset,alt:media.alt||payload.asset.alt||`${media.family} supporting visual`,reason:`${media.reason} Generated asset was materialized and persisted.`});generated++;
+   const persisted=payload.asset;
+   const url=persisted.originalUrl;
+   if(!url)throw new Error("Generated image URL was not returned.");
+   const aspect=aspectFromAsset(persisted.aspectRatio,persisted.orientation);
+   const asset:MediaAsset={id:persisted.id,url,source:"generated",tags:[...(persisted.tags??[]),media.family,"ai-generated"],...(persisted.alt?{alt:persisted.alt}:{}),...(aspect?{aspect}:{}),verified:true};
+   requests.push({...media,asset,alt:media.alt||persisted.alt||`${media.family} supporting visual`,reason:`${media.reason} Generated asset was materialized and persisted.`});generated++;
   }catch(error){warnings.push(`${media.family}: ${error instanceof Error?error.message:"Image generation failed."}`);requests.push(media);}
  }
  return{execution:{...input.execution,requests},generated,warnings};

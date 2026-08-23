@@ -102,6 +102,27 @@
 [data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading h2,
 [data-mi-layout-blueprint="dental-13-implant-results"] .mi-conv-cta--split .mi-conv-heading p{color:inherit}
 
+/* 1024px certification edge: treatment-page headlines must remain inside the
+ * inherited Implant Results composition rather than preserving desktop nowrap. */
+@media(min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] h1,
+  [data-mi-layout-blueprint="dental-13-implant-results"] h2,
+  [data-mi-layout-blueprint="dental-13-implant-results"] h3,
+  [data-mi-layout-blueprint="dental-13-implant-results"] [data-mi-prop-path="title"]{
+    min-width:0;
+    max-width:100%;
+    white-space:normal!important;
+    overflow-wrap:break-word;
+    word-break:normal;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-section__heading,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-content-heading{
+    min-width:0;
+    max-width:100%;
+  }
+}
+
 @media(max-width:47.99rem){
   [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article,
   [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article:last-child{

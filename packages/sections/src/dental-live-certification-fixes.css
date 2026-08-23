@@ -1,0 +1,10 @@
+/* Live production certification fixes discovered from real Builder generations. */
+
+/* Implant Atelier was consistently 11px beyond the mobile first-screen spacing
+ * threshold at the 390px certification viewport. Keep the editorial breathing
+ * room while bringing the first headline decisively inside the certified range. */
+@media (max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{
+    padding-top:2.5rem!important;
+  }
+}

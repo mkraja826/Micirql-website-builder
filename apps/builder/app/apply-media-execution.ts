@@ -30,7 +30,18 @@ function apply(props:Record<string,unknown>,request:MediaRequest,family:SectionF
  };
  if(family==="gallery"||family==="team"||family==="features"){
   const items=Array.isArray(props.items)?props.items as Array<Record<string,unknown>>:[];
-  const target=items.find(item=>!item.image);if(target){target.image=request.asset.url;props.imageSlotMode=props.image?"both":"items";}
+  const target=items.find(item=>!item.image);
+  if(target){
+   // Never write the same asset into both the section image and an item image.
+   // That manufactured duplicate placements and caused otherwise-valid builds to
+   // fail visual-diversity QA. Use a qualified distinct alternate when present;
+   // otherwise keep the item unfilled and let the section image carry the visual.
+   const alternate=request.qualifiedAlternates?.find(({asset})=>asset.url&&asset.url!==request.asset?.url)?.asset;
+   if(alternate?.url){
+    target.image=alternate.url;
+    props.imageSlotMode="both";
+   }
+  }
  }
 }
 function normalizeRatio(value?:string){if(value==="1:1"||value==="4:3"||value==="3:2"||value==="16:9")return value;return value==="wide"?"21:9":value==="portrait"?"4:5":undefined;}

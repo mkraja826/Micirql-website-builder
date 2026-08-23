@@ -15,6 +15,7 @@ export default defineConfig({
     "dental-review-server-boundary.spec.ts",
     "dental-review-isolated-viewport.spec.ts",
     "dental-rendered-review-observability.spec.ts",
+    "dental-rendered-repair-exact-failures.spec.ts",
     "dental-duplicate-seo-repair.spec.ts",
     "dental-content-quality.spec.ts",
     "content-specialty-rules.spec.ts",

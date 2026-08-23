@@ -7,7 +7,10 @@ export const WEBSITE_LAYOUT_LIBRARY: readonly WebsiteLayoutBlueprint[] = [
 
 function runtimeEnv(name: string): string | undefined {
   try {
-    return typeof process !== "undefined" ? process.env?.[name] : undefined;
+    const runtime = globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    };
+    return runtime.process?.env?.[name];
   } catch {
     return undefined;
   }

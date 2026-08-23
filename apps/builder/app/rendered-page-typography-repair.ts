@@ -32,8 +32,6 @@ export function planRenderedPageTypographyRepair(input: {
   const root = "[data-mi-rendered-typography-repair='1']";
   const rules: string[] = [];
   if (operations.includes("rebalance-heading-wrap")) {
-    // Widen the measure first so legitimate Dental headings do not get forced
-    // into 4-6 lines. Scale remains above the rendered certification minimums.
     const h1 = viewport === "mobile" ? "clamp(2rem,7.5vw,2.65rem)" : viewport === "tablet" ? "clamp(2.5rem,4.8vw,3.75rem)" : "clamp(3rem,4vw,5rem)";
     const h2 = viewport === "mobile" ? "clamp(1.75rem,6vw,2.25rem)" : viewport === "tablet" ? "clamp(2rem,3.8vw,2.85rem)" : "clamp(2.25rem,3vw,3.4rem)";
     const h1Measure = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
@@ -43,13 +41,21 @@ export function planRenderedPageTypographyRepair(input: {
     rules.push(`${root} h3{max-width:32ch;line-height:1.12;text-wrap:balance}`);
   }
   if (operations.includes("stabilize-action-wrap")) {
-    // Do not use overflow-wrap:anywhere: it can manufacture 3+ line actions.
-    // Keep words intact, slightly compact the control, and allow at most the
-    // natural two-line wrap that the rendered gate permits.
-    const actionSize = viewport === "mobile" ? "clamp(.82rem,3.5vw,1rem)" : "clamp(.88rem,1.7vw,1rem)";
-    const actionPadding = viewport === "mobile" ? ".7rem" : ".9rem";
-    rules.push(`${root} a,${root} button{max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none;line-height:1.15;font-size:${actionSize}}`);
-    rules.push(`${root} .mi-section__action{white-space:normal;line-height:1.15;min-height:44px;padding-inline:${actionPadding};text-align:center;width:fit-content;max-width:100%}`);
+    const actionSize = viewport === "mobile" ? "clamp(.8rem,3.2vw,.95rem)" : viewport === "tablet" ? "clamp(.84rem,1.8vw,.98rem)" : "clamp(.88rem,1.2vw,1rem)";
+    const actionPadding = viewport === "mobile" ? ".65rem" : viewport === "tablet" ? ".8rem" : ".9rem";
+    const actionGroup = `${root} .mi-section__actions,${root} [class*='actions'],${root} [class*='cta-group'],${root} [class*='button-group']`;
+
+    rules.push(`${root} a,${root} button{max-width:100%;min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none;line-height:1.15;font-size:${actionSize}}`);
+    rules.push(`${root} .mi-section__action,${root} [class*='cta'] a,${root} [class*='cta'] button{white-space:normal;line-height:1.15;min-height:44px;padding-inline:${actionPadding};text-align:center;width:fit-content;max-width:100%;min-width:0}`);
+    rules.push(`${actionGroup}{display:flex;flex-wrap:wrap;align-items:stretch;gap:min(.75rem,2vw);min-width:0;max-width:100%}`);
+
+    if (viewport === "mobile") {
+      rules.push(`${actionGroup}{width:100%;flex-direction:column}`);
+      rules.push(`${actionGroup}>a,${actionGroup}>button,${root} .mi-section__action{width:100%;max-width:100%;flex:0 1 100%}`);
+    } else {
+      rules.push(`${actionGroup}>a,${actionGroup}>button{flex:0 1 auto;max-width:100%}`);
+    }
+
     rules.push(`${root} nav a,${root} header a,${root} nav button,${root} header button{white-space:nowrap;font-size:clamp(.78rem,1.6vw,.95rem);padding-inline:min(.75rem,2vw)}`);
   }
   if (operations.includes("relax-paragraph-measure")) {

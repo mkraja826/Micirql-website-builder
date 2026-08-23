@@ -38,8 +38,8 @@ export async function materializeGeneratedMedia(input:{
     family:media.family,
     domain:input.domain??"general",
     prompt:media.generationPrompt,
-    desiredAspect:media.desiredAspect,
-    preferredTags:media.preferredTags??[],
+    ...(media.desiredAspect?{desiredAspect:media.desiredAspect}:{}),
+    ...(media.preferredTags?.length?{preferredTags:media.preferredTags}:{}),
    });
    const persisted=payload.asset;
    const url=persisted.originalUrl;

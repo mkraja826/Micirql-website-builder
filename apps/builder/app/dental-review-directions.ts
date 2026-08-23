@@ -27,7 +27,11 @@ import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
-const RUNTIME_EVALUATION_LIMIT = 4;
+// Dental review used to evaluate only four blueprints in production. That made the
+// quality gate double as a diversity bottleneck: even with 20 certified blueprints,
+// users could never receive more than four directions. Evaluate a broader certified
+// shortlist so ranking and diversity selection have enough genuinely different work.
+const RUNTIME_EVALUATION_LIMIT = 12;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_DENTAL_MULTIPAGE_SCORE = 90;
 const MIN_PAGE_RHYTHM_SCORE = 78;
@@ -75,12 +79,12 @@ export function buildCertifiedDentalReviewDirections(
     }))
     .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
 
-  // The 20 Dental blueprints are already certified offline at deploy time. At runtime,
-  // rank those certified blueprints cheaply first, then run the full per-draft repair and
-  // quality pipeline only for the small set that can actually be presented to the user.
-  // Every returned direction still passes every existing quality threshold below.
+  // The Dental blueprints are certified offline at deploy time. Runtime still applies
+  // the complete per-draft content, multipage, rhythm, typography and media gates, but
+  // it now evaluates enough archetypes for the final selector to return a premium and
+  // visibly diverse 6-8 direction review rather than four near-neighbours.
   const evaluationBlueprints = process.env.NODE_ENV === "production"
-    ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(1, count)))
+    ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(8, count)))
     : eligibleBlueprints;
 
   for (const entry of evaluationBlueprints) {
@@ -115,13 +119,11 @@ export function buildCertifiedDentalReviewDirections(
         pageRhythmErrors = pageRhythmQuality.issues.filter((issue) => issue.severity === "error");
       }
     }
-
     if (pageRhythmErrors.length || pageRhythmQuality.score < MIN_PAGE_RHYTHM_SCORE) continue;
 
     let pageTypographyQuality = evaluatePageTypographyQuality(candidateSite);
     let pageTypographyErrors = pageTypographyQuality.issues.filter((issue) => issue.severity === "error" && !issue.repairable);
     let pageTypographyRepairOperations: string[] = [];
-
     if (pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE || pageTypographyQuality.issues.some((issue) => issue.severity === "error")) {
       const typographyRepair = repairPageTypography(candidateSite, pageTypographyQuality.issues);
       if (typographyRepair.repaired) {
@@ -131,13 +133,11 @@ export function buildCertifiedDentalReviewDirections(
         pageTypographyErrors = pageTypographyQuality.issues.filter((issue) => issue.severity === "error" && !issue.repairable);
       }
     }
-
     if (pageTypographyErrors.length || pageTypographyQuality.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
 
     let mediaArtDirection = evaluatePageMediaArtDirection(candidateSite);
     let mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
     let mediaArtDirectionRepairOperations: string[] = [];
-
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) {
       const artDirectionRepair = repairPageMediaArtDirection(candidateSite, mediaArtDirection);
       if (artDirectionRepair.repaired) {
@@ -147,7 +147,6 @@ export function buildCertifiedDentalReviewDirections(
         mediaArtDirectionErrors = mediaArtDirection.issues.filter((issue) => issue.severity === "error");
       }
     }
-
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
 
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
@@ -197,7 +196,6 @@ export function buildCertifiedDentalReviewDirections(
 
   const ranked = [...candidates].sort((a, b) => b.designScore.total - a.designScore.total);
   const selected = selectDiverseDesigns(ranked, Math.min(REVIEW_LIMIT, count, ranked.length));
-
   const top = ranked[0];
   if (!top) return selected;
   return [top, ...selected.filter((candidate) => candidate.id !== top.id)].slice(0, Math.min(REVIEW_LIMIT, count));
@@ -208,15 +206,14 @@ export function runtimeRenderedCertifiedDentalIds(): Set<string> {
   return new Set(raw.split(",").map((value) => value.trim()).filter(Boolean));
 }
 
-function selectBlueprintEvaluationSet(
-  entries: BlueprintEvaluationCandidate[],
-  limit: number,
-): BlueprintEvaluationCandidate[] {
+function selectBlueprintEvaluationSet(entries: BlueprintEvaluationCandidate[], limit: number): BlueprintEvaluationCandidate[] {
   if (entries.length <= limit) return entries;
   const ranked = [...entries].sort((a, b) => b.fitBonus - a.fitBonus || a.index - b.index);
   const selected: BlueprintEvaluationCandidate[] = [];
   const usedArchetypes = new Set<string>();
 
+  // First pass deliberately maximizes composition/archetype diversity. This prevents
+  // several high-scoring but visually similar clinic layouts from consuming the pool.
   for (const entry of ranked) {
     if (selected.length >= limit) break;
     if (usedArchetypes.has(entry.blueprint.archetype)) continue;
@@ -230,26 +227,16 @@ function selectBlueprintEvaluationSet(
   return selected;
 }
 
-function blueprintFitBonus(
-  subindustries: string[],
-  blueprintGoals: string[],
-  priorities: string[],
-  styleTags: string[],
-  subindustry: string,
-  goals: string[],
-  signals: string[],
-): number {
+function blueprintFitBonus(subindustries: string[], blueprintGoals: string[], priorities: string[], styleTags: string[], subindustry: string, goals: string[], signals: string[]): number {
   let bonus = 0;
   if (subindustry && subindustries.includes(subindustry)) bonus += subindustries.length === 1 ? 18 : 12;
   else if (subindustry && subindustries.length && !subindustries.includes(subindustry)) bonus -= 10;
-
   const goalMatches = goals.filter((goal) => blueprintGoals.some((candidate) => looselyMatches(candidate, goal))).length;
   bonus += Math.min(6, goalMatches * 2);
   const priorityMatches = priorities.filter((priority) => signals.some((signal) => looselyMatches(priority, signal))).length;
   bonus += Math.min(6, priorityMatches * 2);
   const styleMatches = styleTags.filter((tag) => signals.some((signal) => looselyMatches(tag, signal))).length;
   bonus += Math.min(5, styleMatches);
-
   if (subindustry === "implant-dentistry" && priorities.some((item) => /implant|technology|doctor/.test(item))) bonus += 4;
   if (subindustry === "cosmetic-dentistry" && priorities.some((item) => /visual|outcome|confidence/.test(item))) bonus += 4;
   if (subindustry === "orthodontics" && priorities.some((item) => /journey|treatment|technology/.test(item))) bonus += 4;
@@ -262,12 +249,7 @@ function profileGoals(profile: OnboardingProfile): string[] {
 }
 
 function profileSignals(profile: OnboardingProfile): string[] {
-  return [
-    ...(Array.isArray(profile.style_tags) ? profile.style_tags : []),
-    ...(Array.isArray(profile.services) ? profile.services : []),
-    ...(Array.isArray(profile.required_capabilities) ? profile.required_capabilities : []),
-    profile.notes ?? "",
-  ].map(clean).filter(Boolean);
+  return [...(Array.isArray(profile.style_tags) ? profile.style_tags : []), ...(Array.isArray(profile.services) ? profile.services : []), ...(Array.isArray(profile.required_capabilities) ? profile.required_capabilities : []), profile.notes ?? ""].map(clean).filter(Boolean);
 }
 
 function normalizeDentalSubindustry(value: unknown): string {

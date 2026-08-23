@@ -5,6 +5,12 @@
  * primitive reaches an unsafe breakpoint.
  */
 
+/* Runtime sentinel used by rendered QA to prove that this established shared
+ * safety layer reached the isolated candidate document before measurements run. */
+[data-mi-layout-blueprint^="dental-"]{
+  --mi-dental-responsive-safety-loaded:1;
+}
+
 /* Typography primitives set their own foreground color, so inheriting white from
  * an immersive hero's copy wrapper is not enough. Keep generated image-led hero
  * headlines and body copy readable against the dark overlay. */
@@ -100,6 +106,77 @@
   [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-team--featured .mi-team-card--lead :is(h3,p,span){
     min-width:0;
     overflow-wrap:anywhere;
+  }
+
+  /* Implant Atelier's desktop immersive hero owns a 90vh centered shell. At
+   * the exact tablet certification range that geometry leaves ~271px between
+   * navigation and headline. Collapse the viewport-height shell here, in the
+   * established shared safety layer that the isolated renderer already uses. */
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive{
+    min-height:0!important;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{
+    min-height:0!important;
+    align-items:flex-start!important;
+    padding-block:clamp(2.5rem,5vw,4rem)!important;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__copy{
+    align-self:start!important;
+    min-width:0;
+    max-width:min(100%,49rem);
+  }
+}
+
+/* Proof First, Implant Results and Doctor Signature reached rendered QA with
+ * action groups that could preserve narrow desktop-oriented columns. Own the
+ * conversion geometry in this shared layer so QA and runtime use the same rules. */
+:is(
+  [data-mi-layout-blueprint="dental-06-doctor-brand"],
+  [data-mi-layout-blueprint="dental-13-implant-results"],
+  [data-mi-layout-blueprint="dental-18-proof-first"]
+) :is(.mi-section__actions,.mi-conv-actions){
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));
+  align-items:stretch;
+  width:100%!important;
+  min-width:0!important;
+  max-width:36rem;
+  gap:.65rem;
+}
+
+:is(
+  [data-mi-layout-blueprint="dental-06-doctor-brand"],
+  [data-mi-layout-blueprint="dental-13-implant-results"],
+  [data-mi-layout-blueprint="dental-18-proof-first"]
+) :is(.mi-section__action,.mi-conv-btn){
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  justify-content:center;
+  text-align:center;
+  padding-inline:clamp(.75rem,2vw,1.1rem)!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  hyphens:none;
+}
+
+@media (max-width:64rem){
+  :is(
+    [data-mi-layout-blueprint="dental-06-doctor-brand"],
+    [data-mi-layout-blueprint="dental-13-implant-results"],
+    [data-mi-layout-blueprint="dental-18-proof-first"]
+  ) :is(.mi-section__actions,.mi-conv-actions){
+    grid-template-columns:minmax(0,1fr)!important;
+    max-width:min(100%,32rem)!important;
+  }
+
+  :is(
+    [data-mi-layout-blueprint="dental-06-doctor-brand"],
+    [data-mi-layout-blueprint="dental-13-implant-results"],
+    [data-mi-layout-blueprint="dental-18-proof-first"]
+  ) :is(.mi-cta-split,.mi-conv-cta--split .mi-cta-split){
+    min-width:0!important;
   }
 }
 

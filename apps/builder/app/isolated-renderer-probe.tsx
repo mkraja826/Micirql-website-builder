@@ -18,6 +18,12 @@ const FRAME_DOCUMENT = `<!doctype html><html><head><meta name="viewport" content
  * a phone browser is not a desktop viewport: media queries and vw/vh still use
  * the phone window. The iframe gives rendered QA a truthful viewport while
  * keeping the probe off-screen and same-origin.
+ *
+ * The probe also settles its own fonts and images before reporting readiness.
+ * Generated sites intentionally use native lazy-loading, but an off-screen QA
+ * iframe must not interpret a browser-deferred lazy image as a broken image.
+ * Only the isolated certification copy is switched to eager loading; the saved
+ * site and published runtime keep their original loading behaviour.
  */
 export const IsolatedRendererProbe = forwardRef<IsolatedRendererProbeHandle, {
   site: Site;
@@ -37,8 +43,23 @@ export const IsolatedRendererProbe = forwardRef<IsolatedRendererProbeHandle, {
   }), []);
 
   useEffect(() => {
-    onReadyChange?.(Boolean(mountNode));
-  }, [mountNode, onReadyChange]);
+    const frameDocument = frameRef.current?.contentDocument;
+    if (!mountNode || !frameDocument) {
+      onReadyChange?.(false);
+      return;
+    }
+
+    let cancelled = false;
+    onReadyChange?.(false);
+    void settleProbeDocument(frameDocument).then(() => {
+      if (!cancelled) onReadyChange?.(true);
+    });
+
+    return () => {
+      cancelled = true;
+      onReadyChange?.(false);
+    };
+  }, [mountNode, onReadyChange, path, site, viewport]);
 
   async function prepareFrame() {
     const frame = frameRef.current;
@@ -129,7 +150,54 @@ async function copyParentStyles(targetDocument: Document) {
   if (pending.length) {
     await Promise.race([
       Promise.all(pending).then(() => undefined),
-      new Promise<void>((resolve) => window.setTimeout(resolve, 2500)),
+      delay(targetDocument.defaultView, 2500),
     ]);
   }
+}
+
+async function settleProbeDocument(targetDocument: Document) {
+  const targetWindow = targetDocument.defaultView;
+  await nextFrames(targetWindow, 2);
+
+  const images = [...targetDocument.images];
+  for (const image of images) {
+    image.loading = "eager";
+  }
+
+  const fontSet = (targetDocument as Document & { fonts?: FontFaceSet }).fonts;
+  const fontsReady = fontSet?.ready.then(() => undefined) ?? Promise.resolve();
+  const imagesReady = Promise.all(images.map(waitForImage)).then(() => undefined);
+
+  await Promise.race([
+    Promise.all([fontsReady, imagesReady]).then(() => undefined),
+    delay(targetWindow, 3500),
+  ]);
+  await nextFrames(targetWindow, 2);
+}
+
+function waitForImage(image: HTMLImageElement): Promise<void> {
+  if (image.complete) return Promise.resolve();
+  return new Promise((resolve) => {
+    const settle = () => resolve();
+    image.addEventListener("load", settle, { once: true });
+    image.addEventListener("error", settle, { once: true });
+  });
+}
+
+function nextFrames(targetWindow: Window | null, count: number): Promise<void> {
+  if (!targetWindow || count <= 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    const step = (remaining: number) => {
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+      targetWindow.requestAnimationFrame(() => step(remaining - 1));
+    };
+    step(count);
+  });
+}
+
+function delay(targetWindow: Window | null, milliseconds: number): Promise<void> {
+  return new Promise((resolve) => (targetWindow ?? window).setTimeout(resolve, milliseconds));
 }

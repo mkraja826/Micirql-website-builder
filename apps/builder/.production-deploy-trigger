@@ -1,4 +1,4 @@
 Production deploy trigger
 
-Fresh production deploy requested on 2026-08-23 after rendered review observability QA.
-Expected parent production commit: 97064834dbb905247e94bf3287a5e17cd754af07
+Fresh production deploy requested on 2026-08-23 after exact rendered repair fixes.
+Expected parent production commit: 177bbd9b26dbb8e56f00801f5e52aeb28daa6e27

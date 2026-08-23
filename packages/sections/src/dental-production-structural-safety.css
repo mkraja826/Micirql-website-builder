@@ -80,3 +80,33 @@
     min-width:0;
   }
 }
+
+/* Desktop navigation invariant.
+ * The shared tablet layer intentionally enables the burger through 64rem. The
+ * Builder's desktop preview can be exactly 1024px (64rem), which previously
+ * allowed that tablet rule to win and made a desktop site look like mobile.
+ * At the desktop boundary and above, always restore the full navigation and
+ * remove the mobile toggle/drawer trigger. */
+@media (min-width:64rem){
+  [data-mi-layout-blueprint^="dental-"] .mi-mobile-nav,
+  [data-mi-layout-blueprint^="dental-"] .mi-burger{
+    display:none!important;
+  }
+
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-links,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-nav-groups,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered>.mi-shell-links{
+    display:flex!important;
+  }
+
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-actions>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-centered__action>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-shell-navbar>.mi-container>.mi-shell-cta,
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-row>.mi-shell-cta{
+    display:inline-flex!important;
+  }
+
+  [data-mi-layout-blueprint^="dental-"] .mi-nav-minimal-copy{
+    display:block!important;
+  }
+}

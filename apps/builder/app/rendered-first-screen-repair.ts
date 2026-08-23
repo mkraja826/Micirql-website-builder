@@ -63,9 +63,6 @@ export function planRenderedFirstScreenRepair(input: {
     }
   }
 
-  // Structural absence is intentionally not "repaired" with CSS. It must remain
-  // a hard failure so generation fixes the missing semantic element instead of
-  // hiding the defect with geometry changes.
   const ordered = [...operations];
   const css = buildRepairCss(viewport, ordered);
 
@@ -96,6 +93,7 @@ function buildRepairCss(viewport: FirstScreenRepairViewport, operations: FirstSc
   const rules: string[] = [];
   const hero = `${ROOT} section:has(h1), ${ROOT} .mi-editor-section:has(h1)`;
   const heroInner = `${hero}>*`;
+  const heroInnerDeep = `${hero}>*>*`;
   const h1 = `${ROOT} h1`;
   const nav = `${ROOT} header, ${ROOT} nav`;
   const cta = `${hero} a, ${hero} button`;
@@ -121,12 +119,10 @@ function buildRepairCss(viewport: FirstScreenRepairViewport, operations: FirstSc
   }
 
   if (operations.includes("reduce-hero-top-space")) {
-    const top = viewport === "mobile" ? "clamp(20px,5vw,40px)" : viewport === "tablet" ? "clamp(28px,4vw,52px)" : "clamp(32px,3.5vw,56px)";
-    // Some premium blueprints center their hero inside a large min-height shell.
-    // Merely changing padding leaves a 250-300px nav→headline gap, so the bounded
-    // repair also removes that minimum and starts the first content track at top.
-    rules.push(`${hero}{padding-top:${top}!important;margin-top:0!important;min-height:0!important;align-content:start!important;}`);
-    rules.push(`${heroInner}{min-height:0!important;margin-top:0!important;}`);
+    const top = viewport === "mobile" ? "clamp(16px,4vw,32px)" : viewport === "tablet" ? "clamp(20px,3vw,40px)" : "clamp(28px,3vw,48px)";
+    rules.push(`${hero}{padding-top:${top}!important;margin-top:0!important;min-height:0!important;align-content:start!important;justify-content:flex-start!important;place-content:start!important;}`);
+    rules.push(`${heroInner}{min-height:0!important;margin-top:0!important;padding-top:0!important;align-self:start!important;}`);
+    rules.push(`${heroInnerDeep}{margin-top:0!important;}`);
     rules.push(`${hero} h1{margin-top:0!important;}`);
   }
 

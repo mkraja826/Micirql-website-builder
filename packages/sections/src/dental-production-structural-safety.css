@@ -1,0 +1,82 @@
+/* Dental production structural safety
+ * Fixes layout-owned geometry that a single bounded rendered repair cannot
+ * reliably override. These rules preserve the premium compositions while
+ * making the affected layouts structurally safe before rendered QA runs.
+ */
+
+/* Implant Atelier uses a cinematic 90vh hero on desktop. At the exact tablet
+ * certification range that vertical centering can leave 250-300px between the
+ * navigation and the first headline. Tablet should remain immersive without
+ * inheriting the desktop viewport-height shell. */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive{
+    min-height:0;
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay{
+    min-height:0;
+    align-items:flex-start;
+    padding-block:clamp(2.5rem,5vw,4rem);
+  }
+  [data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__copy{
+    align-self:start;
+    min-width:0;
+    max-width:min(100%,49rem);
+  }
+}
+
+/* Proof First, Implant Results and Doctor Signature were reaching rendered QA
+ * with action groups whose desktop-oriented columns became too narrow at one
+ * or more certified viewports. Give the action container ownership of the
+ * responsive layout: one column when narrow, two only when each control has
+ * enough usable inline measure. */
+:is(
+  [data-mi-layout-blueprint="dental-06-doctor-brand"],
+  [data-mi-layout-blueprint="dental-13-implant-results"],
+  [data-mi-layout-blueprint="dental-18-proof-first"]
+) :is(.mi-section__actions,.mi-conv-actions){
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+  max-width:36rem;
+  gap:.65rem;
+}
+
+:is(
+  [data-mi-layout-blueprint="dental-06-doctor-brand"],
+  [data-mi-layout-blueprint="dental-13-implant-results"],
+  [data-mi-layout-blueprint="dental-18-proof-first"]
+) :is(.mi-section__action,.mi-conv-btn){
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  justify-content:center;
+  text-align:center;
+  padding-inline:clamp(.75rem,2vw,1.1rem);
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+}
+
+/* At phone/tablet widths always stack these conversion actions. This matches
+ * the curated mobile intent and removes the narrow-column state entirely. */
+@media (max-width:64rem){
+  :is(
+    [data-mi-layout-blueprint="dental-06-doctor-brand"],
+    [data-mi-layout-blueprint="dental-13-implant-results"],
+    [data-mi-layout-blueprint="dental-18-proof-first"]
+  ) :is(.mi-section__actions,.mi-conv-actions){
+    grid-template-columns:minmax(0,1fr);
+    max-width:min(100%,32rem);
+  }
+
+  :is(
+    [data-mi-layout-blueprint="dental-06-doctor-brand"],
+    [data-mi-layout-blueprint="dental-13-implant-results"],
+    [data-mi-layout-blueprint="dental-18-proof-first"]
+  ) :is(.mi-cta-split,.mi-conv-cta--split .mi-cta-split){
+    min-width:0;
+  }
+}

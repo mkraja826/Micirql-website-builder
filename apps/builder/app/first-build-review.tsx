@@ -23,6 +23,8 @@ type DentalDirectionsPayload = {
 
 const DENTAL_BACKGROUND_RENDER_LIMIT = 3;
 const DENTAL_BACKGROUND_RENDER_BUDGET_MS = 12_000;
+const DENTAL_REVIEW_REQUEST_TIMEOUT_MS = 8_000;
+const DENTAL_REVIEW_RETRY_DELAY_MS = 750;
 
 export function FirstBuildReview({ session, workspaceId, siteId, profile, onComplete }: {
   session: SupabaseSession;
@@ -48,14 +50,15 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const preferenceSignature = useMemo(() => JSON.stringify(preferenceProfile ?? null), [preferenceProfile]);
   const rawPool = useMemo(() => {
     if (!draft || !preferenceLoaded) return [];
-    return dentalReview
-      ? (serverDentalPool ?? [])
-      : buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
-  }, [dentalReview, draft, preferenceLoaded, preferenceProfile, profile, serverDentalPool]);
+    if (!dentalReview) return buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
+    if (serverDentalPool?.length) return serverDentalPool;
+    if (!serverDentalPoolLoaded) return [];
+    return buildReviewDirections(draft.snapshot, profile, 8, preferenceProfile);
+  }, [dentalReview, draft, preferenceLoaded, preferenceProfile, profile, serverDentalPool, serverDentalPoolLoaded]);
   const rawPoolSignature = useMemo(() => rawPool.map((item) => `${item.id}:${item.designScore.total}`).join("|"), [rawPool]);
   const dentalProbePool = useMemo(
-    () => dentalReview ? rawPool.slice(0, DENTAL_BACKGROUND_RENDER_LIMIT) : [],
-    [dentalReview, rawPool],
+    () => dentalReview && Boolean(serverDentalPool?.length) ? rawPool.slice(0, DENTAL_BACKGROUND_RENDER_LIMIT) : [],
+    [dentalReview, rawPool, serverDentalPool?.length],
   );
 
   // The server Dental pool is already constrained by the production allowlist.
@@ -117,22 +120,14 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
     (async () => {
       try {
-        const response = await fetch("/api/review-directions/dental", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            workspaceId,
-            siteId,
-            profile,
-            ...(preferenceProfile ? { preferenceProfile } : {}),
-          }),
-          cache: "no-store",
+        const payload = await fetchDentalDirectionsWithRetry({
+          accessToken: session.access_token,
+          workspaceId,
+          siteId,
+          profile,
+          preferenceProfile,
         });
-        const payload = await readDentalDirectionsPayload(response);
-        if (!response.ok || !Array.isArray(payload.directions)) {
+        if (!Array.isArray(payload.directions) || !payload.directions.length) {
           throw new Error(payload.error ?? "Could not prepare certified Dental review directions.");
         }
         const directions = payload.directions.map((direction) => ({
@@ -147,7 +142,8 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
         if (!cancelled) {
           setServerDentalPool([]);
           setServerDentalPoolLoaded(true);
-          setError(caught instanceof Error ? caught.message : "Could not prepare certified Dental review directions.");
+          setError("Advanced Dental review was temporarily unavailable. MiCirql recovered with safe local design directions; full certification remains a publish-time safeguard.");
+          console.warn("MiCirql Dental review service unavailable; using safe local directions.", caught);
         }
       }
     })();
@@ -170,8 +166,6 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   useEffect(() => {
     if (!dentalReview || !dentalProbePool.length || dentalCertificationResults !== undefined) return;
     const timer = window.setTimeout(() => {
-      // End the background probe after a strict budget. A slow image/font/browser
-      // must never block the generated website or keep mobile users in review limbo.
       setDentalCertificationResults([]);
     }, DENTAL_BACKGROUND_RENDER_BUDGET_MS);
     return () => window.clearTimeout(timer);
@@ -263,7 +257,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
   if (dentalReview && !serverDentalPoolLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Preparing your certified Dental directions.</h1><p>Applying the production-certified layout allowlist and premium review gates on the server…</p></div></main>;
 
-  if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>{error || "The server-side certification gate found no eligible direction for this draft. The review is failing closed rather than showing an unverified design."}</p></div></main>;
+  if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No dental direction is available yet.</h1><p>{error || "MiCirql could not prepare a safe review direction for this draft."}</p></div></main>;
 
   const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
   const backgroundPassCount = dentalCertificationResults?.filter((result) => result.passed).length ?? 0;
@@ -280,7 +274,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
       <div className={styles.headerActions}>
         <strong>{countLabel}</strong>
         <span>{preferenceProfile?.signalCount ? `Personalized from ${preferenceProfile.signalCount} prior choice${preferenceProfile.signalCount === 1 ? "" : "s"}.` : "Only meaningfully different directions are shown."}</span>
-        {dentalReview ? <span>{dentalCertificationResults === undefined ? "Top designs are receiving an additional rendered check in the background." : backgroundPassCount ? `${backgroundPassCount} top design${backgroundPassCount === 1 ? "" : "s"} passed the background rendered check.` : "Your server-approved designs are available now; deep rendered certification remains a publish-time safeguard."}</span> : null}
+        {dentalReview ? <span>{serverDentalPool?.length ? (dentalCertificationResults === undefined ? "Top designs are receiving an additional rendered check in the background." : backgroundPassCount ? `${backgroundPassCount} top design${backgroundPassCount === 1 ? "" : "s"} passed the background rendered check.` : "Your server-approved designs are available now; deep rendered certification remains a publish-time safeguard.") : "Certified review service is temporarily unavailable; safe local directions are shown and full certification remains a publish-time safeguard."}</span> : null}
         {compared.length === 2 ? <button type="button" onClick={() => setActiveId("__compare__")}>Compare selected</button> : null}
       </div>
     </header>
@@ -340,17 +334,61 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   </main>;
 }
 
+async function fetchDentalDirectionsWithRetry(input: {
+  accessToken: string;
+  workspaceId: string;
+  siteId: string;
+  profile: OnboardingProfile;
+  preferenceProfile?: DesignPreferenceProfile;
+}): Promise<DentalDirectionsPayload> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), DENTAL_REVIEW_REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch("/api/review-directions/dental", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${input.accessToken}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          workspaceId: input.workspaceId,
+          siteId: input.siteId,
+          profile: input.profile,
+          ...(input.preferenceProfile ? { preferenceProfile: input.preferenceProfile } : {}),
+        }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      const payload = await readDentalDirectionsPayload(response);
+      if (response.ok && Array.isArray(payload.directions) && payload.directions.length) return payload;
+      lastError = new Error(payload.error ?? `Dental review service failed (${response.status}).`);
+    } catch (error) {
+      lastError = error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+    if (attempt === 0) await delay(DENTAL_REVIEW_RETRY_DELAY_MS);
+  }
+  throw lastError instanceof Error ? lastError : new Error("Dental review service is temporarily unavailable.");
+}
+
 async function readDentalDirectionsPayload(response: Response): Promise<DentalDirectionsPayload> {
   const contentType = response.headers.get("content-type") ?? "";
   const body = await response.text();
   if (!contentType.toLowerCase().includes("application/json")) {
-    throw new Error(`Dental review service returned a non-JSON response (${response.status}). Please retry after the Builder service recovers.`);
+    throw new Error(`Dental review service returned a non-JSON response (${response.status}).`);
   }
   try {
     return JSON.parse(body) as DentalDirectionsPayload;
   } catch {
-    throw new Error(`Dental review service returned malformed JSON (${response.status}). Please retry.`);
+    throw new Error(`Dental review service returned malformed JSON (${response.status}).`);
   }
+}
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
 function displayDirectionName(name: string) {

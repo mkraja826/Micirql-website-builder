@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import { planRenderedFirstScreenRepair } from "../apps/builder/app/rendered-first-screen-repair";
 import { planRenderedPageTypographyRepair } from "../apps/builder/app/rendered-page-typography-repair";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const structuralSafetyCss = readFileSync(join(here, "../packages/sections/src/dental-production-structural-safety.css"), "utf8");
+const structuralSafetyCss = readFileSync(
+  resolve(process.cwd(), "packages/sections/src/dental-production-structural-safety.css"),
+  "utf8",
+);
 
 test("Dental first-screen repair removes excessive hero lead-in without weakening the gate", () => {
   for (const width of [390, 768, 1024]) {

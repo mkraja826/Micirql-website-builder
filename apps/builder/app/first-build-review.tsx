@@ -7,7 +7,7 @@ import type { SupabaseSession } from "./auth-client";
 import { RendererPreview } from "./renderer-preview";
 import { CompareDesigns } from "./compare-designs";
 import { buildReviewDirections, type ReviewDirection } from "./review-directions";
-import { DentalReviewRenderCertifier } from "./dental-review-render-certifier";
+import { DentalReviewRenderCertifier, type DentalReviewCertificationResult } from "./dental-review-render-certifier";
 import type { OnboardingProfile } from "./preset-ranking";
 import styles from "./first-build-review.module.css";
 
@@ -40,6 +40,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [certifiedDentalPool, setCertifiedDentalPool] = useState<ReviewDirection[]>();
+  const [dentalCertificationResults, setDentalCertificationResults] = useState<DentalReviewCertificationResult[]>();
   const dentalReview = isDentalReviewProfile(profile);
   const profileSignature = useMemo(() => JSON.stringify(profile), [profile]);
   const preferenceSignature = useMemo(() => JSON.stringify(preferenceProfile ?? null), [preferenceProfile]);
@@ -119,7 +120,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
           }),
           cache: "no-store",
         });
-        const payload = await response.json() as DentalDirectionsPayload;
+        const payload = await readDentalDirectionsPayload(response);
         if (!response.ok || !Array.isArray(payload.directions)) {
           throw new Error(payload.error ?? "Could not prepare certified Dental review directions.");
         }
@@ -146,12 +147,13 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   useEffect(() => {
     if (!dentalReview) return;
     setCertifiedDentalPool(undefined);
+    setDentalCertificationResults(undefined);
     setVisibleIds([]);
     setCompareIds([]);
     setActiveId(undefined);
   }, [dentalReview, rawPoolSignature]);
 
-  const handleDentalCertification = useCallback((results: Array<{ direction: ReviewDirection; passed: boolean; repaired: boolean; failures: string[] }>) => {
+  const handleDentalCertification = useCallback((results: DentalReviewCertificationResult[]) => {
     const passed = results
       .filter((result) => result.passed)
       .map((result) => ({
@@ -161,6 +163,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
           result.repaired ? "rendered mobile + desktop certified after bounded repair" : "rendered mobile + desktop certified",
         ],
       }));
+    setDentalCertificationResults(results);
     setCertifiedDentalPool(passed);
   }, []);
 
@@ -261,7 +264,13 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
   if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>{error || "The server-side certification gate found no eligible direction for this draft. The review is failing closed rather than showing an unverified design."}</p></div></main>;
 
-  if (dentalReview && certifiedDentalPool && certifiedDentalPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>These directions did not pass rendered review.</h1><p>MiCirql withheld the candidates because their mobile or desktop first screen still failed after the single allowed repair.</p></div></main>;
+  if (dentalReview && certifiedDentalPool && certifiedDentalPool.length === 0) {
+    const rejected = (dentalCertificationResults ?? []).filter((result) => !result.passed);
+    const failureSummary = rejected.length
+      ? rejected.slice(0, 4).map((result) => `${displayDirectionName(result.direction.name)}: ${result.failures.slice(0, 3).join(" · ") || "unknown rendered failure"}`).join(" | ")
+      : "No rendered failure details were captured.";
+    return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>These directions did not pass rendered review.</h1><p>MiCirql withheld the candidates because their mobile, tablet or desktop rendered checks still failed after the single allowed repair.</p><p data-mi-dental-render-failure-summary>{failureSummary}</p></div></main>;
+  }
 
   const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
 
@@ -330,6 +339,19 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
     {activeId === "__compare__" && compared.length === 2 ? <CompareDesigns directions={compared} viewport={viewport} savingId={savingId} onViewportChange={setViewport} onClose={() => setActiveId(undefined)} onChoose={(direction) => void choose(direction)} /> : null}
   </main>;
+}
+
+async function readDentalDirectionsPayload(response: Response): Promise<DentalDirectionsPayload> {
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = await response.text();
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error(`Dental review service returned a non-JSON response (${response.status}). Please retry after the Builder service recovers.`);
+  }
+  try {
+    return JSON.parse(body) as DentalDirectionsPayload;
+  } catch {
+    throw new Error(`Dental review service returned malformed JSON (${response.status}). Please retry.`);
+  }
 }
 
 function displayDirectionName(name: string) {

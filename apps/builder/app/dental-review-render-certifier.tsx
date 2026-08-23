@@ -212,13 +212,11 @@ function measureFirstScreen(root: HTMLElement, width: number, foldHeight: number
   const cta = actions[0] ?? null;
   const h1Style = h1 ? computedStyle(h1) : null;
   const fontPx = h1Style ? Number.parseFloat(h1Style.fontSize) || 0 : 0;
-  const parsedLineHeight = h1Style ? Number.parseFloat(h1Style.lineHeight) : Number.NaN;
-  const lineHeight = Number.isFinite(parsedLineHeight) ? parsedLineHeight : fontPx * 1.2;
   const h1Rect = relative(h1);
   const navRect = relative(nav);
   const heroRect = relative(hero);
   const ctaRect = relative(cta);
-  const lines = h1Rect && lineHeight > 0 ? Math.max(1, Math.round(h1Rect.height / lineHeight)) : 0;
+  const lines = h1 ? renderedTextLineCount(h1) : 0;
   const mobile = width <= 430;
   const tablet = width > 430 && width <= 1024;
   const minH1 = mobile ? 28 : tablet ? 34 : 40;
@@ -251,30 +249,23 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
     const rect = node.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   };
-  const lineHeight = (node: Element) => {
-    const style = computedStyle(node);
-    const explicit = Number.parseFloat(style.lineHeight);
-    const fontSize = Number.parseFloat(style.fontSize) || 16;
-    return Number.isFinite(explicit) ? explicit : fontSize * 1.2;
-  };
-  const lines = (node: Element) => Math.max(1, Math.round(node.getBoundingClientRect().height / Math.max(1, lineHeight(node))));
   const mobile = width <= 430;
   const tablet = width > 430 && width <= 1024;
   const issues: TypographyIssue[] = [];
 
   for (const heading of [...root.querySelectorAll("h1,h2,h3")].filter(visible)) {
-    const count = lines(heading);
+    const count = renderedTextLineCount(heading);
     const limit = heading.tagName.toLowerCase() === "h1" ? (mobile || tablet ? 4 : 3) : (mobile ? 4 : 3);
     if (count > limit) issues.push({ code: "HEADING_TOO_MANY_RENDERED_LINES", severity: "error" });
   }
   for (const action of [...root.querySelectorAll("a,button")].filter(visible)) {
     if (action.scrollWidth > action.clientWidth + 1) issues.push({ code: "ACTION_TEXT_OVERFLOW", severity: "error" });
-    if (lines(action) > 2) issues.push({ code: "ACTION_WRAP_EXCESSIVE", severity: "error" });
+    if (renderedTextLineCount(action) > 2) issues.push({ code: "ACTION_WRAP_EXCESSIVE", severity: "error" });
   }
   for (const paragraph of [...root.querySelectorAll("p,.mi-type--body,.mi-type--body-sm")].filter(visible)) {
     const text = (paragraph.textContent ?? "").trim();
     if (text.length < 90) continue;
-    const count = lines(paragraph);
+    const count = renderedTextLineCount(paragraph);
     const limit = mobile ? 9 : tablet ? 8 : 7;
     if (count > limit) issues.push({ code: "PARAGRAPH_RENDERED_TOO_DENSE", severity: count > limit + 2 ? "error" : "warning" });
   }
@@ -284,6 +275,22 @@ function measureRenderedTypographyIssues(root: HTMLElement, width: number): Typo
     if (Math.max(...heights) - Math.min(...heights) > 32) issues.push({ code: "CARD_TITLE_HEIGHT_VARIANCE", severity: "warning" });
   }
   return issues;
+}
+
+function renderedTextLineCount(node: Element): number {
+  const document = node.ownerDocument;
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+  range.detach?.();
+  if (!rects.length) return 1;
+
+  const lineTops: number[] = [];
+  for (const rect of rects) {
+    const existing = lineTops.some((top) => Math.abs(top - rect.top) <= 2);
+    if (!existing) lineTops.push(rect.top);
+  }
+  return Math.max(1, lineTops.length);
 }
 
 function computedStyle(node: Element): CSSStyleDeclaration {

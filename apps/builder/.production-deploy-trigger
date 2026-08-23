@@ -1,4 +1,4 @@
 Production deploy trigger
 
-Fresh production deploy requested on 2026-08-23 after true viewport plus settled font/image QA.
-Expected parent production commit: c92c31f34a64342aaabf04f12b90260cb5023817
+Fresh production deploy requested on 2026-08-23 after rendered review observability QA.
+Expected parent production commit: 97064834dbb905247e94bf3287a5e17cd754af07

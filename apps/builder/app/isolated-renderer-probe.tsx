@@ -43,6 +43,24 @@ export const IsolatedRendererProbe = forwardRef<IsolatedRendererProbeHandle, {
   }), []);
 
   useEffect(() => {
+    if (!mountNode) return;
+    const targetDocument = frameRef.current?.contentDocument;
+    const targetWindow = targetDocument?.defaultView;
+    if (!targetDocument || !targetWindow) return;
+
+    forceProbeImagesEager(mountNode);
+    const observer = new targetWindow.MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of [...record.addedNodes]) {
+          if (node instanceof targetWindow.Element) forceProbeImagesEager(node);
+        }
+      }
+    });
+    observer.observe(mountNode, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [mountNode]);
+
+  useEffect(() => {
     const frameDocument = frameRef.current?.contentDocument;
     if (!mountNode || !frameDocument) {
       onReadyChange?.(false);
@@ -158,11 +176,11 @@ async function copyParentStyles(targetDocument: Document) {
 async function settleProbeDocument(targetDocument: Document) {
   const targetWindow = targetDocument.defaultView;
   await nextFrames(targetWindow, 2);
+  await delay(targetWindow, 180);
 
+  const root = targetDocument.getElementById("mi-isolated-renderer-root");
+  if (root) forceProbeImagesEager(root);
   const images = [...targetDocument.images];
-  for (const image of images) {
-    image.loading = "eager";
-  }
 
   const fontSet = (targetDocument as Document & { fonts?: FontFaceSet }).fonts;
   const fontsReady = fontSet?.ready.then(() => undefined) ?? Promise.resolve();
@@ -173,6 +191,13 @@ async function settleProbeDocument(targetDocument: Document) {
     delay(targetWindow, 3500),
   ]);
   await nextFrames(targetWindow, 2);
+}
+
+function forceProbeImagesEager(root: ParentNode | Element) {
+  const images = root instanceof HTMLImageElement
+    ? [root]
+    : [...root.querySelectorAll<HTMLImageElement>("img")];
+  for (const image of images) image.loading = "eager";
 }
 
 function waitForImage(image: HTMLImageElement): Promise<void> {

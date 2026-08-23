@@ -18,6 +18,11 @@ test("Dental review certifier measures true nested viewports instead of widening
   expect(probe).toContain('width,\n        height,');
   expect(probe).toContain("createPortal(");
   expect(probe).toContain("copyParentStyles(frameDocument)");
+  expect(probe).toContain("settleProbeDocument(frameDocument)");
+  expect(probe).toContain('image.loading = "eager"');
+  expect(probe).toContain("fontSet?.ready");
+  expect(probe).toContain("Promise.all(images.map(waitForImage))");
+  expect(probe).toContain("nextFrames(targetWindow, 2)");
   expect(probe).toContain('querySelector<HTMLElement>(".renderer-preview-document")');
 
   expect(certifier).toContain("node.ownerDocument.defaultView?.getComputedStyle(node)");

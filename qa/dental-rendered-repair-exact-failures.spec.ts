@@ -1,6 +1,12 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { planRenderedFirstScreenRepair } from "../apps/builder/app/rendered-first-screen-repair";
 import { planRenderedPageTypographyRepair } from "../apps/builder/app/rendered-page-typography-repair";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const structuralSafetyCss = readFileSync(join(here, "../packages/sections/src/dental-production-structural-safety.css"), "utf8");
 
 test("Dental first-screen repair removes excessive hero lead-in without weakening the gate", () => {
   for (const width of [390, 768, 1024]) {
@@ -55,4 +61,18 @@ test("Dental action-wrap repair remains bounded at tablet breakpoint edges", () 
     expect(plan.css).toContain("max-width:100%");
     expect(plan.css).not.toContain("overflow-wrap:anywhere");
   }
+});
+
+test("recovered production layouts own their failing geometry before rendered repair", () => {
+  expect(structuralSafetyCss).toContain('[data-mi-layout-blueprint="dental-02-implant-luxury"] .mi-hero--immersive .mi-hero__overlay');
+  expect(structuralSafetyCss).toContain("align-items:flex-start");
+  expect(structuralSafetyCss).toContain("min-height:0");
+
+  for (const layoutId of ["dental-06-doctor-brand", "dental-13-implant-results", "dental-18-proof-first"]) {
+    expect(structuralSafetyCss).toContain(`[data-mi-layout-blueprint="${layoutId}"]`);
+  }
+  expect(structuralSafetyCss).toContain("grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))");
+  expect(structuralSafetyCss).toContain("grid-template-columns:minmax(0,1fr)");
+  expect(structuralSafetyCss).toContain("overflow-wrap:normal");
+  expect(structuralSafetyCss).not.toContain("overflow-wrap:anywhere");
 });

@@ -21,6 +21,9 @@ type DentalDirectionsPayload = {
   error?: string;
 };
 
+const DENTAL_BACKGROUND_RENDER_LIMIT = 3;
+const DENTAL_BACKGROUND_RENDER_BUDGET_MS = 12_000;
+
 export function FirstBuildReview({ session, workspaceId, siteId, profile, onComplete }: {
   session: SupabaseSession;
   workspaceId: string;
@@ -39,7 +42,6 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   const [activeId, setActiveId] = useState<string>();
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [viewport, setViewport] = useState<Viewport>("desktop");
-  const [certifiedDentalPool, setCertifiedDentalPool] = useState<ReviewDirection[]>();
   const [dentalCertificationResults, setDentalCertificationResults] = useState<DentalReviewCertificationResult[]>();
   const dentalReview = isDentalReviewProfile(profile);
   const profileSignature = useMemo(() => JSON.stringify(profile), [profile]);
@@ -51,7 +53,16 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
       : buildReviewDirections(draft.snapshot, profile, 24, preferenceProfile);
   }, [dentalReview, draft, preferenceLoaded, preferenceProfile, profile, serverDentalPool]);
   const rawPoolSignature = useMemo(() => rawPool.map((item) => `${item.id}:${item.designScore.total}`).join("|"), [rawPool]);
-  const pool = dentalReview ? (certifiedDentalPool ?? []) : rawPool;
+  const dentalProbePool = useMemo(
+    () => dentalReview ? rawPool.slice(0, DENTAL_BACKGROUND_RENDER_LIMIT) : [],
+    [dentalReview, rawPool],
+  );
+
+  // The server Dental pool is already constrained by the production allowlist.
+  // Browser-rendered QA is an additional signal, not a reason to make generation
+  // appear broken. It therefore runs in the background on only the strongest few
+  // candidates and never replaces the usable server-approved pool.
+  const pool = rawPool;
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
   const visible = useMemo(() => visibleIds.map((id) => byId.get(id)).filter((item): item is ReviewDirection => Boolean(item)), [visibleIds, byId]);
   const active = activeId ? byId.get(activeId) : undefined;
@@ -146,7 +157,6 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
   useEffect(() => {
     if (!dentalReview) return;
-    setCertifiedDentalPool(undefined);
     setDentalCertificationResults(undefined);
     setVisibleIds([]);
     setCompareIds([]);
@@ -154,18 +164,18 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   }, [dentalReview, rawPoolSignature]);
 
   const handleDentalCertification = useCallback((results: DentalReviewCertificationResult[]) => {
-    const passed = results
-      .filter((result) => result.passed)
-      .map((result) => ({
-        ...result.direction,
-        reasons: [
-          ...result.direction.reasons,
-          result.repaired ? "rendered mobile + desktop certified after bounded repair" : "rendered mobile + desktop certified",
-        ],
-      }));
     setDentalCertificationResults(results);
-    setCertifiedDentalPool(passed);
   }, []);
+
+  useEffect(() => {
+    if (!dentalReview || !dentalProbePool.length || dentalCertificationResults !== undefined) return;
+    const timer = window.setTimeout(() => {
+      // End the background probe after a strict budget. A slow image/font/browser
+      // must never block the generated website or keep mobile users in review limbo.
+      setDentalCertificationResults([]);
+    }, DENTAL_BACKGROUND_RENDER_BUDGET_MS);
+    return () => window.clearTimeout(timer);
+  }, [dentalCertificationResults, dentalProbePool.length, dentalReview, rawPoolSignature]);
 
   useEffect(() => {
     if (pool.length && visibleIds.length === 0) setVisibleIds(pool.map((item) => item.id));
@@ -253,28 +263,16 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
 
   if (dentalReview && !serverDentalPoolLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Preparing your certified Dental directions.</h1><p>Applying the production-certified layout allowlist and premium review gates on the server…</p></div></main>;
 
-  if (dentalReview && rawPool.length && certifiedDentalPool === undefined) return <main className={styles.shell}>
-    <DentalReviewRenderCertifier directions={rawPool} onComplete={handleDentalCertification} />
-    <div className={styles.header}>
-      <span>MiCirql design review</span>
-      <h1>Certifying your strongest directions.</h1>
-      <p>Checking the real mobile and desktop first screen, applying one bounded responsive repair where needed, and withholding anything that still fails.</p>
-    </div>
-  </main>;
-
   if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No certified dental direction is available yet.</h1><p>{error || "The server-side certification gate found no eligible direction for this draft. The review is failing closed rather than showing an unverified design."}</p></div></main>;
 
-  if (dentalReview && certifiedDentalPool && certifiedDentalPool.length === 0) {
-    const rejected = (dentalCertificationResults ?? []).filter((result) => !result.passed);
-    const failureSummary = rejected.length
-      ? rejected.slice(0, 4).map((result) => `${displayDirectionName(result.direction.name)}: ${result.failures.slice(0, 3).join(" · ") || "unknown rendered failure"}`).join(" | ")
-      : "No rendered failure details were captured.";
-    return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>These directions did not pass rendered review.</h1><p>MiCirql withheld the candidates because their mobile, tablet or desktop rendered checks still failed after the single allowed repair.</p><p data-mi-dental-render-failure-summary>{failureSummary}</p></div></main>;
-  }
-
   const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
+  const backgroundPassCount = dentalCertificationResults?.filter((result) => result.passed).length ?? 0;
 
   return <main className={styles.shell}>
+    {dentalReview && dentalProbePool.length > 0 && dentalCertificationResults === undefined
+      ? <DentalReviewRenderCertifier directions={dentalProbePool} onComplete={handleDentalCertification} />
+      : null}
+
     <header className={styles.header}>
       <span>MiCirql design review</span>
       <h1>Choose your design direction.</h1>
@@ -282,6 +280,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
       <div className={styles.headerActions}>
         <strong>{countLabel}</strong>
         <span>{preferenceProfile?.signalCount ? `Personalized from ${preferenceProfile.signalCount} prior choice${preferenceProfile.signalCount === 1 ? "" : "s"}.` : "Only meaningfully different directions are shown."}</span>
+        {dentalReview ? <span>{dentalCertificationResults === undefined ? "Top designs are receiving an additional rendered check in the background." : backgroundPassCount ? `${backgroundPassCount} top design${backgroundPassCount === 1 ? "" : "s"} passed the background rendered check.` : "Your server-approved designs are available now; deep rendered certification remains a publish-time safeguard."}</span> : null}
         {compared.length === 2 ? <button type="button" onClick={() => setActiveId("__compare__")}>Compare selected</button> : null}
       </div>
     </header>

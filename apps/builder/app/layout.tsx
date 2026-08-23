@@ -58,6 +58,7 @@ import "@micirql/sections/dental-flagship-typography.css";
 import "@micirql/sections/dental-99-tablet-certification-refinement.css";
 import "@micirql/sections/dental-99-zzz-final-certification-refinement.css";
 import "@micirql/sections/dental-99-zzzz-responsive-certification-refinement.css";
+import "@micirql/sections/dental-production-structural-safety.css";
 import "./globals.css";
 import "./editor-shell-polish.css";
 import "./publish-readiness-polish.css";

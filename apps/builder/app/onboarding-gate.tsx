@@ -93,7 +93,11 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
       });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
-      if (value.selectedLayoutId && payload?.selectedLayout?.id !== value.selectedLayoutId) throw new Error("The generated website did not preserve the reviewed design match. Please analyze the brief again.");
+      const reviewedLayoutMismatch = Boolean(value.selectedLayoutId && payload?.selectedLayout?.id !== value.selectedLayoutId);
+      if (reviewedLayoutMismatch) {
+        setRecoveryNotice("MiCirql generated the website successfully but the planner returned a different certified design direction. The build was preserved instead of forcing you to restart; you can choose the preferred certified direction in the design review.");
+        console.warn("MiCirql reviewed layout drift recovered", { requested: value.selectedLayoutId, returned: payload?.selectedLayout?.id ?? null });
+      }
 
       setBuildStage("designing");
       try {

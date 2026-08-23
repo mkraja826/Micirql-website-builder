@@ -18,6 +18,7 @@
     "@micirql/functions": "workspace:*",
     "@micirql/live-runtime": "workspace:*",
     "@micirql/renderer": "workspace:*",
+    "@micirql/schema": "workspace:*",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

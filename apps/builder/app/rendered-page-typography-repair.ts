@@ -32,15 +32,25 @@ export function planRenderedPageTypographyRepair(input: {
   const root = "[data-mi-rendered-typography-repair='1']";
   const rules: string[] = [];
   if (operations.includes("rebalance-heading-wrap")) {
-    const h1 = viewport === "mobile" ? "clamp(2rem,9vw,2.8rem)" : viewport === "tablet" ? "clamp(2.5rem,6vw,4rem)" : "clamp(3rem,5vw,5.5rem)";
-    const h2 = viewport === "mobile" ? "clamp(1.75rem,7vw,2.35rem)" : viewport === "tablet" ? "clamp(2rem,4.5vw,3rem)" : "clamp(2.25rem,3.4vw,3.6rem)";
-    rules.push(`${root} h1{font-size:${h1};line-height:.98;max-width:18ch;text-wrap:balance}`);
-    rules.push(`${root} h2{font-size:${h2};line-height:1.04;max-width:22ch;text-wrap:balance}`);
-    rules.push(`${root} h3{max-width:28ch;line-height:1.12;text-wrap:balance}`);
+    // Widen the measure first so legitimate Dental headings do not get forced
+    // into 4-6 lines. Scale remains above the rendered certification minimums.
+    const h1 = viewport === "mobile" ? "clamp(2rem,7.5vw,2.65rem)" : viewport === "tablet" ? "clamp(2.5rem,4.8vw,3.75rem)" : "clamp(3rem,4vw,5rem)";
+    const h2 = viewport === "mobile" ? "clamp(1.75rem,6vw,2.25rem)" : viewport === "tablet" ? "clamp(2rem,3.8vw,2.85rem)" : "clamp(2.25rem,3vw,3.4rem)";
+    const h1Measure = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
+    const h2Measure = viewport === "mobile" ? "26ch" : viewport === "tablet" ? "30ch" : "34ch";
+    rules.push(`${root} h1{font-size:${h1};line-height:1;max-width:${h1Measure};text-wrap:balance}`);
+    rules.push(`${root} h2{font-size:${h2};line-height:1.05;max-width:${h2Measure};text-wrap:balance}`);
+    rules.push(`${root} h3{max-width:32ch;line-height:1.12;text-wrap:balance}`);
   }
   if (operations.includes("stabilize-action-wrap")) {
-    rules.push(`${root} a,${root} button{max-width:100%;overflow-wrap:anywhere}`);
-    rules.push(`${root} .mi-section__action{white-space:normal;line-height:1.2;min-height:44px;padding-inline:1.1rem;text-align:center}`);
+    // Do not use overflow-wrap:anywhere: it can manufacture 3+ line actions.
+    // Keep words intact, slightly compact the control, and allow at most the
+    // natural two-line wrap that the rendered gate permits.
+    const actionSize = viewport === "mobile" ? "clamp(.82rem,3.5vw,1rem)" : "clamp(.88rem,1.7vw,1rem)";
+    const actionPadding = viewport === "mobile" ? ".7rem" : ".9rem";
+    rules.push(`${root} a,${root} button{max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none;line-height:1.15;font-size:${actionSize}}`);
+    rules.push(`${root} .mi-section__action{white-space:normal;line-height:1.15;min-height:44px;padding-inline:${actionPadding};text-align:center;width:fit-content;max-width:100%}`);
+    rules.push(`${root} nav a,${root} header a,${root} nav button,${root} header button{white-space:nowrap;font-size:clamp(.78rem,1.6vw,.95rem);padding-inline:min(.75rem,2vw)}`);
   }
   if (operations.includes("relax-paragraph-measure")) {
     rules.push(`${root} p,${root} .mi-type--body,${root} .mi-type--body-sm{max-width:${viewport === "mobile" ? "58ch" : "64ch"};line-height:1.65}`);

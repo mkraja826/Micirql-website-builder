@@ -76,5 +76,5 @@ test("built-in security probes remain neutral when the contract has no security 
   expect(result.positiveRlsPassed).toBeUndefined();
   expect(result.negativeRlsPassed).toBeUndefined();
   expect(result.storageOwnershipPassed).toBe(true);
-  expect(result.paymentIdempotencyPassed).toBeUndefined();
+  expect(result.paymentIdempotencyPassed).toBe(true);
 });

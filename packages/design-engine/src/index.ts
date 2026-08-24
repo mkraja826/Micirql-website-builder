@@ -19,6 +19,7 @@ export * from "./generated-site-quality-gate";
 export * from "./content-quality";
 export * from "./design-diversity";
 export * from "./design-genome";
+export * from "./design-dna";
 export * from "./preference-learning";
 export * from "./industry-intelligence";
 export * from "./industry-pack-framework";

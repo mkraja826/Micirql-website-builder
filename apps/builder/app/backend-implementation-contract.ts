@@ -131,7 +131,12 @@ function ownershipColumns(ownership: FunctionalEntity["ownership"]): BackendTabl
   return [];
 }
 function ownershipIndexes(ownership: FunctionalEntity["ownership"]) { if (ownership === "user") return [["owner_user_id"]]; if (ownership === "tenant") return [["tenant_id"]]; return []; }
-function policySql(rule: string) { const lower = rule.toLowerCase(); if (lower.includes("tenant_id")) return "tenant_id = current_setting('request.jwt.claims', true)::jsonb ->> 'tenant_id'"; if (lower.includes("owner_user_id")) return "owner_user_id = auth.uid()"; return "false"; }
+function policySql(rule: string) {
+  const lower = rule.toLowerCase();
+  if (lower.includes("tenant_id")) return "tenant_id = (current_setting('request.jwt.claims', true)::jsonb ->> 'tenant_id')::uuid";
+  if (lower.includes("owner_user_id")) return "owner_user_id = auth.uid()";
+  return "false";
+}
 function tableName(entityId: string) { return entityId.endsWith("s") ? entityId : `${entityId}s`; }
 function dbType(type: FunctionalEntity["fields"][number]["type"]): BackendTable["columns"][number]["type"] { if (type === "number") return "numeric"; if (type === "boolean") return "boolean"; if (type === "date") return "date"; if (type === "datetime") return "timestamptz"; if (type === "json") return "jsonb"; if (type === "relation") return "uuid"; return "text"; }
 function dedupeRoutes(routes: BackendRoute[]) { const seen = new Set<string>(); return routes.filter((route) => { const key = `${route.method}:${route.path}`; if (seen.has(key)) return false; seen.add(key); return true; }); }

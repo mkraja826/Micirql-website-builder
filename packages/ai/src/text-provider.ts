@@ -34,56 +34,87 @@ type ChatCompletionResponse = {
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const MAX_ATTEMPTS = 3;
+const MAX_JSON_CONTENT_ATTEMPTS = 2;
 const BASE_DELAY_MS = 350;
 const MAX_DELAY_MS = 5_000;
+const JSON_RECOVERY_INSTRUCTION = [
+  "Your previous response could not be parsed as JSON.",
+  "Return exactly one complete valid JSON object or array and nothing else.",
+  "Do not use Markdown fences, comments, prose, trailing commas, or unquoted keys.",
+  "Close every string, object, and array before finishing the response.",
+].join(" ");
+
+class InvalidJsonContentError extends Error {
+  constructor() {
+    super("Text provider returned content that is not valid JSON.");
+    this.name = "InvalidJsonContentError";
+  }
+}
 
 export function createOpenAiCompatibleJsonPlannerModel(config: OpenAiCompatibleTextProviderConfig): PlannerModel {
   validateConfig(config);
   return {
     id: config.id,
     async generate(request: PlannerModelRequest): Promise<unknown> {
-      const response = await fetchWithRetry(config.endpoint, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${config.apiKey}`,
-          ...config.headers,
-        },
-        body: JSON.stringify({
-          model: config.model,
-          messages: [
-            { role: "system", content: request.system },
-            { role: "user", content: serializeInput(request.input) },
-          ],
-          ...(request.responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
-          ...(config.temperature !== undefined ? { temperature: config.temperature } : {}),
-          ...(config.maxOutputTokens !== undefined ? { max_tokens: config.maxOutputTokens } : {}),
-        }),
-      });
-
-      const payload = await parsePayload(response);
-      if (!response.ok) {
-        throw new Error(payload.error?.message ?? `Text provider request failed (${response.status}).`);
-      }
-
-      const content = payload.choices?.[0]?.message?.content;
-      if (typeof content !== "string" || !content.trim()) {
-        throw new Error("Text provider returned no message content.");
-      }
-
-      const inputTokens = normalizeTokenCount(payload.usage?.prompt_tokens ?? payload.usage?.input_tokens);
-      const outputTokens = normalizeTokenCount(payload.usage?.completion_tokens ?? payload.usage?.output_tokens);
-      if (config.onUsage && inputTokens !== undefined && outputTokens !== undefined) {
-        await config.onUsage({
-          inputTokens,
-          outputTokens,
-          costMicrousd: calculateTokenCostMicrousd(config.pricing, { inputTokens, outputTokens }),
+      for (let contentAttempt = 1; contentAttempt <= MAX_JSON_CONTENT_ATTEMPTS; contentAttempt += 1) {
+        const response = await fetchWithRetry(config.endpoint, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${config.apiKey}`,
+            ...config.headers,
+          },
+          body: JSON.stringify({
+            model: config.model,
+            messages: [
+              {
+                role: "system",
+                content: contentAttempt === 1
+                  ? request.system
+                  : `${request.system}\n\n${JSON_RECOVERY_INSTRUCTION}`,
+              },
+              { role: "user", content: serializeInput(request.input) },
+            ],
+            ...(request.responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
+            ...(config.temperature !== undefined ? { temperature: config.temperature } : {}),
+            ...(config.maxOutputTokens !== undefined ? { max_tokens: config.maxOutputTokens } : {}),
+          }),
         });
+
+        const payload = await parsePayload(response);
+        if (!response.ok) {
+          throw new Error(payload.error?.message ?? `Text provider request failed (${response.status}).`);
+        }
+
+        const content = payload.choices?.[0]?.message?.content;
+        if (typeof content !== "string" || !content.trim()) {
+          throw new Error("Text provider returned no message content.");
+        }
+
+        await recordUsage(config, payload);
+
+        try {
+          return parseJsonContent(content);
+        } catch (error) {
+          if (!(error instanceof InvalidJsonContentError) || contentAttempt === MAX_JSON_CONTENT_ATTEMPTS) throw error;
+        }
       }
 
-      return parseJsonContent(content);
+      throw new InvalidJsonContentError();
     },
   };
+}
+
+async function recordUsage(config: OpenAiCompatibleTextProviderConfig, payload: ChatCompletionResponse): Promise<void> {
+  const inputTokens = normalizeTokenCount(payload.usage?.prompt_tokens ?? payload.usage?.input_tokens);
+  const outputTokens = normalizeTokenCount(payload.usage?.completion_tokens ?? payload.usage?.output_tokens);
+  if (!config.onUsage || inputTokens === undefined || outputTokens === undefined) return;
+
+  await config.onUsage({
+    inputTokens,
+    outputTokens,
+    costMicrousd: calculateTokenCostMicrousd(config.pricing, { inputTokens, outputTokens }),
+  });
 }
 
 async function fetchWithRetry(input: string, init: RequestInit): Promise<Response> {
@@ -155,12 +186,93 @@ function serializeInput(input: unknown): string {
 }
 
 function parseJsonContent(content: string): unknown {
-  const trimmed = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const trimmed = stripOuterCodeFence(content);
+  const direct = tryParseJson(trimmed);
+  if (direct.ok) return direct.value;
+
+  const candidates = extractBalancedJsonCandidates(trimmed)
+    .map((candidate) => tryParseJson(candidate))
+    .filter((result): result is { ok: true; value: unknown } => result.ok);
+  const [candidate] = candidates;
+
+  if (candidates.length === 1 && candidate) return candidate.value;
+  throw new InvalidJsonContentError();
+}
+
+function stripOuterCodeFence(content: string): string {
+  return content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+}
+
+function tryParseJson(value: string): { ok: true; value: unknown } | { ok: false } {
   try {
-    return JSON.parse(trimmed);
+    return { ok: true, value: JSON.parse(value) };
   } catch {
-    throw new Error("Text provider returned content that is not valid JSON.");
+    return { ok: false };
   }
+}
+
+function extractBalancedJsonCandidates(content: string): string[] {
+  const candidates: string[] = [];
+  let start = -1;
+  let stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (start < 0) {
+      if (char === "{" || char === "[") {
+        start = index;
+        stack = [char];
+        inString = false;
+        escaped = false;
+      }
+      continue;
+    }
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{" || char === "[") {
+      stack.push(char);
+      continue;
+    }
+
+    if (char !== "}" && char !== "]") continue;
+
+    const expectedOpen = char === "}" ? "{" : "[";
+    if (stack[stack.length - 1] !== expectedOpen) {
+      start = -1;
+      stack = [];
+      inString = false;
+      escaped = false;
+      continue;
+    }
+
+    stack.pop();
+    if (stack.length === 0) {
+      candidates.push(content.slice(start, index + 1));
+      start = -1;
+      inString = false;
+      escaped = false;
+    }
+  }
+
+  return candidates;
 }
 
 function normalizeTokenCount(value: number | undefined): number | undefined {

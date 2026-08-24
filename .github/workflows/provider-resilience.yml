@@ -1,0 +1,44 @@
+name: Provider Resilience
+
+on:
+  pull_request:
+    paths:
+      - "packages/ai/**"
+      - "qa/external-provider-retry.spec.ts"
+      - "playwright.provider-retry.config.ts"
+      - ".github/workflows/provider-resilience.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/ai/**"
+      - "qa/external-provider-retry.spec.ts"
+      - "playwright.provider-retry.config.ts"
+      - ".github/workflows/provider-resilience.yml"
+
+concurrency:
+  group: provider-resilience-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provider-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify provider retry policy
+        run: pnpm qa:provider-retry

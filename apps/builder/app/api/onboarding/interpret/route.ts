@@ -33,10 +33,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function repairExplicitIdentity(profile: InterpretedOnboardingBrief, context: string): InterpretedOnboardingBrief {
+export function repairExplicitIdentity(profile: InterpretedOnboardingBrief, context: string): InterpretedOnboardingBrief {
   const explicitBusinessName = explicitBusinessNameFromBrief(context);
   const explicitLocation = explicitLocationFromBrief(context);
-  if (!explicitBusinessName && !explicitLocation) return profile;
+  const explicitAddresses = explicitAddressesFromBrief(context);
 
   const businessName = explicitBusinessName || profile.businessName;
   const location = explicitLocation || profile.location;
@@ -44,27 +44,58 @@ function repairExplicitIdentity(profile: InterpretedOnboardingBrief, context: st
     ...profile.lockedFacts,
     businessName: explicitBusinessName || profile.lockedFacts.businessName,
     location: explicitLocation || profile.lockedFacts.location,
+    addresses: explicitAddresses,
   };
 
   let notes = profile.notes;
   if (explicitBusinessName) notes = replaceGroundingLine(notes, "Business name", explicitBusinessName);
   if (explicitLocation) notes = replaceGroundingLine(notes, "Location", explicitLocation);
+  notes = replaceGroundingLine(notes, "Addresses", explicitAddresses.join(" | ") || "not supplied");
 
   return { ...profile, businessName, location, lockedFacts, notes };
 }
 
-function explicitBusinessNameFromBrief(context: string): string {
+export function explicitBusinessNameFromBrief(context: string): string {
+  const websiteFor = context.match(/\b(?:website|site|webpage)\s+for\s+["']?([^,.!?\n]{2,80}?)["']?(?=,\s*(?:an?|the)\b|[.!?\n]|$)/i);
+  const websiteForCandidate = cleanBusinessNameCandidate(websiteFor?.[1] ?? "");
+  if (websiteForCandidate) return websiteForCandidate;
+
   const firstSentence = context.split(/[.!?\n]/)[0]?.trim() ?? "";
   if (!firstSentence) return "";
-  const match = firstSentence.match(/^(.{2,80}?)\s+is\s+(?:an?\s+)?(?:(?:premium|modern|private|family|specialist|boutique|high[- ]end|leading|independent)\s+)*(?:dental\s+clinic|clinic|practice|company|business|restaurant|cafe|hotel|resort|agency|studio|school|academy|store|shop|platform|software\s+company)\b/i);
-  const candidate = match?.[1]?.trim().replace(/^["']|["']$/g, "") ?? "";
-  if (!candidate || /^(?:i|we|this|our)\b/i.test(candidate)) return "";
+  const isMatch = firstSentence.match(/^(.{2,80}?)\s+is\s+(?:an?\s+)?(?:(?:premium|modern|private|family|specialist|boutique|high[- ]end|leading|independent|professional)\s+)*(?:dental\s+clinic|clinic|practice|company|business|restaurant|cafe|hotel|resort|agency|studio|school|academy|store|shop|platform|software\s+company)\b/i);
+  return cleanBusinessNameCandidate(isMatch?.[1] ?? "");
+}
+
+function cleanBusinessNameCandidate(value: string): string {
+  const candidate = value.trim().replace(/^["']|["']$/g, "").replace(/^(?:create|build|make|design)\s+(?:an?\s+)?(?:(?:premium|modern|professional|clean|responsive|high[- ]quality)\s*,?\s*)*(?:website|site|webpage)\s+for\s+/i, "").trim();
+  if (!candidate || candidate.length > 80) return "";
+  if (/^(?:i|we|this|our|my|the business|the company|the clinic)\b/i.test(candidate)) return "";
+  if (/\b(?:website|site|webpage)\b/i.test(candidate)) return "";
   return candidate;
 }
 
 function explicitLocationFromBrief(context: string): string {
-  const match = context.match(/\b(?:located\s+in|based\s+in|in)\s+([A-Z][A-Za-z .'-]{1,48}?)(?=\s+(?:focused|speciali[sz](?:ed|ing|es)?|offering|providing|with|that|where)\b|[,.;\n]|$)/);
+  const match = context.match(/\b(?:located\s+in|based\s+in)\s+([A-Z][A-Za-z .'-]{1,48}?)(?=\s+(?:focused|speciali[sz](?:ed|ing|es)?|offering|providing|with|that|where)\b|[,.;\n]|$)/);
   return match?.[1]?.trim() ?? "";
+}
+
+export function explicitAddressesFromBrief(context: string): string[] {
+  const matches = [
+    ...context.matchAll(/\b(?:clinic\s+address|office\s+address|business\s+address|address)\s*(?:is|:)?\s*([^\n.;]{8,140})/gi),
+    ...context.matchAll(/\b(?:located\s+at|office\s+at|clinic\s+at)\s+([^\n.;]{8,140})/gi),
+  ];
+  const values = matches
+    .map((match) => (match[1] ?? "").trim())
+    .filter(Boolean)
+    .filter((value) => !isNegatedFactContext(context, value));
+  return [...new Set(values)].slice(0, 6);
+}
+
+function isNegatedFactContext(context: string, value: string): boolean {
+  const index = context.toLowerCase().indexOf(value.toLowerCase());
+  if (index < 0) return false;
+  const prefix = context.slice(Math.max(0, index - 90), index).toLowerCase();
+  return /(?:do\s+not|don't|never|without|not\s+supplied|not\s+provided|avoid\s+inventing|do\s+not\s+invent)[^.!?\n]{0,80}$/.test(prefix);
 }
 
 function replaceGroundingLine(notes: string, label: string, value: string): string {

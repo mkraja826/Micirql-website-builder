@@ -46,7 +46,10 @@ export function generateSupabaseMigration(contract: BackendImplementationContrac
     statements.push(
       `insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values (${sqlString(bucket.id)}, ${sqlString(bucket.id)}, ${bucket.public ? "true" : "false"}, ${maxBytes}, ${mime}) on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;`,
     );
-    if (bucket.ownerScoped) warnings.push(`Storage bucket ${bucket.id} requires runtime ownership-path enforcement in addition to database policies.`);
+    if (bucket.ownerScoped) {
+      statements.push(...renderStorageOwnershipPolicies(bucket.id));
+      warnings.push(`Storage bucket ${bucket.id} is owner-scoped by the first object path segment and must be verified by the Storage API probe.`);
+    }
   }
 
   statements.push("commit;");
@@ -98,6 +101,18 @@ function renderPolicy(policy: BackendPolicy) {
     ...(checkSql ? [`with check (${checkSql})`] : []),
   ];
   return `${clauses.join("\n  ")};`;
+}
+
+function renderStorageOwnershipPolicies(bucketId: string) {
+  const safeSuffix = bucketId.replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
+  assertIdentifier(safeSuffix, `storage policy suffix ${bucketId}`);
+  const predicate = `bucket_id = ${sqlString(bucketId)} and (storage.foldername(name))[1] = auth.uid()::text`;
+  return [
+    `create policy "micirql_${safeSuffix}_select_own" on storage.objects for select to authenticated using (${predicate});`,
+    `create policy "micirql_${safeSuffix}_insert_own" on storage.objects for insert to authenticated with check (${predicate});`,
+    `create policy "micirql_${safeSuffix}_update_own" on storage.objects for update to authenticated using (${predicate}) with check (${predicate});`,
+    `create policy "micirql_${safeSuffix}_delete_own" on storage.objects for delete to authenticated using (${predicate});`,
+  ];
 }
 
 function validateTable(table: BackendTable, knownTables: Set<string>) {

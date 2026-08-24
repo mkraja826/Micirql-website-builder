@@ -1,4 +1,4 @@
 Production deploy trigger
 
-Fresh production deploy requested on 2026-08-23 after Dental 768px and 1024px breakpoint fixes.
-Expected parent production commit: 1640ec863ef91801f044c4d2778f10d4d790a322
+Fresh production deploy requested on 2026-08-24 after Dental 13 1024px and Dental 15 768px certification fixes.
+Expected parent production commit: 5a85300939510be544f9ea33af83b3170a49abc4

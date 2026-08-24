@@ -27,6 +27,7 @@ export type DentalPremiumRanking = {
     antiPattern: number;
     contentArchitecture: number;
     preferenceAdjustment: number;
+    briefRelevanceAdjustment: number;
   };
 };
 
@@ -52,6 +53,13 @@ export function rankDentalPremiumCandidate(input: DentalPremiumRankingInput): De
   const contentArchitecture = Math.round(input.content * 0.45 + input.multipage * 0.55);
   const preferenceDelta = clampSigned(input.preferenceAdjustedScore.total - input.baseScore.total, -5, 5);
 
+  // A layout that is explicitly curated for the requested dental specialty must
+  // not lose first place to a broader layout solely because the broader layout
+  // has a marginally higher generic visual score. fitBonus already combines
+  // subindustry, goal, priority and style-tag evidence; keep its direct influence
+  // bounded so it can reorder close premium candidates without rescuing weak ones.
+  const briefRelevanceAdjustment = clampSigned(Math.round((input.fitBonus - 12) / 3), -4, 6);
+
   const weighted =
     visualQuality * 0.20 +
     brandBriefFit * 0.18 +
@@ -63,7 +71,7 @@ export function rankDentalPremiumCandidate(input: DentalPremiumRankingInput): De
     contentArchitecture * 0.06;
 
   return {
-    total: clamp(Math.round(weighted + preferenceDelta)),
+    total: clamp(Math.round(weighted + preferenceDelta + briefRelevanceAdjustment)),
     breakdown: {
       visualQuality: clamp(visualQuality),
       brandBriefFit: clamp(brandBriefFit),
@@ -74,6 +82,7 @@ export function rankDentalPremiumCandidate(input: DentalPremiumRankingInput): De
       antiPattern: clamp(input.antiPattern),
       contentArchitecture: clamp(contentArchitecture),
       preferenceAdjustment: preferenceDelta,
+      briefRelevanceAdjustment,
     },
   };
 }

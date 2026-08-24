@@ -1,22 +1,29 @@
-import type { Site } from "@micirql/schema";
+import type { FunctionalArchitecture, Site } from "@micirql/schema";
 
 export type FunctionalPublishIssue = {
-  code: "INVALID_ACTION" | "BROKEN_INTERNAL_LINK" | "MISSING_CONVERSION_PATH" | "MISSING_CONTACT_PATH";
+  code:
+    | "INVALID_ACTION"
+    | "BROKEN_INTERNAL_LINK"
+    | "MISSING_CONVERSION_PATH"
+    | "MISSING_CONTACT_PATH"
+    | "MISSING_REQUIRED_CAPABILITY";
   message: string;
   pagePath?: string;
   sectionId?: string;
+  capabilityId?: string;
 };
 
 export type FunctionalPublishGateResult = {
   ready: boolean;
   issues: FunctionalPublishIssue[];
+  verifiedCapabilities: string[];
 };
 
 const unsafeProtocol = /^(?:javascript|data|file|vbscript):/i;
 const contactPattern = /^(?:tel:|mailto:|sms:|https?:\/\/)/i;
 const conversionWords = /(book|appointment|contact|call|quote|enquir|consult|reserve|schedule|buy|order|get started)/i;
 
-export function evaluateFunctionalPublishGate(site: Site): FunctionalPublishGateResult {
+export function evaluateFunctionalPublishGate(site: Site, architecture?: FunctionalArchitecture): FunctionalPublishGateResult {
   const issues: FunctionalPublishIssue[] = [];
   const pagePaths = new Set(site.pages.map((page) => normalizePath(page.path)));
   let hasConversionPath = false;
@@ -60,7 +67,46 @@ export function evaluateFunctionalPublishGate(site: Site): FunctionalPublishGate
     if (!hasContactPage) issues.push({ code: "MISSING_CONTACT_PATH", message: "Visitors have no clear contact or booking destination." });
   }
 
-  return { ready: issues.length === 0, issues };
+  const verifiedCapabilities = architecture ? verifyArchitectureCapabilities(site, architecture, issues) : [];
+  return { ready: issues.length === 0, issues, verifiedCapabilities };
+}
+
+function verifyArchitectureCapabilities(site: Site, architecture: FunctionalArchitecture, issues: FunctionalPublishIssue[]) {
+  const surfaceText = site.pages.flatMap((page) => [page.path, page.name, ...page.sections.map((section) => section.component.componentId)]).join(" ").toLowerCase();
+  const bindingIds = site.pages.flatMap((page) => page.sections.flatMap((section) => Object.values(section.bindings).map((binding) => binding?.actionId).filter((value): value is string => Boolean(value))));
+  const actionText = site.pages.flatMap((page) => page.sections.flatMap((section) => collectActions(section.props).flatMap((action) => [action.label ?? "", action.href ?? ""]))).join(" ").toLowerCase();
+  const bindingText = bindingIds.join(" ").toLowerCase();
+  const searchable = `${surfaceText} ${actionText} ${bindingText}`;
+  const verified = new Set<string>();
+
+  for (const capability of architecture.capabilities) {
+    const id = capability.id.toLowerCase();
+    const observable = capabilityPattern(id);
+    if (!observable) continue;
+    if (observable.test(searchable)) {
+      verified.add(capability.id);
+      continue;
+    }
+    issues.push({
+      code: "MISSING_REQUIRED_CAPABILITY",
+      capabilityId: capability.id,
+      message: `Required capability “${capability.name}” is present in the functional architecture but no corresponding page, component, action or binding exists in the generated site.`,
+    });
+  }
+
+  return [...verified];
+}
+
+function capabilityPattern(id: string): RegExp | null {
+  if (id === "auth") return /(login|log-in|sign in|signin|sign-in|signup|sign up|account|portal|session|auth)/i;
+  if (id === "booking") return /(book|booking|appointment|reservation|reserve|schedule|consultation)/i;
+  if (id === "commerce") return /(product|catalog|shop|store|cart|checkout|order|purchase|buy)/i;
+  if (id === "payments") return /(payment|pay|checkout|billing|subscription|razorpay|stripe)/i;
+  if (id === "storage") return /(upload|file|asset|document|photo|image|gallery|attachment)/i;
+  if (id === "search") return /(search|filter|catalog|listing|directory)/i;
+  if (id === "admin") return /(admin|dashboard|manage|management|cms)/i;
+  if (id === "ai") return /(ai|assistant|chatbot|recommendation)/i;
+  return null;
 }
 
 function inspectHref(

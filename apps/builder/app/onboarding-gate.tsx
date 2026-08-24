@@ -68,6 +68,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
     setBuildStage("planning");
     setRecoveryNotice("");
     setError("");
+    let recoveryOccurred = false;
     try {
       const structuredBrief = {
         workspaceId: context.workspaceId,
@@ -95,6 +96,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
       if (!response.ok || !payload?.ok) throw new Error(payload?.error ?? "Website build failed.");
       const reviewedLayoutMismatch = Boolean(value.selectedLayoutId && payload?.selectedLayout?.id !== value.selectedLayoutId);
       if (reviewedLayoutMismatch) {
+        recoveryOccurred = true;
         setRecoveryNotice("MiCirql generated the website successfully but the planner returned a different certified design direction. The build was preserved instead of forcing you to restart; you can choose the preferred certified direction in the design review.");
         console.warn("MiCirql reviewed layout drift recovered", { requested: value.selectedLayoutId, returned: payload?.selectedLayout?.id ?? null });
       }
@@ -108,6 +110,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
         });
         const architectPayload = await architectureResponse.json().catch(() => ({})) as ArchitectPayload;
         if (!architectureResponse.ok) {
+          recoveryOccurred = true;
           setBuildStage("recovering");
           setRecoveryNotice("MiCirql kept the safe base website because advanced page enrichment did not complete. Nothing was lost.");
           console.error("MiCirql page architecture enrichment failed", architectPayload);
@@ -117,6 +120,7 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
           const failedProviders = architectPayload.content?.recovery?.failedProviders ?? 0;
           const warnings = [architectPayload.contentWarning, architectPayload.mediaWarning].filter(Boolean) as string[];
           if (fallback || failedProviders > 0 || warnings.length) {
+            recoveryOccurred = true;
             setBuildStage("recovering");
             const providerText = fallback || failedProviders > 0 ? ` Content generation recovered after ${Math.max(1, failedProviders)} provider failure${failedProviders === 1 ? "" : "s"}.` : "";
             const enrichmentText = warnings.length ? " A non-critical enrichment step was skipped and the last safe result was preserved." : "";
@@ -124,11 +128,16 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
           }
         }
       } catch (architectureError) {
+        recoveryOccurred = true;
         setBuildStage("recovering");
         setRecoveryNotice("MiCirql kept the safe base website because advanced enrichment was interrupted. Nothing was lost.");
         console.error("MiCirql page architecture enrichment failed; keeping base build.", architectureError);
       }
 
+      if (recoveryOccurred) {
+        setBuildStage("recovering");
+        await delay(700);
+      }
       setBuildStage("checking");
       const nextProfile = (payload.profile ?? null) as OnboardingProfile | null;
       setProfile(nextProfile);
@@ -181,7 +190,7 @@ function BuildProgress({ stage, recoveryNotice }: { stage: BuildStage; recoveryN
   const recovering = stage === "recovering";
   return <main style={shellStyle}><section style={progressCardStyle} aria-live="polite">
     <span style={progressEyebrowStyle}>MiCirql build intelligence</span>
-    <h1 style={progressHeadingStyle}>{recovering ? "Recovering safely…" : stages[activeIndex]?.label ?? "Building your website…"}</h1>
+    <h1 style={progressHeadingStyle}>{recovering ? "Build recovered safely" : stages[activeIndex]?.label ?? "Building your website…"}</h1>
     <p style={progressCopyStyle}>{recovering ? recoveryNotice || "A build step failed, so MiCirql is preserving the last safe result." : "MiCirql is building through guarded stages. Failed providers and incomplete results are rejected before they can replace your website."}</p>
     <div style={stageListStyle}>{stages.map((item, index) => {
       const done = !recovering && index < activeIndex;
@@ -193,6 +202,7 @@ function BuildProgress({ stage, recoveryNotice }: { stage: BuildStage; recoveryN
 }
 
 function commaList(value: string) { return value.split(",").map((item) => item.trim()).filter(Boolean); }
+function delay(ms: number) { return new Promise<void>((resolve) => window.setTimeout(resolve, ms)); }
 
 const shellStyle: React.CSSProperties = { minHeight: "100vh", padding: "24px 16px 56px", background: "#09090b", color: "#f7f7fb", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
 const loadingStyle: React.CSSProperties = { maxWidth: 560, margin: "15vh auto 0", padding: 28, border: "1px solid #292933", borderRadius: 20, background: "#111115", textAlign: "center", color: "#b7b7c1" };

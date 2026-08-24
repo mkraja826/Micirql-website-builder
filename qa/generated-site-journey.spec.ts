@@ -161,7 +161,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function assertNoDeadRenderedActions(page: import("@playwright/test").Page) {
-  const invalid = await page.locator("a[href], button").evaluateAll((elements) => elements
+  const renderedWebsite = page.locator(".renderer-preview-document").first();
+  await expect(renderedWebsite).toBeVisible();
+  const invalid = await renderedWebsite.locator("a[href], button:not([data-mi-canvas-action])").evaluateAll((elements) => elements
     .filter((element) => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();

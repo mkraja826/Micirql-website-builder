@@ -7,7 +7,9 @@ export type BuildDiagnosticRow = {
 
 export function summarizeBuildDiagnostics(rows: readonly BuildDiagnosticRow[]) {
   const qualityScores = rows
-    .map((row) => Number(row.quality_score))
+    .map((row) => row.quality_score)
+    .filter((value) => value !== null && value !== undefined && value !== "")
+    .map((value) => Number(value))
     .filter(Number.isFinite);
 
   return {

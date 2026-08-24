@@ -76,8 +76,8 @@ test("generated design choices survive editor back-navigation and can be reselec
   await page.unroute("**/api/drafts**");
 
   const profile = {
-    industry: "dental",
-    subindustry: "dental implants",
+    industry: "healthcare clinic",
+    subindustry: "oral care",
     goals: ["book appointments"],
     style_tags: ["premium", "professional"],
     required_capabilities: ["booking"],
@@ -87,10 +87,26 @@ test("generated design choices survive editor back-navigation and can be reselec
   await page.route("**/api/onboarding**", async route => {
     if (route.request().method() === "POST") {
       generated = true;
-      return route.fulfill({ json: { ok: true, profile } });
+      return route.fulfill({ json: { ok: true, profile, selectedLayout: { id: "layout-1" } } });
     }
     return route.fulfill({ json: { completed: false, profile: null } });
   });
+  await page.route("**/api/onboarding/interpret**", async route => route.fulfill({ json: {
+    profile: {
+      businessName: "AI Generated Dental",
+      industry: "healthcare clinic",
+      subindustry: "oral care",
+      location: "Hyderabad",
+      services: ["Dental implants", "Crowns", "Root canal"],
+      goals: ["book appointments"],
+      styleTags: ["premium", "professional"],
+      requiredCapabilities: ["booking"],
+      languages: ["en"],
+      notes: "Premium oral care clinic in Hyderabad",
+    },
+    layoutRecommendation: { id: "layout-1", name: "Premium clinic", description: "Conversion-led healthcare layout", score: 94, reasons: ["Clinic fit"], preferredSubindustry: "oral care" },
+  } }));
+  await page.route("**/api/onboarding/architect**", async route => route.fulfill({ json: { ok: true, content: { fallbackUsed: false, recovery: { attemptedProviders: 1, failedProviders: 0 } }, contentWarning: null, mediaWarning: null, generatedMediaCount: 1, exactPlacement: { placed: 1 }, functionalBindings: { bound: ["booking"] } } }));
   await page.route("**/api/design-preferences**", async route => route.fulfill({ json: {} }));
   await page.route("**/api/drafts**", async route => {
     const draft = { workspaceId: "workspace-demo", siteId: "workspace-preview", revision: generated ? 4 : 3, snapshot: generated ? generatedSite : site, updatedAt: now, updatedBy: "smoke-user" };
@@ -99,23 +115,14 @@ test("generated design choices survive editor back-navigation and can be reselec
 
   await page.goto("/");
   await page.getByRole("button", { name: "Open editor" }).first().click();
-  await expect(page.getByRole("heading", { name: "Tell us about your business." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Describe the website you want." })).toBeVisible();
 
-  await page.getByLabel("Business name").fill("AI Generated Dental");
-  await page.getByLabel("Speciality").fill("Dental implants");
-  await page.getByLabel("Primary location").fill("Hyderabad");
-  await page.getByLabel("Main services").fill("Dental implants, crowns, root canal");
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByRole("heading", { name: "Give MiCirql your brand direction." })).toBeVisible();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByRole("heading", { name: "What should this website achieve?" })).toBeVisible();
-  await page.getByRole("button", { name: "book appointments" }).click();
-  await page.getByRole("button", { name: "booking" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByRole("heading", { name: "Review before we build." })).toBeVisible();
-  await page.getByRole("button", { name: "Create my website" }).click();
+  await page.getByLabel("Your website brief").fill("AI Generated Dental is a premium oral care clinic in Hyderabad offering dental implants, crowns and root canal treatment, with appointment booking as the main goal.");
+  await page.getByRole("button", { name: "Analyze my brief" }).click();
+  await expect(page.getByText("What MiCirql understood")).toBeVisible();
+  await page.getByRole("button", { name: "Build my website" }).click();
 
-  await expect(page.getByRole("heading", { name: "Choose from 20 different directions." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose your design direction." })).toBeVisible();
   const useButtons = page.getByRole("button", { name: "Use this design" });
   await expect(useButtons.first()).toBeVisible();
   await useButtons.first().click();
@@ -124,7 +131,7 @@ test("generated design choices survive editor back-navigation and can be reselec
   await expect(page.getByText("Restore your smile with confidence").first()).toBeVisible();
   await page.getByRole("button", { name: "← Designs" }).click();
 
-  await expect(page.getByRole("heading", { name: "Choose from 20 different directions." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose your design direction." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Use this design" }).nth(1)).toBeVisible();
   await page.getByRole("button", { name: "Use this design" }).nth(1).click();
   await expect(page.getByRole("button", { name: "← Designs" })).toBeVisible();

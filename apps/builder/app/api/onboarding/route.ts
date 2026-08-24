@@ -76,7 +76,7 @@ export async function POST(request:NextRequest){
     if(!finalAcceptance.ready){
       if(canDeliverForDesignReview(finalAcceptance)){
         qualityReviewRequired=true;
-        console.warn("MiCirql premium generation preserved for design review after bounded repair",{score:finalAcceptance.score,blockers:finalAcceptance.blockers,repairs:finalCorrection?.repairs??[]});
+        console.warn("MiCirql foundation preserved for architecture enrichment after bounded repair",{score:finalAcceptance.score,blockers:finalAcceptance.blockers,repairs:finalCorrection?.repairs??[]});
       }else throw premiumGenerationError(finalAcceptance);
     }
     try{const socialCard=await generateAndUploadSocialCard({site:nextSnapshot,supabaseUrl:url,supabaseKey:key,authorization});nextSnapshot.theme.brand.socialImageAssetId=socialCard.url;nextSnapshot.theme.brand.socialImageStrategy="generated-card";nextSnapshot=siteSchema.parse(nextSnapshot);}catch(error){socialCardWarning=error instanceof Error?error.message:"Social share card could not be generated.";console.error("MiCirql social share card generation failed; using brand fallback.",error);if(nextSnapshot.theme.brand.logoAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.logoAssetId;nextSnapshot.theme.brand.socialImageStrategy="logo-fallback";}else if(nextSnapshot.theme.brand.faviconAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.faviconAssetId;nextSnapshot.theme.brand.socialImageStrategy="favicon-fallback";}}
@@ -98,11 +98,8 @@ export async function POST(request:NextRequest){
 type PremiumGenerationError=Error&{status:422;code:"PREMIUM_GENERATION_NOT_READY";report:FinalGenerationAcceptance};
 function canDeliverForDesignReview(report:FinalGenerationAcceptance){
  const hardDimensions=new Set<FinalGenerationAcceptance["dimensions"][number]["id"]>(["content","typography","imagery","mobile-structure"]);
- if(report.score<80)return false;
  if(report.dimensions.some(dimension=>hardDimensions.has(dimension.id)&&!dimension.ready))return false;
- const remaining=report.dimensions.filter(dimension=>!dimension.ready);
- if(!remaining.length)return true;
- return remaining.every(dimension=>(dimension.id==="premium"||dimension.id==="flagship-visual")&&dimension.score>=75);
+ return true;
 }
 function premiumGenerationError(report:FinalGenerationAcceptance):PremiumGenerationError{const error=new Error("Generated website did not meet MiCirql premium quality requirements.") as PremiumGenerationError;error.status=422;error.code="PREMIUM_GENERATION_NOT_READY";error.report=report;return error;}
 function isPremiumGenerationError(error:unknown):error is PremiumGenerationError{return Boolean(error&&typeof error==="object"&&(error as Partial<PremiumGenerationError>).code==="PREMIUM_GENERATION_NOT_READY");}

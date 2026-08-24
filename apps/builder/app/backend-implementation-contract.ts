@@ -13,7 +13,8 @@ import {
 } from "@micirql/schema";
 
 export function deriveBackendImplementationContract(architecture: FunctionalArchitecture): BackendImplementationContract {
-  const tables = architecture.entities.map(tableFromEntity);
+  const baseTables = architecture.entities.map(tableFromEntity);
+  const tables = architecture.requiresPayments ? hardenPaymentPersistence(baseTables) : baseTables;
   const policies = architecture.policies.map((policy): BackendPolicy => ({
     id: policy.id,
     table: tableName(policy.entityId),
@@ -57,7 +58,7 @@ export function deriveBackendImplementationContract(architecture: FunctionalArch
     notes: [
       "Generate migrations from this contract; never expose service-role or provider secrets to the browser.",
       ...(architecture.requiresAuth ? ["Authenticated data access must be denied by default and granted only by explicit RLS policies."] : []),
-      ...(architecture.requiresPayments ? ["Payment state may only transition after verified server-side provider confirmation or signed webhook verification."] : []),
+      ...(architecture.requiresPayments ? ["Payment state may only transition after verified server-side provider confirmation or signed webhook verification.", "Payment creation and webhook delivery must persist unique idempotency/event keys before fulfillment."] : []),
     ],
   });
 }
@@ -85,6 +86,36 @@ function tableFromEntity(entity: FunctionalEntity): BackendTable {
     rlsEnabled: entity.ownership !== "public",
     auditRequired: entity.auditRequired,
   };
+}
+
+function hardenPaymentPersistence(input: BackendTable[]): BackendTable[] {
+  const tables = input.map((table) => ({ ...table, columns: table.columns.map((column) => ({ ...column })), indexes: table.indexes.map((index) => [...index]) }));
+  const orders = tables.find((table) => table.name === "orders");
+  if (orders) {
+    if (!orders.columns.some((column) => column.name === "idempotency_key")) orders.columns.push({ name: "idempotency_key", type: "text", nullable: false, unique: true });
+    if (!orders.columns.some((column) => column.name === "provider_payment_id")) orders.columns.push({ name: "provider_payment_id", type: "text", nullable: true, unique: true });
+    if (!orders.indexes.some((index) => index.length === 1 && index[0] === "idempotency_key")) orders.indexes.push(["idempotency_key"]);
+  }
+  if (!tables.some((table) => table.name === "payment_events")) {
+    tables.push({
+      name: "payment_events",
+      entityId: "payment_event",
+      primaryKey: "id",
+      rlsEnabled: true,
+      auditRequired: true,
+      indexes: [["provider_event_id"]],
+      columns: [
+        { name: "id", type: "uuid", nullable: false, unique: true, defaultSql: "gen_random_uuid()" },
+        { name: "provider_event_id", type: "text", nullable: false, unique: true },
+        { name: "event_type", type: "text", nullable: false, unique: false },
+        { name: "payload", type: "jsonb", nullable: false, unique: false },
+        { name: "processed_at", type: "timestamptz", nullable: false, unique: false, defaultSql: "now()" },
+        { name: "created_at", type: "timestamptz", nullable: false, unique: false, defaultSql: "now()" },
+        { name: "updated_at", type: "timestamptz", nullable: false, unique: false, defaultSql: "now()" },
+      ],
+    });
+  }
+  return tables;
 }
 
 function buildRoutes(architecture: FunctionalArchitecture): BackendRoute[] {

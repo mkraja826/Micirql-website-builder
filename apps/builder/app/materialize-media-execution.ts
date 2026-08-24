@@ -52,20 +52,30 @@ export async function materializeGeneratedMedia(input:{
  return{execution:{...input.execution,requests},generated,warnings};
 }
 
+const FLAGSHIP_DENTAL_BLUEPRINTS=new Set([
+ "dental-01-clinical-authority",
+ "dental-02-implant-luxury",
+ "dental-03-smile-studio",
+ "dental-05-digital-dentistry",
+ "dental-08-boutique-cosmetic",
+]);
+
 export function generatedMediaBudget(site:Site):number{
  const blueprintId=lockedBlueprintId(site);
  if(!blueprintId)return 2;
- if(blueprintId==="dental-03-smile-studio"||blueprintId==="dental-05-digital-dentistry")return 3;
- if(blueprintId==="dental-02-implant-luxury"||blueprintId==="dental-08-boutique-cosmetic"||blueprintId==="dental-01-clinical-authority")return 2;
+ // The flagship visual gate requires meaningful media in at least three major
+ // home-page sections. Reusable/customer media may satisfy part of that budget,
+ // but the generation fallback must be capable of filling three distinct slots.
+ if(FLAGSHIP_DENTAL_BLUEPRINTS.has(blueprintId))return 3;
  return 2;
 }
 
 const BLUEPRINT_MEDIA_PRIORITY:Record<string,SectionFamily[]>={
- "dental-01-clinical-authority":["hero","about","features","process","services","gallery"],
- "dental-02-implant-luxury":["hero","process","features","about","services","gallery"],
- "dental-03-smile-studio":["hero","gallery","about","services","features","process"],
- "dental-05-digital-dentistry":["hero","features","process","about","services","gallery"],
- "dental-08-boutique-cosmetic":["hero","about","gallery","services","features","process"],
+ "dental-01-clinical-authority":["hero","features","process","services","about","gallery"],
+ "dental-02-implant-luxury":["hero","process","features","services","about","gallery"],
+ "dental-03-smile-studio":["hero","gallery","services","process","features","about"],
+ "dental-05-digital-dentistry":["hero","features","process","services","about","gallery"],
+ "dental-08-boutique-cosmetic":["hero","gallery","services","process","features","about"],
 };
 
 export function generatedMediaPriority(site:Site):SectionFamily[]{

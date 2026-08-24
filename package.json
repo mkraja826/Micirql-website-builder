@@ -23,6 +23,7 @@
     "qa:functional-architecture": "playwright test --config=playwright.functional-architecture.config.ts",
     "qa:backend-implementation": "playwright test --config=playwright.backend-implementation.config.ts",
     "qa:full-stack-app": "playwright test --config=playwright.full-stack-app.config.ts",
+    "qa:full-stack-live": "playwright test --config=playwright.full-stack-live.config.ts",
     "qa:sections": "playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",
     "qa:sections:core": "MI_QA_CORE=1 playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts qa/functional-interactions.spec.ts",

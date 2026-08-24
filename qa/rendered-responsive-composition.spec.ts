@@ -43,4 +43,4 @@ test("composition QA tolerates editorial variation while enforcing responsive sa
   expect(source).toContain("if (mobile) {");
   expect(source).not.toContain("font-family");
   expect(source).not.toContain("innerHTML =");
-}
+});

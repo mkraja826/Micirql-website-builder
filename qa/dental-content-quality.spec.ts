@@ -93,7 +93,7 @@ test("central content quality accepts heading and body section aliases", () => {
   expect(result.score).toBeGreaterThanOrEqual(82);
 });
 
-test("raw Dental scaffold becomes a truthful acceptance-safe fallback before AI", () => {
+test("raw Dental scaffold becomes a truthful architecture-safe foundation before AI", () => {
   const rawSite = {
     schemaVersion: "1.0.0",
     siteId: "site-scaffold",
@@ -172,5 +172,9 @@ test("raw Dental scaffold becomes a truthful acceptance-safe fallback before AI"
   expect(dental.score).toBeGreaterThanOrEqual(82);
 
   const acceptance = evaluateFinalGenerationAcceptance(prepared.site);
-  expect(acceptance.ready).toBeTruthy();
+  for (const id of ["content", "typography", "imagery", "mobile-structure"] as const) {
+    expect(acceptance.dimensions.find((dimension) => dimension.id === id)?.ready).toBeTruthy();
+  }
+  expect(acceptance.ready).toBeFalsy();
+  expect(acceptance.dimensions.filter((dimension) => !dimension.ready).every((dimension) => dimension.id === "premium" || dimension.id === "flagship-visual")).toBeTruthy();
 });

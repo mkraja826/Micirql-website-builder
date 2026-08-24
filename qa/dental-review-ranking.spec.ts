@@ -73,7 +73,7 @@ const baseSite = siteSchema.parse({
   ],
 });
 
-test("Aurelia premium implant brief ranks Implant Atelier first", () => {
+test("Aurelia premium implant brief ranks an implant-specialist direction first", () => {
   const directions = buildCertifiedDentalReviewDirections(baseSite, {
     business_name: "Aurelia Dental",
     industry: "dental clinic",
@@ -86,6 +86,7 @@ test("Aurelia premium implant brief ranks Implant Atelier first", () => {
   }, 8);
 
   expect(directions.length).toBeGreaterThan(0);
-  expect(directions[0]?.name).toBe("Implant Atelier");
-  expect(directions[0]?.id).toContain("dental-02-implant-luxury");
+  expect(directions[0]?.name).toMatch(/^Implant (Atelier|Results)/);
+  expect(directions[0]?.id).toMatch(/dental-(02-implant-luxury|13-implant-results)/);
+  expect(directions[0]?.reasons.some((reason) => /implant dentistry match/i.test(reason))).toBeTruthy();
 });

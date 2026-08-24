@@ -24,9 +24,13 @@ test("dental review uses server-certified blueprint systems instead of generic r
   expect(helper).toContain("DENTAL_LAYOUT_BLUEPRINTS");
   expect(helper).toContain("applyWebsiteLayoutBlueprint(site, blueprint)");
   expect(helper).toContain("const REVIEW_LIMIT = 8");
-  expect(helper).toContain("const RUNTIME_EVALUATION_LIMIT = 4");
+  expect(helper).toContain("const RUNTIME_EVALUATION_LIMIT = 20");
   expect(helper).toContain("selectBlueprintEvaluationSet(eligibleBlueprints");
-  expect(helper).toContain("Every returned direction still passes every existing quality threshold below");
+  expect(helper).toContain("MIN_DENTAL_CONTENT_SCORE = 82");
+  expect(helper).toContain("MIN_DENTAL_MULTIPAGE_SCORE = 90");
+  expect(helper).toContain("MIN_PAGE_RHYTHM_SCORE = 78");
+  expect(helper).toContain("MIN_PAGE_TYPOGRAPHY_SCORE = 82");
+  expect(helper).toContain("MIN_MEDIA_ART_DIRECTION_SCORE = 80");
   expect(helper).toContain("MICIRQL_DENTAL_CERTIFIED_LAYOUT_IDS");
 
   expect(diagnostics).toContain("const DIAGNOSTIC_SAMPLE_LIMIT = 1");

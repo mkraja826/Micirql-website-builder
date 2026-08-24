@@ -7,6 +7,8 @@ import { materializeGeneratedMedia } from "../../../materialize-media-execution"
 import { applyMediaExecution } from "../../../apply-media-execution";
 import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
+import { deriveFunctionalArchitecture } from "../../../functional-architecture";
+import { evaluateFunctionalPublishGate } from "../../../functional-publish-gate";
 import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
 import { evaluateAboveFoldComposition } from "../../../above-fold-composition-quality";
 import { evaluateDentalContentQuality, type DentalContentQualityResult } from "../../../dental-content-quality";
@@ -47,6 +49,17 @@ export async function POST(request: NextRequest) {
       notes: optionalText(body.notes) ?? null,
     };
     const requiredCapabilities = list(body.requiredCapabilities);
+    const functionalProfile = {
+      business_name: businessName,
+      industry,
+      subindustry: facts.subindustry,
+      location: facts.location,
+      services: facts.services,
+      goals: facts.goals,
+      required_capabilities: requiredCapabilities,
+      notes: facts.notes,
+    };
+    const functionalArchitecture = deriveFunctionalArchitecture(functionalProfile);
     const plan = planPageArchitecture({
       businessName,
       industry,
@@ -132,19 +145,16 @@ export async function POST(request: NextRequest) {
       throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
     }
 
+    let functionalQuality = evaluateFunctionalPublishGate(finalDraft.snapshot, functionalArchitecture);
+    if (!functionalQuality.ready) {
+      const codes = [...new Set(functionalQuality.issues.map((item) => item.capabilityId ? `${item.code}:${item.capabilityId}` : item.code))];
+      throw new Error(`GENERATED_FUNCTIONAL_QUALITY_FAILED: ${codes.join(", ")}`);
+    }
+
     let dentalContentQuality: DentalContentQualityResult | null = null;
     let dentalRepairApplied = false;
     let dentalRepairCodes: string[] = [];
-    const dentalProfile = {
-      business_name: businessName,
-      industry,
-      subindustry: facts.subindustry,
-      location: facts.location,
-      services: facts.services,
-      goals: facts.goals,
-      required_capabilities: requiredCapabilities,
-      notes: facts.notes,
-    };
+    const dentalProfile = functionalProfile;
 
     if (isDentalBrief(facts)) {
       dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, dentalProfile);
@@ -171,6 +181,11 @@ export async function POST(request: NextRequest) {
         if (!generatedQuality.ready) {
           const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
           throw new Error(`GENERATED_SITE_QUALITY_FAILED_AFTER_DENTAL_REPAIR: ${codes.join(", ")}`);
+        }
+        functionalQuality = evaluateFunctionalPublishGate(finalDraft.snapshot, functionalArchitecture);
+        if (!functionalQuality.ready) {
+          const codes = [...new Set(functionalQuality.issues.map((item) => item.capabilityId ? `${item.code}:${item.capabilityId}` : item.code))];
+          throw new Error(`GENERATED_FUNCTIONAL_QUALITY_FAILED_AFTER_DENTAL_REPAIR: ${codes.join(", ")}`);
         }
         dentalContentQuality = evaluateDentalContentQuality(finalDraft.snapshot, dentalProfile);
       }
@@ -217,10 +232,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, functionalArchitecture, functionalQuality, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, functionalArchitecture, functionalQuality, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

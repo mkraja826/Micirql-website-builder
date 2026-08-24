@@ -4,6 +4,7 @@ import type {
   SupabaseSchemaSnapshot,
   SupabaseStagingAdapter,
 } from "./supabase-staging-executor";
+import { createSupabaseRlsProbeRunner } from "./supabase-rls-probe-runner";
 
 export type SupabaseManagementProviderOptions = {
   accessToken: string;
@@ -24,6 +25,7 @@ export type SupabasePreviewBranch = {
 
 export function createSupabaseManagementProvider(options: SupabaseManagementProviderOptions) {
   const client = new SupabaseManagementClient(options);
+  const defaultProbeRunner = createSupabaseRlsProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
 
   return {
     async createPreviewBranch(parentProjectRef: string, branchName: string): Promise<SupabasePreviewBranch> {
@@ -55,12 +57,7 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
         },
         introspectSchema: async (projectRef) => client.introspectSchema(projectRef),
         runSecurityProbes: async (projectRef, contract) => {
-          if (!options.probeRunner) {
-            return {
-              errors: ["Security probe runner is not configured for this Supabase provider."],
-            };
-          }
-          return options.probeRunner(projectRef, contract);
+          return (options.probeRunner ?? defaultProbeRunner)(projectRef, contract);
         },
       };
     },

@@ -123,6 +123,49 @@
   }
 }
 
+/* 768px tablet edge: the desktop media-first hero has a 22rem minimum media
+ * column, which leaves the action row too narrow at exactly 768px. Collapse
+ * only the compact-tablet range to a single-column hero and keep both CTAs
+ * inside the available width. */
+@media(min-width:48rem) and (max-width:56rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__split{
+    grid-template-columns:minmax(0,1fr);
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__copy{
+    order:1;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__media{
+    order:2;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__actions{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+    min-width:0;
+    gap:.7rem;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__action{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+    white-space:normal;
+    text-align:center;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-section__action span{
+    min-width:0;
+    max-width:100%;
+    overflow-wrap:break-word;
+  }
+}
+
 @media(max-width:47.99rem){
   [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article,
   [data-mi-layout-blueprint="dental-13-implant-results"] .mi-proof--metrics .mi-proof-metrics article:last-child{

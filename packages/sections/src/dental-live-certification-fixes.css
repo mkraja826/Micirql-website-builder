@@ -8,3 +8,100 @@
     padding-top:2.5rem!important;
   }
 }
+
+/* Dental 13 — Implant Results
+ * At the 1024px certification viewport the long implant treatment heading could
+ * escape the copy column. Keep the evidence-first split, but make both tracks and
+ * the editable title explicitly shrink-safe inside the available tablet/desktop
+ * width. */
+@media (min-width:48rem) and (max-width:64rem){
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__split{
+    grid-template-columns:minmax(18rem,.92fr) minmax(0,1.08fr)!important;
+    gap:clamp(1.4rem,3vw,2rem)!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--display{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--display{
+    font-size:clamp(3rem,5vw,4.25rem)!important;
+    line-height:.96!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+  [data-mi-layout-blueprint="dental-13-implant-results"] .mi-hero--media-first .mi-type--display [data-mi-prop-path="title"]{
+    display:block;
+    min-width:0;
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+}
+
+/* Dental 15 — Smile Campaign
+ * The blueprint's compact rules end at 47.99rem, leaving the exact 768px QA
+ * viewport in the desktop three-column campaign poster. Bridge only that narrow
+ * breakpoint boundary so 768px receives the intended stacked composition. */
+@media (min-width:47.99rem) and (max-width:48rem){
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-container{
+    width:min(100% - 1.5rem,var(--mi-content-lg))!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial>.mi-container{
+    width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__index{
+    display:none!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__copy,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-hero__copy{
+    order:1!important;
+    padding:2.6rem 1rem 2rem!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media{
+    order:2!important;
+    min-height:0!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-hero--editorial .mi-section__media img{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    aspect-ratio:4/3!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team-featured,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-cta-split,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-split{
+    grid-template-columns:minmax(0,1fr)!important;
+    min-width:0!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-gallery-mosaic .mi-gallery-card,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-services-spotlight .mi-service-item,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-team-card--lead,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-cta-split>* ,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] .mi-contact-split>*{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] img,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] video,
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] iframe{
+    max-width:100%!important;
+  }
+}

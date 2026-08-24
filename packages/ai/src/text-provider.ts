@@ -190,7 +190,7 @@ function parseJsonContent(content: string): unknown {
   const direct = tryParseJson(trimmed);
   if (direct.ok) return direct.value;
 
-  const candidates = extractBalancedJsonCandidates(trimmed);
+  const candidates = extractBalancedJsonCandidates(trimmed)
     .map((candidate) => tryParseJson(candidate))
     .filter((result): result is { ok: true; value: unknown } => result.ok);
 

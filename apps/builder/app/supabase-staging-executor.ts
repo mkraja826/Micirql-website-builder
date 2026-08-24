@@ -29,10 +29,7 @@ export type SupabaseCertificationProbeResult = {
 export type SupabaseStagingAdapter = {
   applyMigration: (projectRef: string, sql: string) => Promise<void>;
   introspectSchema: (projectRef: string) => Promise<SupabaseSchemaSnapshot>;
-  runSecurityProbes: (
-    projectRef: string,
-    contract: BackendImplementationContract,
-  ) => Promise<SupabaseCertificationProbeResult>;
+  runSecurityProbes: (projectRef: string, contract: BackendImplementationContract) => Promise<SupabaseCertificationProbeResult>;
 };
 
 export type SupabaseStagingExecutionResult = {
@@ -96,10 +93,10 @@ export async function executeSupabaseStagingCertification(input: {
     observedTableCount: observedTables.length,
     observedPolicyCount: observedPolicies.length,
     observedBucketCount: observedBuckets.length,
-    positiveRlsPassed: probes.positiveRlsPassed,
-    negativeRlsPassed: probes.negativeRlsPassed,
-    storageOwnershipPassed: probes.storageOwnershipPassed,
-    paymentIdempotencyPassed: probes.paymentIdempotencyPassed,
+    ...(probes.positiveRlsPassed !== undefined ? { positiveRlsPassed: probes.positiveRlsPassed } : {}),
+    ...(probes.negativeRlsPassed !== undefined ? { negativeRlsPassed: probes.negativeRlsPassed } : {}),
+    ...(probes.storageOwnershipPassed !== undefined ? { storageOwnershipPassed: probes.storageOwnershipPassed } : {}),
+    ...(probes.paymentIdempotencyPassed !== undefined ? { paymentIdempotencyPassed: probes.paymentIdempotencyPassed } : {}),
     applyErrors: errors,
   };
 
@@ -112,9 +109,7 @@ export async function executeSupabaseStagingCertification(input: {
 
 function assertIsolatedTarget(target: SupabaseCertificationEnvironment) {
   if (!target.projectRef.trim()) throw new Error("STAGING_PROJECT_REF_REQUIRED");
-  if (target.productionProjectRef && target.projectRef === target.productionProjectRef) {
-    throw new Error("STAGING_PROJECT_MUST_DIFFER_FROM_PRODUCTION");
-  }
+  if (target.productionProjectRef && target.projectRef === target.productionProjectRef) throw new Error("STAGING_PROJECT_MUST_DIFFER_FROM_PRODUCTION");
   if (/prod(?:uction)?/i.test(target.environment)) throw new Error("PRODUCTION_CERTIFICATION_FORBIDDEN");
 }
 
@@ -123,19 +118,9 @@ function validateSnapshot(contract: BackendImplementationContract, snapshot: Sup
   const tables = new Set(snapshot.tables);
   const policies = new Set(snapshot.policies.map((policy) => `${policy.table}:${policy.name}`));
   const buckets = new Set(snapshot.buckets);
-
-  for (const table of contract.tables) {
-    if (!tables.has(table.name)) errors.push(`Missing expected table: ${table.name}`);
-  }
-  for (const policy of contract.policies) {
-    if (!policies.has(`${policy.table}:${policy.id}`)) errors.push(`Missing expected RLS policy: ${policy.table}.${policy.id}`);
-  }
-  for (const bucket of contract.storageBuckets) {
-    if (!buckets.has(bucket.id)) errors.push(`Missing expected storage bucket: ${bucket.id}`);
-  }
+  for (const table of contract.tables) if (!tables.has(table.name)) errors.push(`Missing expected table: ${table.name}`);
+  for (const policy of contract.policies) if (!policies.has(`${policy.table}:${policy.id}`)) errors.push(`Missing expected RLS policy: ${policy.table}.${policy.id}`);
+  for (const bucket of contract.storageBuckets) if (!buckets.has(bucket.id)) errors.push(`Missing expected storage bucket: ${bucket.id}`);
   return errors;
 }
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
+function errorMessage(error: unknown) { return error instanceof Error ? error.message : String(error); }

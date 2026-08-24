@@ -125,7 +125,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
           workspaceId,
           siteId,
           profile,
-          preferenceProfile,
+          ...(preferenceProfile ? { preferenceProfile } : {}),
         });
         if (!Array.isArray(payload.directions) || !payload.directions.length) {
           throw new Error(payload.error ?? "Could not prepare certified Dental review directions.");

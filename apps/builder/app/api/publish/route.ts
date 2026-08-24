@@ -80,14 +80,14 @@ export async function POST(request: NextRequest) {
     }
 
     const architecture = deriveFunctionalArchitecture({
-      business_name: groundingFacts.businessName,
+      business_name: groundingFacts.businessName ?? null,
       industry: groundingFacts.industry ?? null,
       subindustry: groundingFacts.subindustry ?? null,
       location: groundingFacts.location ?? null,
-      goals: groundingFacts.goals,
-      services: groundingFacts.services,
+      goals: groundingFacts.goals ?? null,
+      services: groundingFacts.services ?? null,
       required_capabilities: inferFunctionalCapabilities(publishSite, groundingFacts),
-      notes: groundingFacts.notes,
+      notes: groundingFacts.notes ?? null,
     });
     const backendContract = deriveBackendImplementationContract(architecture);
     const fullStackCertification = await evaluateFullStackPublishCertification({
@@ -193,8 +193,8 @@ function inferFunctionalCapabilities(site: Site, facts: GroundingFacts) {
     site.subtype,
     site.name,
     ...site.pages.flatMap((page) => page.sections.flatMap((section) => [section.id, section.component.componentId, ...Object.values(section.bindings).map((binding) => binding.actionId)])),
-    ...facts.goals,
-    ...facts.services,
+    ...(facts.goals ?? []),
+    ...(facts.services ?? []),
     facts.notes,
   ].filter(Boolean).join(" ").toLowerCase();
   const capabilities: string[] = [];

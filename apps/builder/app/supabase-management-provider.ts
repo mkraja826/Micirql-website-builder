@@ -30,7 +30,7 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
   const rlsProbeRunner = createSupabaseRlsProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
   const storageProbeRunner = createSupabaseStorageProbeRunner({
     getApiKeys: (projectRef) => client.getApiKeys(projectRef),
-    fetchImpl: options.fetchImpl,
+    ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
   });
   const paymentProbeRunner = createSupabasePaymentProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
 
@@ -39,10 +39,10 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
     const storage = await storageProbeRunner(projectRef, contract);
     const payment = await paymentProbeRunner(projectRef, contract);
     return {
-      positiveRlsPassed: rls.positiveRlsPassed,
-      negativeRlsPassed: rls.negativeRlsPassed,
-      storageOwnershipPassed: storage.storageOwnershipPassed,
-      paymentIdempotencyPassed: payment.paymentIdempotencyPassed,
+      ...(rls.positiveRlsPassed !== undefined ? { positiveRlsPassed: rls.positiveRlsPassed } : {}),
+      ...(rls.negativeRlsPassed !== undefined ? { negativeRlsPassed: rls.negativeRlsPassed } : {}),
+      ...(storage.storageOwnershipPassed !== undefined ? { storageOwnershipPassed: storage.storageOwnershipPassed } : {}),
+      ...(payment.paymentIdempotencyPassed !== undefined ? { paymentIdempotencyPassed: payment.paymentIdempotencyPassed } : {}),
       errors: [...(rls.errors ?? []), ...(storage.errors ?? []), ...(payment.errors ?? [])],
     };
   };
@@ -55,12 +55,15 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
       });
       const projectRef = text(created.project_ref);
       if (!projectRef) throw new Error("SUPABASE_BRANCH_PROJECT_REF_MISSING");
+      const id = optionalText(created.id);
+      const parentBranchRef = optionalText(created.parent_project_ref);
+      const status = optionalText(created.status);
       const branch = {
-        id: optionalText(created.id),
+        ...(id ? { id } : {}),
         name: text(created.name) || branchName,
         projectRef,
-        parentProjectRef: optionalText(created.parent_project_ref),
-        status: optionalText(created.status),
+        ...(parentBranchRef ? { parentProjectRef: parentBranchRef } : {}),
+        ...(status ? { status } : {}),
       } satisfies SupabasePreviewBranch;
       await client.waitForBranchReady(branch.projectRef);
       return branch;
@@ -72,13 +75,9 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
 
     createStagingAdapter(): SupabaseStagingAdapter {
       return {
-        applyMigration: async (projectRef, sql) => {
-          await client.runQuery(projectRef, sql, false);
-        },
+        applyMigration: async (projectRef, sql) => { await client.runQuery(projectRef, sql, false); },
         introspectSchema: async (projectRef) => client.introspectSchema(projectRef),
-        runSecurityProbes: async (projectRef, contract) => {
-          return (options.probeRunner ?? defaultProbeRunner)(projectRef, contract);
-        },
+        runSecurityProbes: async (projectRef, contract) => (options.probeRunner ?? defaultProbeRunner)(projectRef, contract),
       };
     },
   };
@@ -129,10 +128,7 @@ class SupabaseManagementClient {
   async getApiKeys(projectRef: string): Promise<SupabaseProjectApiKey[]> {
     const value = await this.request<unknown>(`/v1/projects/${encodeURIComponent(projectRef)}/api-keys?reveal=true`);
     const keyRows = Array.isArray(value) ? value.filter(isRecord) : [];
-    return keyRows.map((row) => ({
-      type: text(row.type) || text(row.name),
-      apiKey: text(row.api_key),
-    })).filter((key) => key.type && key.apiKey);
+    return keyRows.map((row) => ({ type: text(row.type) || text(row.name), apiKey: text(row.api_key) })).filter((key) => key.type && key.apiKey);
   }
 
   async waitForBranchReady(projectRef: string) {

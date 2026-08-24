@@ -3,6 +3,7 @@ import {
   DENTAL_LAYOUT_BLUEPRINTS,
   applyPreferenceBias,
   deriveDesignDna,
+  evaluateDesignAntiPatterns,
   evaluateIndustryFit,
   evaluateWebsiteContent,
   normalizeWebsiteContent,
@@ -93,10 +94,6 @@ export function buildCertifiedDentalReviewDirections(
     })
     .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
 
-  // Runtime keeps the full quality gates, while the pre-evaluation shortlist now
-  // considers both industry relevance and customer-specific Design DNA. This lets
-  // Taste controls influence which certified archetypes receive expensive runtime
-  // evaluation without ever bypassing rendered certification or quality checks.
   const evaluationBlueprints = process.env.NODE_ENV === "production"
     ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(8, count)))
     : eligibleBlueprints;
@@ -163,6 +160,12 @@ export function buildCertifiedDentalReviewDirections(
     }
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
 
+    // Anti-pattern lint happens after structural repairs so we score the design the
+    // customer would actually see. Hard AI-looking patterns reject the candidate;
+    // softer repetition/genericity issues reduce its rank without weakening QA.
+    const antiPatterns = evaluateDesignAntiPatterns(candidateSite);
+    if (!antiPatterns.ready) continue;
+
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
     const baseScore = scoreDesign({
       site: candidateSite,
@@ -171,7 +174,7 @@ export function buildCertifiedDentalReviewDirections(
       archetypeFitScore: industryFit.score,
     });
     const biased = applyPreferenceBias(baseScore, preferenceProfile);
-    const designScore = { ...biased, total: Math.min(100, biased.total + fitBonus + dnaBonus) };
+    const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - antiPatterns.penalty)) };
 
     candidates.push({
       id: `certified-${blueprint.id}`,
@@ -194,6 +197,7 @@ export function buildCertifiedDentalReviewDirections(
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
         ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
+        `anti-pattern quality ${antiPatterns.score}/100${antiPatterns.issues.length ? ` (${antiPatterns.issues.length} warning${antiPatterns.issues.length === 1 ? "" : "s"})` : ""}`,
         `dental content ${dentalContentQuality.score}/100`,
         `multi-page architecture ${multipageQuality.score}/100`,
         `page rhythm ${pageRhythmQuality.score}/100`,
@@ -228,8 +232,6 @@ function selectBlueprintEvaluationSet(entries: BlueprintEvaluationCandidate[], l
   const selected: BlueprintEvaluationCandidate[] = [];
   const usedArchetypes = new Set<string>();
 
-  // First pass deliberately maximizes composition/archetype diversity while using
-  // Design DNA to decide which representative of each archetype deserves evaluation.
   for (const entry of ranked) {
     if (selected.length >= limit) break;
     if (usedArchetypes.has(entry.blueprint.archetype)) continue;

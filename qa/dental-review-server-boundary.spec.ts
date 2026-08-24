@@ -21,9 +21,11 @@ test("Dental review candidates are generated server-side so the runtime allowlis
   expect(generator).toContain('process.env.NODE_ENV === "production" && renderedCertifiedIds.size === 0');
 });
 
-test("Dental review keeps rendered browser certification after server-side candidate filtering", () => {
+test("Dental review keeps rendered browser certification as an additional nonblocking signal after server filtering", () => {
   expect(review).toContain("DentalReviewRenderCertifier");
   expect(review).toContain("serverDentalPoolLoaded");
-  expect(review).toContain("setCertifiedDentalPool(passed)");
-  expect(review).toContain("These directions did not pass rendered review.");
+  expect(review).toContain("const dentalProbePool");
+  expect(review).toContain("const pool = rawPool");
+  expect(review).toContain("browser-rendered QA is an additional signal");
+  expect(review).toContain("deep rendered certification remains a publish-time safeguard");
 });

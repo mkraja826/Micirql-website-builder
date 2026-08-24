@@ -6,6 +6,7 @@ import type {
 } from "./supabase-staging-executor";
 import { createSupabaseRlsProbeRunner } from "./supabase-rls-probe-runner";
 import { createSupabaseStorageProbeRunner, type SupabaseProjectApiKey } from "./supabase-storage-probe-runner";
+import { createSupabasePaymentProbeRunner } from "./supabase-payment-probe-runner";
 
 export type SupabaseManagementProviderOptions = {
   accessToken: string;
@@ -31,16 +32,18 @@ export function createSupabaseManagementProvider(options: SupabaseManagementProv
     getApiKeys: (projectRef) => client.getApiKeys(projectRef),
     fetchImpl: options.fetchImpl,
   });
+  const paymentProbeRunner = createSupabasePaymentProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
 
   const defaultProbeRunner = async (projectRef: string, contract: BackendImplementationContract): Promise<SupabaseCertificationProbeResult> => {
     const rls = await rlsProbeRunner(projectRef, contract);
     const storage = await storageProbeRunner(projectRef, contract);
+    const payment = await paymentProbeRunner(projectRef, contract);
     return {
       positiveRlsPassed: rls.positiveRlsPassed,
       negativeRlsPassed: rls.negativeRlsPassed,
       storageOwnershipPassed: storage.storageOwnershipPassed,
-      paymentIdempotencyPassed: rls.paymentIdempotencyPassed,
-      errors: [...(rls.errors ?? []), ...(storage.errors ?? [])],
+      paymentIdempotencyPassed: payment.paymentIdempotencyPassed,
+      errors: [...(rls.errors ?? []), ...(storage.errors ?? []), ...(payment.errors ?? [])],
     };
   };
 

@@ -56,23 +56,31 @@ export function selectDiverseDesigns<T extends { designScore: DesignScore }>(can
   const usedThemeFamilies = new Set<string>();
   const target = Math.min(limit, 8);
 
-  // Pass 1: establish genuinely different visual systems first. Prefer a new
-  // theme family and a new named direction, and use a strict similarity ceiling.
+  // Pass 1: establish genuinely different design directions first. Mutations now
+  // inherit the same direction key as their certified parent, so a refined/focused
+  // sibling cannot consume a slot intended for a different blueprint.
   for (const candidate of ranked) {
     if (selected.length >= target) break;
     const direction = candidateSystem(candidate);
     const themeFamily = candidate.designScore.fingerprint.system;
     if (direction && usedDirections.has(direction)) continue;
-    if (themeFamily && usedThemeFamilies.has(themeFamily)) continue;
     const nearestSimilarity = nearestDesignSimilarity(candidate, selected);
     if (nearestSimilarity >= 0.64) continue;
+
+    // Theme family is only a soft visual-system signal now. Dental and other industry
+    // packs often share one renderer theme while still having very different certified
+    // compositions, so never let a shared theme collapse the first pass to one option.
+    const sharesTheme = Boolean(themeFamily && usedThemeFamilies.has(themeFamily));
+    if (sharesTheme && nearestSimilarity >= 0.5) continue;
+
     selected.push(candidate);
     if (direction) usedDirections.add(direction);
     if (themeFamily) usedThemeFamilies.add(themeFamily);
   }
 
-  // Pass 2: add only candidates that remain clearly distinct. Never fill the
-  // quota with near-duplicates just to reach a requested count.
+  // Pass 2: fill remaining slots with the most distinct high-quality candidates.
+  // A sibling mutation is admitted only if its rendered fingerprint is materially
+  // different from everything already selected; otherwise another blueprint wins.
   const remaining = ranked.filter((candidate) => !selected.includes(candidate));
   while (remaining.length && selected.length < target) {
     let bestIndex = -1;
@@ -81,11 +89,19 @@ export function selectDiverseDesigns<T extends { designScore: DesignScore }>(can
       const candidate = remaining[index]!;
       const nearestSimilarity = nearestDesignSimilarity(candidate, selected);
       if (nearestSimilarity >= 0.72) continue;
+
       const direction = candidateSystem(candidate);
       const themeFamily = candidate.designScore.fingerprint.system;
-      const directionPenalty = direction && usedDirections.has(direction) ? 24 : 0;
-      const themePenalty = themeFamily && usedThemeFamilies.has(themeFamily) ? 12 : 0;
-      const diversityBonus = (1 - nearestSimilarity) * 52;
+      const isSibling = Boolean(direction && usedDirections.has(direction));
+
+      // Mutations are useful for exploration, but should not crowd out genuinely
+      // different concepts. Require a much stronger visual delta before a sibling
+      // can enter the final 6-8 direction set.
+      if (isSibling && nearestSimilarity >= 0.46) continue;
+
+      const directionPenalty = isSibling ? 34 : 0;
+      const themePenalty = themeFamily && usedThemeFamilies.has(themeFamily) ? 6 : 0;
+      const diversityBonus = (1 - nearestSimilarity) * 58;
       const adjusted = candidate.designScore.total + diversityBonus - directionPenalty - themePenalty;
       if (adjusted > bestAdjusted) {
         bestAdjusted = adjusted;
@@ -147,9 +163,20 @@ function scoreVisualIdentity(site: Site): number {
 
 function candidateSystem(candidate: unknown): string | undefined {
   if (!candidate || typeof candidate !== "object") return undefined;
-  const name = (candidate as { name?: unknown }).name;
-  if (typeof name !== "string" || !name.trim()) return undefined;
-  return name.split(" · variation ")[0]?.trim().toLowerCase();
+  const object = candidate as { id?: unknown; name?: unknown };
+
+  // Dental V2 mutations use `certified-<blueprint>-refined|focused`. Prefer the id
+  // because it is stable even if a display label changes.
+  if (typeof object.id === "string" && object.id.trim()) {
+    return object.id
+      .trim()
+      .toLowerCase()
+      .replace(/-(?:refined|focused)$/i, "");
+  }
+
+  if (typeof object.name !== "string" || !object.name.trim()) return undefined;
+  // Treat any `Direction · Mutation` label as the same parent direction.
+  return object.name.split(" · ")[0]?.trim().toLowerCase();
 }
 
 function familyAndVariant(componentId: string): string | undefined {

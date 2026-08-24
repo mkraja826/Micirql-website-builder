@@ -1,0 +1,31 @@
+name: Dental Diversity Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/builder/**"
+      - "packages/design-engine/**"
+      - "packages/sections/**"
+      - "qa/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/dental-diversity-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  dental-diversity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Verify Dental generation intelligence
+        run: pnpm qa:dental-diversity

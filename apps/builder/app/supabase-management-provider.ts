@@ -5,6 +5,7 @@ import type {
   SupabaseStagingAdapter,
 } from "./supabase-staging-executor";
 import { createSupabaseRlsProbeRunner } from "./supabase-rls-probe-runner";
+import { createSupabaseStorageProbeRunner, type SupabaseProjectApiKey } from "./supabase-storage-probe-runner";
 
 export type SupabaseManagementProviderOptions = {
   accessToken: string;
@@ -25,7 +26,23 @@ export type SupabasePreviewBranch = {
 
 export function createSupabaseManagementProvider(options: SupabaseManagementProviderOptions) {
   const client = new SupabaseManagementClient(options);
-  const defaultProbeRunner = createSupabaseRlsProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
+  const rlsProbeRunner = createSupabaseRlsProbeRunner((projectRef, sql, readOnly) => client.runQuery(projectRef, sql, readOnly));
+  const storageProbeRunner = createSupabaseStorageProbeRunner({
+    getApiKeys: (projectRef) => client.getApiKeys(projectRef),
+    fetchImpl: options.fetchImpl,
+  });
+
+  const defaultProbeRunner = async (projectRef: string, contract: BackendImplementationContract): Promise<SupabaseCertificationProbeResult> => {
+    const rls = await rlsProbeRunner(projectRef, contract);
+    const storage = await storageProbeRunner(projectRef, contract);
+    return {
+      positiveRlsPassed: rls.positiveRlsPassed,
+      negativeRlsPassed: rls.negativeRlsPassed,
+      storageOwnershipPassed: storage.storageOwnershipPassed,
+      paymentIdempotencyPassed: rls.paymentIdempotencyPassed,
+      errors: [...(rls.errors ?? []), ...(storage.errors ?? [])],
+    };
+  };
 
   return {
     async createPreviewBranch(parentProjectRef: string, branchName: string): Promise<SupabasePreviewBranch> {
@@ -104,6 +121,15 @@ class SupabaseManagementClient {
       method: "POST",
       body: JSON.stringify(readOnly ? { query } : { query, read_only: false }),
     });
+  }
+
+  async getApiKeys(projectRef: string): Promise<SupabaseProjectApiKey[]> {
+    const value = await this.request<unknown>(`/v1/projects/${encodeURIComponent(projectRef)}/api-keys?reveal=true`);
+    const keyRows = Array.isArray(value) ? value.filter(isRecord) : [];
+    return keyRows.map((row) => ({
+      type: text(row.type) || text(row.name),
+      apiKey: text(row.api_key),
+    })).filter((key) => key.type && key.apiKey);
   }
 
   async waitForBranchReady(projectRef: string) {

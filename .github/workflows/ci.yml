@@ -42,6 +42,9 @@ jobs:
       - name: Verify functional architecture gate
         run: pnpm qa:functional-architecture
 
+      - name: Verify backend implementation contract
+        run: pnpm qa:backend-implementation
+
       - name: Verify provider retry policy
         run: pnpm qa:provider-retry
 

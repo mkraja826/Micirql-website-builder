@@ -182,7 +182,7 @@ jobs:
       - name: Verify deployed Builder Pexels runtime
         shell: bash
         run: |
-          url='https://micirql-website-builder.karthikraja826.workers.dev/api/admin/pexels-health'
+          url='https://builder.micirql.com/api/admin/pexels-health'
           status='000'
           for attempt in 1 2 3 4 5 6; do
             status=$(curl --silent --show-error --output /tmp/pexels-runtime.json --write-out '%{http_code}' \

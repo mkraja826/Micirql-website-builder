@@ -9,8 +9,9 @@ export type SupabaseMigrationArtifact = {
 };
 
 const IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
-const SAFE_DEFAULT = /^(?:gen_random_uuid\(\)|now\(\)|true|false|-?\d+(?:\.\d+)?|'[^'\\]*(?:\\.[^'\\]*)*')$/i;
-const SAFE_POLICY = /^[a-z0-9_().'\s=><!:\-]+$/i;
+const POLICY_NAME = /^[a-z0-9_-]+$/;
+const SAFE_DEFAULT = /^(?:gen_random_uuid\(\)|now\(\)|auth\.uid\(\)|true|false|-?\d+(?:\.\d+)?|'[^'\\]*(?:\\.[^'\\]*)*')$/i;
+const SAFE_POLICY = /^[a-z0-9_().'\s=><!,:\-]+$/i;
 
 export function generateSupabaseMigration(contract: BackendImplementationContract): SupabaseMigrationArtifact {
   if (contract.provider !== "supabase") throw new Error("SUPABASE_MIGRATION_PROVIDER_REQUIRED");
@@ -85,12 +86,12 @@ function renderIndex(table: string, columns: string[]) {
 }
 
 function renderPolicy(policy: BackendPolicy) {
-  assertIdentifier(policy.id.replace(/-/g, "_"), `policy ${policy.id}`);
+  if (!POLICY_NAME.test(policy.id)) throw new Error(`UNSAFE_POLICY_NAME:${policy.id}`);
   const operation = policy.operation.toUpperCase();
   const usingSql = safePolicySql(policy.usingSql, policy.id, "using");
   const checkSql = safePolicySql(policy.checkSql, policy.id, "check");
   const clauses = [
-    `create policy ${q(policy.id)} on public.${q(policy.table)}`,
+    `create policy ${quotePolicyName(policy.id)} on public.${q(policy.table)}`,
     `for ${operation}`,
     "to authenticated",
     ...(usingSql ? [`using (${usingSql})`] : []),
@@ -147,4 +148,5 @@ function assertIdentifier(value: string, context: string) {
   if (!IDENTIFIER.test(value)) throw new Error(`UNSAFE_SQL_IDENTIFIER:${context}`);
 }
 function q(value: string) { assertIdentifier(value, value); return `"${value}"`; }
+function quotePolicyName(value: string) { return `"${value}"`; }
 function sqlString(value: string) { return `'${value.replace(/'/g, "''")}'`; }

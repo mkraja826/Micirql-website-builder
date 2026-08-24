@@ -19,6 +19,7 @@ import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
 import { applyDentalMultipageMediaSafety } from "./dental-multipage-media-safety";
 import { evaluateDentalMultipageQuality } from "./dental-multipage-quality";
+import { buildDentalTasteMutations } from "./dental-taste-mutations";
 import { repairDesignAntiPatterns } from "./design-anti-pattern-repair";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
@@ -176,53 +177,74 @@ export function buildCertifiedDentalReviewDirections(
     }
     if (!antiPatterns.ready) continue;
 
-    const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
-    const baseScore = scoreDesign({
-      site: candidateSite,
-      readinessScore: repaired.readiness.score,
-      contentScore: Math.min(contentQuality.score, dentalContentQuality.score, multipageQuality.score, pageRhythmQuality.score, pageTypographyQuality.score, mediaArtDirection.score),
-      archetypeFitScore: industryFit.score,
-    });
-    const biased = applyPreferenceBias(baseScore, preferenceProfile);
-    const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - antiPatterns.penalty)) };
+    const sharedReasons = [
+      "rendered-certified dental design system",
+      blueprint.archetype.replace(/-/g, " "),
+      `${blueprint.design.imageStyle} imagery`,
+      `${blueprint.design.sectionRhythm} section rhythm`,
+      ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
+      ...(fitBonus >= 18 ? ["high brief relevance"] : []),
+      ...(dnaMatch >= 20 ? [`strong Design DNA match ${dnaMatch}/30`] : dnaMatch >= 12 ? [`Design DNA match ${dnaMatch}/30`] : []),
+      `taste: ${designDna.spacing} spacing, ${designDna.typography.replace(/-/g, " ")}, ${designDna.photography.replace(/-/g, " ")} photography`,
+      ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
+      ...(multipageArchitecture.treatmentPages.length ? [`multi-page treatment architecture: ${multipageArchitecture.treatmentPages.length} treatment page${multipageArchitecture.treatmentPages.length === 1 ? "" : "s"}`] : []),
+      ...(contactPageRepair.repaired ? ["auto-repaired dedicated contact conversion section"] : []),
+      ...(multipageMediaSafety.reusedQualifiedHero ? [`reused qualified hero media on ${multipageMediaSafety.reusedQualifiedHero} treatment page${multipageMediaSafety.reusedQualifiedHero === 1 ? "" : "s"}`] : []),
+      ...(multipageMediaSafety.removedEmptyHeroSlots ? [`removed ${multipageMediaSafety.removedEmptyHeroSlots} empty treatment hero media slot${multipageMediaSafety.removedEmptyHeroSlots === 1 ? "" : "s"}`] : []),
+      ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
+      ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
+      ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
+      ...(antiPatternRepairOperations.length ? [`auto-repaired design anti-patterns: ${antiPatternRepairOperations.join(", ")}`] : []),
+      `dental content ${dentalContentQuality.score}/100`,
+      `multi-page architecture ${multipageQuality.score}/100`,
+    ];
 
-    candidates.push({
-      id: `certified-${blueprint.id}`,
-      name: blueprint.name,
-      description: blueprint.description,
-      reasons: [
-        "rendered-certified dental design system",
-        blueprint.archetype.replace(/-/g, " "),
-        `${blueprint.design.imageStyle} imagery`,
-        `${blueprint.design.sectionRhythm} section rhythm`,
-        ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
-        ...(fitBonus >= 18 ? ["high brief relevance"] : []),
-        ...(dnaMatch >= 20 ? [`strong Design DNA match ${dnaMatch}/30`] : dnaMatch >= 12 ? [`Design DNA match ${dnaMatch}/30`] : []),
-        `taste: ${designDna.spacing} spacing, ${designDna.typography.replace(/-/g, " ")}, ${designDna.photography.replace(/-/g, " ")} photography`,
-        ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
-        ...(multipageArchitecture.treatmentPages.length ? [`multi-page treatment architecture: ${multipageArchitecture.treatmentPages.length} treatment page${multipageArchitecture.treatmentPages.length === 1 ? "" : "s"}`] : []),
-        ...(contactPageRepair.repaired ? ["auto-repaired dedicated contact conversion section"] : []),
-        ...(multipageMediaSafety.reusedQualifiedHero ? [`reused qualified hero media on ${multipageMediaSafety.reusedQualifiedHero} treatment page${multipageMediaSafety.reusedQualifiedHero === 1 ? "" : "s"}`] : []),
-        ...(multipageMediaSafety.removedEmptyHeroSlots ? [`removed ${multipageMediaSafety.removedEmptyHeroSlots} empty treatment hero media slot${multipageMediaSafety.removedEmptyHeroSlots === 1 ? "" : "s"}`] : []),
-        ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
-        ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
-        ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
-        ...(antiPatternRepairOperations.length ? [`auto-repaired design anti-patterns: ${antiPatternRepairOperations.join(", ")}`] : []),
-        `anti-pattern quality ${antiPatterns.score}/100${antiPatterns.issues.length ? ` (${antiPatterns.issues.length} warning${antiPatterns.issues.length === 1 ? "" : "s"})` : ""}`,
-        `dental content ${dentalContentQuality.score}/100`,
-        `multi-page architecture ${multipageQuality.score}/100`,
-        `page rhythm ${pageRhythmQuality.score}/100`,
-        `page typography ${pageTypographyQuality.score}/100`,
-        `media art direction ${mediaArtDirection.score}/100`,
-        `design quality ${designScore.total}/100`,
-      ],
-      site: candidateSite,
-      themeFamily: candidateSite.theme.family,
-      variantSeed: index,
-      readiness: repaired.readiness,
-      contentQuality,
-      designScore,
-    });
+    const mutations = buildDentalTasteMutations(candidateSite, blueprint, designDna);
+    for (const mutation of mutations) {
+      const mutationRhythm = evaluatePageRhythmQuality(mutation.site);
+      const mutationTypography = evaluatePageTypographyQuality(mutation.site);
+      const mutationMedia = evaluatePageMediaArtDirection(mutation.site);
+      const mutationAntiPatterns = evaluateDesignAntiPatterns(mutation.site);
+      const mutationHasRhythmError = mutationRhythm.issues.some((issue) => issue.severity === "error");
+      const mutationHasTypographyError = mutationTypography.issues.some((issue) => issue.severity === "error" && !issue.repairable);
+      const mutationHasMediaError = mutationMedia.issues.some((issue) => issue.severity === "error");
+      if (mutationHasRhythmError || mutationRhythm.score < MIN_PAGE_RHYTHM_SCORE) continue;
+      if (mutationHasTypographyError || mutationTypography.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
+      if (mutationHasMediaError || mutationMedia.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
+      if (!mutationAntiPatterns.ready) continue;
+
+      const industryFit = evaluateIndustryFit(mutation.site, industry, subindustry);
+      const baseScore = scoreDesign({
+        site: mutation.site,
+        readinessScore: repaired.readiness.score,
+        contentScore: Math.min(contentQuality.score, dentalContentQuality.score, multipageQuality.score, mutationRhythm.score, mutationTypography.score, mutationMedia.score),
+        archetypeFitScore: industryFit.score,
+      });
+      const biased = applyPreferenceBias(baseScore, preferenceProfile);
+      const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - mutationAntiPatterns.penalty)) };
+      const suffix = mutation.id === "base" ? "" : `-${mutation.id}`;
+
+      candidates.push({
+        id: `certified-${blueprint.id}${suffix}`,
+        name: mutation.id === "base" ? blueprint.name : `${blueprint.name} · ${mutation.label}`,
+        description: blueprint.description,
+        reasons: [
+          ...sharedReasons,
+          ...(mutation.operations.length ? [`taste mutation: ${mutation.operations.join(", ")}`] : []),
+          `anti-pattern quality ${mutationAntiPatterns.score}/100${mutationAntiPatterns.issues.length ? ` (${mutationAntiPatterns.issues.length} warning${mutationAntiPatterns.issues.length === 1 ? "" : "s"})` : ""}`,
+          `page rhythm ${mutationRhythm.score}/100`,
+          `page typography ${mutationTypography.score}/100`,
+          `media art direction ${mutationMedia.score}/100`,
+          `design quality ${designScore.total}/100`,
+        ],
+        site: mutation.site,
+        themeFamily: mutation.site.theme.family,
+        variantSeed: index * 10 + (mutation.id === "base" ? 0 : mutation.id === "refined" ? 1 : 2),
+        readiness: repaired.readiness,
+        contentQuality,
+        designScore,
+      });
+    }
   }
 
   const ranked = [...candidates].sort((a, b) => b.designScore.total - a.designScore.total);

@@ -150,7 +150,6 @@ export function OnboardingGate({ session, initialWorkspaceId, initialSiteId, onB
 
   if (profile && reviewSessionActive) {
     return <OnboardingProfileProvider profile={profile}>
-      {recoveryNotice ? <div style={recoveryBannerStyle} role="status"><strong>Build recovered safely</strong><span>{recoveryNotice}</span></div> : null}
       {ready ? <div className="mi-review-editor-session">
         <style>{`.mi-review-editor-session .editor-back-button{display:none!important}`}</style>
         <button style={backStyle} onClick={() => setReady(false)}>← Designs</button>
@@ -207,4 +206,3 @@ const stageRowStyle: React.CSSProperties = { display: "flex", alignItems: "cente
 const stageActiveStyle: React.CSSProperties = { color: "#f7f7fb", borderColor: "#5a4dd6", background: "#171522" };
 const stageDoneStyle: React.CSSProperties = { color: "#b9f4cf", borderColor: "#244b34" };
 const recoveryInlineStyle: React.CSSProperties = { display: "grid", gap: 5, marginTop: 18, padding: 14, borderRadius: 12, border: "1px solid #5b4822", background: "#1b160c", color: "#f2d58a" };
-const recoveryBannerStyle: React.CSSProperties = { position: "fixed", top: 76, right: 16, left: "auto", transform: "none", zIndex: 70, width: "min(420px, calc(100vw - 32px))", display: "grid", gap: 4, padding: "10px 14px", borderRadius: 12, border: "1px solid #4b4030", background: "rgba(25,20,12,.94)", color: "#f5dda1", boxShadow: "0 10px 30px rgba(0,0,0,.28)", pointerEvents: "none", userSelect: "none" };

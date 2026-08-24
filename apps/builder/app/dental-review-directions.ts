@@ -31,7 +31,7 @@ import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
-const RUNTIME_EVALUATION_LIMIT = 12;
+const RUNTIME_EVALUATION_LIMIT = 20;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_DENTAL_MULTIPAGE_SCORE = 90;
 const MIN_PAGE_RHYTHM_SCORE = 78;
@@ -95,8 +95,11 @@ export function buildCertifiedDentalReviewDirections(
     })
     .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
 
+  // Review output stays capped at 8, but production now evaluates a much broader
+  // internal pool first. This gives Taste/DNA ranking, anti-pattern repair and
+  // diversity selection enough material to choose genuinely different premium work.
   const evaluationBlueprints = process.env.NODE_ENV === "production"
-    ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(8, count)))
+    ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, eligibleBlueprints.length))
     : eligibleBlueprints;
 
   for (const entry of evaluationBlueprints) {
@@ -161,10 +164,6 @@ export function buildCertifiedDentalReviewDirections(
     }
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
 
-    // A candidate now receives one conservative anti-pattern repair pass before it is
-    // rejected. The repair may rebalance repetitive middle sections and flatten card
-    // saturation, but it cannot hide hard media/content defects such as repeated
-    // imagery or excessive identical CTAs.
     let antiPatterns = evaluateDesignAntiPatterns(candidateSite);
     let antiPatternRepairOperations: string[] = [];
     if (antiPatterns.issues.length) {

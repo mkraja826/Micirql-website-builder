@@ -19,6 +19,7 @@ import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
 import { applyDentalMultipageMediaSafety } from "./dental-multipage-media-safety";
 import { evaluateDentalMultipageQuality } from "./dental-multipage-quality";
+import { repairDesignAntiPatterns } from "./design-anti-pattern-repair";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
 import { repairPageRhythm } from "./page-rhythm-repair";
 import { evaluatePageTypographyQuality } from "./page-typography-quality";
@@ -160,10 +161,20 @@ export function buildCertifiedDentalReviewDirections(
     }
     if (mediaArtDirectionErrors.length || mediaArtDirection.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
 
-    // Anti-pattern lint happens after structural repairs so we score the design the
-    // customer would actually see. Hard AI-looking patterns reject the candidate;
-    // softer repetition/genericity issues reduce its rank without weakening QA.
-    const antiPatterns = evaluateDesignAntiPatterns(candidateSite);
+    // A candidate now receives one conservative anti-pattern repair pass before it is
+    // rejected. The repair may rebalance repetitive middle sections and flatten card
+    // saturation, but it cannot hide hard media/content defects such as repeated
+    // imagery or excessive identical CTAs.
+    let antiPatterns = evaluateDesignAntiPatterns(candidateSite);
+    let antiPatternRepairOperations: string[] = [];
+    if (antiPatterns.issues.length) {
+      const antiPatternRepair = repairDesignAntiPatterns(candidateSite, antiPatterns.issues);
+      if (antiPatternRepair.repaired) {
+        candidateSite = normalizeWebsiteContent(antiPatternRepair.site);
+        antiPatternRepairOperations = antiPatternRepair.operations;
+        antiPatterns = evaluateDesignAntiPatterns(candidateSite);
+      }
+    }
     if (!antiPatterns.ready) continue;
 
     const industryFit = evaluateIndustryFit(candidateSite, industry, subindustry);
@@ -197,6 +208,7 @@ export function buildCertifiedDentalReviewDirections(
         ...(pageRhythmRepairOperations.length ? [`auto-repaired page rhythm: ${pageRhythmRepairOperations.join(", ")}`] : []),
         ...(pageTypographyRepairOperations.length ? [`auto-repaired typography: ${pageTypographyRepairOperations.join(", ")}`] : []),
         ...(mediaArtDirectionRepairOperations.length ? [`auto-repaired media art direction: ${mediaArtDirectionRepairOperations.join(", ")}`] : []),
+        ...(antiPatternRepairOperations.length ? [`auto-repaired design anti-patterns: ${antiPatternRepairOperations.join(", ")}`] : []),
         `anti-pattern quality ${antiPatterns.score}/100${antiPatterns.issues.length ? ` (${antiPatterns.issues.length} warning${antiPatterns.issues.length === 1 ? "" : "s"})` : ""}`,
         `dental content ${dentalContentQuality.score}/100`,
         `multi-page architecture ${multipageQuality.score}/100`,

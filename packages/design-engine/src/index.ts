@@ -20,6 +20,7 @@ export * from "./content-quality";
 export * from "./design-diversity";
 export * from "./design-genome";
 export * from "./design-dna";
+export * from "./design-anti-pattern-gate";
 export * from "./preference-learning";
 export * from "./industry-intelligence";
 export * from "./industry-pack-framework";

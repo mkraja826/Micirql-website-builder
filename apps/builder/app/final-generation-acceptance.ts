@@ -1,9 +1,9 @@
-import { evaluatePremiumQualityGate, evaluateWebsiteContent } from "@micirql/design-engine";
+import { evaluateFlagshipVisualQuality, evaluatePremiumQualityGate, evaluateWebsiteContent } from "@micirql/design-engine";
 import type { Site } from "@micirql/schema";
 import { evaluateFirstBuildQuality } from "./first-build-quality";
 
 export type FinalGenerationDimension = {
-  id: "premium" | "content" | "typography" | "imagery" | "mobile-structure";
+  id: "flagship-visual" | "premium" | "content" | "typography" | "imagery" | "mobile-structure";
   ready: boolean;
   score: number;
   blockers: string[];
@@ -16,6 +16,7 @@ export type FinalGenerationAcceptance = {
   dimensions: FinalGenerationDimension[];
   blockers: string[];
   warnings: string[];
+  flagshipVisual: ReturnType<typeof evaluateFlagshipVisualQuality>;
   premium: ReturnType<typeof evaluatePremiumQualityGate>;
   firstBuild: ReturnType<typeof evaluateFirstBuildQuality>;
   content: ReturnType<typeof evaluateWebsiteContent>;
@@ -30,9 +31,14 @@ const DEFAULT_FONT_FAMILIES = new Set([
 ]);
 
 export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAcceptance {
+  const flagshipVisual = evaluateFlagshipVisualQuality(site);
   const premium = evaluatePremiumQualityGate(site);
   const firstBuild = evaluateFirstBuildQuality(site);
   const content = evaluateWebsiteContent(site);
+
+  const flagshipBlockers = flagshipVisual.blockers.map((issue) => `${issue.code}: ${issue.message}`);
+  if (flagshipVisual.score < 90) flagshipBlockers.push(`FLAGSHIP_VISUAL_SCORE: Flagship visual score ${flagshipVisual.score} is below 90.`);
+  const flagshipWarnings = flagshipVisual.warnings.map((issue) => `${issue.code}: ${issue.message}`);
 
   const premiumBlockers = [
     ...premium.blockers.map((issue) => `${issue.code}: ${issue.message}`),
@@ -55,6 +61,13 @@ export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAc
   const mobile = evaluateMobileStructure(site);
 
   const dimensions: FinalGenerationDimension[] = [
+    {
+      id: "flagship-visual",
+      ready: flagshipVisual.flagshipReady && flagshipBlockers.length === 0,
+      score: flagshipVisual.score,
+      blockers: flagshipBlockers,
+      warnings: flagshipWarnings,
+    },
     {
       id: "premium",
       ready: premium.premiumReady && firstBuild.ready && premiumBlockers.length === 0,
@@ -84,6 +97,7 @@ export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAc
     dimensions,
     blockers,
     warnings,
+    flagshipVisual,
     premium,
     firstBuild,
     content,

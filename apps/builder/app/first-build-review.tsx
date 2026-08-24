@@ -61,10 +61,6 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     [dentalReview, rawPool, serverDentalPool?.length],
   );
 
-  // The server Dental pool is already constrained by the production allowlist.
-  // Browser-rendered QA is an additional signal, not a reason to make generation
-  // appear broken. It therefore runs in the background on only the strongest few
-  // candidates and never replaces the usable server-approved pool.
   const pool = rawPool;
   const byId = useMemo(() => new Map(pool.map((item) => [item.id, item])), [pool]);
   const visible = useMemo(() => visibleIds.map((id) => byId.get(id)).filter((item): item is ReviewDirection => Boolean(item)), [visibleIds, byId]);
@@ -125,7 +121,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
           workspaceId,
           siteId,
           profile,
-          preferenceProfile,
+          ...(preferenceProfile ? { preferenceProfile } : {}),
         });
         if (!Array.isArray(payload.directions) || !payload.directions.length) {
           throw new Error(payload.error ?? "Could not prepare certified Dental review directions.");
@@ -143,54 +139,50 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
           setServerDentalPool([]);
           setServerDentalPoolLoaded(true);
           setError("Advanced Dental review was temporarily unavailable. MiCirql recovered with safe local design directions; full certification remains a publish-time safeguard.");
-          console.warn("MiCirql Dental review service unavailable; using safe local directions.", caught);
         }
       }
     })();
-
     return () => { cancelled = true; };
-  }, [dentalReview, draft?.revision, preferenceLoaded, preferenceSignature, profileSignature, session.access_token, workspaceId, siteId]);
+  }, [dentalReview, draft, preferenceLoaded, preferenceSignature, profileSignature, session.access_token, siteId, workspaceId]);
 
   useEffect(() => {
-    if (!dentalReview) return;
-    setDentalCertificationResults(undefined);
-    setVisibleIds([]);
-    setCompareIds([]);
-    setActiveId(undefined);
-  }, [dentalReview, rawPoolSignature]);
+    if (!rawPool.length) {
+      setVisibleIds([]);
+      setActiveId(undefined);
+      setCompareIds([]);
+      return;
+    }
+    setVisibleIds((previous) => {
+      const existing = previous.filter((id) => rawPool.some((item) => item.id === id));
+      return existing.length ? existing : rawPool.slice(0, 6).map((item) => item.id);
+    });
+  }, [rawPoolSignature]);
 
   const handleDentalCertification = useCallback((results: DentalReviewCertificationResult[]) => {
     setDentalCertificationResults(results);
   }, []);
 
-  useEffect(() => {
-    if (!dentalReview || !dentalProbePool.length || dentalCertificationResults !== undefined) return;
-    const timer = window.setTimeout(() => {
-      setDentalCertificationResults([]);
-    }, DENTAL_BACKGROUND_RENDER_BUDGET_MS);
-    return () => window.clearTimeout(timer);
-  }, [dentalCertificationResults, dentalProbePool.length, dentalReview, rawPoolSignature]);
-
-  useEffect(() => {
-    if (pool.length && visibleIds.length === 0) setVisibleIds(pool.map((item) => item.id));
-  }, [pool, visibleIds.length]);
-
   async function choose(direction: ReviewDirection) {
-    if (!draft || savingId) return;
+    if (!draft) return;
     setSavingId(direction.id);
     setError("");
     try {
-      const alreadyApplied = sameDesign(draft.snapshot, direction.site);
-      if (!alreadyApplied) {
-        const response = await fetch("/api/drafts", {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" },
-          body: JSON.stringify({ snapshot: direction.site, expectedRevision: draft.revision, updatedBy: "first-build-review" }),
-        });
-        const payload = await response.json() as { draft?: DraftRecord; error?: string };
-        if (!response.ok || !payload.draft) throw new Error(payload.error ?? "Could not save this design direction.");
-      }
-      await recordPreference("selected", direction, { comparedWith: compareIds.filter((id) => id !== direction.id) });
+      const response = await fetch("/api/drafts", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          snapshot: direction.site,
+          expectedRevision: draft.revision,
+          updatedBy: session.user.id,
+        }),
+      });
+      const payload = await response.json() as { draft?: DraftRecord; error?: string };
+      if (!response.ok || !payload.draft) throw new Error(payload.error ?? "Could not save this design direction.");
+      setDraft({ ...payload.draft, snapshot: siteSchema.parse(payload.draft.snapshot) });
+      await recordPreference("selected", direction);
       onComplete();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save this design direction.");
@@ -199,30 +191,35 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     }
   }
 
-  function regenerate(direction: ReviewDirection) {
-    void recordPreference("regenerate", direction);
-    const unused = pool.find((candidate) => candidate.themeFamily === direction.themeFamily && !visibleIds.includes(candidate.id))
-      ?? pool.find((candidate) => !visibleIds.includes(candidate.id));
-    if (!unused) return;
-    setVisibleIds((current) => current.map((id) => id === direction.id ? unused.id : id));
-    setCompareIds((current) => current.filter((id) => id !== direction.id));
-    if (activeId === direction.id) setActiveId(unused.id);
+  function moreLike(direction: ReviewDirection) {
+    const alternatives = rawPool
+      .filter((item) => item.id !== direction.id)
+      .sort((a, b) => similarityToFingerprint(direction.designScore.fingerprint, b.designScore.fingerprint) - similarityToFingerprint(direction.designScore.fingerprint, a.designScore.fingerprint));
+    setVisibleIds([direction.id, ...alternatives.slice(0, 5).map((item) => item.id)]);
+    setActiveId(undefined);
+    void recordPreference("more_like_this", direction);
   }
 
-  function moreLike(direction: ReviewDirection) {
-    void recordPreference("more_like_this", direction);
-    const fingerprint = direction.designScore.fingerprint;
-    const ranked = [...pool].sort((a, b) => similarityToFingerprint(b.designScore.fingerprint, fingerprint) - similarityToFingerprint(a.designScore.fingerprint, fingerprint));
-    setVisibleIds(ranked.slice(0, 8).map((item) => item.id));
+  function regenerate(direction: ReviewDirection) {
+    const current = new Set(visibleIds);
+    const candidates = rawPool.filter((item) => !current.has(item.id) && !sameDesign(item.site, direction.site));
+    const next = candidates[0] ?? rawPool.find((item) => item.id !== direction.id && !sameDesign(item.site, direction.site));
+    if (!next) {
+      setError("MiCirql has already shown the strongest meaningfully different directions for this brief.");
+      return;
+    }
+    setVisibleIds((previous) => previous.map((id) => id === direction.id ? next.id : id));
+    setActiveId(undefined);
+    setCompareIds((previous) => previous.filter((id) => id !== direction.id));
+    void recordPreference("regenerate", direction);
   }
 
   function toggleCompare(direction: ReviewDirection) {
-    const adding = !compareIds.includes(direction.id);
-    if (adding) void recordPreference("compare", direction, { currentCompareIds: compareIds });
-    setCompareIds((current) => current.includes(direction.id) ? current.filter((item) => item !== direction.id) : current.length < 2 ? [...current, direction.id] : [current[1]!, direction.id]);
+    setCompareIds((previous) => previous.includes(direction.id) ? previous.filter((id) => id !== direction.id) : [...previous, direction.id].slice(-2));
+    void recordPreference("compare", direction);
   }
 
-  async function recordPreference(signalType: PreferenceSignal, direction: ReviewDirection, metadata: Record<string, unknown> = {}) {
+  async function recordPreference(signal: PreferenceSignal, direction: ReviewDirection) {
     try {
       await fetch("/api/design-preferences", {
         method: "POST",
@@ -230,22 +227,10 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
         body: JSON.stringify({
           workspaceId,
           siteId,
-          signalType,
+          signal,
           directionId: direction.id,
-          directionSignature: designSignature(direction.site),
-          themeFamily: direction.site.theme.family,
-          density: direction.site.theme.brand.density,
-          shape: direction.site.theme.brand.shape,
-          motion: direction.site.theme.brand.motion,
-          typographyDisplay: direction.site.theme.brand.typography.display,
-          typographyBody: direction.site.theme.brand.typography.body,
-          metadata: {
-            variantSeed: direction.variantSeed,
-            name: displayDirectionName(direction.name),
-            designQuality: direction.designScore.total,
-            fingerprint: direction.designScore.fingerprint,
-            ...metadata,
-          },
+          designSignature: designSignature(direction.site),
+          fingerprint: direction.designScore.fingerprint,
         }),
       });
     } catch (caught) {
@@ -254,9 +239,7 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
   }
 
   if (!draft || !preferenceLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Your website is ready for a first look.</h1><p>{error || "Preparing distinct design directions and learning from your previous choices…"}</p></div></main>;
-
   if (dentalReview && !serverDentalPoolLoaded) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>Preparing your certified Dental directions.</h1><p>Applying the production-certified layout allowlist and premium review gates on the server…</p></div></main>;
-
   if (dentalReview && rawPool.length === 0) return <main className={styles.shell}><div className={styles.header}><span>MiCirql design review</span><h1>No dental direction is available yet.</h1><p>{error || "MiCirql could not prepare a safe review direction for this draft."}</p></div></main>;
 
   const countLabel = `${visible.length} curated design direction${visible.length === 1 ? "" : "s"}`;
@@ -266,10 +249,8 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
     {dentalReview && dentalProbePool.length > 0 && dentalCertificationResults === undefined
       ? <DentalReviewRenderCertifier directions={dentalProbePool} onComplete={handleDentalCertification} />
       : null}
-
     <header className={styles.header}>
-      <span>MiCirql design review</span>
-      <h1>Choose your design direction.</h1>
+      <span>MiCirql design review</span><h1>Choose your design direction.</h1>
       <p>MiCirql selected the strongest visually distinct directions for this website. Your business structure, functionality and brand colors stay intact while composition, typography and visual language change.</p>
       <div className={styles.headerActions}>
         <strong>{countLabel}</strong>
@@ -278,97 +259,35 @@ export function FirstBuildReview({ session, workspaceId, siteId, profile, onComp
         {compared.length === 2 ? <button type="button" onClick={() => setActiveId("__compare__")}>Compare selected</button> : null}
       </div>
     </header>
-
     <section className={styles.grid}>
       {visible.map((direction, index) => {
         const name = displayDirectionName(direction.name);
         const recommendation = index === 0 ? recommendationReasons(direction) : [];
         return <article className={styles.card} key={direction.id}>
-          <div className={styles.cardTop}>
-            <span className={styles.badge}>{index === 0 ? "Best match" : index < 3 ? `Top ${index + 1}` : `Direction ${index + 1}`}</span>
-            <strong>{name}</strong>
-            <small>{direction.description}</small>
-            {index === 0 && recommendation.length ? <div className={styles.matchReasons}>{recommendation.map((reason) => <span key={reason}>{reason}</span>)}</div> : null}
-          </div>
-          <div className={styles.previewButton} aria-label={`${name} design preview`}>
-            <div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div>
-          </div>
-          <div className={styles.utilityActions}>
-            <button type="button" className={styles.previewAction} onClick={() => setActiveId(direction.id)}>Preview</button>
-            <details className={styles.moreActions}>
-              <summary aria-label={`More actions for ${name}`}>•••</summary>
-              <div className={styles.moreActionsMenu}>
-                <button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button>
-                <button type="button" onClick={() => moreLike(direction)}>More like this</button>
-                <button type="button" onClick={() => regenerate(direction)}>Try another</button>
-              </div>
-            </details>
-          </div>
+          <div className={styles.cardTop}><span className={styles.badge}>{index === 0 ? "Best match" : index < 3 ? `Top ${index + 1}` : `Direction ${index + 1}`}</span><strong>{name}</strong><small>{direction.description}</small>{index === 0 && recommendation.length ? <div className={styles.matchReasons}>{recommendation.map((reason) => <span key={reason}>{reason}</span>)}</div> : null}</div>
+          <div className={styles.previewButton} aria-label={`${name} design preview`}><div className={styles.preview}><RendererPreview site={direction.site} path={direction.site.pages[0]?.path ?? "/"} viewport="desktop" onSelectSection={() => {}} /></div></div>
+          <div className={styles.utilityActions}><button type="button" className={styles.previewAction} onClick={() => setActiveId(direction.id)}>Preview</button><details className={styles.moreActions}><summary aria-label={`More actions for ${name}`}>•••</summary><div className={styles.moreActionsMenu}><button type="button" className={compareIds.includes(direction.id) ? styles.selectedAction : ""} onClick={() => toggleCompare(direction)}>{compareIds.includes(direction.id) ? "Comparing" : "Compare"}</button><button type="button" onClick={() => moreLike(direction)}>More like this</button><button type="button" onClick={() => regenerate(direction)}>Try another</button></div></details></div>
           <div className={styles.actions}><button type="button" disabled={Boolean(savingId)} onClick={() => void choose(direction)}>{savingId === direction.id ? "Saving…" : "Use this design"}</button></div>
         </article>;
       })}
     </section>
-
     {error ? <div className={styles.error}>{error}</div> : null}
-
-    {active && activeId !== "__compare__" ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label={`${displayDirectionName(active.name)} preview`}>
-      <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          <div><small>Design preview</small><strong>{displayDirectionName(active.name)}</strong></div>
-          <div className={styles.modalTools}>
-            <button type="button" className={viewport === "desktop" ? styles.selectedAction : ""} onClick={() => setViewport("desktop")}>Desktop</button>
-            <button type="button" className={viewport === "mobile" ? styles.selectedAction : ""} onClick={() => setViewport("mobile")}>Mobile</button>
-            <button type="button" onClick={() => setActiveId(undefined)}>Close</button>
-          </div>
-        </div>
-        <div className={viewport === "mobile" ? styles.fullPreviewMobile : styles.fullPreview}><RendererPreview site={active.site} path={active.site.pages[0]?.path ?? "/"} viewport={viewport} onSelectSection={() => {}} /></div>
-        <div className={styles.modalFooter}>
-          <button type="button" onClick={() => moreLike(active)}>More like this</button>
-          <button type="button" onClick={() => regenerate(active)}>Try another</button>
-          <button type="button" className={styles.primaryModalAction} disabled={Boolean(savingId)} onClick={() => void choose(active)}>{savingId === active.id ? "Saving…" : "Use this design"}</button>
-        </div>
-      </div>
-    </div> : null}
-
+    {active && activeId !== "__compare__" ? <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label={`${displayDirectionName(active.name)} preview`}><div className={styles.modal}><div className={styles.modalHeader}><div><small>Design preview</small><strong>{displayDirectionName(active.name)}</strong></div><div className={styles.modalTools}><button type="button" className={viewport === "desktop" ? styles.selectedAction : ""} onClick={() => setViewport("desktop")}>Desktop</button><button type="button" className={viewport === "mobile" ? styles.selectedAction : ""} onClick={() => setViewport("mobile")}>Mobile</button><button type="button" onClick={() => setActiveId(undefined)}>Close</button></div></div><div className={viewport === "mobile" ? styles.fullPreviewMobile : styles.fullPreview}><RendererPreview site={active.site} path={active.site.pages[0]?.path ?? "/"} viewport={viewport} onSelectSection={() => {}} /></div><div className={styles.modalFooter}><button type="button" onClick={() => moreLike(active)}>More like this</button><button type="button" onClick={() => regenerate(active)}>Try another</button><button type="button" className={styles.primaryModalAction} disabled={Boolean(savingId)} onClick={() => void choose(active)}>{savingId === active.id ? "Saving…" : "Use this design"}</button></div></div></div> : null}
     {activeId === "__compare__" && compared.length === 2 ? <CompareDesigns directions={compared} viewport={viewport} savingId={savingId} onViewportChange={setViewport} onClose={() => setActiveId(undefined)} onChoose={(direction) => void choose(direction)} /> : null}
   </main>;
 }
 
-async function fetchDentalDirectionsWithRetry(input: {
-  accessToken: string;
-  workspaceId: string;
-  siteId: string;
-  profile: OnboardingProfile;
-  preferenceProfile?: DesignPreferenceProfile;
-}): Promise<DentalDirectionsPayload> {
+async function fetchDentalDirectionsWithRetry(input: { accessToken: string; workspaceId: string; siteId: string; profile: OnboardingProfile; preferenceProfile?: DesignPreferenceProfile; }): Promise<DentalDirectionsPayload> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), DENTAL_REVIEW_REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch("/api/review-directions/dental", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${input.accessToken}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          workspaceId: input.workspaceId,
-          siteId: input.siteId,
-          profile: input.profile,
-          ...(input.preferenceProfile ? { preferenceProfile: input.preferenceProfile } : {}),
-        }),
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      const response = await fetch("/api/review-directions/dental", { method: "POST", headers: { Authorization: `Bearer ${input.accessToken}`, "content-type": "application/json" }, body: JSON.stringify({ workspaceId: input.workspaceId, siteId: input.siteId, profile: input.profile, ...(input.preferenceProfile ? { preferenceProfile: input.preferenceProfile } : {}) }), cache: "no-store", signal: controller.signal });
       const payload = await readDentalDirectionsPayload(response);
       if (response.ok && Array.isArray(payload.directions) && payload.directions.length) return payload;
       lastError = new Error(payload.error ?? `Dental review service failed (${response.status}).`);
-    } catch (error) {
-      lastError = error;
-    } finally {
-      window.clearTimeout(timeout);
-    }
+    } catch (error) { lastError = error; } finally { window.clearTimeout(timeout); }
     if (attempt === 0) await delay(DENTAL_REVIEW_RETRY_DELAY_MS);
   }
   throw lastError instanceof Error ? lastError : new Error("Dental review service is temporarily unavailable.");
@@ -377,62 +296,13 @@ async function fetchDentalDirectionsWithRetry(input: {
 async function readDentalDirectionsPayload(response: Response): Promise<DentalDirectionsPayload> {
   const contentType = response.headers.get("content-type") ?? "";
   const body = await response.text();
-  if (!contentType.toLowerCase().includes("application/json")) {
-    throw new Error(`Dental review service returned a non-JSON response (${response.status}).`);
-  }
-  try {
-    return JSON.parse(body) as DentalDirectionsPayload;
-  } catch {
-    throw new Error(`Dental review service returned malformed JSON (${response.status}).`);
-  }
+  if (!contentType.toLowerCase().includes("application/json")) throw new Error(`Dental review service returned a non-JSON response (${response.status}).`);
+  try { return JSON.parse(body) as DentalDirectionsPayload; } catch { throw new Error(`Dental review service returned malformed JSON (${response.status}).`); }
 }
-
-function delay(ms: number) {
-  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-}
-
-function displayDirectionName(name: string) {
-  return name.replace(/\s*·\s*variation\s+\d+\s*$/i, "").trim();
-}
-
-function recommendationReasons(direction: ReviewDirection): string[] {
-  const ignored = /certified dental design system|design quality|readiness|content quality/i;
-  const normalized = direction.reasons
-    .filter((reason) => !ignored.test(reason))
-    .map((reason) => reason.replace(/^matched to\s+/i, "").replace(/\bsection rhythm$/i, "").trim())
-    .filter(Boolean);
-  return [...new Set(normalized)].slice(0, 3);
-}
-
-function designSignature(site: Site) {
-  return [site.theme.family, site.theme.brand.density, site.theme.brand.shape, site.theme.brand.motion, ...site.pages.flatMap((page) => page.sections.map((section) => section.component.componentId))].join("|");
-}
-
-function similarityToFingerprint(a: ReviewDirection["designScore"]["fingerprint"], b: ReviewDirection["designScore"]["fingerprint"]): number {
-  let score = 0;
-  if (a.palette === b.palette) score += 0.25;
-  if (a.typography === b.typography) score += 0.2;
-  if (a.density === b.density) score += 0.1;
-  if (a.shape === b.shape) score += 0.1;
-  const left = new Set(a.structure.split("|").filter(Boolean));
-  const right = new Set(b.structure.split("|").filter(Boolean));
-  const union = new Set([...left, ...right]);
-  const intersection = [...left].filter((token) => right.has(token)).length;
-  score += union.size ? (intersection / union.size) * 0.35 : 0;
-  return score;
-}
-
-function sameDesign(a: Site, b: Site) {
-  if (JSON.stringify(a.theme) !== JSON.stringify(b.theme)) return false;
-  const componentsA = a.pages.flatMap((page) => page.sections.map((section) => section.component.componentId));
-  const componentsB = b.pages.flatMap((page) => page.sections.map((section) => section.component.componentId));
-  return JSON.stringify(componentsA) === JSON.stringify(componentsB);
-}
-
-function isDentalReviewProfile(profile: OnboardingProfile): boolean {
-  return /dental|dentist|dentistry|orthodont|endodont|implant|cosmetic/.test(`${cleanProfileSignal(profile.industry)} ${cleanProfileSignal(profile.subindustry)}`);
-}
-
-function cleanProfileSignal(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
+function delay(ms: number) { return new Promise<void>((resolve) => window.setTimeout(resolve, ms)); }
+function displayDirectionName(name: string) { return name.replace(/\s*·\s*variation\s+\d+\s*$/i, "").trim(); }
+function recommendationReasons(direction: ReviewDirection): string[] { const ignored = /certified dental design system|design quality|readiness|content quality/i; const normalized = direction.reasons.filter((reason) => !ignored.test(reason)).map((reason) => reason.replace(/^matched to\s+/i, "").replace(/\bsection rhythm$/i, "").trim()).filter(Boolean); return [...new Set(normalized)].slice(0, 3); }
+function designSignature(site: Site) { return [site.theme.family, site.theme.brand.density, site.theme.brand.shape, site.theme.brand.motion, ...site.pages.flatMap((page) => page.sections.map((section) => section.component.componentId))].join("|"); }
+function similarityToFingerprint(a: ReviewDirection["designScore"]["fingerprint"], b: ReviewDirection["designScore"]["fingerprint"]): number { let score = 0; if (a.palette === b.palette) score += 0.25; if (a.typography === b.typography) score += 0.2; if (a.density === b.density) score += 0.1; if (a.shape === b.shape) score += 0.1; const left = new Set(a.structure.split("|").filter(Boolean)); const right = new Set(b.structure.split("|").filter(Boolean)); const union = new Set([...left, ...right]); const intersection = [...left].filter((token) => right.has(token)).length; score += union.size ? (intersection / union.size) * 0.35 : 0; return score; }
+function sameDesign(a: Site, b: Site) { if (JSON.stringify(a.theme) !== JSON.stringify(b.theme)) return false; const componentsA = a.pages.flatMap((page) => page.sections.map((section) => section.component.componentId)); const componentsB = b.pages.flatMap((page) => page.sections.map((section) => section.component.componentId)); return JSON.stringify(componentsA) === JSON.stringify(componentsB); }
+function isDentalReviewProfile(profile: OnboardingProfile) { return /dental|dentist|dentistry|implant|orthodont|oral|prosthodont/i.test([profile.industry, profile.subindustry, ...(profile.services ?? []), profile.notes].filter(Boolean).join(" ")); }

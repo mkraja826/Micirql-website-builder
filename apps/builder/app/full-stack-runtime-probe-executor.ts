@@ -58,11 +58,11 @@ export async function executeFullStackRuntimeCertification(input: {
 
   const evidence: FullStackAppEvidence = {
     environment: target.environment,
-    uiWorkflowPassed: base[0],
-    apiWritePassed: base[1],
-    databasePersistencePassed: base[2],
-    reloadPersistencePassed: base[3],
-    validationFailurePassed: base[4],
+    uiWorkflowPassed: base[0] ?? false,
+    apiWritePassed: base[1] ?? false,
+    databasePersistencePassed: base[2] ?? false,
+    reloadPersistencePassed: base[3] ?? false,
+    validationFailurePassed: base[4] ?? false,
   };
 
   try {
@@ -101,24 +101,13 @@ export async function executeFullStackRuntimeCertification(input: {
   return { evidence, certification };
 }
 
-async function runRequiredSteps(
-  steps: Array<[string, () => Promise<FullStackRuntimeProbeStep>]>,
-  errors: string[],
-) {
+async function runRequiredSteps(steps: Array<[string, () => Promise<FullStackRuntimeProbeStep>]>, errors: string[]) {
   const results: boolean[] = [];
-  for (const [label, fn] of steps) {
-    results.push(await runStep(label, fn, errors));
-  }
+  for (const [label, fn] of steps) results.push(await runStep(label, fn, errors));
   return results;
 }
 
-async function runOptionalRequired<T>(
-  label: string,
-  fn: ((target: FullStackRuntimeProbeTarget, input: T) => Promise<FullStackRuntimeProbeStep>) | undefined,
-  target: FullStackRuntimeProbeTarget,
-  input: T,
-  errors: string[],
-) {
+async function runOptionalRequired<T>(label: string, fn: ((target: FullStackRuntimeProbeTarget, input: T) => Promise<FullStackRuntimeProbeStep>) | undefined, target: FullStackRuntimeProbeTarget, input: T, errors: string[]) {
   if (!fn) {
     errors.push(`${label} probe is required but no runtime adapter implementation is configured.`);
     return false;
@@ -141,14 +130,7 @@ function assertSafeTarget(target: FullStackRuntimeProbeTarget) {
   const url = target.appBaseUrl.trim();
   if (!url) throw new Error("FULL_STACK_PREVIEW_URL_REQUIRED");
   if (!/^https?:\/\//i.test(url)) throw new Error("FULL_STACK_PREVIEW_URL_INVALID");
-  if (target.productionBaseUrl && normalizeUrl(target.productionBaseUrl) === normalizeUrl(url)) {
-    throw new Error("FULL_STACK_PREVIEW_MUST_DIFFER_FROM_PRODUCTION");
-  }
+  if (target.productionBaseUrl && normalizeUrl(target.productionBaseUrl) === normalizeUrl(url)) throw new Error("FULL_STACK_PREVIEW_MUST_DIFFER_FROM_PRODUCTION");
 }
-
-function normalizeUrl(value: string) {
-  return value.trim().replace(/\/+$/, "").toLowerCase();
-}
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
+function normalizeUrl(value: string) { return value.trim().replace(/\/+$/, "").toLowerCase(); }
+function errorMessage(error: unknown) { return error instanceof Error ? error.message : String(error); }

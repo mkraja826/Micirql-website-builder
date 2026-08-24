@@ -5,3 +5,4 @@ export * from "./render";
 export * from "./adapters";
 export * from "./runtime";
 export * from "./manifest";
+export * from "./probe-instrumentation";

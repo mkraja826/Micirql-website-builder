@@ -45,6 +45,9 @@ jobs:
       - name: Verify backend implementation contract
         run: pnpm qa:backend-implementation
 
+      - name: Verify full-stack application certification
+        run: pnpm qa:full-stack-app
+
       - name: Verify provider retry policy
         run: pnpm qa:provider-retry
 

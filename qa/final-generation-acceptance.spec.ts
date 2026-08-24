@@ -43,9 +43,12 @@ test("final acceptance combines flagship visual, premium, content, typography, i
   expect(source).toContain("RENDERED_MOBILE_REQUIRED");
 });
 
-test("targeted correction repairs flagship composition failures and re-scores the result", async () => {
+test("targeted correction runs bounded dimension-aware recovery passes and re-scores each pass", async () => {
   const source = await readFile(path.join(root, "apps/builder/app/final-generation-correction.ts"), "utf8");
 
+  expect(source).toContain("const MAX_RECOVERY_PASSES = 3");
+  expect(source).toContain("pass <= MAX_RECOVERY_PASSES && !final.ready");
+  expect(source).toContain("final.dimensions.filter((dimension) => !dimension.ready)");
   expect(source).toContain('failed.has("content") || failed.has("premium") || failed.has("flagship-visual")');
   expect(source).toContain('failed.has("flagship-visual")');
   expect(source).toContain('failed.has("typography")');
@@ -59,4 +62,6 @@ test("targeted correction repairs flagship composition failures and re-scores th
   expect(source).toContain("repairImageReferences(candidate)");
   expect(source).toContain("applyPremiumQualityCorrection(candidate)");
   expect(source).toContain("evaluateFinalGenerationAcceptance(candidate)");
+  expect(source).toContain("pass-${pass}[");
+  expect(source).toContain("if (JSON.stringify(candidate) === beforePass) break");
 });

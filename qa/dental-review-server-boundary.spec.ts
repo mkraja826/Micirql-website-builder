@@ -26,6 +26,6 @@ test("Dental review keeps rendered browser certification as an additional nonblo
   expect(review).toContain("serverDentalPoolLoaded");
   expect(review).toContain("const dentalProbePool");
   expect(review).toContain("const pool = rawPool");
-  expect(review).toContain("browser-rendered QA is an additional signal");
+  expect(review).toContain("Browser-rendered QA is an additional signal");
   expect(review).toContain("deep rendered certification remains a publish-time safeguard");
 });

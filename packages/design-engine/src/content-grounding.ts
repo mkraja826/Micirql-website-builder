@@ -25,20 +25,20 @@ export type GroundingIssue = {
 
 export type GroundingReport = { site: Site; issues: GroundingIssue[]; grounded: boolean };
 
-type RiskPattern = { re: RegExp; reason: string; allowIfFactContainsMatch?: boolean };
+type RiskPattern = { re: RegExp; reason: string };
 
 const RISK_PATTERNS: RiskPattern[] = [
   { re: /\b\d[\d,]*\+?\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|practice|clinical experience)\b/i, reason: "unsupplied years of experience" },
   { re: /\b\d[\d,]*\+?\s+(?:clients?|patients?|projects?|locations?|awards?|cases?|customers?|implants?|smiles?|surgeries?|procedures?)\b/i, reason: "unsupplied numeric proof" },
-  { re: /\b(?:dr\.?|doctor|prof\.?|professor)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b/, reason: "unsupplied clinician or team identity", allowIfFactContainsMatch: true },
-  { re: /\b(?:BDS|MDS|DDS|DMD|MBBS|MD|MS|MCh|FRCS|FDS|FICOI|MICOI|PhD)\b/i, reason: "unsupplied professional qualification", allowIfFactContainsMatch: true },
-  { re: /\b(?:implantologist|orthodontist|prosthodontist|endodontist|periodontist|oral surgeon|cosmetic dentist|pediatric dentist|paediatric dentist)\b/i, reason: "unsupplied clinical specialty", allowIfFactContainsMatch: true },
-  { re: /\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|fellowship[- ]trained|no\.?\s*1|#1|best in|leading|top[- ]rated)\b/i, reason: "unsupplied credential or ranking", allowIfFactContainsMatch: true },
-  { re: /\b(?:expert|experienced|renowned|highly skilled|trusted|best possible)\b/i, reason: "unsupplied expertise or trust claim", allowIfFactContainsMatch: true },
-  { re: /\b(?:guaranteed|100%|zero risk|risk[- ]free|permanent results?|instant results?|pain[- ]free|painless|same[- ]day results?|lifetime guarantee)\b/i, reason: "unsupported guarantee or treatment outcome" },
+  { re: /\b(?:dr\.?|doctor|prof\.?|professor)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b/i, reason: "unsupplied clinician or team identity" },
+  { re: /\b(?:BDS|MDS|DDS|DMD|MBBS|MD|MS|MCh|FRCS|FDS|FICOI|MICOI|PhD)\b/i, reason: "unsupplied professional qualification" },
+  { re: /\b(?:implantologist|orthodontist|prosthodontist|endodontist|periodontist|oral surgeon|cosmetic dentist|pediatric dentist|paediatric dentist)\b/i, reason: "unsupplied clinical specialty" },
+  { re: /\b(?:award[- ]winning|certified|accredited|licensed|board[- ]certified|fellowship[- ]trained|no\.?\s*1|#1|best in|leading|top[- ]rated)\b/i, reason: "unsupplied credential or ranking" },
+  { re: /\b(?:expert|experienced|renowned|highly skilled|trusted|best possible)\b/i, reason: "unsupplied expertise or trust claim" },
+  { re: /\b(?:guaranteed|100%|zero risk|risk[- ]free|permanent results?|instant results?|pain[- ]free|painless|same[- ]day results?|lifetime guarantee|satisfaction guarantee)\b/i, reason: "unsupported guarantee or treatment outcome" },
   { re: /(?:₹|\$|€|£)\s?\d[\d,.]*|\b\d[\d,.]*\s*(?:INR|USD|AUD|GBP|EUR)\b|\b(?:from|starting at|starts at)\s*(?:₹|\$|€|£)?\s?\d[\d,.]*/i, reason: "unsupplied price" },
   { re: /\b(?:rated\s*)?\d(?:\.\d)?\s*\/\s*5\b|\b\d(?:\.\d)?[- ]star\b|\b\d{2,3}%\s+(?:success|satisfaction|recommend|recommended|effective|improvement)\b/i, reason: "unsupplied rating or percentage proof" },
-  { re: /\b(?:clinically proven|proven results?|proven success|success rate|failure rate|complication rate)\b/i, reason: "unsupplied clinical evidence claim", allowIfFactContainsMatch: true },
+  { re: /\b(?:clinically proven|proven results?|proven success|success rate|failure rate|complication rate)\b/i, reason: "unsupplied clinical evidence claim" },
 ];
 
 const SAFE_REPLACEMENTS: Record<string, string> = {
@@ -87,20 +87,30 @@ function sanitizeRecord(record: Record<string, unknown>, pageId: string, section
 
 function risky(value: string, factText: string): string | null {
   for (const pattern of RISK_PATTERNS) {
-    const match = pattern.re.exec(value);
-    if (!match) continue;
-    if (pattern.allowIfFactContainsMatch) {
-      const globalFlags = pattern.re.flags.includes("g") ? pattern.re.flags : `${pattern.re.flags}g`;
-      const claims = [...value.matchAll(new RegExp(pattern.re.source, globalFlags))].map((item) => normalize(item[0] ?? "")).filter(Boolean);
-      if (claims.length > 0 && claims.every((claim) => factText.includes(claim))) continue;
-    }
-    const normalized = normalize(value);
-    if (normalized && factText.includes(normalized)) continue;
-    const matchedClaim = normalize(match[0] ?? "");
-    if (matchedClaim && factText.includes(matchedClaim)) continue;
+    const globalFlags = pattern.re.flags.includes("g") ? pattern.re.flags : `${pattern.re.flags}g`;
+    const claims = [...value.matchAll(new RegExp(pattern.re.source, globalFlags))]
+      .map((item) => normalize(item[0] ?? ""))
+      .filter(Boolean);
+    if (!claims.length) continue;
+
+    const normalizedValue = normalize(value);
+    if (normalizedValue && factText.includes(normalizedValue)) continue;
+    if (claims.every((claim) => factSupportsClaim(factText, claim, pattern.reason))) continue;
     return pattern.reason;
   }
   return null;
+}
+
+function factSupportsClaim(factText: string, claim: string, reason: string): boolean {
+  if (!claim) return false;
+  if (factText.includes(claim)) return true;
+
+  if (reason === "unsupplied price") {
+    const amount = claim.match(/(?:₹|\$|€|£)\s?\d[\d,.]*|\b\d[\d,.]*\s*(?:inr|usd|aud|gbp|eur)\b/i)?.[0];
+    if (amount && factText.includes(normalize(amount))) return true;
+  }
+
+  return false;
 }
 
 function safeReplacement(field: string, family: string, original: string): string {

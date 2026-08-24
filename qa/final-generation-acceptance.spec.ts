@@ -24,12 +24,15 @@ test("onboarding retries failed final premium acceptance before hard rejection a
   expect(source).toContain("finalCorrection:finalCorrection?");
 });
 
-test("final acceptance combines premium, content, typography, imagery and mobile-structure dimensions", async () => {
+test("final acceptance combines flagship visual, premium, content, typography, imagery and mobile-structure dimensions", async () => {
   const source = await readFile(path.join(root, "apps/builder/app/final-generation-acceptance.ts"), "utf8");
 
-  for (const dimension of ["premium", "content", "typography", "imagery", "mobile-structure"]) {
+  for (const dimension of ["flagship-visual", "premium", "content", "typography", "imagery", "mobile-structure"]) {
     expect(source).toContain(`id: \"${dimension}\"`);
   }
+  expect(source).toContain("evaluateFlagshipVisualQuality(site)");
+  expect(source).toContain("flagshipVisual.score < 90");
+  expect(source).toContain("flagshipVisual.flagshipReady");
   expect(source).toContain("premium.score < 85");
   expect(source).toContain("firstBuild.score < 88");
   expect(source).toContain("content.score < 82");
@@ -40,14 +43,17 @@ test("final acceptance combines premium, content, typography, imagery and mobile
   expect(source).toContain("RENDERED_MOBILE_REQUIRED");
 });
 
-test("targeted correction only repairs dimensions that failed and re-scores the result", async () => {
+test("targeted correction repairs flagship composition failures and re-scores the result", async () => {
   const source = await readFile(path.join(root, "apps/builder/app/final-generation-correction.ts"), "utf8");
 
-  expect(source).toContain('failed.has("content") || failed.has("premium")');
+  expect(source).toContain('failed.has("content") || failed.has("premium") || failed.has("flagship-visual")');
+  expect(source).toContain('failed.has("flagship-visual")');
   expect(source).toContain('failed.has("typography")');
   expect(source).toContain('failed.has("mobile-structure") || failed.has("typography")');
   expect(source).toContain('failed.has("imagery")');
   expect(source).toContain("repairContentDepth(candidate)");
+  expect(source).toContain("repairFlagshipComposition(candidate)");
+  expect(source).toContain("arrangeFlagshipOpening(content)");
   expect(source).toContain("repairTypography(candidate)");
   expect(source).toContain("compactMobileRiskCopy(candidate)");
   expect(source).toContain("repairImageReferences(candidate)");

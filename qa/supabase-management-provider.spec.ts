@@ -42,7 +42,7 @@ test("staging adapter uses Management API query endpoints for migration and intr
       const url = String(input);
       const body = typeof init?.body === "string" ? JSON.parse(init.body) as { query?: string } : {};
       if (body.query) queries.push(body.query);
-      if (url.endsWith("/database/query") && init?.method === "POST") return jsonResponse([] , 201);
+      if (url.endsWith("/database/query") && init?.method === "POST") return jsonResponse([], 201);
       if (url.endsWith("/database/query/read-only") && init?.method === "POST") {
         if (/pg_tables/.test(body.query ?? "")) return jsonResponse([{ tablename: "bookings" }], 201);
         if (/pg_policies/.test(body.query ?? "")) return jsonResponse([{ tablename: "bookings", policyname: "booking-select" }], 201);
@@ -61,7 +61,7 @@ test("staging adapter uses Management API query endpoints for migration and intr
   expect(queries.some((query) => query.includes("begin; select 1; commit;"))).toBeTruthy();
 });
 
-test("does not claim security certification when no probe runner is configured", async () => {
+test("built-in security probes remain neutral when the contract has no security requirements", async () => {
   const provider = createSupabaseManagementProvider({
     accessToken: "test-token",
     fetchImpl: (async () => jsonResponse([])) as typeof fetch,
@@ -72,5 +72,9 @@ test("does not claim security certification when no probe runner is configured",
     tables: [], policies: [], routes: [], storageBuckets: [], jobs: [], integrations: [], acceptanceChecks: [],
     requiresAuth: false, requiresRls: false, requiresSecrets: false, notes: [],
   });
-  expect(result.errors?.join(" ")).toContain("not configured");
+  expect(result.errors).toEqual([]);
+  expect(result.positiveRlsPassed).toBeUndefined();
+  expect(result.negativeRlsPassed).toBeUndefined();
+  expect(result.storageOwnershipPassed).toBe(true);
+  expect(result.paymentIdempotencyPassed).toBeUndefined();
 });

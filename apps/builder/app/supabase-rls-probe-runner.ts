@@ -39,19 +39,11 @@ export function createSupabaseRlsProbeRunner(query: SupabaseProbeQueryExecutor) 
       }
     }
 
-    const paymentIdempotencyPassed = contract.acceptanceChecks.some((check) => check.required && check.id === "payment-idempotency")
-      ? undefined
-      : true;
-
-    if (contract.acceptanceChecks.some((check) => check.required && check.id === "payment-idempotency")) {
-      errors.push("Payment idempotency requires an integration-level payment probe and remains uncertified by the SQL RLS runner.");
-    }
-
     return {
       positiveRlsPassed,
       negativeRlsPassed,
       storageOwnershipPassed: contract.storageBuckets.some((bucket) => bucket.ownerScoped) ? undefined : true,
-      paymentIdempotencyPassed,
+      paymentIdempotencyPassed: undefined,
       errors,
     };
   };

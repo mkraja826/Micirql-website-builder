@@ -193,8 +193,9 @@ function parseJsonContent(content: string): unknown {
   const candidates = extractBalancedJsonCandidates(trimmed)
     .map((candidate) => tryParseJson(candidate))
     .filter((result): result is { ok: true; value: unknown } => result.ok);
+  const [candidate] = candidates;
 
-  if (candidates.length === 1) return candidates[0].value;
+  if (candidates.length === 1 && candidate) return candidate.value;
   throw new InvalidJsonContentError();
 }
 

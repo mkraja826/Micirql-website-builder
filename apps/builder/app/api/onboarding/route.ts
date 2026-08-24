@@ -58,7 +58,7 @@ export async function POST(request:NextRequest){
   const quality=inferGenerationQuality(recommendationProfile,composition),visualMediaPlan=planVisualMedia(recommendationProfile,composition,quality);
   let mediaExecution=null,imageWarning:string|null=null;let generatedMediaCount=0;const mediaMaterializationWarnings:string[]=[];
   try{const pools=await loadMediaPools(lockedBrief.workspaceId);mediaExecution=executeMediaPlan({plan:visualMediaPlan,...pools,allowGeneration:true});}catch(error){imageWarning=error instanceof Error?error.message:"Media execution planning failed.";console.error("MiCirql media execution failed; continuing without resolved media.",error);}
-  let initialPreset:{id:string;name:string;reasons:string[]}|null=null,initialComposition:{intent:string;sections:Array<{family:string;variant:number;purpose:string;priority:string}>;reasoning:string[]}|null=null,presetWarning:string|null=null,socialCardWarning:string|null=null;let premiumQuality:ReturnType<typeof applyPremiumQualityCorrection>|null=null;let finalAcceptance:FinalGenerationAcceptance|null=null;let finalCorrection:FinalGenerationCorrection|null=null;
+  let initialPreset:{id:string;name:string;reasons:string[]}|null=null,initialComposition:{intent:string;sections:Array<{family:string;variant:number;purpose:string;priority:string}>;reasoning:string[]}|null=null,presetWarning:string|null=null,socialCardWarning:string|null=null;let premiumQuality:ReturnType<typeof applyPremiumQualityCorrection>|null=null;let finalAcceptance:FinalGenerationAcceptance|null=null;let finalCorrection:FinalGenerationCorrection|null=null;let qualityReviewRequired=false;
   try{
     const current=await getSupabaseDraft(request,lockedBrief.workspaceId,lockedBrief.siteId);if(!current)throw new Error("Generated draft could not be loaded for composition application.");
     let nextSnapshot=applyComposition(current.snapshot,composition,quality);
@@ -73,7 +73,12 @@ export async function POST(request:NextRequest){
       premiumQuality=applyPremiumQualityCorrection(nextSnapshot);nextSnapshot=premiumQuality.site;
       finalAcceptance=evaluateFinalGenerationAcceptance(nextSnapshot);
     }
-    if(!finalAcceptance.ready)throw premiumGenerationError(finalAcceptance);
+    if(!finalAcceptance.ready){
+      if(canDeliverForDesignReview(finalAcceptance)){
+        qualityReviewRequired=true;
+        console.warn("MiCirql premium generation preserved for design review after bounded repair",{score:finalAcceptance.score,blockers:finalAcceptance.blockers,repairs:finalCorrection?.repairs??[]});
+      }else throw premiumGenerationError(finalAcceptance);
+    }
     try{const socialCard=await generateAndUploadSocialCard({site:nextSnapshot,supabaseUrl:url,supabaseKey:key,authorization});nextSnapshot.theme.brand.socialImageAssetId=socialCard.url;nextSnapshot.theme.brand.socialImageStrategy="generated-card";nextSnapshot=siteSchema.parse(nextSnapshot);}catch(error){socialCardWarning=error instanceof Error?error.message:"Social share card could not be generated.";console.error("MiCirql social share card generation failed; using brand fallback.",error);if(nextSnapshot.theme.brand.logoAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.logoAssetId;nextSnapshot.theme.brand.socialImageStrategy="logo-fallback";}else if(nextSnapshot.theme.brand.faviconAssetId){nextSnapshot.theme.brand.socialImageAssetId=nextSnapshot.theme.brand.faviconAssetId;nextSnapshot.theme.brand.socialImageStrategy="favicon-fallback";}}
     await saveSupabaseDraft(request,{snapshot:nextSnapshot,expectedRevision:current.revision});initialPreset={id:composition.preset.id,name:composition.preset.name,reasons:composition.reasoning};initialComposition={intent:composition.intent,sections:composition.sections,reasoning:composition.reasoning};
   }catch(error){if(isPremiumGenerationError(error))throw error;presetWarning=error instanceof Error?error.message:"Initial composition could not be applied.";console.error("MiCirql initial composition failed; continuing with generated draft.",error);}
@@ -83,7 +88,7 @@ export async function POST(request:NextRequest){
   const savedProfiles=await profileResponse.json() as unknown[];
   const creditBalance=await getCreditBalance(workspaceId);
   reservation=null;
-  return NextResponse.json({ok:true,planId:plan.plan_id,build,blueprint:plan.blueprint,selectedLayout:plan.selected_layout??null,industryContext,planningSource:advice.source,planningProvider:advice.provider??null,planningModel:advice.model??null,planningUsage:advice.usage??null,planningWarning:advice.warning??null,brandPalette:advice.brandColors,content,contentWarning,contentIntegrity,contentGrounding,images,imageWarning,visualMediaPlan,mediaExecution,initialPreset,initialComposition,generationQuality:quality,premiumQuality:premiumQuality?{premiumReady:premiumQuality.final.premiumReady,initialScore:premiumQuality.initial.score,finalScore:premiumQuality.final.score,attemptedCorrection:premiumQuality.attempted,appliedCorrection:premiumQuality.applied,blockers:premiumQuality.final.blockers,warnings:premiumQuality.final.warnings,metrics:premiumQuality.final.metrics}:null,finalAcceptance,finalCorrection:finalCorrection?{attempted:finalCorrection.attempted,applied:finalCorrection.applied,repairs:finalCorrection.repairs,initialScore:finalCorrection.initial.score,finalScore:finalCorrection.final.score}:null,presetWarning,socialCardWarning,creditsCharged:websiteCredits,creditBalance,profile:savedProfiles[0]??profile});
+  return NextResponse.json({ok:true,planId:plan.plan_id,build,blueprint:plan.blueprint,selectedLayout:plan.selected_layout??null,industryContext,planningSource:advice.source,planningProvider:advice.provider??null,planningModel:advice.model??null,planningUsage:advice.usage??null,planningWarning:advice.warning??null,brandPalette:advice.brandColors,content,contentWarning,contentIntegrity,contentGrounding,images,imageWarning,visualMediaPlan,mediaExecution,initialPreset,initialComposition,generationQuality:quality,premiumQuality:premiumQuality?{premiumReady:premiumQuality.final.premiumReady,initialScore:premiumQuality.initial.score,finalScore:premiumQuality.final.score,attemptedCorrection:premiumQuality.attempted,appliedCorrection:premiumQuality.applied,blockers:premiumQuality.final.blockers,warnings:premiumQuality.final.warnings,metrics:premiumQuality.final.metrics}:null,finalAcceptance,qualityReviewRequired,finalCorrection:finalCorrection?{attempted:finalCorrection.attempted,applied:finalCorrection.applied,repairs:finalCorrection.repairs,initialScore:finalCorrection.initial.score,finalScore:finalCorrection.final.score}:null,presetWarning,socialCardWarning,creditsCharged:websiteCredits,creditBalance,profile:savedProfiles[0]??profile});
  }catch(error){
   if(reservation){try{await refundCredits({workspaceId:reservation.workspaceId,credits:reservation.credits,operationKey:`refund:${reservation.operationKey}`,description:"Refund failed AI website generation",metadata:{reservation:reservation.operationKey}});}catch(refundError){console.error("MiCirql website credit refund failed",refundError);}}
   return errorResponse(error);
@@ -91,6 +96,14 @@ export async function POST(request:NextRequest){
 }
 
 type PremiumGenerationError=Error&{status:422;code:"PREMIUM_GENERATION_NOT_READY";report:FinalGenerationAcceptance};
+function canDeliverForDesignReview(report:FinalGenerationAcceptance){
+ const hardDimensions=new Set<FinalGenerationAcceptance["dimensions"][number]["id"]>(["content","typography","imagery","mobile-structure"]);
+ if(report.score<80)return false;
+ if(report.dimensions.some(dimension=>hardDimensions.has(dimension.id)&&!dimension.ready))return false;
+ const remaining=report.dimensions.filter(dimension=>!dimension.ready);
+ if(!remaining.length)return true;
+ return remaining.every(dimension=>(dimension.id==="premium"||dimension.id==="flagship-visual")&&dimension.score>=75);
+}
 function premiumGenerationError(report:FinalGenerationAcceptance):PremiumGenerationError{const error=new Error("Generated website did not meet MiCirql premium quality requirements.") as PremiumGenerationError;error.status=422;error.code="PREMIUM_GENERATION_NOT_READY";error.report=report;return error;}
 function isPremiumGenerationError(error:unknown):error is PremiumGenerationError{return Boolean(error&&typeof error==="object"&&(error as Partial<PremiumGenerationError>).code==="PREMIUM_GENERATION_NOT_READY");}
 function string(value:unknown){return typeof value==="string"?value.trim():"";}

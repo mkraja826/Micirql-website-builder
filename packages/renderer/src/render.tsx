@@ -1,5 +1,6 @@
 import React, { Fragment, createElement } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { runtimeProbeAttributesForSection } from "./probe-instrumentation";
 import type { PreparedPage } from "./types";
 
 export function renderPreparedPage(prepared: PreparedPage): ReactNode {
@@ -30,6 +31,7 @@ export function renderPreparedPage(prepared: PreparedPage): ReactNode {
         <Fragment key={section.id}>
           {createElement(component.Component, {
             ...props,
+            ...runtimeProbeAttributesForSection({ section, component, props }),
             "data-mi-section-id": section.id,
             "data-mi-component-id": component.registry.id,
             "data-mi-component-version": component.registry.version,

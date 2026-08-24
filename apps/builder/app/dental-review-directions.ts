@@ -19,6 +19,7 @@ import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
 import { applyDentalMultipageMediaSafety } from "./dental-multipage-media-safety";
 import { evaluateDentalMultipageQuality } from "./dental-multipage-quality";
+import { rankDentalPremiumCandidate } from "./dental-premium-ranking";
 import { evaluateDentalResponsiveCandidate } from "./dental-responsive-candidate-quality";
 import { buildDentalTasteMutations } from "./dental-taste-mutations";
 import { repairDesignAntiPatterns } from "./design-anti-pattern-repair";
@@ -102,7 +103,7 @@ export function buildCertifiedDentalReviewDirections(
     : eligibleBlueprints;
 
   for (const entry of evaluationBlueprints) {
-    const { blueprint, index, fitBonus, dnaMatch, dnaBonus } = entry;
+    const { blueprint, index, fitBonus, dnaMatch } = entry;
 
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
@@ -229,8 +230,21 @@ export function buildCertifiedDentalReviewDirections(
         archetypeFitScore: industryFit.score,
       });
       const biased = applyPreferenceBias(baseScore, preferenceProfile);
-      const responsivePenalty = Math.max(0, Math.round((100 - mutationResponsive.score) / 2));
-      const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - mutationAntiPatterns.penalty - responsivePenalty)) };
+      const premiumRanking = rankDentalPremiumCandidate({
+        baseScore,
+        preferenceAdjustedScore: biased,
+        industryFit: industryFit.score,
+        dnaMatch,
+        fitBonus,
+        content: Math.min(contentQuality.score, dentalContentQuality.score),
+        multipage: multipageQuality.score,
+        typography: mutationTypography.score,
+        rhythm: mutationRhythm.score,
+        media: mutationMedia.score,
+        responsive: mutationResponsive.score,
+        antiPattern: mutationAntiPatterns.score,
+      });
+      const designScore = { ...biased, total: premiumRanking.total };
       const suffix = mutation.id === "base" ? "" : `-${mutation.id}`;
 
       candidates.push({
@@ -245,7 +259,7 @@ export function buildCertifiedDentalReviewDirections(
           `page rhythm ${mutationRhythm.score}/100`,
           `page typography ${mutationTypography.score}/100`,
           `media art direction ${mutationMedia.score}/100`,
-          `design quality ${designScore.total}/100`,
+          `premium ranking ${premiumRanking.total}/100 (visual ${premiumRanking.breakdown.visualQuality}, brief ${premiumRanking.breakdown.brandBriefFit}, responsive ${premiumRanking.breakdown.responsive})`,
         ],
         site: mutation.site,
         themeFamily: mutation.site.theme.family,

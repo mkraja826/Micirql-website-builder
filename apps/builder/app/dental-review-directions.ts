@@ -19,6 +19,7 @@ import { applyDentalFaqIntelligence } from "./dental-faq-intelligence";
 import { applyDentalMultipageArchitecture } from "./dental-multipage-architecture";
 import { applyDentalMultipageMediaSafety } from "./dental-multipage-media-safety";
 import { evaluateDentalMultipageQuality } from "./dental-multipage-quality";
+import { evaluateDentalResponsiveCandidate } from "./dental-responsive-candidate-quality";
 import { buildDentalTasteMutations } from "./dental-taste-mutations";
 import { repairDesignAntiPatterns } from "./design-anti-pattern-repair";
 import { evaluatePageRhythmQuality } from "./page-rhythm-quality";
@@ -96,9 +97,6 @@ export function buildCertifiedDentalReviewDirections(
     })
     .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
 
-  // Review output stays capped at 8, but production now evaluates a much broader
-  // internal pool first. This gives Taste/DNA ranking, anti-pattern repair and
-  // diversity selection enough material to choose genuinely different premium work.
   const evaluationBlueprints = process.env.NODE_ENV === "production"
     ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, eligibleBlueprints.length))
     : eligibleBlueprints;
@@ -205,6 +203,7 @@ export function buildCertifiedDentalReviewDirections(
       const mutationTypography = evaluatePageTypographyQuality(mutation.site);
       const mutationMedia = evaluatePageMediaArtDirection(mutation.site);
       const mutationAntiPatterns = evaluateDesignAntiPatterns(mutation.site);
+      const mutationResponsive = evaluateDentalResponsiveCandidate(mutation.site, blueprint);
       const mutationHasRhythmError = mutationRhythm.issues.some((issue) => issue.severity === "error");
       const mutationHasTypographyError = mutationTypography.issues.some((issue) => issue.severity === "error" && !issue.repairable);
       const mutationHasMediaError = mutationMedia.issues.some((issue) => issue.severity === "error");
@@ -212,16 +211,26 @@ export function buildCertifiedDentalReviewDirections(
       if (mutationHasTypographyError || mutationTypography.score < MIN_PAGE_TYPOGRAPHY_SCORE) continue;
       if (mutationHasMediaError || mutationMedia.score < MIN_MEDIA_ART_DIRECTION_SCORE) continue;
       if (!mutationAntiPatterns.ready) continue;
+      if (!mutationResponsive.ready) continue;
 
       const industryFit = evaluateIndustryFit(mutation.site, industry, subindustry);
       const baseScore = scoreDesign({
         site: mutation.site,
         readinessScore: repaired.readiness.score,
-        contentScore: Math.min(contentQuality.score, dentalContentQuality.score, multipageQuality.score, mutationRhythm.score, mutationTypography.score, mutationMedia.score),
+        contentScore: Math.min(
+          contentQuality.score,
+          dentalContentQuality.score,
+          multipageQuality.score,
+          mutationRhythm.score,
+          mutationTypography.score,
+          mutationMedia.score,
+          mutationResponsive.score,
+        ),
         archetypeFitScore: industryFit.score,
       });
       const biased = applyPreferenceBias(baseScore, preferenceProfile);
-      const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - mutationAntiPatterns.penalty)) };
+      const responsivePenalty = Math.max(0, Math.round((100 - mutationResponsive.score) / 2));
+      const designScore = { ...biased, total: Math.max(0, Math.min(100, biased.total + fitBonus + dnaBonus - mutationAntiPatterns.penalty - responsivePenalty)) };
       const suffix = mutation.id === "base" ? "" : `-${mutation.id}`;
 
       candidates.push({
@@ -232,6 +241,7 @@ export function buildCertifiedDentalReviewDirections(
           ...sharedReasons,
           ...(mutation.operations.length ? [`taste mutation: ${mutation.operations.join(", ")}`] : []),
           `anti-pattern quality ${mutationAntiPatterns.score}/100${mutationAntiPatterns.issues.length ? ` (${mutationAntiPatterns.issues.length} warning${mutationAntiPatterns.issues.length === 1 ? "" : "s"})` : ""}`,
+          `responsive quality ${mutationResponsive.score}/100 (mobile ${mutationResponsive.mobile}, tablet ${mutationResponsive.tablet}, desktop ${mutationResponsive.desktop})`,
           `page rhythm ${mutationRhythm.score}/100`,
           `page typography ${mutationTypography.score}/100`,
           `media art direction ${mutationMedia.score}/100`,

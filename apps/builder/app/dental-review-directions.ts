@@ -2,10 +2,12 @@ import type { Site } from "@micirql/schema";
 import {
   DENTAL_LAYOUT_BLUEPRINTS,
   applyPreferenceBias,
+  deriveDesignDna,
   evaluateIndustryFit,
   evaluateWebsiteContent,
   normalizeWebsiteContent,
   scoreDesign,
+  scoreDesignDnaMatch,
   selectDiverseDesigns,
   type DesignPreferenceProfile,
 } from "@micirql/design-engine";
@@ -27,21 +29,20 @@ import type { OnboardingProfile } from "./preset-ranking";
 import type { ReviewDirection } from "./review-directions";
 
 const REVIEW_LIMIT = 8;
-// Dental review used to evaluate only four blueprints in production. That made the
-// quality gate double as a diversity bottleneck: even with 20 certified blueprints,
-// users could never receive more than four directions. Evaluate a broader certified
-// shortlist so ranking and diversity selection have enough genuinely different work.
 const RUNTIME_EVALUATION_LIMIT = 12;
 const MIN_DENTAL_CONTENT_SCORE = 82;
 const MIN_DENTAL_MULTIPAGE_SCORE = 90;
 const MIN_PAGE_RHYTHM_SCORE = 78;
 const MIN_PAGE_TYPOGRAPHY_SCORE = 82;
 const MIN_MEDIA_ART_DIRECTION_SCORE = 80;
+const MAX_DNA_RANKING_BONUS = 15;
 
 type BlueprintEvaluationCandidate = {
   blueprint: (typeof DENTAL_LAYOUT_BLUEPRINTS)[number];
   index: number;
   fitBonus: number;
+  dnaMatch: number;
+  dnaBonus: number;
 };
 
 export function isDentalReviewProfile(profile: OnboardingProfile): boolean {
@@ -58,37 +59,50 @@ export function buildCertifiedDentalReviewDirections(
   const subindustry = normalizeDentalSubindustry(profile.subindustry);
   const goals = profileGoals(profile);
   const briefSignals = profileSignals(profile);
+  const designDna = deriveDesignDna({
+    industry,
+    subindustry,
+    goals,
+    styleTags: Array.isArray(profile.style_tags) ? profile.style_tags : [],
+    services: Array.isArray(profile.services) ? profile.services : [],
+    notes: profile.notes ?? "",
+  });
   const candidates: ReviewDirection[] = [];
   const renderedCertifiedIds = runtimeRenderedCertifiedDentalIds();
 
   if (process.env.NODE_ENV === "production" && renderedCertifiedIds.size === 0) return [];
 
   const eligibleBlueprints: BlueprintEvaluationCandidate[] = DENTAL_LAYOUT_BLUEPRINTS
-    .map((blueprint, index) => ({
-      blueprint,
-      index,
-      fitBonus: blueprintFitBonus(
-        blueprint.fit.subindustryIds,
-        blueprint.fit.goals,
-        blueprint.fit.priorities,
-        blueprint.styleTags,
-        subindustry,
-        goals,
-        briefSignals,
-      ),
-    }))
+    .map((blueprint, index) => {
+      const dnaMatch = scoreDesignDnaMatch(designDna, blueprint);
+      return {
+        blueprint,
+        index,
+        dnaMatch,
+        dnaBonus: Math.min(MAX_DNA_RANKING_BONUS, Math.round(dnaMatch / 2)),
+        fitBonus: blueprintFitBonus(
+          blueprint.fit.subindustryIds,
+          blueprint.fit.goals,
+          blueprint.fit.priorities,
+          blueprint.styleTags,
+          subindustry,
+          goals,
+          briefSignals,
+        ),
+      };
+    })
     .filter((entry) => process.env.NODE_ENV !== "production" || renderedCertifiedIds.has(entry.blueprint.id));
 
-  // The Dental blueprints are certified offline at deploy time. Runtime still applies
-  // the complete per-draft content, multipage, rhythm, typography and media gates, but
-  // it now evaluates enough archetypes for the final selector to return a premium and
-  // visibly diverse 6-8 direction review rather than four near-neighbours.
+  // Runtime keeps the full quality gates, while the pre-evaluation shortlist now
+  // considers both industry relevance and customer-specific Design DNA. This lets
+  // Taste controls influence which certified archetypes receive expensive runtime
+  // evaluation without ever bypassing rendered certification or quality checks.
   const evaluationBlueprints = process.env.NODE_ENV === "production"
     ? selectBlueprintEvaluationSet(eligibleBlueprints, Math.min(RUNTIME_EVALUATION_LIMIT, Math.max(8, count)))
     : eligibleBlueprints;
 
   for (const entry of evaluationBlueprints) {
-    const { blueprint, index, fitBonus } = entry;
+    const { blueprint, index, fitBonus, dnaMatch, dnaBonus } = entry;
 
     const composed = applyWebsiteLayoutBlueprint(site, blueprint);
     const repaired = repairWebsiteInvariants(composed, "healthcare-clinic", industry, subindustry);
@@ -157,7 +171,7 @@ export function buildCertifiedDentalReviewDirections(
       archetypeFitScore: industryFit.score,
     });
     const biased = applyPreferenceBias(baseScore, preferenceProfile);
-    const designScore = { ...biased, total: Math.min(100, biased.total + fitBonus) };
+    const designScore = { ...biased, total: Math.min(100, biased.total + fitBonus + dnaBonus) };
 
     candidates.push({
       id: `certified-${blueprint.id}`,
@@ -170,6 +184,8 @@ export function buildCertifiedDentalReviewDirections(
         `${blueprint.design.sectionRhythm} section rhythm`,
         ...(subindustry && blueprint.fit.subindustryIds.includes(subindustry) ? [`strong ${subindustry.replace(/-/g, " ")} match`] : []),
         ...(fitBonus >= 18 ? ["high brief relevance"] : []),
+        ...(dnaMatch >= 20 ? [`strong Design DNA match ${dnaMatch}/30`] : dnaMatch >= 12 ? [`Design DNA match ${dnaMatch}/30`] : []),
+        `taste: ${designDna.spacing} spacing, ${designDna.typography.replace(/-/g, " ")}, ${designDna.photography.replace(/-/g, " ")} photography`,
         ...(faqIntelligence.applied ? [`specialty FAQ decision support: ${faqIntelligence.specialty}`] : []),
         ...(multipageArchitecture.treatmentPages.length ? [`multi-page treatment architecture: ${multipageArchitecture.treatmentPages.length} treatment page${multipageArchitecture.treatmentPages.length === 1 ? "" : "s"}`] : []),
         ...(contactPageRepair.repaired ? ["auto-repaired dedicated contact conversion section"] : []),
@@ -208,12 +224,12 @@ export function runtimeRenderedCertifiedDentalIds(): Set<string> {
 
 function selectBlueprintEvaluationSet(entries: BlueprintEvaluationCandidate[], limit: number): BlueprintEvaluationCandidate[] {
   if (entries.length <= limit) return entries;
-  const ranked = [...entries].sort((a, b) => b.fitBonus - a.fitBonus || a.index - b.index);
+  const ranked = [...entries].sort((a, b) => (b.fitBonus + b.dnaBonus) - (a.fitBonus + a.dnaBonus) || b.dnaMatch - a.dnaMatch || a.index - b.index);
   const selected: BlueprintEvaluationCandidate[] = [];
   const usedArchetypes = new Set<string>();
 
-  // First pass deliberately maximizes composition/archetype diversity. This prevents
-  // several high-scoring but visually similar clinic layouts from consuming the pool.
+  // First pass deliberately maximizes composition/archetype diversity while using
+  // Design DNA to decide which representative of each archetype deserves evaluation.
   for (const entry of ranked) {
     if (selected.length >= limit) break;
     if (usedArchetypes.has(entry.blueprint.archetype)) continue;

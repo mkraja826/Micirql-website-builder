@@ -2,8 +2,11 @@ import { evaluateWebsiteContent, groundSiteContent, validateWebsite, type Ground
 import { siteSchema, type Site } from "@micirql/schema";
 import { NextRequest } from "next/server";
 import { getSupabaseDraft, saveSupabaseDraft, usesSupabaseDraftStore } from "../drafts/supabase-store";
+import { deriveBackendImplementationContract } from "../../backend-implementation-contract";
+import { deriveFunctionalArchitecture } from "../../functional-architecture";
 import { evaluateFunctionalPublishGate } from "../../functional-publish-gate";
 import { repairFunctionalPublishIssues } from "../../functional-publish-repair";
+import { evaluateFullStackPublishCertification } from "../../publish-full-stack-certification";
 import { assessPublishRepairSync } from "../../publish-repair-sync";
 import { getPublishRuntime } from "../../publish-runtime";
 
@@ -76,6 +79,42 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: false, code: "WEBSITE_NOT_READY", readiness, contentQuality, grounding, functionalRepairs: functionalRepair.repairs, issues: readiness.errors }, { status: 422 });
     }
 
+    const architecture = deriveFunctionalArchitecture({
+      business_name: groundingFacts.businessName,
+      industry: groundingFacts.industry ?? null,
+      subindustry: groundingFacts.subindustry ?? null,
+      location: groundingFacts.location ?? null,
+      goals: groundingFacts.goals,
+      services: groundingFacts.services,
+      required_capabilities: inferFunctionalCapabilities(publishSite, groundingFacts),
+      notes: groundingFacts.notes,
+    });
+    const backendContract = deriveBackendImplementationContract(architecture);
+    const fullStackCertification = await evaluateFullStackPublishCertification({
+      site: publishSite,
+      architecture,
+      backend: backendContract,
+    });
+    if (!fullStackCertification.allowed) {
+      return Response.json({
+        ok: false,
+        code: "FULL_STACK_CERTIFICATION_REQUIRED",
+        readiness,
+        contentQuality,
+        grounding,
+        functionalRepairs: functionalRepair.repairs,
+        architecture,
+        backendContract,
+        fullStackCertification,
+        issues: [{
+          code: "FULL_STACK_CERTIFICATION_REQUIRED",
+          message: fullStackCertification.status === "failed"
+            ? "The exact preview build failed full-stack runtime certification. Fix the reported runtime failures and certify a new preview before publishing."
+            : "This backend-enabled build must pass full-stack runtime certification on an isolated preview before production publishing is allowed.",
+        }],
+      }, { status: 422 });
+    }
+
     let draftRepairPersisted = false;
     let repairedDraftRevision: number | undefined;
     if (functionalRepair.repaired) {
@@ -134,6 +173,9 @@ export async function POST(request: NextRequest) {
       readiness,
       contentQuality,
       grounding,
+      architecture,
+      backendContract,
+      fullStackCertification,
       functionalRepairs: functionalRepair.repairs,
       repairedSite: functionalRepair.repaired ? publishSite : undefined,
       draftRepairPersisted,
@@ -145,6 +187,24 @@ export async function POST(request: NextRequest) {
 }
 
 function cleanArray(value: unknown) { return Array.isArray(value) ? [...new Set(value.map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean))].slice(0, 48) : []; }
+
+function inferFunctionalCapabilities(site: Site, facts: GroundingFacts) {
+  const text = [
+    site.subtype,
+    site.name,
+    ...site.pages.flatMap((page) => page.sections.flatMap((section) => [section.id, section.component.componentId, ...Object.values(section.bindings).map((binding) => binding.actionId)])),
+    ...facts.goals,
+    ...facts.services,
+    facts.notes,
+  ].filter(Boolean).join(" ").toLowerCase();
+  const capabilities: string[] = [];
+  if (/book|booking|appointment|schedule|reserve/.test(text)) capabilities.push("booking");
+  if (/login|sign.?in|account|portal|dashboard|admin/.test(text)) capabilities.push("auth", "admin");
+  if (/payment|checkout|subscription|billing|razorpay|stripe/.test(text)) capabilities.push("payments");
+  if (/upload|file|document|photo|image|x.?ray/.test(text)) capabilities.push("uploads");
+  if (/search|filter|listing|catalog|property|directory/.test(text)) capabilities.push("search");
+  return [...new Set(capabilities)];
+}
 
 function inferArchetype(site: Site): string {
   const text = `${site.subtype ?? ""} ${site.name}`.toLowerCase();

@@ -16,24 +16,25 @@ export function deriveFunctionalArchitecture(profile: OnboardingProfile): Functi
   const text = profileText(profile);
   const capabilitiesRequested = stringList(profile.required_capabilities);
   const goals = stringList(profile.goals);
+  const explicitStatic = isExplicitStaticProfile(profile, capabilitiesRequested, goals);
 
-  const wantsAuth = hasAny(text, ["login", "sign in", "signup", "account", "portal", "dashboard", "member", "admin", "role"]);
-  const wantsBooking = hasAny(text, ["book", "booking", "appointment", "reservation", "schedule", "consultation"]);
-  const wantsCommerce = hasAny(text, ["ecommerce", "e-commerce", "shop", "store", "cart", "checkout", "order", "purchase"]);
-  const wantsPayments = wantsCommerce || hasAny(text, ["payment", "subscription", "billing", "razorpay", "stripe"]);
-  const wantsStorage = hasAny(text, ["upload", "file", "image", "photo", "document", "gallery", "x-ray", "xray", "attachment"]);
-  const wantsNotifications = hasAny(text, ["notification", "email", "sms", "whatsapp", "reminder", "alert"]);
-  const wantsSearch = hasAny(text, ["search", "filter", "listing", "catalog", "property", "products", "directory"]);
-  const wantsAdmin = hasAny(text, ["admin", "manage", "management", "cms", "backend", "dashboard"]);
-  const wantsAi = hasAny(text, [" ai ", "artificial intelligence", "chatbot", "assistant", "recommendation"]);
-  const wantsAnalytics = hasAny(text, ["analytics", "visitor", "tracking", "reports", "reporting"]);
-  const wantsMarketplace = hasAny(text, ["marketplace", "seller", "vendor", "agent portal", "two-sided"]);
-  const wantsMultiTenant = hasAny(text, ["multi-tenant", "multitenant", "multiple clinics", "multiple companies", "organizations", "workspaces", "tenants"]);
-  const wantsCrud = wantsAuth || wantsBooking || wantsCommerce || wantsAdmin || wantsMarketplace || capabilitiesRequested.some((value) => /crud|database|backend|manage/.test(value));
+  const wantsAuth = !explicitStatic && hasAny(text, ["login", "sign in", "signup", "account", "portal", "dashboard", "member", "admin", "role"]);
+  const wantsBooking = !explicitStatic && hasAny(text, ["book", "booking", "appointment", "reservation", "schedule", "consultation"]);
+  const wantsCommerce = !explicitStatic && hasAny(text, ["ecommerce", "e-commerce", "shop", "store", "cart", "checkout", "order", "purchase"]);
+  const wantsPayments = !explicitStatic && (wantsCommerce || hasAny(text, ["payment", "subscription", "billing", "razorpay", "stripe"]));
+  const wantsStorage = !explicitStatic && hasAny(text, ["upload", "file", "image", "photo", "document", "gallery", "x-ray", "xray", "attachment"]);
+  const wantsNotifications = !explicitStatic && hasAny(text, ["notification", "email", "sms", "whatsapp", "reminder", "alert"]);
+  const wantsSearch = !explicitStatic && hasAny(text, ["search", "filter", "listing", "catalog", "property", "products", "directory"]);
+  const wantsAdmin = !explicitStatic && hasAny(text, ["admin", "manage", "management", "cms", "backend", "dashboard"]);
+  const wantsAi = !explicitStatic && hasAny(text, [" ai ", "artificial intelligence", "chatbot", "assistant", "recommendation"]);
+  const wantsAnalytics = !explicitStatic && hasAny(text, ["analytics", "visitor", "tracking", "reports", "reporting"]);
+  const wantsMarketplace = !explicitStatic && hasAny(text, ["marketplace", "seller", "vendor", "agent portal", "two-sided"]);
+  const wantsMultiTenant = !explicitStatic && hasAny(text, ["multi-tenant", "multitenant", "multiple clinics", "multiple companies", "organizations", "workspaces", "tenants"]);
+  const wantsCrud = !explicitStatic && (wantsAuth || wantsBooking || wantsCommerce || wantsAdmin || wantsMarketplace || capabilitiesRequested.some((value) => /crud|database|backend|manage/.test(value)));
 
   const surfaces = inferSurfaces({ wantsAuth, wantsBooking, wantsCommerce, wantsAdmin, wantsMarketplace });
   const roles = buildRoles({ wantsAuth, wantsAdmin, wantsMarketplace, wantsMultiTenant });
-  const entities = buildEntities({ profile, wantsBooking, wantsCommerce, wantsStorage, wantsMarketplace, wantsAnalytics, wantsMultiTenant });
+  const entities = buildEntities({ profile, wantsAuth, wantsCrud, wantsBooking, wantsCommerce, wantsStorage, wantsMarketplace, wantsAnalytics, wantsMultiTenant });
   const capabilities = buildCapabilities({
     roles,
     entities,
@@ -74,6 +75,7 @@ export function deriveFunctionalArchitecture(profile: OnboardingProfile): Functi
     requiresBackgroundJobs: wantsNotifications || wantsPayments,
     notes: [
       "Functional plan is deterministic and must be validated against the final generated application before publish.",
+      ...(explicitStatic ? ["The brief explicitly requests a static website without application backend functionality."] : []),
       ...(backendRequired ? ["Server-side validation is required for all state-changing operations."] : []),
       ...(wantsAuth ? ["Default-deny authorization applies to authenticated data until an explicit policy grants access."] : []),
     ],
@@ -100,7 +102,7 @@ function buildRoles(input: { wantsAuth: boolean; wantsAdmin: boolean; wantsMarke
   return roles;
 }
 
-function buildEntities(input: { profile: OnboardingProfile; wantsBooking: boolean; wantsCommerce: boolean; wantsStorage: boolean; wantsMarketplace: boolean; wantsAnalytics: boolean; wantsMultiTenant: boolean }): FunctionalEntity[] {
+function buildEntities(input: { profile: OnboardingProfile; wantsAuth: boolean; wantsCrud: boolean; wantsBooking: boolean; wantsCommerce: boolean; wantsStorage: boolean; wantsMarketplace: boolean; wantsAnalytics: boolean; wantsMultiTenant: boolean }): FunctionalEntity[] {
   const entities: FunctionalEntity[] = [];
   if (input.wantsMultiTenant) entities.push(entity("tenant", "Tenant", "Organization/workspace boundary.", "system", [field("name", "text", true), field("slug", "text", true, true)], true));
   if (input.wantsBooking) entities.push(entity("booking", "Booking", "Appointment or reservation request.", input.wantsMultiTenant ? "tenant" : "user", [field("name", "text", true), field("email", "email", true), field("phone", "phone"), field("starts_at", "datetime", true), field("status", "text", true), field("notes", "text")], true));
@@ -112,6 +114,7 @@ function buildEntities(input: { profile: OnboardingProfile; wantsBooking: boolea
   if (input.wantsStorage) entities.push(entity("asset", "Asset", "Uploaded file or media metadata.", "user", [field("url", "url", true), field("mime_type", "text", true), field("size", "number")], true));
   if (input.wantsAnalytics) entities.push(entity("event", "Analytics Event", "Privacy-aware product or visitor event.", "system", [field("event_name", "text", true), field("occurred_at", "datetime", true), field("metadata", "json")], false));
   if (!entities.length && hasAny(profileText(input.profile), ["contact", "enquiry", "lead"])) entities.push(entity("enquiry", "Enquiry", "Website contact or lead enquiry.", "system", [field("name", "text", true), field("email", "email", true), field("phone", "phone"), field("message", "text", true)], true));
+  if (!entities.length && input.wantsCrud) entities.push(entity("record", "Application Record", "Generic persisted application record required by the explicit backend/data-management request.", input.wantsAuth ? "user" : "system", [field("title", "text", true), field("status", "text"), field("data", "json")], true));
   return entities;
 }
 
@@ -183,6 +186,16 @@ function inferProductType(profile: OnboardingProfile, surfaces: ProductSurface[]
   if (hasAny(text, ["saas", "software", "dashboard", "portal", "app"])) return "web-application";
   if (surfaces.includes("booking")) return "service-business-with-booking";
   return "marketing-website";
+}
+
+function isExplicitStaticProfile(profile: OnboardingProfile, capabilitiesRequested: string[], goals: string[]): boolean {
+  if (capabilitiesRequested.length > 0) return false;
+  if (goals.some((goal) => /login|account|portal|dashboard|book|appointment|checkout|payment|upload|backend|database|admin|manage|subscription/.test(goal))) return false;
+  const notes = typeof profile.notes === "string" ? profile.notes.trim().toLowerCase() : "";
+  const staticIntent = /\bstatic\b|\bmarketing-only\b|\bmarketing only\b/.test(notes);
+  const explicitNoBackend = /\bno\s+(?:app\s+)?backend\b|\bwithout\s+(?:an?\s+)?(?:app\s+)?backend\b/.test(notes);
+  const explicitNoInteractiveApp = /\bno\s+(?:login|sign[- ]?in|accounts?|forms?|portal|dashboard)\b/.test(notes);
+  return staticIntent && (explicitNoBackend || explicitNoInteractiveApp);
 }
 
 function entity(id: string, name: string, description: string, ownership: FunctionalEntity["ownership"], fields: FunctionalEntity["fields"], auditRequired: boolean): FunctionalEntity { return { id, name, description, ownership, fields, indexes: [], auditRequired }; }

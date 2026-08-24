@@ -39,12 +39,8 @@ test("fails closed when cross-user access is visible", async () => {
     required_capabilities: ["auth", "booking", "backend"],
   });
   const contract = deriveBackendImplementationContract(architecture);
-  let scopedRead = 0;
   const runner = createSupabaseRlsProbeRunner(async (_projectRef, sql) => {
-    if (/select count\(\*\)::int as count/.test(sql)) {
-      scopedRead += 1;
-      return [{ count: 1 }];
-    }
+    if (/select count\(\*\)::int as count/.test(sql)) return [{ count: 1 }];
     return [];
   });
 
@@ -54,7 +50,7 @@ test("fails closed when cross-user access is visible", async () => {
   expect(result.errors?.join(" ")).toContain("Cross-user/cross-tenant");
 });
 
-test("keeps storage and payment certification fail-closed for dedicated probes", async () => {
+test("leaves storage and payment evidence to their dedicated probes", async () => {
   const architecture = deriveFunctionalArchitecture({
     business_name: "Probe Store",
     industry: "ecommerce",
@@ -72,8 +68,9 @@ test("keeps storage and payment certification fail-closed for dedicated probes",
   });
 
   const result = await runner("preview-ref", contract);
+  expect(result.positiveRlsPassed).toBe(true);
+  expect(result.negativeRlsPassed).toBe(true);
   expect(result.storageOwnershipPassed).toBeUndefined();
   expect(result.paymentIdempotencyPassed).toBeUndefined();
-  expect(result.errors?.join(" ")).toContain("Storage ownership");
-  expect(result.errors?.join(" ")).toContain("Payment idempotency");
+  expect(result.errors).toEqual([]);
 });

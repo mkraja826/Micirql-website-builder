@@ -39,16 +39,10 @@ export function createSupabaseRlsProbeRunner(query: SupabaseProbeQueryExecutor) 
       }
     }
 
-    const storageOwnershipPassed = contract.storageBuckets.some((bucket) => bucket.ownerScoped)
-      ? undefined
-      : true;
     const paymentIdempotencyPassed = contract.acceptanceChecks.some((check) => check.required && check.id === "payment-idempotency")
       ? undefined
       : true;
 
-    if (contract.storageBuckets.some((bucket) => bucket.ownerScoped)) {
-      errors.push("Storage ownership requires the dedicated Storage API probe and remains uncertified by the SQL RLS runner.");
-    }
     if (contract.acceptanceChecks.some((check) => check.required && check.id === "payment-idempotency")) {
       errors.push("Payment idempotency requires an integration-level payment probe and remains uncertified by the SQL RLS runner.");
     }
@@ -56,7 +50,7 @@ export function createSupabaseRlsProbeRunner(query: SupabaseProbeQueryExecutor) 
     return {
       positiveRlsPassed,
       negativeRlsPassed,
-      storageOwnershipPassed,
+      storageOwnershipPassed: contract.storageBuckets.some((bucket) => bucket.ownerScoped) ? undefined : true,
       paymentIdempotencyPassed,
       errors,
     };

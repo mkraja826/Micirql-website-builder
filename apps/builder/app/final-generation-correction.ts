@@ -17,6 +17,7 @@ const PROMINENT_FAMILIES = new Set(["hero", "about", "team", "gallery", "service
 const AUTHORITY_FAMILIES = new Set(["team", "testimonials", "stats"]);
 const DISCOVERY_FAMILIES = new Set(["services", "features", "gallery"]);
 const SHELL_FAMILIES = new Set(["navbar", "footer"]);
+const MAX_RECOVERY_PASSES = 3;
 
 export function applyFinalGenerationCorrection(site: Site): FinalGenerationCorrection {
   const initial = evaluateFinalGenerationAcceptance(site);
@@ -24,39 +25,51 @@ export function applyFinalGenerationCorrection(site: Site): FinalGenerationCorre
 
   let candidate = structuredClone(site);
   const repairs: string[] = [];
-  const failed = new Set(initial.dimensions.filter((dimension) => !dimension.ready).map((dimension) => dimension.id));
+  let final = initial;
 
-  if (failed.has("content") || failed.has("premium") || failed.has("flagship-visual")) {
-    const repaired = repairContentDepth(candidate);
-    if (JSON.stringify(repaired) !== JSON.stringify(candidate)) repairs.push("content-depth");
-    candidate = repaired;
+  for (let pass = 1; pass <= MAX_RECOVERY_PASSES && !final.ready; pass += 1) {
+    const beforePass = JSON.stringify(candidate);
+    const failed = new Set(final.dimensions.filter((dimension) => !dimension.ready).map((dimension) => dimension.id));
+    const passRepairs: string[] = [];
+
+    if (failed.has("content") || failed.has("premium") || failed.has("flagship-visual")) {
+      const repaired = repairContentDepth(candidate);
+      if (JSON.stringify(repaired) !== JSON.stringify(candidate)) passRepairs.push("content-depth");
+      candidate = repaired;
+    }
+
+    if (failed.has("flagship-visual")) {
+      const flagshipRepairs = repairFlagshipComposition(candidate);
+      if (flagshipRepairs > 0) passRepairs.push(`flagship-composition:${flagshipRepairs}`);
+    }
+
+    if (failed.has("typography")) {
+      if (repairTypography(candidate)) passRepairs.push("typography-system");
+    }
+
+    if (failed.has("mobile-structure") || failed.has("typography")) {
+      const compacted = compactMobileRiskCopy(candidate);
+      if (compacted > 0) passRepairs.push(`mobile-copy:${compacted}`);
+    }
+
+    if (failed.has("imagery")) {
+      const mediaRepairs = repairImageReferences(candidate);
+      if (mediaRepairs > 0) passRepairs.push(`imagery:${mediaRepairs}`);
+    }
+
+    candidate = siteSchema.parse(candidate);
+    const premiumCorrection = applyPremiumQualityCorrection(candidate);
+    candidate = premiumCorrection.site;
+    if (premiumCorrection.applied) passRepairs.push("premium-rhythm");
+
+    final = evaluateFinalGenerationAcceptance(candidate);
+    const failedAfter = final.dimensions.filter((dimension) => !dimension.ready).map((dimension) => dimension.id);
+    repairs.push(`pass-${pass}[${passRepairs.length ? passRepairs.join(",") : "no-change"}]=>${failedAfter.length ? failedAfter.join(",") : "ready"}`);
+
+    // Avoid burning all passes when the correction engine cannot change the candidate.
+    if (JSON.stringify(candidate) === beforePass) break;
   }
 
-  if (failed.has("flagship-visual")) {
-    const flagshipRepairs = repairFlagshipComposition(candidate);
-    if (flagshipRepairs > 0) repairs.push(`flagship-composition:${flagshipRepairs}`);
-  }
-
-  if (failed.has("typography")) {
-    if (repairTypography(candidate)) repairs.push("typography-system");
-  }
-
-  if (failed.has("mobile-structure") || failed.has("typography")) {
-    const compacted = compactMobileRiskCopy(candidate);
-    if (compacted > 0) repairs.push(`mobile-copy:${compacted}`);
-  }
-
-  if (failed.has("imagery")) {
-    const mediaRepairs = repairImageReferences(candidate);
-    if (mediaRepairs > 0) repairs.push(`imagery:${mediaRepairs}`);
-  }
-
-  candidate = siteSchema.parse(candidate);
-  const premiumCorrection = applyPremiumQualityCorrection(candidate);
-  candidate = premiumCorrection.site;
-  if (premiumCorrection.applied) repairs.push("premium-rhythm");
-
-  const final = evaluateFinalGenerationAcceptance(candidate);
   const applied = JSON.stringify(candidate) !== JSON.stringify(site);
   return { site: candidate, initial, final, attempted: true, applied, repairs };
 }
@@ -124,7 +137,6 @@ function arrangeFlagshipOpening(sections: Site["pages"][number]["sections"]): {
     changed += 1;
   };
 
-  // Flagship opening: hero -> authority/proof -> discovery -> a distinct narrative role.
   placeFamily(1, AUTHORITY_FAMILIES);
   placeFamily(2, DISCOVERY_FAMILIES);
 

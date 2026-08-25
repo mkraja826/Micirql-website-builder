@@ -12,6 +12,9 @@ test("rendered typography browser measures real responsive geometry", () => {
   expect(source).toContain("CARD_TITLE_HEIGHT_VARIANCE");
   expect(source).toContain("getBoundingClientRect()");
   expect(source).toContain("document.createRange()");
+  expect(source).toContain("range.getClientRects()");
+  expect(source).toContain("renderedTextRects");
+  expect(source).not.toContain("node.getBoundingClientRect().height / Math.max(1, lineHeight(node))");
 });
 
 test("dental blueprint certification requires rendered typography at every target", () => {

@@ -45,7 +45,31 @@ export async function measureRenderedPageTypography(rootLocator: Locator, width:
       const fontSize = Number.parseFloat(style.fontSize) || 16;
       return Number.isFinite(explicit) ? explicit : fontSize * 1.2;
     };
-    const lineCount = (node: Element) => Math.max(1, Math.round(node.getBoundingClientRect().height / Math.max(1, lineHeight(node))));
+    const renderedTextRects = (node: Element) => {
+      const range = document.createRange();
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      const rects: DOMRect[] = [];
+      while (walker.nextNode()) {
+        const textNode = walker.currentNode as Text;
+        if (!textNode.data.trim()) continue;
+        range.selectNodeContents(textNode);
+        for (const client of Array.from(range.getClientRects())) {
+          if (client.width > 0 && client.height > 0) rects.push(client);
+        }
+      }
+      return rects;
+    };
+    const lineCount = (node: Element) => {
+      const rects = renderedTextRects(node);
+      if (!rects.length) return 1;
+      const tolerance = Math.max(2, lineHeight(node) * 0.35);
+      const centers: number[] = [];
+      for (const rect of rects.sort((a, b) => a.top - b.top || a.left - b.left)) {
+        const center = (rect.top + rect.bottom) / 2;
+        if (!centers.some((existing) => Math.abs(existing - center) <= tolerance)) centers.push(center);
+      }
+      return Math.max(1, centers.length);
+    };
     const selectorFor = (node: Element) => {
       const section = node.closest("[data-mi-section-id]");
       const sectionId = section?.getAttribute("data-mi-section-id") ?? "page";
@@ -55,26 +79,12 @@ export async function measureRenderedPageTypography(rootLocator: Locator, width:
     const lastRenderedLineRatio = (node: Element) => {
       const text = (node.textContent ?? "").trim().replace(/\s+/g, " ");
       if (!text || text.split(" ").length < 3) return 1;
-      const range = document.createRange();
-      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
-      const textNodes: Text[] = [];
-      while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-      if (!textNodes.length) return 1;
       const rect = node.getBoundingClientRect();
-      const allRects: DOMRect[] = [];
-      for (const textNode of textNodes) {
-        const value = textNode.data;
-        for (let offset = 0; offset < value.length; offset += 1) {
-          if (/\s/.test(value[offset] ?? "")) continue;
-          range.setStart(textNode, offset);
-          range.setEnd(textNode, Math.min(value.length, offset + 1));
-          const client = range.getBoundingClientRect();
-          if (client.width > 0 && client.height > 0) allRects.push(client);
-        }
-      }
+      const allRects = renderedTextRects(node);
       if (!allRects.length || rect.width <= 0) return 1;
       const bottom = Math.max(...allRects.map((item) => item.bottom));
-      const last = allRects.filter((item) => Math.abs(item.bottom - bottom) <= 2);
+      const tolerance = Math.max(2, lineHeight(node) * 0.2);
+      const last = allRects.filter((item) => Math.abs(item.bottom - bottom) <= tolerance);
       if (!last.length) return 1;
       const left = Math.min(...last.map((item) => item.left));
       const right = Math.max(...last.map((item) => item.right));

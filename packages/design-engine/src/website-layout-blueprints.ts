@@ -163,8 +163,8 @@ function rank(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelection
       rawScore += 30;
       reasons.push(`subindustry: ${input.subindustryId}`);
       if (layout.fit.subindustryIds.length === 1) {
-        rawScore += 6;
-        reasons.push("subindustry specificity: specialist layout +6");
+        rawScore += 12;
+        reasons.push("subindustry specificity: specialist layout +12");
       }
     }
     rawScore += overlapScore(input.goals, layout.fit.goals, 20, reasons, "goal");

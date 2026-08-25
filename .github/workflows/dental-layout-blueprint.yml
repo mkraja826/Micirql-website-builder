@@ -95,7 +95,7 @@ jobs:
           node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
           const fs = require('fs');
           const path = require('path');
-          const root = 'test-results';
+          const root = 'dental-certification-results';
           const expectedLayouts = 20;
           const expectedWidths = [360, 390, 430, 768, 1024, 1440];
           const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
@@ -129,7 +129,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: micirql-dental-layout-blueprints
-          path: test-results/dental-layout-blueprint-*
+          path: dental-certification-results/dental-layout-blueprint-*
           retention-days: 30
 
       - name: Enforce complete 20-layout certification gate
@@ -143,7 +143,7 @@ jobs:
           const path = require('path');
           const expectedLayouts = 20;
           const expectedWidths = [360, 390, 430, 768, 1024, 1440];
-          const root = 'test-results';
+          const root = 'dental-certification-results';
           const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
           const dirs = fs.existsSync(root)
             ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()

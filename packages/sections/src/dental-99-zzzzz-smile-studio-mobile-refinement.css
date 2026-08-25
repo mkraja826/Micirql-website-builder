@@ -1,0 +1,256 @@
+/* Smile Studio mobile art-direction refinement.
+ * Keep this late in the Dental cascade so mobile preserves the curated desktop
+ * identity instead of degrading into the shared generic one-column safety layout.
+ * Geometry remains bounded; this layer changes composition, spacing and hierarchy only.
+ */
+
+@media (max-width:47.99rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"]{
+    --mi-section-space:clamp(3.5rem,12vw,5rem);
+  }
+
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-container{
+    width:min(100% - 2.25rem,var(--mi-content-lg));
+  }
+
+  /* Navigation: compact premium shell, not a tall desktop bar squeezed onto mobile. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered{
+    min-height:4.5rem;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-nav-centered .mi-shell-brand{
+    font-size:1.05rem;
+    max-width:calc(100% - 3.75rem);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* Hero: preserve editorial hierarchy while using a deliberate mobile sequence. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial{
+    padding-top:clamp(3rem,10vw,4rem);
+    padding-bottom:clamp(3.75rem,12vw,5.25rem);
+    background:
+      radial-gradient(circle at 88% 8%,var(--mi-smile-lilac),transparent 16rem),
+      radial-gradient(circle at 5% 90%,var(--mi-smile-blush),transparent 15rem),
+      var(--mi-smile-ivory);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid{
+    display:grid;
+    grid-template-columns:3.2rem minmax(0,1fr)!important;
+    gap:.9rem 1rem;
+    align-items:start;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__index{
+    grid-column:1;
+    grid-row:1;
+    margin:0;
+    padding:.2rem 0 0;
+    font-size:clamp(2.6rem,13vw,3.7rem);
+    line-height:.82;
+    opacity:.9;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__copy{
+    grid-column:2;
+    grid-row:1;
+    width:100%;
+    gap:.9rem!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--eyebrow{
+    font-size:.72rem;
+    letter-spacing:.14em;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--display{
+    max-width:10.5ch;
+    font-size:clamp(2.8rem,12vw,4rem)!important;
+    line-height:.93!important;
+    letter-spacing:-.052em!important;
+    text-wrap:balance;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--body{
+    max-width:31rem;
+    font-size:1rem;
+    line-height:1.62;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__actions{
+    display:flex!important;
+    flex-wrap:wrap;
+    gap:.65rem!important;
+    width:auto;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__action{
+    width:auto!important;
+    min-width:min(11rem,100%);
+    min-height:48px;
+    padding-inline:1.15rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media{
+    grid-column:1/-1;
+    grid-row:2;
+    margin-top:.55rem;
+    transform:none;
+    border-radius:1.35rem 1.35rem .55rem .55rem;
+    box-shadow:0 1.25rem 2.8rem color-mix(in srgb,var(--mi-smile-ink) 11%,transparent);
+    overflow:hidden;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__media img{
+    width:100%;
+    aspect-ratio:4/3;
+    min-height:0;
+    max-height:28rem;
+    object-fit:cover;
+    object-position:center 28%;
+  }
+
+  /* Empty evidence sections should stay visually quiet instead of creating huge blank bands. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-gallery-section--mosaic,.mi-team--featured,.mi-proof--quote) .mi-content-heading,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] :is(.mi-gallery-section--mosaic,.mi-team--featured,.mi-proof--quote) .mi-section__heading{
+    max-width:28rem;
+  }
+
+  /* Gallery: editorial horizontal rail on phone, retaining image-led character. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:min(82vw,20rem);
+    grid-template-columns:none!important;
+    grid-auto-rows:minmax(17rem,55vw);
+    gap:.8rem;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+    padding-bottom:.25rem;
+    overscroll-behavior-inline:contain;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic::-webkit-scrollbar{display:none}
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-gallery-mosaic .mi-gallery-card{
+    grid-column:auto!important;
+    grid-row:auto!important;
+    margin-top:0!important;
+    min-height:17rem;
+    scroll-snap-align:start;
+  }
+
+  /* Treatment cards: compact horizontal cards instead of repetitive full-width slabs. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-services-spotlight{
+    display:grid;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:.75rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-services--spotlight .mi-service-item{
+    min-height:0;
+    padding:1.15rem 1.1rem;
+    border-radius:1rem;
+    box-shadow:0 .65rem 1.8rem color-mix(in srgb,var(--mi-smile-ink) 5%,transparent);
+  }
+
+  /* Team: featured profile remains editorial; secondary profiles become compact rows. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-featured{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:minmax(7rem,.72fr) minmax(0,1.28fr)!important;
+    gap:1rem;
+    align-items:center;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    min-height:0;
+    aspect-ratio:4/5;
+    border-radius:1rem;
+  }
+
+  /* Quote section: premium editorial quote, but not an oversized dark wall. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote{
+    padding-block:clamp(3.75rem,13vw,5.5rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-proof--quote blockquote p{
+    max-width:18ch;
+    font-size:clamp(1.9rem,8vw,2.8rem)!important;
+    line-height:1.06!important;
+    text-wrap:balance;
+  }
+
+  /* Journey reads like a designed timeline instead of three unrelated cards. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-timeline{
+    display:grid;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:0;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-process-node{
+    display:grid;
+    grid-template-columns:2.75rem minmax(0,1fr);
+    gap:.9rem;
+    padding:1.15rem .1rem 1.2rem;
+    border-top:1px solid color-mix(in srgb,var(--mi-color-border) 72%,transparent);
+  }
+
+  /* Conversion CTA: retain a premium split-card feeling with actions sized to content. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split{
+    padding-block:clamp(3.25rem,11vw,4.5rem);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-cta-split{
+    padding:clamp(1.35rem,6vw,2rem);
+    border-radius:1.25rem;
+    box-shadow:0 1.2rem 2.8rem color-mix(in srgb,var(--mi-color-primary) 15%,transparent);
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-actions{
+    display:flex!important;
+    flex-wrap:wrap;
+    gap:.65rem;
+    width:auto;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn{
+    width:auto!important;
+    min-width:min(10.5rem,100%);
+    min-height:48px!important;
+    padding-inline:1rem!important;
+  }
+
+  /* Contact: visual hierarchy first, form second, with tighter fields and card radius. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-split{
+    display:grid;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:1.5rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-contact-form{
+    padding:1.15rem;
+    border-radius:1.1rem;
+    box-shadow:0 .8rem 2rem color-mix(in srgb,var(--mi-smile-ink) 6%,transparent);
+  }
+
+  /* Footer: avoid a long stack of evenly weighted links. */
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-shell-footer--editorial .mi-footer-wordmark{
+    font-size:clamp(2.15rem,10vw,3.4rem);
+    line-height:.94;
+    max-width:9ch;
+  }
+}
+
+@media (max-width:27rem){
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-container{
+    width:min(100% - 1.5rem,var(--mi-content-lg));
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-hero__editorial-grid{
+    grid-template-columns:2.55rem minmax(0,1fr)!important;
+    gap:.75rem .75rem;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-type--display{
+    font-size:clamp(2.45rem,11.5vw,3.25rem)!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-hero--editorial .mi-section__action,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-conv-cta--split .mi-conv-btn{
+    width:100%!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead img,
+  [data-mi-layout-blueprint="dental-03-smile-studio"] .mi-team--featured .mi-team-card--lead .mi-team-avatar{
+    max-height:22rem;
+    width:100%;
+    object-fit:cover;
+  }
+}

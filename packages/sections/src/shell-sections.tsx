@@ -43,12 +43,39 @@ function logoPlacement(logo: LogoPresentation, location: "navbar" | "footer") {
   return { shape, maxHeight, desktopWidth, mobileWidth, mobileHeight, surface };
 }
 
-function BrandMark({ props, location }: { props: VariantProps; location: "navbar" | "footer" }) {
-  if (!props.logo?.src) {
-    return location === "navbar"
-      ? <a href="/" className="mi-shell-brand"><InlineField path="title">{props.title}</InlineField></a>
-      : <div className="mi-footer-brand"><strong><InlineField path="title">{props.title}</InlineField></strong>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div>
+function fallbackInitial(title: string) {
+  const normalized = title.trim();
+  return normalized ? normalized.charAt(0).toUpperCase() : "M";
+}
+
+function FallbackBrand({ props, location }: { props: VariantProps; location: "navbar" | "footer" }) {
+  const mark = <span
+    className={`mi-brand-logo mi-brand-logo--neutral-container mi-brand-logo--square mi-brand-logo--${location}`}
+    data-logo-fallback="true"
+    data-logo-location={location}
+    style={{
+      width: location === "navbar" ? "42px" : "48px",
+      height: location === "navbar" ? "42px" : "48px",
+      flex: "0 0 auto",
+      padding: 0,
+      fontSize: location === "navbar" ? ".92rem" : "1rem",
+      lineHeight: 1,
+      fontWeight: 900,
+      letterSpacing: "-.03em",
+      color: "var(--mi-color-primary)",
+      background: "var(--mi-color-surface-elevated)",
+    }}
+    aria-hidden="true"
+  >{fallbackInitial(props.title)}</span>;
+
+  if (location === "navbar") {
+    return <a href="/" className="mi-shell-brand mi-shell-brand--fallback" style={{ gap: ".65rem" }}>{mark}<InlineField path="title">{props.title}</InlineField></a>;
   }
+  return <div className="mi-footer-brand mi-footer-brand--fallback"><div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>{mark}<strong><InlineField path="title">{props.title}</InlineField></strong></div>{props.description ? <p><InlineField path="description">{props.description}</InlineField></p> : null}</div>;
+}
+
+function BrandMark({ props, location }: { props: VariantProps; location: "navbar" | "footer" }) {
+  if (!props.logo?.src) return <FallbackBrand props={props} location={location} />;
 
   const treatment = props.logo.treatment ?? "direct";
   const placement = logoPlacement(props.logo, location);
@@ -100,7 +127,7 @@ export function StructuralNavbar(props: VariantProps) {
   if (props.variant === 2) return <header className="mi-shell-navbar mi-shell-navbar--utility"><div className="mi-nav-utility"><Container><span>{props.description || "Welcome"}</span>{props.primaryAction ? <a href={props.primaryAction.href}>{props.primaryAction.label}</a> : null}</Container></div><Container><div className="mi-nav-row">{brand}<NavLinks items={items} groups={groups} /><PrimaryAction action={props.primaryAction} />{menu}</div></Container></header>;
   if (props.variant === 3) { const midpoint = Math.ceil(items.length / 2); return <header className="mi-shell-navbar mi-shell-navbar--centered"><Container><div className="mi-nav-centered"><NavLinks items={items.slice(0, midpoint)} />{brand}<NavLinks items={items.slice(midpoint)} groups={groups} /><div className="mi-nav-centered__action"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header> }
   if (props.variant === 4) return <header className="mi-shell-navbar mi-shell-navbar--floating"><Container><div className="mi-nav-float">{brand}<NavLinks items={items} groups={groups} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
-  if (props.variant === 5) return <header className="mi-shell-navbar mi-shell-navbar--minimal"><Container><div className="mi-nav-row">{brand}<div className="mi-nav-minimal-copy">{props.description ? <span>{props.description}</span> : null}</div><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
+  if (props.variant === 5) return <header className="mi-shell-navbar mi-shell-navbar--minimal"><Container><div className="mi-nav-row">{brand}{items.length || groups.length ? <NavLinks items={items} groups={groups} /> : <div className="mi-nav-minimal-copy">{props.description ? <span>{props.description}</span> : null}</div>}<div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>;
   return <header className="mi-shell-navbar mi-shell-navbar--classic"><Container><div className="mi-nav-row">{brand}<NavLinks items={items} groups={groups} /><div className="mi-nav-actions"><PrimaryAction action={props.primaryAction} />{menu}</div></div></Container></header>
 }
 

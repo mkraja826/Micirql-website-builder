@@ -81,8 +81,8 @@ jobs:
         run: |
           pnpm qa:dental-blueprint
           pnpm exec playwright test --config=playwright.dental-blueprint.config.ts \
-            qa/dental-layout-blueprint.spec.ts \
-            qa/dental-layout-blueprint-0[2-9].spec.ts \
+            qa/dental-layout-blueprint-00.spec.ts \
+            qa/dental-layout-blueprint-0[4-9].spec.ts \
             qa/dental-layout-blueprint-1[0-9].spec.ts \
             qa/dental-layout-blueprint-20.spec.ts
 

@@ -2,6 +2,9 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
+  // Keep Playwright-owned artifacts separate from the durable certification
+  // evidence written by dental-blueprint-qa.ts under test-results/.
+  outputDir: "playwright-results/dental-blueprint",
   // qa:dental-blueprint passes an explicit file list. Keep the config broad so
   // those quality layers are not silently filtered out by an older filename-only
   // match rule as the certification pipeline grows.

@@ -76,6 +76,7 @@ import "./editor-mode-polish.css";
 import "./editor-adaptive-breakpoints.css";
 import "./auth-signout-position.css";
 import "./mobile-layout-hardening.css";
+import "./product-ux-system.css";
 import { PreviewInteractionGuard } from "./preview-interaction-guard";
 
 export const metadata: Metadata = {

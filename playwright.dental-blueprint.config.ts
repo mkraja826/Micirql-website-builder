@@ -2,6 +2,11 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
+  // Keep Playwright's disposable runner artifacts separate from the durable
+  // Dental certification evidence written to test-results/dental-layout-blueprint-*.
+  // Playwright cleans outputDir at the start of each run, while the workflow's
+  // final 20-layout gate must read those certification reports after the run.
+  outputDir: "playwright-results/dental-blueprint",
   // qa:dental-blueprint passes an explicit file list. Keep the config broad so
   // those quality layers are not silently filtered out by an older filename-only
   // match rule as the certification pipeline grows.

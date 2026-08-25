@@ -73,7 +73,7 @@ begin
   select pg_get_functiondef('public.run_site_build(uuid,uuid)'::regprocedure)
     into v_def;
 
-  if position('''Treatments'',''href'',''#services''') = 0 then
+  if position('''Treatments'',''href'',''#services''' in v_def) = 0 then
     v_def := replace(v_def, '''Services'',''href'',''#services''', '''Treatments'',''href'',''#services''');
     v_def := replace(v_def, '''Explore services'',''href'',''#services''', '''Explore treatments'',''href'',''#services''');
     v_def := replace(

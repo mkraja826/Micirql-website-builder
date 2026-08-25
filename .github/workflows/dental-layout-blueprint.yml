@@ -79,12 +79,12 @@ jobs:
         id: dental_qa
         continue-on-error: true
         run: |
+          pnpm qa:dental-blueprint
           pnpm exec playwright test --config=playwright.dental-blueprint.config.ts \
             qa/dental-layout-blueprint.spec.ts \
             qa/dental-layout-blueprint-0[2-9].spec.ts \
             qa/dental-layout-blueprint-1[0-9].spec.ts \
             qa/dental-layout-blueprint-20.spec.ts
-          pnpm qa:dental-blueprint
 
       - name: Add certification summary
         if: always()

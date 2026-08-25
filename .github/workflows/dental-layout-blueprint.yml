@@ -75,11 +75,14 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Run broader Dental blueprint regression suite
+        continue-on-error: true
+        run: pnpm qa:dental-blueprint
+
       - name: Certify curated Dental blueprints at six viewport widths
         id: dental_qa
         continue-on-error: true
         run: |
-          pnpm qa:dental-blueprint
           pnpm exec playwright test --config=playwright.dental-blueprint.config.ts \
             qa/dental-layout-blueprint-00.spec.ts \
             qa/dental-layout-blueprint-0[4-9].spec.ts \

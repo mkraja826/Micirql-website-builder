@@ -123,7 +123,7 @@ export async function runDentalBlueprintCertification(args: {
   await args.page.getByRole("button", { name: "Open editor" }).first().click();
   await installCaptureStyles(args.page);
 
-  const output = path.join(process.cwd(), "test-results", args.outputName);
+  const output = path.join(process.cwd(), "dental-certification-results", args.outputName);
   await mkdir(output, { recursive: true });
   const results: Array<Record<string, unknown>> = [];
 

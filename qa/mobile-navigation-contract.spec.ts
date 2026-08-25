@@ -22,3 +22,14 @@ test("mobile CSS makes the burger visible and touch-safe", () => {
   expect(premiumMobile).toContain(".mi-shell-navbar .mi-burger{display:flex!important");
   expect(premiumMobile).toContain("width:44px!important;height:44px!important");
 });
+
+test("minimal navbar keeps real primary navigation on desktop", () => {
+  expect(shell).toContain('props.variant === 5');
+  expect(shell).toContain('items.length || groups.length ? <NavLinks items={items} groups={groups} />');
+});
+
+test("missing logo renders an intentional brand fallback instead of an empty slot", () => {
+  expect(shell).toContain('data-logo-fallback="true"');
+  expect(shell).toContain('className="mi-shell-brand mi-shell-brand--fallback"');
+  expect(shell).toContain('fallbackInitial(props.title)');
+});

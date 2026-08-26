@@ -113,11 +113,10 @@ test("Pearl Dental certified materialization renders through editor and preview 
   await page.goto("/");
   await page.getByRole("button", { name: "Open editor" }).first().click();
   await expect(page.getByText("Pearl Dental").first()).toBeVisible();
-  await expect(page.getByText("Treatments").first()).toBeVisible();
+  await expect(page.locator('[data-mi-prop-path="title"]', { hasText: "Treatments" }).first()).toBeVisible();
   await expect(page.getByText("Request an appointment").first()).toBeVisible();
   await expect(page.getByText("Clinical team").first()).toBeVisible();
   await expect(page.getByText("Only verified patient feedback should be published here.").first()).toBeVisible();
-
   const previewPublish = page.getByRole("button", { name: /Preview.*publish|Publish/i }).last();
   await previewPublish.click();
   await expect(page.getByText(/Ready to launch|blocker/i)).toBeVisible();

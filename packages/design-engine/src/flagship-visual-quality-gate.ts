@@ -105,7 +105,29 @@ function family(componentId: string): string | undefined {
   const value = componentId.toLowerCase();
   const families = ["navbar", "hero", "about", "services", "features", "process", "testimonials", "gallery", "portfolio", "team", "pricing", "cta", "contact", "lead-capture", "form", "faq", "stats", "footer"];
   for (const item of families) if (value === `${item}.placeholder` || value.startsWith(`${item}.`)) return item;
-  const codes: Record<string, string> = { nav: "navbar", hero: "hero", about: "about", services: "services", features: "features", process: "process", testimonials: "testimonials", gallery: "gallery", team: "team", pricing: "pricing", cta: "cta", contact: "contact", stats: "stats", footer: "footer" };
+  const codes: Record<string, string> = {
+    nav: "navbar",
+    hero: "hero",
+    about: "about",
+    serv: "services",
+    services: "services",
+    feat: "features",
+    features: "features",
+    proc: "process",
+    process: "process",
+    test: "testimonials",
+    testimonials: "testimonials",
+    gall: "gallery",
+    gallery: "gallery",
+    team: "team",
+    pricing: "pricing",
+    cta: "cta",
+    cont: "contact",
+    contact: "contact",
+    stats: "stats",
+    foot: "footer",
+    footer: "footer",
+  };
   for (const [code, item] of Object.entries(codes)) if (value.includes(`-${code}-`)) return item;
   return undefined;
 }

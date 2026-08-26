@@ -32,37 +32,37 @@ export function planRenderedPageTypographyRepair(input: {
   const root = "[data-mi-rendered-typography-repair='1']";
   const rules: string[] = [];
   if (operations.includes("rebalance-heading-wrap")) {
-    const h1 = viewport === "mobile" ? "clamp(2rem,7.5vw,2.65rem)" : viewport === "tablet" ? "clamp(2.5rem,4.8vw,3.75rem)" : "clamp(3rem,4vw,5rem)";
-    const h2 = viewport === "mobile" ? "clamp(1.75rem,6vw,2.25rem)" : viewport === "tablet" ? "clamp(2rem,3.8vw,2.85rem)" : "clamp(2.25rem,3vw,3.4rem)";
+    const h1 = viewport === "mobile" ? "clamp(2rem,7.5vw,2.65rem)" : viewport === "tablet" ? "clamp(2.25rem,4vw,3.25rem)" : "clamp(2.5rem,3vw,3.75rem)";
+    const h2 = viewport === "mobile" ? "clamp(1.6rem,5.5vw,2.1rem)" : viewport === "tablet" ? "clamp(1.85rem,3.2vw,2.5rem)" : "clamp(2rem,2.4vw,2.75rem)";
     const h1Measure = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
     const h2Measure = viewport === "mobile" ? "26ch" : viewport === "tablet" ? "30ch" : "34ch";
-    rules.push(`${root} h1{font-size:${h1};line-height:1;max-width:${h1Measure};text-wrap:balance}`);
-    rules.push(`${root} h2{font-size:${h2};line-height:1.05;max-width:${h2Measure};text-wrap:balance}`);
-    rules.push(`${root} h3{max-width:32ch;line-height:1.12;text-wrap:balance}`);
+    rules.push(`${root} h1{font-size:${h1}!important;line-height:1!important;max-width:${h1Measure}!important;text-wrap:balance!important}`);
+    rules.push(`${root} h2{font-size:${h2}!important;line-height:1.05!important;max-width:${h2Measure}!important;text-wrap:balance!important}`);
+    rules.push(`${root} h3{max-width:32ch!important;line-height:1.12!important;text-wrap:balance!important}`);
   }
   if (operations.includes("stabilize-action-wrap")) {
     const actionSize = viewport === "mobile" ? "clamp(.8rem,3.2vw,.95rem)" : viewport === "tablet" ? "clamp(.84rem,1.8vw,.98rem)" : "clamp(.88rem,1.2vw,1rem)";
     const actionPadding = viewport === "mobile" ? ".65rem" : viewport === "tablet" ? ".8rem" : ".9rem";
     const actionGroup = `${root} .mi-section__actions,${root} [class*='actions'],${root} [class*='cta-group'],${root} [class*='button-group']`;
 
-    rules.push(`${root} a,${root} button{max-width:100%;min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none;line-height:1.15;font-size:${actionSize}}`);
-    rules.push(`${root} .mi-section__action,${root} [class*='cta'] a,${root} [class*='cta'] button{white-space:normal;line-height:1.15;min-height:44px;padding-inline:${actionPadding};text-align:center;width:fit-content;max-width:100%;min-width:0}`);
-    rules.push(`${actionGroup}{display:flex;flex-wrap:wrap;align-items:stretch;gap:min(.75rem,2vw);min-width:0;max-width:100%}`);
+    rules.push(`${root} a,${root} button{max-width:100%!important;min-width:0!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;line-height:1.15!important;font-size:${actionSize}!important}`);
+    rules.push(`${root} .mi-section__action,${root} [class*='cta'] a,${root} [class*='cta'] button{white-space:normal!important;line-height:1.15!important;min-height:44px!important;padding-inline:${actionPadding}!important;text-align:center!important;width:fit-content!important;max-width:100%!important;min-width:0!important}`);
+    rules.push(`${actionGroup}{display:flex!important;flex-wrap:wrap!important;align-items:stretch!important;gap:min(.75rem,2vw)!important;min-width:0!important;max-width:100%!important}`);
 
     if (viewport === "mobile") {
-      rules.push(`${actionGroup}{width:100%;flex-direction:column}`);
-      rules.push(`${actionGroup}>a,${actionGroup}>button,${root} .mi-section__action{width:100%;max-width:100%;flex:0 1 100%}`);
+      rules.push(`${actionGroup}{width:100%!important;flex-direction:column!important}`);
+      rules.push(`${actionGroup}>a,${actionGroup}>button,${root} .mi-section__action{width:100%!important;max-width:100%!important;flex:0 1 100%!important}`);
     } else {
-      rules.push(`${actionGroup}>a,${actionGroup}>button{flex:0 1 auto;max-width:100%}`);
+      rules.push(`${actionGroup}>a,${actionGroup}>button{flex:0 1 auto!important;max-width:100%!important}`);
     }
 
-    rules.push(`${root} nav a,${root} header a,${root} nav button,${root} header button{white-space:nowrap;font-size:clamp(.78rem,1.6vw,.95rem);padding-inline:min(.75rem,2vw)}`);
+    rules.push(`${root} nav a,${root} header a,${root} nav button,${root} header button{white-space:nowrap!important;font-size:clamp(.78rem,1.6vw,.95rem)!important;padding-inline:min(.75rem,2vw)!important}`);
   }
   if (operations.includes("relax-paragraph-measure")) {
-    rules.push(`${root} p,${root} .mi-type--body,${root} .mi-type--body-sm{max-width:${viewport === "mobile" ? "58ch" : "64ch"};line-height:1.65}`);
+    rules.push(`${root} p,${root} .mi-type--body,${root} .mi-type--body-sm{max-width:${viewport === "mobile" ? "58ch" : "64ch"}!important;line-height:1.65!important}`);
   }
   if (operations.includes("normalize-card-title-rhythm")) {
-    rules.push(`${root} .mi-card h3,${root} .mi-service-item h3,${root} [class*='card'] h3,${root} [class*='item'] h3{min-height:2.24em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}`);
+    rules.push(`${root} .mi-card h3,${root} .mi-service-item h3,${root} [class*='card'] h3,${root} [class*='item'] h3{min-height:2.24em!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}`);
   }
 
   return {

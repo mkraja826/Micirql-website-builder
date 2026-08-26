@@ -109,7 +109,12 @@ function buildRepairCss(viewport: FirstScreenRepairViewport, operations: FirstSc
 
   if (operations.includes("reduce-headline-wrap")) {
     const maxWidth = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
-    rules.push(`${h1}{max-width:${maxWidth}!important;text-wrap:balance;}`);
+    const fontSize = viewport === "mobile"
+      ? "clamp(2rem,7.5vw,2.65rem)"
+      : viewport === "tablet"
+        ? "clamp(2.25rem,4vw,3.25rem)"
+        : "clamp(2.5rem,3vw,3.75rem)";
+    rules.push(`${h1}{font-size:${fontSize}!important;max-width:${maxWidth}!important;text-wrap:balance!important;}`);
   }
 
   if (operations.includes("compress-navigation")) {

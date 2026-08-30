@@ -33,3 +33,15 @@ test("Dental 15 and 19 constrain whole-page authored containers at the narrow ta
   expect(css).not.toContain("overflow-x:hidden");
   expect(css).not.toContain("overflow-x:clip");
 });
+
+test("rendered repair selectors outrank authored important typography without becoming global", () => {
+  const typographyRepair = readFileSync("apps/builder/app/rendered-page-typography-repair.ts", "utf8");
+  const firstScreenRepair = readFileSync("apps/builder/app/rendered-first-screen-repair.ts", "utf8");
+
+  expect(typographyRepair).toContain("const priorityRoot = `${root}${root}${root}${root}`");
+  expect(typographyRepair).toContain("`${priorityRoot} h1{font-size:${h1}!important");
+  expect(firstScreenRepair).toContain("const PRIORITY_ROOT = `${ROOT}${ROOT}${ROOT}${ROOT}`");
+  expect(firstScreenRepair).toContain("const h1 = `${PRIORITY_ROOT} h1`");
+  expect(typographyRepair).not.toContain("body h1{");
+  expect(firstScreenRepair).not.toContain("body h1{");
+});

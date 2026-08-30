@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import type { CSSProperties, DragEvent, MouseEvent } from "react";
+import type { CSSProperties, DragEvent, KeyboardEvent as ReactKeyboardEvent, MouseEvent } from "react";
 import type { Site } from "@micirql/schema";
 import { installFaqAccordions, installGalleryLightboxes, SeedSection, seedSectionCatalog, sectionDesignId, type SectionFamily } from "@micirql/sections";
 import { persistedFirstScreenRepairCss } from "./persisted-first-screen-repair";
@@ -21,6 +21,26 @@ type PreviewPayload = {
   themeStyle?: Record<string, string>;
   sections?: PreviewSection[];
   issues?: Array<{ message: string }>;
+};
+
+const hoverAffordanceStyle: CSSProperties = {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  zIndex: 7,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  minHeight: 30,
+  padding: "0 10px",
+  border: "1px solid rgba(255,255,255,.18)",
+  borderRadius: 999,
+  background: "rgba(17,17,21,.9)",
+  color: "#fff",
+  boxShadow: "0 8px 24px rgba(0,0,0,.18)",
+  backdropFilter: "blur(12px)",
+  cursor: "pointer",
+  font: "600 11px/1 Inter, ui-sans-serif, system-ui, sans-serif",
 };
 
 export function RendererPreview({
@@ -57,6 +77,7 @@ export function RendererPreview({
   const [error, setError] = useState("");
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
   const [dropIndex, setDropIndex] = useState<number>();
+  const [hoveredSectionId, setHoveredSectionId] = useState<string>();
   const requestId = useRef(0);
   const previewRoot = useRef<HTMLElement>(null);
   const repairCss = persistedFirstScreenRepairCss(site, viewport, path);
@@ -115,6 +136,13 @@ export function RendererPreview({
     event.preventDefault(); event.stopPropagation(); onSelectSection(sectionId);
   }
 
+  function handleSectionKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, sectionId: string) {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onSelectSection(sectionId);
+  }
+
   function handleDrop(event: DragEvent<HTMLDivElement>, targetIndex: number) {
     event.preventDefault();
     const sectionId = draggedSectionId ?? event.dataTransfer.getData("text/mi-section-id");
@@ -163,9 +191,11 @@ export function RendererPreview({
             const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
             if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
             const selected = section.id === selectedSectionId;
+            const hovered = section.id === hoveredSectionId;
             const globalShell = seed.family === "navbar" || seed.family === "footer";
             const sourceSection = site.pages.find((page) => page.path === path)?.sections.find((candidate) => candidate.id === section.id);
             const hidden = sourceSection?.hidden ?? false;
+            const sectionLabel = `${seed.family}${globalShell ? " global" : ""} section`;
             return <Fragment key={section.id}>
               <div
                 data-mi-section-id={section.id}
@@ -174,10 +204,27 @@ export function RendererPreview({
                 data-mi-global-section={globalShell ? "true" : undefined}
                 className={`mi-editor-section${selected ? " mi-editor-selected" : ""}${hidden ? " mi-editor-hidden" : ""}${globalShell ? " mi-editor-global-section" : ""}`}
                 draggable={Boolean(onReorderSection && !globalShell)}
+                tabIndex={0}
+                aria-label={`Edit ${sectionLabel}`}
+                onMouseEnter={() => setHoveredSectionId(section.id)}
+                onMouseLeave={() => setHoveredSectionId((current) => current === section.id ? undefined : current)}
+                onFocus={() => setHoveredSectionId(section.id)}
+                onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHoveredSectionId((current) => current === section.id ? undefined : current); }}
+                onKeyDown={(event) => handleSectionKeyDown(event, section.id)}
                 onDragStart={(event) => { if (globalShell) { event.preventDefault(); return; } setDraggedSectionId(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/mi-section-id", section.id); }}
                 onDragEnd={() => { setDraggedSectionId(undefined); setDropIndex(undefined); }}
                 onClick={(event) => handleSectionClick(event, section.id)}
               >
+                {!selected && hovered ? <button
+                  type="button"
+                  data-mi-canvas-action="select-section"
+                  aria-label={`Select ${sectionLabel}`}
+                  style={hoverAffordanceStyle}
+                  onClick={(event) => runAction(event, () => onSelectSection(section.id))}
+                >
+                  <span aria-hidden="true">✦</span>
+                  <span>Edit {seed.family}</span>
+                </button> : null}
                 {selected ? <div className="mi-editor-canvas-toolbar" data-mi-canvas-action="toolbar">
                   {!globalShell ? <span className="mi-editor-drag-handle" title="Drag section" aria-hidden="true">⋮⋮</span> : null}
                   <span className="mi-editor-canvas-label">{seed.family}{globalShell ? " · Global" : ""}</span>

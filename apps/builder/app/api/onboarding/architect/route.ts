@@ -9,6 +9,8 @@ import { applyExactAssetPlacement } from "../../../exact-asset-placement";
 import { applyFunctionalBindings } from "../../../functional-binding-intelligence";
 import { deriveFunctionalArchitecture } from "../../../functional-architecture";
 import { evaluateFunctionalPublishGate } from "../../../functional-publish-gate";
+import { repairFunctionalPublishIssues } from "../../../functional-publish-repair";
+import { applyFinalGenerationCorrection } from "../../../final-generation-correction";
 import { evaluateSiteVisualQuality } from "../../../site-visual-quality";
 import { evaluateAboveFoldComposition } from "../../../above-fold-composition-quality";
 import { evaluateDentalContentQuality, type DentalContentQualityResult } from "../../../dental-content-quality";
@@ -136,19 +138,58 @@ export async function POST(request: NextRequest) {
       console.error("MiCirql functional binding pass failed; keeping generated content and media.", error);
     }
 
+    const autonomousRepair = {
+      attempted: false,
+      applied: false,
+      stages: [] as string[],
+      repairs: [] as string[],
+    };
+
     stage = "quality";
     let finalDraft = await getSupabaseDraft(request, workspaceId, siteId);
     if (!finalDraft) throw new Error("GENERATED_SITE_QUALITY_FAILED: final draft unavailable");
     let generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
     if (!generatedQuality.ready) {
-      const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
-      throw new Error(`GENERATED_SITE_QUALITY_FAILED: ${codes.join(", ")}`);
+      stage = "quality-repair";
+      const correction = applyFinalGenerationCorrection(finalDraft.snapshot);
+      autonomousRepair.attempted = correction.attempted;
+      autonomousRepair.repairs.push(...correction.repairs);
+      if (correction.applied) {
+        await saveSupabaseDraft(request, { snapshot: correction.site, expectedRevision: finalDraft.revision });
+        const repairedDraft = await getSupabaseDraft(request, workspaceId, siteId);
+        if (!repairedDraft) throw new Error("AUTONOMOUS_QUALITY_REPAIR_FAILED: repaired draft unavailable");
+        finalDraft = repairedDraft;
+        autonomousRepair.applied = true;
+        autonomousRepair.stages.push("final-generation-correction");
+        generatedQuality = evaluateGeneratedSiteQuality(finalDraft.snapshot, businessName);
+      }
+      stage = "quality";
+      if (!generatedQuality.ready) {
+        const codes = [...new Set(generatedQuality.issues.map((item) => item.code))];
+        throw new Error(`GENERATED_SITE_QUALITY_FAILED_AFTER_AUTONOMOUS_REPAIR: ${codes.join(", ")}`);
+      }
     }
 
     let functionalQuality = evaluateFunctionalPublishGate(finalDraft.snapshot, functionalArchitecture);
     if (!functionalQuality.ready) {
-      const codes = [...new Set(functionalQuality.issues.map((item) => item.capabilityId ? `${item.code}:${item.capabilityId}` : item.code))];
-      throw new Error(`GENERATED_FUNCTIONAL_QUALITY_FAILED: ${codes.join(", ")}`);
+      stage = "functional-repair";
+      autonomousRepair.attempted = true;
+      const repair = repairFunctionalPublishIssues(finalDraft.snapshot);
+      autonomousRepair.repairs.push(...repair.repairs.map((item) => `functional:${item}`));
+      if (repair.repaired) {
+        await saveSupabaseDraft(request, { snapshot: repair.site, expectedRevision: finalDraft.revision });
+        const repairedDraft = await getSupabaseDraft(request, workspaceId, siteId);
+        if (!repairedDraft) throw new Error("AUTONOMOUS_FUNCTIONAL_REPAIR_FAILED: repaired draft unavailable");
+        finalDraft = repairedDraft;
+        autonomousRepair.applied = true;
+        autonomousRepair.stages.push("functional-publish-repair");
+        functionalQuality = evaluateFunctionalPublishGate(finalDraft.snapshot, functionalArchitecture);
+      }
+      stage = "quality";
+      if (!functionalQuality.ready) {
+        const codes = [...new Set(functionalQuality.issues.map((item) => item.capabilityId ? `${item.code}:${item.capabilityId}` : item.code))];
+        throw new Error(`GENERATED_FUNCTIONAL_QUALITY_FAILED_AFTER_AUTONOMOUS_REPAIR: ${codes.join(", ")}`);
+      }
     }
 
     let dentalContentQuality: DentalContentQualityResult | null = null;
@@ -217,8 +258,9 @@ export async function POST(request: NextRequest) {
     }
 
     const fallbackCount = content?.recovery?.failedProviders ?? 0;
+    const autonomousRecoveryReason = autonomousRepair.applied ? `Autonomous deterministic repair applied: ${autonomousRepair.stages.join(", ")}` : null;
     const dentalRecoveryReason = dentalRepairApplied ? `Dental specialty content auto-repaired: ${dentalRepairCodes.join(", ")}` : null;
-    const recoveryReason = contentWarning || mediaWarning || dentalRecoveryReason || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
+    const recoveryReason = contentWarning || mediaWarning || autonomousRecoveryReason || dentalRecoveryReason || (fallbackCount > 0 ? content?.recovery?.failures?.map((item) => item.reason).filter(Boolean).join(" | ") : null) || null;
     const outcome = recoveryReason ? "recovered" as const : "success" as const;
     const qualityScore = Math.min(content?.audit.contentQuality.score ?? 100, visualQuality.score, dentalContentQuality?.score ?? 100, heroCoherence.score, aboveFoldQuality.score);
     await safeRecordBuildObservability(request, {
@@ -232,10 +274,10 @@ export async function POST(request: NextRequest) {
       fallbackCount,
       qualityScore,
       recoveryReason,
-      details: { generatedMediaCount, exactPlacement, functionalBindings, functionalArchitecture, functionalQuality, contentWarning, mediaWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality },
+      details: { generatedMediaCount, exactPlacement, functionalBindings, functionalArchitecture, functionalQuality, contentWarning, mediaWarning, autonomousRepair, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality },
     });
 
-    return NextResponse.json({ ok: true, buildId, architecture: plan, functionalArchitecture, functionalQuality, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality });
+    return NextResponse.json({ ok: true, buildId, architecture: plan, functionalArchitecture, functionalQuality, mediaExecution, generatedMediaCount, mediaWarning, exactPlacement, functionalBindings, content, contentWarning, autonomousRepair, generatedQuality, dentalContentQuality, dentalRepairApplied, dentalRepairCodes, heroCoherence, aboveFoldQuality, visualQuality });
   } catch (error) {
     if (workspaceId && siteId) await safeRecordBuildObservability(request, {
       workspaceId,

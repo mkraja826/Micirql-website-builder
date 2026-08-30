@@ -37,13 +37,15 @@ test("secondary pages use purpose-specific section recipes", () => {
   expect(planner).toContain("pageRole: role");
 });
 
-test("page roles also receive distinct component variant profiles", () => {
-  expect(planner).toContain("const PAGE_VARIANTS");
-  expect(planner).toContain('"service-detail": { hero: 4');
-  expect(planner).toContain("team: { hero: 5, team: 4");
-  expect(planner).toContain("gallery: { hero: 2, gallery: 4");
-  expect(planner).toContain("contact: { hero: 5, contact: 4");
-  expect(planner).toContain("sectionDesignId(themeFamily, family, variant)");
+test("page roles receive semantic registry-driven component profiles", () => {
+  expect(planner).toContain("const ROLE_INTENTS");
+  expect(planner).toContain('"service-detail": {');
+  expect(planner).toContain('hero: intent(["sales", "appointments", "education"], "opening", true, "low", "heavy")');
+  expect(planner).toContain('gallery: intent(["portfolio", "visual-proof", "trust"], "visual-break", true, "low", "heavy")');
+  expect(planner).toContain("selectSemanticComponentId");
+  expect(planner).toContain("semanticRegistryScore");
+  expect(planner).toContain("seedSectionRegistryEntries");
+  expect(planner).not.toContain("const PAGE_VARIANTS");
 });
 
 test("page-specific media protects doctors results and low-value pages", () => {

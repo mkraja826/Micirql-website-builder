@@ -1,5 +1,12 @@
+import type { DesignRegistryEntry } from "@micirql/registry";
 import { siteSchema, type Site } from "@micirql/schema";
-import { FAMILY_CODES, sectionDesignId, type SectionFamily as LibrarySectionFamily, type SectionVariant } from "@micirql/sections";
+import {
+  FAMILY_CODES,
+  sectionDesignId,
+  seedSectionRegistryEntries,
+  type SectionFamily as LibrarySectionFamily,
+  type SectionVariant,
+} from "@micirql/sections";
 
 export type PageArchitectureInput = {
   industry: string;
@@ -14,6 +21,9 @@ export type PageArchitectureInput = {
 
 type PageRole = "home" | "about" | "services" | "service-detail" | "team" | "gallery" | "blog" | "faq" | "contact";
 type SectionFamily = "navbar" | "hero" | "about" | "services" | "features" | "process" | "testimonials" | "gallery" | "team" | "cta" | "contact" | "footer";
+type PlacementRole = NonNullable<DesignRegistryEntry["intelligence"]>["placementRoles"][number];
+type Density = NonNullable<DesignRegistryEntry["intelligence"]>["contentDensity"];
+type VisualWeight = NonNullable<DesignRegistryEntry["intelligence"]>["visualWeight"];
 
 type ArchitecturePage = {
   id: string;
@@ -29,6 +39,14 @@ export type PageArchitecturePlan = {
   reasons: string[];
 };
 
+type SectionIntent = {
+  conversionGoals: string[];
+  placementRole: PlacementRole;
+  preferImage?: boolean | undefined;
+  targetContentDensity?: Density | undefined;
+  targetVisualWeight?: VisualWeight | undefined;
+};
+
 const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
   about: ["navbar", "hero", "about", "features", "team", "testimonials", "cta", "footer"],
   services: ["navbar", "hero", "services", "features", "process", "testimonials", "cta", "footer"],
@@ -40,15 +58,65 @@ const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
   contact: ["navbar", "hero", "contact", "cta", "footer"],
 };
 
-const PAGE_VARIANTS: Record<Exclude<PageRole, "home">, Partial<Record<SectionFamily, SectionVariant>>> = {
-  about: { hero: 3, about: 4, features: 2, team: 2, testimonials: 4, cta: 2 },
-  services: { hero: 2, services: 4, features: 3, process: 2, testimonials: 2, cta: 4 },
-  "service-detail": { hero: 4, about: 2, features: 4, process: 4, testimonials: 3, cta: 5, contact: 2 },
-  team: { hero: 5, team: 4, about: 3, testimonials: 2, cta: 3 },
-  gallery: { hero: 2, gallery: 4, testimonials: 5, about: 2, cta: 4 },
-  blog: { hero: 3, features: 5, services: 2, process: 3, cta: 2 },
-  faq: { hero: 4, features: 2, process: 5, cta: 3, contact: 4 },
-  contact: { hero: 5, contact: 4, cta: 2 },
+const ROLE_INTENTS: Record<Exclude<PageRole, "home">, Partial<Record<SectionFamily, SectionIntent>>> = {
+  about: {
+    hero: intent(["trust", "authority"], "opening", true, "low", "medium"),
+    about: intent(["trust", "authority", "education"], "core-content", true, "high", "medium"),
+    features: intent(["trust", "differentiation"], "early-proof", false, "medium", "light"),
+    team: intent(["trust", "authority"], "core-content", true, "medium", "medium"),
+    testimonials: intent(["trust"], "decision-support", true, "medium", "medium"),
+    cta: intent(["lead-generation", "appointments", "sales"], "conversion", false, "low", "medium"),
+  },
+  services: {
+    hero: intent(["sales", "appointments", "education"], "opening", true, "low", "medium"),
+    services: intent(["sales", "appointments", "discovery"], "core-content", true, "high", "medium"),
+    features: intent(["differentiation", "education"], "decision-support", false, "medium", "light"),
+    process: intent(["education", "trust"], "decision-support", false, "medium", "medium"),
+    testimonials: intent(["trust", "sales"], "decision-support", true, "medium", "medium"),
+    cta: intent(["lead-generation", "appointments", "sales"], "conversion", false, "low", "medium"),
+  },
+  "service-detail": {
+    hero: intent(["sales", "appointments", "education"], "opening", true, "low", "heavy"),
+    about: intent(["education", "trust"], "core-content", true, "medium", "medium"),
+    features: intent(["differentiation", "education"], "decision-support", false, "medium", "medium"),
+    process: intent(["education", "trust", "appointments"], "decision-support", false, "medium", "medium"),
+    testimonials: intent(["trust", "appointments"], "decision-support", true, "medium", "medium"),
+    cta: intent(["lead-generation", "appointments", "sales"], "conversion", true, "low", "heavy"),
+    contact: intent(["lead-generation", "appointments", "enquiries"], "closing", false, "medium", "light"),
+  },
+  team: {
+    hero: intent(["trust", "authority"], "opening", true, "low", "medium"),
+    team: intent(["trust", "authority", "appointments"], "core-content", true, "high", "medium"),
+    about: intent(["trust", "education"], "core-content", true, "medium", "light"),
+    testimonials: intent(["trust"], "decision-support", true, "medium", "medium"),
+    cta: intent(["lead-generation", "appointments"], "conversion", false, "low", "medium"),
+  },
+  gallery: {
+    hero: intent(["trust", "visual-proof"], "opening", true, "low", "medium"),
+    gallery: intent(["portfolio", "visual-proof", "trust"], "visual-break", true, "low", "heavy"),
+    testimonials: intent(["trust", "sales"], "decision-support", true, "medium", "medium"),
+    about: intent(["trust", "education"], "core-content", true, "medium", "light"),
+    cta: intent(["lead-generation", "appointments", "sales"], "conversion", false, "low", "medium"),
+  },
+  blog: {
+    hero: intent(["awareness", "education"], "opening", true, "low", "light"),
+    features: intent(["education", "discovery"], "core-content", false, "high", "light"),
+    services: intent(["discovery", "education"], "core-content", true, "medium", "medium"),
+    process: intent(["education"], "decision-support", false, "medium", "light"),
+    cta: intent(["lead-generation", "signup"], "conversion", false, "low", "light"),
+  },
+  faq: {
+    hero: intent(["trust", "education"], "opening", false, "low", "light"),
+    features: intent(["education", "trust"], "core-content", false, "high", "light"),
+    process: intent(["education", "trust"], "decision-support", false, "medium", "light"),
+    cta: intent(["lead-generation", "appointments"], "conversion", false, "low", "medium"),
+    contact: intent(["lead-generation", "appointments", "enquiries"], "closing", false, "medium", "light"),
+  },
+  contact: {
+    hero: intent(["lead-generation", "appointments", "enquiries"], "opening", true, "low", "medium"),
+    contact: intent(["lead-generation", "appointments", "enquiries"], "conversion", false, "medium", "light"),
+    cta: intent(["lead-generation", "appointments", "sales"], "closing", false, "low", "medium"),
+  },
 };
 
 export function planPageArchitecture(input: PageArchitectureInput): PageArchitecturePlan {
@@ -96,7 +164,7 @@ export function planPageArchitecture(input: PageArchitectureInput): PageArchitec
       "Sitemap derived from the brief instead of starter-page defaults.",
       services.length ? "Services are represented as a hub and, where useful, dedicated conversion/search pages." : "No unstated service pages were invented.",
       healthcare ? "Healthcare trust architecture includes team and FAQ pages by default." : "Industry-neutral trust architecture applied.",
-      "Each secondary page receives a purpose-specific section composition and component-variant profile instead of inheriting the homepage design.",
+      "Secondary pages use semantic registry intelligence for component selection, with deterministic recipes retained as a safe fallback.",
     ],
   };
 }
@@ -120,7 +188,7 @@ export function applyPageArchitecture(site: Site, plan: PageArchitecturePlan): S
       ...(pagePlan.primaryKeyword ? { primaryKeyword: pagePlan.primaryKeyword } : {}),
     };
     if (pagePlan.role !== "home") {
-      base.sections = composePageSections(existing?.sections ?? [], home.sections, pagePlan.role, pagePlan.purpose, next.theme.family);
+      base.sections = composePageSections(existing?.sections ?? [], home.sections, pagePlan.role, pagePlan.purpose, next);
     }
     return base;
   });
@@ -136,29 +204,134 @@ export function applyPageArchitecture(site: Site, plan: PageArchitecturePlan): S
   return siteSchema.parse(next);
 }
 
-function composePageSections(existingSections: Site["pages"][number]["sections"], homeSections: Site["pages"][number]["sections"], role: Exclude<PageRole, "home">, purpose: string, themeFamily: Site["theme"]["family"]) {
+function composePageSections(
+  existingSections: Site["pages"][number]["sections"],
+  homeSections: Site["pages"][number]["sections"],
+  role: Exclude<PageRole, "home">,
+  purpose: string,
+  site: Site,
+) {
   const pool = [...existingSections, ...homeSections];
   const byFamily = new Map<SectionFamily, Site["pages"][number]["sections"][number]>();
   for (const section of pool) {
     const family = sectionFamily(section.component.componentId);
     if (family && !byFamily.has(family)) byFamily.set(family, section);
   }
-  const selected = PAGE_RECIPES[role]
-    .map((family) => ({ family, section: byFamily.get(family) }))
+
+  const recipe = PAGE_RECIPES[role];
+  const selected = recipe
+    .map((family, index) => ({ family, section: byFamily.get(family), index }))
     .filter((entry) => Boolean(entry.section))
-    .map(({ family, section }) => {
+    .map(({ family, section, index }) => {
       const next = structuredClone(section!);
-      const variant = PAGE_VARIANTS[role][family];
-      if (variant && isLibraryFamily(family)) {
-        next.component = { componentId: sectionDesignId(themeFamily, family, variant), version: next.component.version };
+      if (isLibraryFamily(family)) {
+        const previousFamily = recipe[index - 1];
+        const nextFamily = recipe[index + 1];
+        const semanticId = selectSemanticComponentId({ family, role, site, previousFamily, nextFamily });
+        if (semanticId) next.component = { componentId: semanticId, version: next.component.version };
       }
       next.props = { ...next.props, pagePurpose: purpose, pageRole: role };
       return next;
     });
+
   if (selected.length >= 3) return selected;
   const fallback = homeSections.map((section) => structuredClone(section));
   for (const section of fallback) section.props = { ...section.props, pagePurpose: purpose, pageRole: role };
   return fallback;
+}
+
+function selectSemanticComponentId(args: {
+  family: Extract<LibrarySectionFamily, SectionFamily>;
+  role: Exclude<PageRole, "home">;
+  site: Site;
+  previousFamily?: SectionFamily | undefined;
+  nextFamily?: SectionFamily | undefined;
+}): string | undefined {
+  const intentSpec = ROLE_INTENTS[args.role][args.family] ?? defaultIntent(args.family);
+  const candidates = seedSectionRegistryEntries.filter((entry) => entry.family === args.family && entry.theme === args.site.theme.family);
+  if (!candidates.length) return undefined;
+
+  const ranked = candidates
+    .map((entry) => ({ entry, score: semanticRegistryScore(entry, intentSpec, args.site, args.previousFamily, args.nextFamily) }))
+    .sort((a, b) => b.score - a.score || a.entry.id.localeCompare(b.entry.id));
+
+  return ranked[0]?.entry.id;
+}
+
+function semanticRegistryScore(
+  entry: DesignRegistryEntry,
+  desired: SectionIntent,
+  site: Site,
+  previousFamily?: SectionFamily,
+  nextFamily?: SectionFamily,
+) {
+  const intelligence = entry.intelligence;
+  if (!intelligence) return -1_000;
+  let score = entry.domainCompatibility[site.domain] ?? 0;
+  score += entry.theme === site.theme.family ? 30 : 0;
+  score += desired.conversionGoals.filter((goal) => intelligence.conversionGoals.includes(goal)).length * 12;
+  score += intelligence.placementRoles.includes(desired.placementRole) ? 18 : 0;
+  score += desired.targetContentDensity === intelligence.contentDensity ? 8 : 0;
+  score += desired.targetVisualWeight === intelligence.visualWeight ? 8 : 0;
+  score += site.theme.modifiers.filter((modifier) => entry.modifiers.includes(modifier)).length * 3;
+  score += entry.brandPersonalities.some((personality) => semanticBrandSignals(site).includes(personality)) ? 5 : 0;
+  score += intelligence.mobileSuitability * 0.08;
+  score += intelligence.aiPriority * 0.04;
+
+  if (desired.preferImage === true) {
+    score += intelligence.imageRequirement === "required" || intelligence.imageRequirement === "recommended" ? 12 : intelligence.imageRequirement === "optional" ? 4 : -8;
+  } else if (desired.preferImage === false) {
+    score += intelligence.imageRequirement === "none" || intelligence.imageRequirement === "optional" ? 8 : -4;
+  }
+
+  if (previousFamily) {
+    if (intelligence.avoidAdjacent.includes(previousFamily)) score -= 100;
+    else if (intelligence.idealPredecessors.includes(previousFamily)) score += 14;
+  }
+  if (nextFamily) {
+    if (intelligence.avoidAdjacent.includes(nextFamily)) score -= 100;
+    else if (intelligence.idealSuccessors.includes(nextFamily)) score += 10;
+  }
+
+  return score;
+}
+
+function semanticBrandSignals(site: Site): string[] {
+  const signals = new Set<string>();
+  for (const modifier of site.theme.modifiers) {
+    if (modifier === "rounded") signals.add("approachable");
+    if (modifier === "photography-led") signals.add("premium");
+    if (modifier === "geometric") signals.add("structured");
+    if (modifier === "motion-rich") signals.add("energetic");
+    if (modifier === "motion-subtle") signals.add("refined");
+    if (modifier === "dark") signals.add("premium");
+  }
+  return [...signals];
+}
+
+function defaultIntent(family: SectionFamily): SectionIntent {
+  if (family === "navbar") return intent(["navigation", "conversion"], "opening", false, "low", "light");
+  if (family === "hero") return intent(["lead-generation", "awareness"], "opening", true, "low", "medium");
+  if (family === "cta") return intent(["lead-generation", "sales"], "conversion", false, "low", "medium");
+  if (family === "contact") return intent(["lead-generation", "enquiries"], "closing", false, "medium", "light");
+  if (family === "footer") return intent(["navigation", "trust"], "closing", false, "medium", "light");
+  return intent(["trust", "education"], "core-content", true, "medium", "medium");
+}
+
+function intent(
+  conversionGoals: string[],
+  placementRole: PlacementRole,
+  preferImage?: boolean,
+  targetContentDensity?: Density,
+  targetVisualWeight?: VisualWeight,
+): SectionIntent {
+  return {
+    conversionGoals,
+    placementRole,
+    ...(preferImage !== undefined ? { preferImage } : {}),
+    ...(targetContentDensity !== undefined ? { targetContentDensity } : {}),
+    ...(targetVisualWeight !== undefined ? { targetVisualWeight } : {}),
+  };
 }
 
 function isLibraryFamily(family: SectionFamily): family is Extract<LibrarySectionFamily, SectionFamily> {

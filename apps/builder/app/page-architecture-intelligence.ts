@@ -2,10 +2,8 @@ import type { DesignRegistryEntry } from "@micirql/registry";
 import { siteSchema, type Site } from "@micirql/schema";
 import {
   FAMILY_CODES,
-  sectionDesignId,
   seedSectionRegistryEntries,
   type SectionFamily as LibrarySectionFamily,
-  type SectionVariant,
 } from "@micirql/sections";
 
 export type PageArchitectureInput = {
@@ -47,6 +45,12 @@ type SectionIntent = {
   targetVisualWeight?: VisualWeight | undefined;
 };
 
+type JourneyRule = {
+  required: SectionFamily[];
+  optional: SectionFamily[];
+  maxMiddleSections: number;
+};
+
 const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
   about: ["navbar", "hero", "about", "features", "team", "testimonials", "cta", "footer"],
   services: ["navbar", "hero", "services", "features", "process", "testimonials", "cta", "footer"],
@@ -56,6 +60,17 @@ const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
   blog: ["navbar", "hero", "features", "services", "process", "cta", "footer"],
   faq: ["navbar", "hero", "features", "process", "cta", "contact", "footer"],
   contact: ["navbar", "hero", "contact", "cta", "footer"],
+};
+
+const JOURNEY_RULES: Record<Exclude<PageRole, "home">, JourneyRule> = {
+  about: { required: ["about"], optional: ["features", "team", "testimonials"], maxMiddleSections: 4 },
+  services: { required: ["services"], optional: ["features", "process", "testimonials"], maxMiddleSections: 4 },
+  "service-detail": { required: ["about", "features"], optional: ["process", "testimonials", "contact"], maxMiddleSections: 5 },
+  team: { required: ["team"], optional: ["about", "testimonials", "features"], maxMiddleSections: 4 },
+  gallery: { required: ["gallery"], optional: ["testimonials", "about", "features"], maxMiddleSections: 4 },
+  blog: { required: ["features"], optional: ["services", "process", "testimonials"], maxMiddleSections: 4 },
+  faq: { required: ["features"], optional: ["process", "contact", "testimonials"], maxMiddleSections: 4 },
+  contact: { required: ["contact"], optional: ["testimonials", "about"], maxMiddleSections: 2 },
 };
 
 const ROLE_INTENTS: Record<Exclude<PageRole, "home">, Partial<Record<SectionFamily, SectionIntent>>> = {
@@ -103,18 +118,22 @@ const ROLE_INTENTS: Record<Exclude<PageRole, "home">, Partial<Record<SectionFami
     features: intent(["education", "discovery"], "core-content", false, "high", "light"),
     services: intent(["discovery", "education"], "core-content", true, "medium", "medium"),
     process: intent(["education"], "decision-support", false, "medium", "light"),
+    testimonials: intent(["trust"], "decision-support", true, "low", "light"),
     cta: intent(["lead-generation", "signup"], "conversion", false, "low", "light"),
   },
   faq: {
     hero: intent(["trust", "education"], "opening", false, "low", "light"),
     features: intent(["education", "trust"], "core-content", false, "high", "light"),
     process: intent(["education", "trust"], "decision-support", false, "medium", "light"),
+    testimonials: intent(["trust"], "decision-support", true, "low", "light"),
     cta: intent(["lead-generation", "appointments"], "conversion", false, "low", "medium"),
     contact: intent(["lead-generation", "appointments", "enquiries"], "closing", false, "medium", "light"),
   },
   contact: {
     hero: intent(["lead-generation", "appointments", "enquiries"], "opening", true, "low", "medium"),
     contact: intent(["lead-generation", "appointments", "enquiries"], "conversion", false, "medium", "light"),
+    testimonials: intent(["trust"], "decision-support", true, "low", "light"),
+    about: intent(["trust"], "decision-support", true, "low", "light"),
     cta: intent(["lead-generation", "appointments", "sales"], "closing", false, "low", "medium"),
   },
 };
@@ -164,7 +183,7 @@ export function planPageArchitecture(input: PageArchitectureInput): PageArchitec
       "Sitemap derived from the brief instead of starter-page defaults.",
       services.length ? "Services are represented as a hub and, where useful, dedicated conversion/search pages." : "No unstated service pages were invented.",
       healthcare ? "Healthcare trust architecture includes team and FAQ pages by default." : "Industry-neutral trust architecture applied.",
-      "Secondary pages use semantic registry intelligence for component selection, with deterministic recipes retained as a safe fallback.",
+      "Secondary pages use semantic section journeys and registry-ranked components, with deterministic recipes retained only as a safe fallback.",
     ],
   };
 }
@@ -218,15 +237,15 @@ function composePageSections(
     if (family && !byFamily.has(family)) byFamily.set(family, section);
   }
 
-  const recipe = PAGE_RECIPES[role];
-  const selected = recipe
+  const journey = selectSemanticJourney(role, byFamily, site);
+  const selected = journey
     .map((family, index) => ({ family, section: byFamily.get(family), index }))
     .filter((entry) => Boolean(entry.section))
     .map(({ family, section, index }) => {
       const next = structuredClone(section!);
       if (isLibraryFamily(family)) {
-        const previousFamily = recipe[index - 1];
-        const nextFamily = recipe[index + 1];
+        const previousFamily = journey[index - 1];
+        const nextFamily = journey[index + 1];
         const semanticId = selectSemanticComponentId({ family, role, site, previousFamily, nextFamily });
         if (semanticId) next.component = { componentId: semanticId, version: next.component.version };
       }
@@ -235,9 +254,81 @@ function composePageSections(
     });
 
   if (selected.length >= 3) return selected;
+  const fallbackRecipe = PAGE_RECIPES[role];
+  const deterministic = fallbackRecipe
+    .map((family) => byFamily.get(family))
+    .filter((section): section is Site["pages"][number]["sections"][number] => Boolean(section))
+    .map((section) => structuredClone(section));
+  if (deterministic.length >= 3) {
+    for (const section of deterministic) section.props = { ...section.props, pagePurpose: purpose, pageRole: role };
+    return deterministic;
+  }
+
   const fallback = homeSections.map((section) => structuredClone(section));
   for (const section of fallback) section.props = { ...section.props, pagePurpose: purpose, pageRole: role };
   return fallback;
+}
+
+function selectSemanticJourney(
+  role: Exclude<PageRole, "home">,
+  byFamily: Map<SectionFamily, Site["pages"][number]["sections"][number]>,
+  site: Site,
+): SectionFamily[] {
+  const rule = JOURNEY_RULES[role];
+  const available = new Set(byFamily.keys());
+  const journey: SectionFamily[] = [];
+
+  addIfAvailable(journey, available, "navbar");
+  addIfAvailable(journey, available, "hero");
+
+  const middleCandidates = unique([...rule.required, ...rule.optional])
+    .filter((family) => available.has(family))
+    .map((family) => ({
+      family,
+      required: rule.required.includes(family),
+      score: journeyFamilyScore(family, role, site),
+      placement: placementOrder((ROLE_INTENTS[role][family] ?? defaultIntent(family)).placementRole),
+    }))
+    .sort((a, b) => {
+      if (a.required !== b.required) return a.required ? -1 : 1;
+      return a.placement - b.placement || b.score - a.score || a.family.localeCompare(b.family);
+    });
+
+  const requiredCount = middleCandidates.filter((item) => item.required).length;
+  const middleLimit = Math.max(requiredCount, rule.maxMiddleSections);
+  for (const candidate of middleCandidates.slice(0, middleLimit)) {
+    if (!journey.includes(candidate.family)) journey.push(candidate.family);
+  }
+
+  addIfAvailable(journey, available, "cta");
+  if (role === "contact" || role === "service-detail" || role === "faq") addIfAvailable(journey, available, "contact");
+  addIfAvailable(journey, available, "footer");
+
+  return unique(journey);
+}
+
+function journeyFamilyScore(family: SectionFamily, role: Exclude<PageRole, "home">, site: Site): number {
+  const desired = ROLE_INTENTS[role][family] ?? defaultIntent(family);
+  const candidates = seedSectionRegistryEntries.filter((entry) => entry.family === family && entry.theme === site.theme.family);
+  if (!candidates.length) return -1_000;
+  return Math.max(...candidates.map((entry) => semanticRegistryScore(entry, desired, site)));
+}
+
+function placementOrder(role: PlacementRole): number {
+  const order: Partial<Record<PlacementRole, number>> = {
+    opening: 0,
+    "early-proof": 1,
+    "core-content": 2,
+    "visual-break": 3,
+    "decision-support": 4,
+    conversion: 5,
+    closing: 6,
+  };
+  return order[role] ?? 3;
+}
+
+function addIfAvailable(journey: SectionFamily[], available: Set<SectionFamily>, family: SectionFamily) {
+  if (available.has(family) && !journey.includes(family)) journey.push(family);
 }
 
 function selectSemanticComponentId(args: {
@@ -358,7 +449,7 @@ function sectionFamily(componentId: string): SectionFamily | undefined {
 function cleanService(value: string) { return value.trim().replace(/[.;:]+$/g, ""); }
 function slugify(value: string) { return value.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64); }
 function titleCase(value: string) { return value.replace(/\b\w/g, (char) => char.toUpperCase()); }
-function unique(values: string[]) { return [...new Set(values)]; }
+function unique<T>(values: T[]) { return [...new Set(values)]; }
 function uniquePages(pages: ArchitecturePage[]) { const seen = new Set<string>(); return pages.filter((page) => { if (seen.has(page.path)) return false; seen.add(page.path); return true; }); }
 function seoTitle(pageName: string, businessName: string) { return `${pageName} | ${businessName}`.slice(0, 70); }
 function seoDescription(purpose: string, businessName: string) { return `${purpose} for ${businessName}.`.slice(0, 180); }

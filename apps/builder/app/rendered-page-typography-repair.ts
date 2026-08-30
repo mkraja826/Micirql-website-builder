@@ -32,19 +32,29 @@ export function planRenderedPageTypographyRepair(input: {
   const root = "[data-mi-rendered-typography-repair='1']";
   // Repair CSS is injected after authored layout CSS, but authored blueprints may
   // legitimately use high-specificity !important typography rules. Repeat the
-  // same repair marker to raise specificity without broadening the selector or
-  // coupling repair logic to individual Dental blueprints.
+  // same repair marker to raise specificity without coupling repair logic to an
+  // individual Dental blueprint.
   const priorityRoot = `${root}${root}${root}${root}`;
+  const headingContainers = `${priorityRoot} [data-mi-section-id] .mi-content-heading,${priorityRoot} [data-mi-section-id] .mi-section__heading,${priorityRoot} [data-mi-section-id] [class*='heading']`;
   const rules: string[] = [];
+
   if (operations.includes("rebalance-heading-wrap")) {
     const h1 = viewport === "mobile" ? "clamp(2rem,7.5vw,2.65rem)" : viewport === "tablet" ? "clamp(2.25rem,4vw,3.25rem)" : "clamp(2.5rem,3vw,3.75rem)";
     const h2 = viewport === "mobile" ? "clamp(1.6rem,5.5vw,2.1rem)" : viewport === "tablet" ? "clamp(1.85rem,3.2vw,2.5rem)" : "clamp(2rem,2.4vw,2.75rem)";
     const h1Measure = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
     const h2Measure = viewport === "mobile" ? "26ch" : viewport === "tablet" ? "30ch" : "34ch";
-    rules.push(`${priorityRoot} h1{font-size:${h1}!important;line-height:1!important;max-width:${h1Measure}!important;text-wrap:balance!important}`);
-    rules.push(`${priorityRoot} h2{font-size:${h2}!important;line-height:1.05!important;max-width:${h2Measure}!important;text-wrap:balance!important}`);
-    rules.push(`${priorityRoot} h3{max-width:32ch!important;line-height:1.12!important;text-wrap:balance!important}`);
+
+    // Some premium compositions intentionally author narrow heading measures.
+    // When browser evidence proves that measure is no longer viable at the
+    // current viewport, allow the bounded repair pass to reclaim the available
+    // container width before reducing type. This avoids tiny multi-line columns
+    // while preserving the authored layout for healthy renders.
+    rules.push(`${headingContainers}{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}`);
+    rules.push(`${priorityRoot} h1{font-size:${h1}!important;line-height:1!important;width:min(100%,${h1Measure})!important;max-width:${h1Measure}!important;min-width:0!important;text-wrap:balance!important}`);
+    rules.push(`${priorityRoot} h2{font-size:${h2}!important;line-height:1.05!important;width:min(100%,${h2Measure})!important;max-width:${h2Measure}!important;min-width:0!important;text-wrap:balance!important}`);
+    rules.push(`${priorityRoot} h3{width:min(100%,32ch)!important;max-width:32ch!important;min-width:0!important;line-height:1.12!important;text-wrap:balance!important}`);
   }
+
   if (operations.includes("stabilize-action-wrap")) {
     const actionSize = viewport === "mobile" ? "clamp(.8rem,3.2vw,.95rem)" : viewport === "tablet" ? "clamp(.84rem,1.8vw,.98rem)" : "clamp(.88rem,1.2vw,1rem)";
     const actionPadding = viewport === "mobile" ? ".65rem" : viewport === "tablet" ? ".8rem" : ".9rem";
@@ -57,15 +67,19 @@ export function planRenderedPageTypographyRepair(input: {
     if (viewport === "mobile") {
       rules.push(`${actionGroup}{width:100%!important;flex-direction:column!important}`);
       rules.push(`${actionGroup}>a,${actionGroup}>button,${priorityRoot} .mi-section__action{width:100%!important;max-width:100%!important;flex:0 1 100%!important}`);
+      rules.push(`${priorityRoot} .mi-shell-brand{white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;max-width:100%!important}`);
     } else {
       rules.push(`${actionGroup}>a,${actionGroup}>button{flex:0 1 auto!important;max-width:100%!important}`);
     }
 
-    rules.push(`${priorityRoot} nav a,${priorityRoot} header a,${priorityRoot} nav button,${priorityRoot} header button{white-space:nowrap!important;font-size:clamp(.78rem,1.6vw,.95rem)!important;padding-inline:min(.75rem,2vw)!important}`);
+    rules.push(`${priorityRoot} nav a:not(.mi-shell-brand),${priorityRoot} header a:not(.mi-shell-brand),${priorityRoot} nav button,${priorityRoot} header button{white-space:nowrap!important;font-size:clamp(.78rem,1.6vw,.95rem)!important;padding-inline:min(.75rem,2vw)!important}`);
   }
+
   if (operations.includes("relax-paragraph-measure")) {
-    rules.push(`${priorityRoot} p,${priorityRoot} .mi-type--body,${priorityRoot} .mi-type--body-sm{max-width:${viewport === "mobile" ? "58ch" : "64ch"}!important;line-height:1.65!important}`);
+    const measure = viewport === "mobile" ? "58ch" : "64ch";
+    rules.push(`${priorityRoot} p,${priorityRoot} .mi-type--body,${priorityRoot} .mi-type--body-sm{width:min(100%,${measure})!important;max-width:${measure}!important;min-width:0!important;line-height:1.65!important}`);
   }
+
   if (operations.includes("normalize-card-title-rhythm")) {
     rules.push(`${priorityRoot} .mi-card h3,${priorityRoot} .mi-service-item h3,${priorityRoot} [class*='card'] h3,${priorityRoot} [class*='item'] h3{min-height:2.24em!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}`);
   }

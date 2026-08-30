@@ -31,6 +31,10 @@ export type FirstScreenRepairPlan = {
 };
 
 const ROOT = "[data-mi-first-screen-repair='1']";
+// Match only the marked repair root while outranking authored !important rules
+// that use multiple layout/class selectors. Repeating the same marker raises
+// specificity without making the repair global or blueprint-specific.
+const PRIORITY_ROOT = `${ROOT}${ROOT}${ROOT}${ROOT}`;
 
 export function planRenderedFirstScreenRepair(input: {
   width: number;
@@ -91,11 +95,11 @@ function buildRepairCss(viewport: FirstScreenRepairViewport, operations: FirstSc
   if (!operations.length) return "";
 
   const rules: string[] = [];
-  const hero = `${ROOT} section:has(h1), ${ROOT} .mi-editor-section:has(h1)`;
+  const hero = `${PRIORITY_ROOT} section:has(h1), ${PRIORITY_ROOT} .mi-editor-section:has(h1)`;
   const heroInner = `${hero}>*`;
   const heroInnerDeep = `${hero}>*>*`;
-  const h1 = `${ROOT} h1`;
-  const nav = `${ROOT} header, ${ROOT} nav`;
+  const h1 = `${PRIORITY_ROOT} h1`;
+  const nav = `${PRIORITY_ROOT} header, ${PRIORITY_ROOT} nav`;
   const cta = `${hero} a, ${hero} button`;
 
   if (operations.includes("increase-headline-scale")) {
@@ -109,7 +113,12 @@ function buildRepairCss(viewport: FirstScreenRepairViewport, operations: FirstSc
 
   if (operations.includes("reduce-headline-wrap")) {
     const maxWidth = viewport === "mobile" ? "24ch" : viewport === "tablet" ? "28ch" : "32ch";
-    rules.push(`${h1}{max-width:${maxWidth}!important;text-wrap:balance;}`);
+    const fontSize = viewport === "mobile"
+      ? "clamp(2rem,7.5vw,2.65rem)"
+      : viewport === "tablet"
+        ? "clamp(2.25rem,4vw,3.25rem)"
+        : "clamp(2.5rem,3vw,3.75rem)";
+    rules.push(`${h1}{font-size:${fontSize}!important;max-width:${maxWidth}!important;text-wrap:balance!important;}`);
   }
 
   if (operations.includes("compress-navigation")) {

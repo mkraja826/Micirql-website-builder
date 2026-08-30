@@ -54,4 +54,71 @@
     max-width:100%!important;
     box-sizing:border-box!important;
   }
+
+  /* The Builder's nominal 768px tablet mode renders inside a narrower preview
+   * canvas. Hero-only stacking is not enough: intrinsic widths in later content,
+   * proof, conversion, contact and footer compositions can still increase the
+   * document scroll width by a handful of pixels. Constrain the authored layout
+   * containers themselves rather than clipping overflow so every child remains
+   * measurable and the premium gate continues to catch real geometry defects. */
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] :is(
+    .mi-container,
+    .mi-nav-row,
+    .mi-section__layout,
+    .mi-content-heading,
+    .mi-section__actions,
+    .mi-services-spotlight,
+    .mi-gallery-mosaic,
+    .mi-proof-quote,
+    .mi-team-featured,
+    .mi-cta-split,
+    .mi-contact-split,
+    .mi-conv-actions,
+    .mi-contact-actions
+  ),
+  [data-mi-layout-blueprint="dental-19-minimal-white"] :is(
+    .mi-container,
+    .mi-nav-row,
+    .mi-section__layout,
+    .mi-content-heading,
+    .mi-section__actions,
+    .mi-services-spotlight,
+    .mi-process-timeline,
+    .mi-faq-list,
+    .mi-proof-quote,
+    .mi-team-featured,
+    .mi-gallery-mosaic,
+    .mi-cta-split,
+    .mi-contact-split,
+    .mi-conv-actions,
+    .mi-contact-actions
+  ){
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  [data-mi-layout-blueprint="dental-15-smile-campaign"] :is(
+    .mi-services-spotlight,
+    .mi-gallery-mosaic,
+    .mi-proof-quote,
+    .mi-team-featured,
+    .mi-cta-split,
+    .mi-contact-split
+  )>*,
+  [data-mi-layout-blueprint="dental-19-minimal-white"] :is(
+    .mi-services-spotlight,
+    .mi-process-timeline,
+    .mi-faq-list,
+    .mi-proof-quote,
+    .mi-team-featured,
+    .mi-gallery-mosaic,
+    .mi-cta-split,
+    .mi-contact-split
+  )>*{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
 }

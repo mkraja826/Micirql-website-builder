@@ -25,14 +25,16 @@ test("healthcare architecture includes trust and objection handling", () => {
   expect(planner).toContain('healthcare ? "/results" : "/gallery"');
 });
 
-test("secondary pages use purpose-specific section recipes", () => {
+test("secondary pages use semantic journeys with deterministic recipe fallback", () => {
+  expect(planner).toContain("const JOURNEY_RULES");
+  expect(planner).toContain('about: { required: ["about"], optional: ["features", "team", "testimonials"]');
+  expect(planner).toContain('"service-detail": { required: ["about", "features"], optional: ["process", "testimonials", "contact"]');
+  expect(planner).toContain('gallery: { required: ["gallery"], optional: ["testimonials", "about", "features"]');
+  expect(planner).toContain("selectSemanticJourney(role, byFamily, site)");
+  expect(planner).toContain("journeyFamilyScore");
+  expect(planner).toContain("placementOrder");
   expect(planner).toContain("const PAGE_RECIPES");
-  expect(planner).toContain('about: ["navbar", "hero", "about", "features", "team", "testimonials", "cta", "footer"]');
-  expect(planner).toContain('"service-detail": ["navbar", "hero", "about", "features", "process", "testimonials", "cta", "contact", "footer"]');
-  expect(planner).toContain('team: ["navbar", "hero", "team", "about", "testimonials", "cta", "footer"]');
-  expect(planner).toContain('gallery: ["navbar", "hero", "gallery", "testimonials", "about", "cta", "footer"]');
-  expect(planner).toContain('faq: ["navbar", "hero", "features", "process", "cta", "contact", "footer"]');
-  expect(planner).toContain('contact: ["navbar", "hero", "contact", "cta", "footer"]');
+  expect(planner).toContain("const fallbackRecipe = PAGE_RECIPES[role]");
   expect(planner).toContain("pagePurpose: purpose");
   expect(planner).toContain("pageRole: role");
 });

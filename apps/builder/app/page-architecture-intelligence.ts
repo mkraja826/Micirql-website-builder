@@ -42,9 +42,9 @@ export type PageArchitecturePlan = {
 type SectionIntent = {
   conversionGoals: string[];
   placementRole: PlacementRole;
-  preferImage?: boolean;
-  targetContentDensity?: Density;
-  targetVisualWeight?: VisualWeight;
+  preferImage?: boolean | undefined;
+  targetContentDensity?: Density | undefined;
+  targetVisualWeight?: VisualWeight | undefined;
 };
 
 const PAGE_RECIPES: Record<Exclude<PageRole, "home">, SectionFamily[]> = {
@@ -227,13 +227,7 @@ function composePageSections(
       if (isLibraryFamily(family)) {
         const previousFamily = recipe[index - 1];
         const nextFamily = recipe[index + 1];
-        const semanticId = selectSemanticComponentId({
-          family,
-          role,
-          site,
-          previousFamily,
-          nextFamily,
-        });
+        const semanticId = selectSemanticComponentId({ family, role, site, previousFamily, nextFamily });
         if (semanticId) next.component = { componentId: semanticId, version: next.component.version };
       }
       next.props = { ...next.props, pagePurpose: purpose, pageRole: role };
@@ -250,8 +244,8 @@ function selectSemanticComponentId(args: {
   family: Extract<LibrarySectionFamily, SectionFamily>;
   role: Exclude<PageRole, "home">;
   site: Site;
-  previousFamily?: SectionFamily;
-  nextFamily?: SectionFamily;
+  previousFamily?: SectionFamily | undefined;
+  nextFamily?: SectionFamily | undefined;
 }): string | undefined {
   const intentSpec = ROLE_INTENTS[args.role][args.family] ?? defaultIntent(args.family);
   const candidates = seedSectionRegistryEntries.filter((entry) => entry.family === args.family && entry.theme === args.site.theme.family);
@@ -331,7 +325,13 @@ function intent(
   targetContentDensity?: Density,
   targetVisualWeight?: VisualWeight,
 ): SectionIntent {
-  return { conversionGoals, placementRole, preferImage, targetContentDensity, targetVisualWeight };
+  return {
+    conversionGoals,
+    placementRole,
+    ...(preferImage !== undefined ? { preferImage } : {}),
+    ...(targetContentDensity !== undefined ? { targetContentDensity } : {}),
+    ...(targetVisualWeight !== undefined ? { targetVisualWeight } : {}),
+  };
 }
 
 function isLibraryFamily(family: SectionFamily): family is Extract<LibrarySectionFamily, SectionFamily> {

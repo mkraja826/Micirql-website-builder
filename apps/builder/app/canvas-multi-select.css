@@ -1,0 +1,19 @@
+[data-mi-section-id][data-mi-batch-selected="true"] {
+  outline: 2px solid color-mix(in srgb, var(--mi-primary, #6d5dfc) 72%, white 28%);
+  outline-offset: -2px;
+  position: relative;
+}
+
+[data-mi-section-id][data-mi-batch-selected="true"]::after {
+  content: "Batch selected";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 8;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(17,17,21,.9);
+  color: #fff;
+  font: 600 10px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  pointer-events: none;
+}

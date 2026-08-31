@@ -13,9 +13,12 @@ export function KeyboardSectionActions() {
 
       const duplicate = (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "d";
       const remove = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && (event.key === "Delete" || event.key === "Backspace");
-      if (!duplicate && !remove) return;
+      const moveUp = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey && event.key === "ArrowUp";
+      const moveDown = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey && event.key === "ArrowDown";
+      if (!duplicate && !remove && !moveUp && !moveDown) return;
 
-      const action = section.querySelector<HTMLButtonElement>(`[data-mi-canvas-action="${duplicate ? "duplicate" : "remove"}"]`);
+      const actionName = duplicate ? "duplicate" : remove ? "remove" : moveUp ? "move-up" : "move-down";
+      const action = section.querySelector<HTMLButtonElement>(`[data-mi-canvas-action="${actionName}"]`);
       if (!action || action.disabled) return;
       event.preventDefault();
       event.stopPropagation();

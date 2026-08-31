@@ -86,7 +86,7 @@ test("canvas batch selection stays separate from single-section editor selection
 });
 
 test("shift-click selects an inclusive non-global section range from the last anchor", () => {
-  expect(multiSelect).toContain('const anchorSectionId = useRef<string>();');
+  expect(multiSelect).toContain('const anchorSectionId = useRef<string | null>(null);');
   expect(multiSelect).toContain('function selectableSections()');
   expect(multiSelect).toContain('.filter((section) => section.dataset.miGlobalSection !== "true")');
   expect(multiSelect).toContain('if (event.shiftKey && anchorSectionId.current)');
@@ -95,7 +95,7 @@ test("shift-click selects an inclusive non-global section range from the last an
   expect(multiSelect).toContain('const end = Math.max(fromIndex, toIndex);');
   expect(multiSelect).toContain('sections.slice(start, end + 1).forEach((candidate) => candidate.setAttribute(SELECTED_ATTR, "true"));');
   expect(multiSelect).toContain('anchorSectionId.current = sectionId;');
-  expect(multiSelect).toContain('anchorSectionId.current = undefined;');
+  expect(multiSelect).toContain('anchorSectionId.current = null;');
 });
 
 test("multi-select discovery stays passive and desktop-only", () => {

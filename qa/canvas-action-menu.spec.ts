@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const source = readFileSync(resolve(process.cwd(), "apps/builder/app/renderer-preview.tsx"), "utf8");
+const workspace = readFileSync(resolve(process.cwd(), "apps/builder/app/workspace-client.tsx"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');
@@ -27,6 +28,7 @@ test("global shell sections remain protected from local structural actions", () 
   expect(source).toContain("onRequestImageChange && !contextMenu.globalShell");
   expect(source).toContain("onRequestMove && !contextMenu.globalShell");
   expect(source).toContain("onRequestVisibility && !contextMenu.globalShell");
+  expect(source).toContain("onRequestRemove && !contextMenu.globalShell");
   expect(source).toContain("draggable={Boolean(onReorderSection && !globalShell)}");
 });
 
@@ -35,4 +37,12 @@ test("action menu dismisses safely on escape, outside pointer, resize and scroll
   expect(source).toContain('window.addEventListener("pointerdown", dismiss)');
   expect(source).toContain('window.addEventListener("resize", dismissOnViewportChange)');
   expect(source).toContain('window.addEventListener("scroll", dismissOnViewportChange, true)');
+});
+
+test("canvas removal is confirmed, undoable and routed through section.remove", () => {
+  expect(source).toContain('data-mi-canvas-action="remove"');
+  expect(source).toContain("onRequestRemove(contextMenu.sectionId)");
+  expect(workspace).toContain('window.confirm("Remove this section? You can undo this change.")');
+  expect(workspace).toContain('commit({type:"section.remove",pageId:activePage.id,sectionId})');
+  expect(workspace).toContain('selectPage(activePage.id);setMode("content")');
 });

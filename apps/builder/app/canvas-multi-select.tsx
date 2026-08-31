@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const SELECTED_ATTR = "data-mi-batch-selected";
+
+function selectedIds() {
+  return Array.from(document.querySelectorAll<HTMLElement>(`[${SELECTED_ATTR}="true"]`))
+    .map((candidate) => candidate.dataset.miSectionId)
+    .filter((id): id is string => Boolean(id));
+}
 
 function clearBatchSelection() {
   document.querySelectorAll<HTMLElement>(`[${SELECTED_ATTR}="true"]`).forEach((section) => {
@@ -11,7 +17,26 @@ function clearBatchSelection() {
 }
 
 export function CanvasMultiSelect() {
+  const [batchCount, setBatchCount] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+
   useEffect(() => {
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const syncHint = () => setShowHint(finePointer.matches);
+    syncHint();
+    finePointer.addEventListener("change", syncHint);
+
+    const emitSelection = () => {
+      const ids = selectedIds();
+      setBatchCount(ids.length);
+      window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", { detail: { sectionIds: ids } }));
+    };
+
+    const clearAndEmit = () => {
+      clearBatchSelection();
+      emitSelection();
+    };
+
     const onClickCapture = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
@@ -22,7 +47,7 @@ export function CanvasMultiSelect() {
 
       const additive = event.metaKey || event.ctrlKey;
       if (!additive) {
-        clearBatchSelection();
+        clearAndEmit();
         return;
       }
       if (section.dataset.miGlobalSection === "true") return;
@@ -33,24 +58,23 @@ export function CanvasMultiSelect() {
       if (section.getAttribute(SELECTED_ATTR) === "true") section.removeAttribute(SELECTED_ATTR);
       else section.setAttribute(SELECTED_ATTR, "true");
 
-      window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", {
-        detail: {
-          sectionIds: Array.from(document.querySelectorAll<HTMLElement>(`[${SELECTED_ATTR}="true"]`))
-            .map((candidate) => candidate.dataset.miSectionId)
-            .filter((id): id is string => Boolean(id)),
-        },
-      }));
+      emitSelection();
     };
 
-    const clearOnPageNavigation = () => clearBatchSelection();
     window.addEventListener("click", onClickCapture, true);
-    window.addEventListener("popstate", clearOnPageNavigation);
+    window.addEventListener("popstate", clearAndEmit);
     return () => {
       window.removeEventListener("click", onClickCapture, true);
-      window.removeEventListener("popstate", clearOnPageNavigation);
+      window.removeEventListener("popstate", clearAndEmit);
+      finePointer.removeEventListener("change", syncHint);
       clearBatchSelection();
     };
   }, []);
 
-  return null;
+  if (!showHint || batchCount > 0) return null;
+
+  return <div className="mi-editor-multiselect-hint" role="status" aria-live="polite" data-mi-canvas-action="multiselect-hint">
+    <span aria-hidden="true">⌘</span>
+    <span><strong>Multi-select</strong> · Ctrl/Cmd-click sections</span>
+  </div>;
 }

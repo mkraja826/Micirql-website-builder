@@ -83,6 +83,43 @@ async function duplicateBatchSelection() {
   }
 }
 
+async function removeBatchSelection() {
+  const ids = selectedIds();
+  if (!ids.length) return;
+  const label = ids.length === 1 ? "this selected section" : `${ids.length} selected sections`;
+  if (!window.confirm(`Remove ${label}? You can undo these changes.`)) return;
+
+  document.documentElement.dataset.miBatchAction = "true";
+  try {
+    for (const sectionId of ids) {
+      const section = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      if (!section || section.dataset.miGlobalSection === "true") continue;
+
+      section.focus();
+      section.click();
+      await waitForFrame();
+      await waitForFrame();
+
+      const current = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      const remove = current?.querySelector<HTMLButtonElement>('[data-mi-canvas-action="remove"]');
+      if (remove && !remove.disabled) {
+        const originalConfirm = window.confirm;
+        window.confirm = () => true;
+        try {
+          remove.click();
+        } finally {
+          window.confirm = originalConfirm;
+        }
+      }
+      await waitForFrame();
+      await waitForFrame();
+    }
+  } finally {
+    delete document.documentElement.dataset.miBatchAction;
+    window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", { detail: { sectionIds: [] } }));
+  }
+}
+
 function clearBatchSelection() {
   selectedSections().forEach((section) => section.removeAttribute(SELECTED_ATTR));
   window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", { detail: { sectionIds: [] } }));
@@ -108,6 +145,7 @@ export function BatchSectionActions() {
       <button type="button" onClick={() => void duplicateBatchSelection()}>Duplicate</button>
       <button type="button" onClick={() => void setBatchVisibility(true)}>Hide all</button>
       <button type="button" onClick={() => void setBatchVisibility(false)}>Show all</button>
+      <button type="button" className="is-danger" onClick={() => void removeBatchSelection()}>Remove</button>
       <button type="button" className="is-muted" onClick={clearBatchSelection}>Clear</button>
     </div>
   );

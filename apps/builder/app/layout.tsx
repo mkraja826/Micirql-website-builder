@@ -77,6 +77,7 @@ import "./editor-adaptive-breakpoints.css";
 import "./auth-signout-position.css";
 import "./mobile-layout-hardening.css";
 import { PreviewInteractionGuard } from "./preview-interaction-guard";
+import { KeyboardSectionActions } from "./keyboard-section-actions";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",
@@ -86,7 +87,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><PreviewInteractionGuard />{children}</body>
+      <body><PreviewInteractionGuard /><KeyboardSectionActions />{children}</body>
     </html>
   );
 }

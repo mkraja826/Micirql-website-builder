@@ -32,6 +32,8 @@
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
     gap:0;
+    max-width:100%;
+    overflow:clip;
     border-top:1px solid var(--mi-ortho-line);
   }
   [data-mi-layout-blueprint="dental-09-ortho-journey"] .mi-process--timeline .mi-process-node{

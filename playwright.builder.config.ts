@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:builder-journey|generated-site-journey|publish-repair-lifecycle|build-telemetry-ux|build-diagnostics-summary|onboarding-non-json-recovery)\.spec\.ts/,
+  testMatch: /(?:builder-journey|generated-site-journey|publish-repair-lifecycle|build-telemetry-ux|build-diagnostics-summary|onboarding-non-json-recovery|canvas-action-menu)\.spec\.ts/,
   timeout: 60_000,
   fullyParallel: false,
   workers: 1,

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 const source = readFileSync(resolve(process.cwd(), "apps/builder/app/renderer-preview.tsx"), "utf8");
 const workspace = readFileSync(resolve(process.cwd(), "apps/builder/app/workspace-client.tsx"), "utf8");
+const keyboard = readFileSync(resolve(process.cwd(), "apps/builder/app/keyboard-section-actions.tsx"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');
@@ -55,4 +56,15 @@ test("canvas duplication uses a fresh id and the existing section.add history pa
   expect(workspace).toContain('const duplicate:SiteSection={...structuredClone(source),id:`${family??"section"}-${crypto.randomUUID().slice(0,8)}`}');
   expect(workspace).toContain('commit({type:"section.add",pageId:activePage.id,section:duplicate,toIndex:index+1})');
   expect(workspace).toContain('selectSection(activePage.id,duplicate.id);setMode("content")');
+});
+
+test("focused section keyboard shortcuts reuse certified duplicate and remove actions safely", () => {
+  expect(keyboard).toContain('target.closest<HTMLElement>("[data-mi-section-id]")');
+  expect(keyboard).toContain('if (!section || target !== section) return');
+  expect(keyboard).toContain('if (section.dataset.miGlobalSection === "true") return');
+  expect(keyboard).toContain('(event.metaKey || event.ctrlKey)');
+  expect(keyboard).toContain('event.key.toLowerCase() === "d"');
+  expect(keyboard).toContain('event.key === "Delete" || event.key === "Backspace"');
+  expect(keyboard).toContain('data-mi-canvas-action="${duplicate ? "duplicate" : "remove"}"');
+  expect(keyboard).toContain('action.click()');
 });

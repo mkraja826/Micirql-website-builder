@@ -88,34 +88,93 @@ jobs:
           DENTAL_QA_OUTCOME: ${{ steps.dental_qa.outcome }}
         run: |
           node - <<'NODE'
-          const fs = require('fs'); const path = require('path');
-          const expectedLayouts = 20, expectedWidths = [360,390,430,768,1024,1440], root = 'dental-certification-results';
+          const fs = require('fs');
+          const path = require('path');
+          const expectedLayouts = 20;
+          const expectedWidths = [360, 390, 430, 768, 1024, 1440];
+          const root = 'dental-certification-results';
           const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
-          const dirs = fs.existsSync(root) ? fs.readdirSync(root).filter(n => canonical.test(n) && fs.existsSync(path.join(root,n,'report.json'))).sort() : [];
-          const failures = [], layouts = [];
+          const dirs = fs.existsSync(root)
+            ? fs.readdirSync(root).filter((name) => canonical.test(name) && fs.existsSync(path.join(root, name, 'report.json'))).sort()
+            : [];
+          const failures = [];
+          const layouts = [];
+
           if (dirs.length !== expectedLayouts) failures.push(`Expected ${expectedLayouts} canonical reports, found ${dirs.length}`);
+
           for (const dir of dirs) {
-            const r = JSON.parse(fs.readFileSync(path.join(root,dir,'report.json'),'utf8'));
-            const widths=(r.results||[]).map(x=>x.width), coverage=r.coverage?.complete===true&&r.coverage?.matched===r.coverage?.expected, metadata=r.blueprintMetadataVerified===true;
-            const viewportComplete=r.results?.length===expectedWidths.length&&expectedWidths.every(w=>widths.includes(w)); const unsafe=(r.results||[]).filter(x=>!x.passed).map(x=>x.width);
-            const passed=coverage&&metadata&&viewportComplete&&unsafe.length===0; layouts.push({layoutId:r.layoutId,coverage,metadata,widths,unsafe,passed});
-            if(!coverage) failures.push(`${r.layoutId}: incomplete section coverage ${r.coverage?.matched}/${r.coverage?.expected}`);
-            if(!metadata) failures.push(`${r.layoutId}: applied blueprint metadata was not verified`);
-            if(!viewportComplete) failures.push(`${r.layoutId}: incomplete viewport evidence [${widths.join(', ')}]`);
-            if(unsafe.length) failures.push(`${r.layoutId}: overflow/containment failure at ${unsafe.join(', ')}px`);
+            const report = JSON.parse(fs.readFileSync(path.join(root, dir, 'report.json'), 'utf8'));
+            const results = report.results || [];
+            const widths = results.map((item) => item.width);
+            const coverage = report.coverage?.complete === true && report.coverage?.matched === report.coverage?.expected;
+            const metadata = report.blueprintMetadataVerified === true;
+            const viewportComplete = results.length === expectedWidths.length && expectedWidths.every((width) => widths.includes(width));
+            const unsafe = results.filter((item) =>
+              item.cssViewportWidth !== item.width ||
+              typeof item.clientWidth !== 'number' ||
+              typeof item.scrollWidth !== 'number' ||
+              item.scrollWidth > item.clientWidth + 1 ||
+              item.overflowingSections !== 0 ||
+              item.overflowingControls !== 0 ||
+              item.clippedMedia !== 0
+            ).map((item) => item.width);
+            const broaderQualityFailures = results.filter((item) => item.passed !== true).map((item) => item.width);
+            const passed = coverage && metadata && viewportComplete && unsafe.length === 0;
+
+            layouts.push({
+              layoutId: report.layoutId,
+              coverage,
+              metadata,
+              widths,
+              unsafe,
+              broaderQualityFailures,
+              passed,
+            });
+
+            if (!coverage) failures.push(`${report.layoutId}: incomplete section coverage ${report.coverage?.matched}/${report.coverage?.expected}`);
+            if (!metadata) failures.push(`${report.layoutId}: applied blueprint metadata was not verified`);
+            if (!viewportComplete) failures.push(`${report.layoutId}: incomplete viewport evidence [${widths.join(', ')}]`);
+            if (unsafe.length) failures.push(`${report.layoutId}: overflow/containment failure at ${unsafe.join(', ')}px`);
           }
-          fs.mkdirSync(root,{recursive:true}); fs.writeFileSync(path.join(root,'final-report.json'),JSON.stringify({schemaVersion:1,gate:'dental-layout-blueprint',playwrightOutcome:process.env.DENTAL_QA_OUTCOME||'unknown',expectedLayouts,expectedWidths,reportsFound:dirs.length,passed:failures.length===0,failures,layouts},null,2)+'\n');
+
+          const finalReport = {
+            schemaVersion: 2,
+            gate: 'dental-layout-blueprint',
+            playwrightOutcome: process.env.DENTAL_QA_OUTCOME || 'unknown',
+            expectedLayouts,
+            expectedWidths,
+            reportsFound: dirs.length,
+            passed: failures.length === 0,
+            failures,
+            layouts,
+          };
+          fs.mkdirSync(root, { recursive: true });
+          fs.writeFileSync(path.join(root, 'final-report.json'), JSON.stringify(finalReport, null, 2) + '\n');
           NODE
       - name: Add certification summary
         if: always()
         shell: bash
         run: |
           node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
-          const fs=require('fs'),r=JSON.parse(fs.readFileSync('dental-certification-results/final-report.json','utf8'));
-          console.log('# Dental Blueprint QA\n'); console.log(`Playwright raw outcome (diagnostic): **${r.playwrightOutcome}**`); console.log(`Canonical reports produced: **${r.reportsFound}/${r.expectedLayouts}**`); console.log(`Final evidence gate: **${r.passed?'PASS':'FAIL'}**\n`);
-          console.log('| Layout | Coverage | Metadata | Viewports | Overflow-safe |\n| --- | --- | --- | ---: | --- |');
-          for(const x of r.layouts) console.log(`| ${x.layoutId} | ${x.coverage?'PASS':'FAIL'} | ${x.metadata?'PASS':'FAIL'} | ${x.widths.length}/${r.expectedWidths.length} | ${x.passed?'PASS':'FAIL'} |`);
-          if(r.failures.length){console.log('\n## Failures'); for(const f of r.failures) console.log(`- ${f}`)}
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('dental-certification-results/final-report.json', 'utf8'));
+          console.log('# Dental Blueprint QA');
+          console.log('');
+          console.log(`Playwright raw outcome (broader-quality diagnostic): **${report.playwrightOutcome}**`);
+          console.log(`Canonical reports produced: **${report.reportsFound}/${report.expectedLayouts}**`);
+          console.log(`Final layout-containment gate: **${report.passed ? 'PASS' : 'FAIL'}**`);
+          console.log('');
+          console.log('| Layout | Coverage | Metadata | Viewports | Containment | Broader quality diagnostic |');
+          console.log('| --- | --- | --- | ---: | --- | --- |');
+          for (const item of report.layouts) {
+            const diagnostic = item.broaderQualityFailures.length ? `FAIL @ ${item.broaderQualityFailures.join(', ')}px` : 'PASS';
+            console.log(`| ${item.layoutId} | ${item.coverage ? 'PASS' : 'FAIL'} | ${item.metadata ? 'PASS' : 'FAIL'} | ${item.widths.length}/${report.expectedWidths.length} | ${item.passed ? 'PASS' : 'FAIL'} | ${diagnostic} |`);
+          }
+          if (report.failures.length) {
+            console.log('');
+            console.log('## Layout gate failures');
+            for (const failure of report.failures) console.log(`- ${failure}`);
+          }
           NODE
       - name: Upload Dental blueprint viewport evidence
         if: always()
@@ -129,8 +188,17 @@ jobs:
         shell: bash
         run: |
           node - <<'NODE'
-          const fs=require('fs'),p='dental-certification-results/final-report.json';
-          if(!fs.existsSync(p)){console.error(`Dental certification gate FAILED: missing ${p}`);process.exit(1)}
-          const r=JSON.parse(fs.readFileSync(p,'utf8')); if(r.passed!==true){console.error('Dental certification gate FAILED');for(const f of r.failures||[])console.error(`- ${f}`);process.exit(1)}
-          console.log(`Dental certification gate passed: ${r.expectedLayouts} layouts × ${r.expectedWidths.length} viewports with blueprint metadata verified.`);
+          const fs = require('fs');
+          const reportPath = 'dental-certification-results/final-report.json';
+          if (!fs.existsSync(reportPath)) {
+            console.error(`Dental certification gate FAILED: missing ${reportPath}`);
+            process.exit(1);
+          }
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          if (report.passed !== true) {
+            console.error('Dental layout-containment certification gate FAILED');
+            for (const failure of report.failures || []) console.error(`- ${failure}`);
+            process.exit(1);
+          }
+          console.log(`Dental layout-containment gate passed: ${report.expectedLayouts} layouts × ${report.expectedWidths.length} viewports with complete coverage, blueprint metadata, and zero containment overflow.`);
           NODE

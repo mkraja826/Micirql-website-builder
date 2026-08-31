@@ -93,6 +93,7 @@ export function RendererPreview({
   onRequestCopyEdit,
   onRequestMove,
   onRequestVisibility,
+  onRequestRemove,
   onRequestAddSection,
   onReorderSection,
 }: {
@@ -107,6 +108,7 @@ export function RendererPreview({
   onRequestCopyEdit?(sectionId: string): void;
   onRequestMove?(sectionId: string, direction: "up" | "down"): void;
   onRequestVisibility?(sectionId: string, hidden: boolean): void;
+  onRequestRemove?(sectionId: string): void;
   onRequestAddSection?(afterSectionId?: string): void;
   onReorderSection?(sectionId: string, toIndex: number): void;
 }) {
@@ -322,6 +324,7 @@ export function RendererPreview({
                     {onRequestImageChange && !globalShell ? <button type="button" data-mi-canvas-action="image" onClick={(event) => runAction(event, () => onRequestImageChange(section.id, "image"))}>Change image</button> : null}
                     {onRequestMove && !globalShell ? <span className="mi-editor-move-actions"><button type="button" title="Move section up" aria-label="Move section up" data-mi-canvas-action="move-up" disabled={index === 0} onClick={(event) => runAction(event, () => onRequestMove(section.id, "up"))}>↑</button><button type="button" title="Move section down" aria-label="Move section down" data-mi-canvas-action="move-down" disabled={index === preview.sections!.length - 1} onClick={(event) => runAction(event, () => onRequestMove(section.id, "down"))}>↓</button></span> : null}
                     {onRequestVisibility && !globalShell ? <button type="button" className="is-muted" data-mi-canvas-action="visibility" onClick={(event) => runAction(event, () => onRequestVisibility(section.id, !hidden))}>{hidden ? "Show" : "Hide"}</button> : null}
+                    {onRequestRemove && !globalShell ? <button type="button" className="is-danger" data-mi-canvas-action="remove" onClick={(event) => runAction(event, () => onRequestRemove(section.id))}>Remove</button> : null}
                   </div>
                 </div> : null}
                 <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />
@@ -349,6 +352,7 @@ export function RendererPreview({
           <button type="button" role="menuitem" disabled={contextMenu.index === (preview.sections?.length ?? 0) - 1} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === (preview.sections?.length ?? 0) - 1 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "down"))}>Move down</button>
         </> : null}
         {onRequestVisibility && !contextMenu.globalShell ? <button type="button" role="menuitem" style={{ ...contextMenuButtonStyle, color: "#aaaab4" }} onClick={() => runMenuAction(() => onRequestVisibility(contextMenu.sectionId, !contextMenu.hidden))}>{contextMenu.hidden ? "Show section" : "Hide section"}</button> : null}
+        {onRequestRemove && !contextMenu.globalShell ? <button type="button" role="menuitem" style={{ ...contextMenuButtonStyle, color: "#ff9a9a" }} onClick={() => runMenuAction(() => onRequestRemove(contextMenu.sectionId))}>Remove section</button> : null}
       </div> : null}
     </div>
   );

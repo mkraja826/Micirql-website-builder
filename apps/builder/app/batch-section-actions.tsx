@@ -181,7 +181,7 @@ export function BatchSectionActions() {
       <button type="button" onClick={() => void setBatchVisibility(true)}>Hide all</button>
       <button type="button" onClick={() => void setBatchVisibility(false)}>Show all</button>
       <button type="button" className="is-danger" onClick={() => void removeBatchSelection()}>Remove</button>
-      <button type="button" className="is-muted" onClick={clearBatchSelection}>Clear</button>
+      <button type="button" className="is-muted" aria-keyshortcuts="Escape" title="Clear selection (Esc)" onClick={clearBatchSelection}>Clear selection</button>
     </div>
   );
 }

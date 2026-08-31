@@ -63,6 +63,18 @@
   color: #aaaab4;
 }
 
+.mi-editor-batch-toolbar button.is-danger {
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.18);
+  color: #fecaca;
+}
+
+.mi-editor-batch-toolbar button.is-danger:hover {
+  border-color: rgba(248,113,113,.7);
+  background: rgba(127,29,29,.32);
+  color: #fff;
+}
+
 @media (max-width: 640px) {
   .mi-editor-batch-toolbar {
     right: 10px;

@@ -23,6 +23,16 @@ type PreviewPayload = {
   issues?: Array<{ message: string }>;
 };
 
+type CanvasContextMenu = {
+  sectionId: string;
+  family: SectionFamily;
+  index: number;
+  globalShell: boolean;
+  hidden: boolean;
+  x: number;
+  y: number;
+};
+
 const hoverAffordanceStyle: CSSProperties = {
   position: "absolute",
   top: 8,
@@ -41,6 +51,34 @@ const hoverAffordanceStyle: CSSProperties = {
   backdropFilter: "blur(12px)",
   cursor: "pointer",
   font: "600 11px/1 Inter, ui-sans-serif, system-ui, sans-serif",
+};
+
+const contextMenuStyle: CSSProperties = {
+  position: "fixed",
+  zIndex: 100,
+  width: 220,
+  display: "grid",
+  gap: 4,
+  padding: 7,
+  border: "1px solid rgba(255,255,255,.14)",
+  borderRadius: 12,
+  background: "rgba(16,16,22,.97)",
+  boxShadow: "0 18px 48px rgba(0,0,0,.34)",
+  backdropFilter: "blur(18px)",
+  color: "#f7f7fa",
+  font: "600 12px/1.2 Inter, ui-sans-serif, system-ui, sans-serif",
+};
+
+const contextMenuButtonStyle: CSSProperties = {
+  minHeight: 36,
+  padding: "8px 10px",
+  border: 0,
+  borderRadius: 8,
+  background: "transparent",
+  color: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+  font: "inherit",
 };
 
 export function RendererPreview({
@@ -78,6 +116,7 @@ export function RendererPreview({
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
   const [dropIndex, setDropIndex] = useState<number>();
   const [hoveredSectionId, setHoveredSectionId] = useState<string>();
+  const [contextMenu, setContextMenu] = useState<CanvasContextMenu>();
   const requestId = useRef(0);
   const previewRoot = useRef<HTMLElement>(null);
   const repairCss = persistedFirstScreenRepairCss(site, viewport, path);
@@ -121,6 +160,26 @@ export function RendererPreview({
     return () => { disposeFaq(); disposeGallery(); };
   }, [preview]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-mi-canvas-action="context-menu"]')) setContextMenu(undefined);
+    };
+    const dismissOnKey = (event: KeyboardEvent) => { if (event.key === "Escape") setContextMenu(undefined); };
+    const dismissOnViewportChange = () => setContextMenu(undefined);
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", dismissOnKey);
+    window.addEventListener("resize", dismissOnViewportChange);
+    window.addEventListener("scroll", dismissOnViewportChange, true);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", dismissOnKey);
+      window.removeEventListener("resize", dismissOnViewportChange);
+      window.removeEventListener("scroll", dismissOnViewportChange, true);
+    };
+  }, [contextMenu]);
+
   function handleSectionClick(event: MouseEvent<HTMLDivElement>, sectionId: string) {
     const target = event.target as HTMLElement;
     if (target.closest("[data-mi-canvas-action]")) return;
@@ -136,8 +195,27 @@ export function RendererPreview({
     event.preventDefault(); event.stopPropagation(); onSelectSection(sectionId);
   }
 
-  function handleSectionKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, sectionId: string) {
+  function openContextMenu(sectionId: string, family: SectionFamily, index: number, globalShell: boolean, hidden: boolean, x: number, y: number) {
+    onSelectSection(sectionId);
+    setContextMenu({
+      sectionId,
+      family,
+      index,
+      globalShell,
+      hidden,
+      x: Math.max(8, Math.min(x, window.innerWidth - 228)),
+      y: Math.max(8, Math.min(y, window.innerHeight - 260)),
+    });
+  }
+
+  function handleSectionKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, sectionId: string, family: SectionFamily, index: number, globalShell: boolean, hidden: boolean) {
     if (event.target !== event.currentTarget) return;
+    if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      const rect = event.currentTarget.getBoundingClientRect();
+      openContextMenu(sectionId, family, index, globalShell, hidden, rect.left + 24, rect.top + 24);
+      return;
+    }
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     onSelectSection(sectionId);
@@ -152,6 +230,11 @@ export function RendererPreview({
 
   function runAction(event: MouseEvent<HTMLButtonElement>, action: () => void) {
     event.preventDefault(); event.stopPropagation(); action();
+  }
+
+  function runMenuAction(action: () => void) {
+    setContextMenu(undefined);
+    action();
   }
 
   function insertionZone(afterSectionId: string | undefined, index: number) {
@@ -210,7 +293,12 @@ export function RendererPreview({
                 onMouseLeave={() => setHoveredSectionId((current) => current === section.id ? undefined : current)}
                 onFocus={() => setHoveredSectionId(section.id)}
                 onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHoveredSectionId((current) => current === section.id ? undefined : current); }}
-                onKeyDown={(event) => handleSectionKeyDown(event, section.id)}
+                onKeyDown={(event) => handleSectionKeyDown(event, section.id, seed.family, index, globalShell, hidden)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  openContextMenu(section.id, seed.family, index, globalShell, hidden, event.clientX, event.clientY);
+                }}
                 onDragStart={(event) => { if (globalShell) { event.preventDefault(); return; } setDraggedSectionId(section.id); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/mi-section-id", section.id); }}
                 onDragEnd={() => { setDraggedSectionId(undefined); setDropIndex(undefined); }}
                 onClick={(event) => handleSectionClick(event, section.id)}
@@ -244,6 +332,24 @@ export function RendererPreview({
           {error ? <div className="renderer-preview-warning" role="status">Using local preview while the server preview reconnects.</div> : null}
         </main>
       ) : null}
+      {contextMenu ? <div
+        role="menu"
+        aria-label={`${contextMenu.family} section actions`}
+        data-mi-canvas-action="context-menu"
+        style={{ ...contextMenuStyle, left: contextMenu.x, top: contextMenu.y }}
+        onPointerDown={(event) => event.stopPropagation()}
+        onContextMenu={(event) => event.preventDefault()}
+      >
+        <div style={{ padding: "5px 9px 7px", color: "#b9a7ff", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase" }}>{contextMenu.family}{contextMenu.globalShell ? " · Global" : ""}</div>
+        {onRequestDesignChange ? <button type="button" role="menuitem" style={contextMenuButtonStyle} onClick={() => runMenuAction(() => onRequestDesignChange(contextMenu.sectionId))}>Replace design</button> : null}
+        {onRequestCopyEdit ? <button type="button" role="menuitem" style={contextMenuButtonStyle} onClick={() => runMenuAction(() => onRequestCopyEdit(contextMenu.sectionId))}>Edit copy</button> : null}
+        {onRequestImageChange && !contextMenu.globalShell ? <button type="button" role="menuitem" style={contextMenuButtonStyle} onClick={() => runMenuAction(() => onRequestImageChange(contextMenu.sectionId, "image"))}>Change image</button> : null}
+        {onRequestMove && !contextMenu.globalShell ? <>
+          <button type="button" role="menuitem" disabled={contextMenu.index === 0} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === 0 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "up"))}>Move up</button>
+          <button type="button" role="menuitem" disabled={contextMenu.index === (preview.sections?.length ?? 0) - 1} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === (preview.sections?.length ?? 0) - 1 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "down"))}>Move down</button>
+        </> : null}
+        {onRequestVisibility && !contextMenu.globalShell ? <button type="button" role="menuitem" style={{ ...contextMenuButtonStyle, color: "#aaaab4" }} onClick={() => runMenuAction(() => onRequestVisibility(contextMenu.sectionId, !contextMenu.hidden))}>{contextMenu.hidden ? "Show section" : "Hide section"}</button> : null}
+      </div> : null}
     </div>
   );
 }

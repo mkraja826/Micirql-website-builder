@@ -76,8 +76,10 @@ import "./editor-mode-polish.css";
 import "./editor-adaptive-breakpoints.css";
 import "./auth-signout-position.css";
 import "./mobile-layout-hardening.css";
+import "./canvas-multi-select.css";
 import { PreviewInteractionGuard } from "./preview-interaction-guard";
 import { KeyboardSectionActions } from "./keyboard-section-actions";
+import { CanvasMultiSelect } from "./canvas-multi-select";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",
@@ -87,7 +89,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><PreviewInteractionGuard /><KeyboardSectionActions />{children}</body>
+      <body><PreviewInteractionGuard /><KeyboardSectionActions /><CanvasMultiSelect />{children}</body>
     </html>
   );
 }

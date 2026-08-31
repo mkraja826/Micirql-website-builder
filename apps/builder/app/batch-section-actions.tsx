@@ -83,6 +83,34 @@ async function duplicateBatchSelection() {
   }
 }
 
+async function moveBatchSelection(direction: "up" | "down") {
+  const ids = selectedIds();
+  if (!ids.length) return;
+  const orderedIds = direction === "up" ? ids : [...ids].reverse();
+
+  document.documentElement.dataset.miBatchAction = "true";
+  try {
+    for (const sectionId of orderedIds) {
+      const section = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      if (!section || section.dataset.miGlobalSection === "true") continue;
+
+      section.focus();
+      section.click();
+      await waitForFrame();
+      await waitForFrame();
+
+      const current = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      const action = current?.querySelector<HTMLButtonElement>(`[data-mi-canvas-action="move-${direction}"]`);
+      if (action && !action.disabled) action.click();
+      await waitForFrame();
+      await waitForFrame();
+    }
+  } finally {
+    delete document.documentElement.dataset.miBatchAction;
+    restoreBatchSelection(ids);
+  }
+}
+
 async function removeBatchSelection() {
   const ids = selectedIds();
   if (!ids.length) return;
@@ -142,6 +170,8 @@ export function BatchSectionActions() {
   return (
     <div className="mi-editor-batch-toolbar" role="toolbar" aria-label="Batch section actions" data-mi-canvas-action="batch-toolbar">
       <strong>{sectionIds.length} selected</strong>
+      <button type="button" onClick={() => void moveBatchSelection("up")}>Move up</button>
+      <button type="button" onClick={() => void moveBatchSelection("down")}>Move down</button>
       <button type="button" onClick={() => void duplicateBatchSelection()}>Duplicate</button>
       <button type="button" onClick={() => void setBatchVisibility(true)}>Hide all</button>
       <button type="button" onClick={() => void setBatchVisibility(false)}>Show all</button>

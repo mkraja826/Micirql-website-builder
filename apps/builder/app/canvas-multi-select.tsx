@@ -91,16 +91,25 @@ export function CanvasMultiSelect() {
       emitSelection();
     };
 
-    const clearOnPageNavigation = () => {
+    const clearSelectionState = () => {
       anchorSectionId.current = null;
       clearAndEmit();
     };
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || selectedIds().length === 0) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable=true]")) return;
+      clearSelectionState();
+    };
+
     window.addEventListener("click", onClickCapture, true);
-    window.addEventListener("popstate", clearOnPageNavigation);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("popstate", clearSelectionState);
     return () => {
       window.removeEventListener("click", onClickCapture, true);
-      window.removeEventListener("popstate", clearOnPageNavigation);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("popstate", clearSelectionState);
       finePointer.removeEventListener("change", syncHint);
       clearBatchSelection();
     };

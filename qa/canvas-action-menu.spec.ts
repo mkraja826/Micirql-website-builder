@@ -98,6 +98,14 @@ test("shift-click selects an inclusive non-global section range from the last an
   expect(multiSelect).toContain('anchorSectionId.current = null;');
 });
 
+test("escape clears an active batch without stealing escape from text editing", () => {
+  expect(multiSelect).toContain('if (event.key !== "Escape" || selectedIds().length === 0) return;');
+  expect(multiSelect).toContain('target.closest("input, textarea, select, [contenteditable=true]")');
+  expect(multiSelect).toContain('clearSelectionState();');
+  expect(multiSelect).toContain('window.addEventListener("keydown", onKeyDown);');
+  expect(multiSelect).toContain('window.removeEventListener("keydown", onKeyDown);');
+});
+
 test("multi-select discovery stays passive and desktop-only", () => {
   expect(multiSelect).toContain('window.matchMedia("(hover: hover) and (pointer: fine)")');
   expect(multiSelect).toContain('if (!showHint || batchCount > 0) return null;');

@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-const source = readFileSync(new URL("../apps/builder/app/renderer-preview.tsx", import.meta.url), "utf8");
+const source = readFileSync(resolve(process.cwd(), "apps/builder/app/renderer-preview.tsx"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');

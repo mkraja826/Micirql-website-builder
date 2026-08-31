@@ -15,9 +15,21 @@ function waitForFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+function selectedIds() {
+  return selectedSections()
+    .map((section) => section.dataset.miSectionId)
+    .filter((id): id is string => Boolean(id));
+}
+
+function restoreBatchSelection(ids: string[]) {
+  ids.forEach((sectionId) => {
+    document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`)?.setAttribute(SELECTED_ATTR, "true");
+  });
+  window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", { detail: { sectionIds: ids } }));
+}
+
 async function setBatchVisibility(hidden: boolean) {
-  const sections = selectedSections();
-  const ids = sections.map((section) => section.dataset.miSectionId).filter((id): id is string => Boolean(id));
+  const ids = selectedIds();
   if (!ids.length) return;
 
   document.documentElement.dataset.miBatchAction = "true";
@@ -40,10 +52,34 @@ async function setBatchVisibility(hidden: boolean) {
     }
   } finally {
     delete document.documentElement.dataset.miBatchAction;
-    ids.forEach((sectionId) => {
-      document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`)?.setAttribute(SELECTED_ATTR, "true");
-    });
-    window.dispatchEvent(new CustomEvent("micirql:batch-selection-change", { detail: { sectionIds: ids } }));
+    restoreBatchSelection(ids);
+  }
+}
+
+async function duplicateBatchSelection() {
+  const ids = selectedIds();
+  if (!ids.length) return;
+
+  document.documentElement.dataset.miBatchAction = "true";
+  try {
+    for (const sectionId of ids) {
+      const section = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      if (!section || section.dataset.miGlobalSection === "true") continue;
+
+      section.focus();
+      section.click();
+      await waitForFrame();
+      await waitForFrame();
+
+      const current = document.querySelector<HTMLElement>(`[data-mi-section-id="${CSS.escape(sectionId)}"]`);
+      const duplicate = current?.querySelector<HTMLButtonElement>('[data-mi-canvas-action="duplicate"]');
+      if (duplicate && !duplicate.disabled) duplicate.click();
+      await waitForFrame();
+      await waitForFrame();
+    }
+  } finally {
+    delete document.documentElement.dataset.miBatchAction;
+    restoreBatchSelection(ids);
   }
 }
 
@@ -69,6 +105,7 @@ export function BatchSectionActions() {
   return (
     <div className="mi-editor-batch-toolbar" role="toolbar" aria-label="Batch section actions" data-mi-canvas-action="batch-toolbar">
       <strong>{sectionIds.length} selected</strong>
+      <button type="button" onClick={() => void duplicateBatchSelection()}>Duplicate</button>
       <button type="button" onClick={() => void setBatchVisibility(true)}>Hide all</button>
       <button type="button" onClick={() => void setBatchVisibility(false)}>Show all</button>
       <button type="button" className="is-muted" onClick={clearBatchSelection}>Clear</button>

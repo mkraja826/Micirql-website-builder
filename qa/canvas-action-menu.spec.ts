@@ -95,3 +95,13 @@ test("batch visibility reuses certified section visibility controls safely", () 
   expect(batchActions).toContain('Show all');
   expect(batchActions).toContain('micirql:batch-selection-change');
 });
+
+test("batch duplication reuses certified duplicate controls and keeps the original batch stable", () => {
+  expect(batchActions).toContain('async function duplicateBatchSelection()');
+  expect(batchActions).toContain('section.dataset.miGlobalSection === "true"');
+  expect(batchActions).toContain("'[data-mi-canvas-action=\"duplicate\"]'");
+  expect(batchActions).toContain('duplicate.click();');
+  expect(batchActions).toContain('restoreBatchSelection(ids);');
+  expect(batchActions).toContain('Duplicate</button>');
+  expect(batchActions).not.toContain('section.add');
+});

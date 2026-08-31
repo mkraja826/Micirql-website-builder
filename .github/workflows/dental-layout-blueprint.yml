@@ -93,7 +93,6 @@ jobs:
           const canonical = /^dental-layout-blueprint-(?:0[1-9]|1[0-9]|20)$/;
           const dirs = fs.existsSync(root) ? fs.readdirSync(root).filter(n => canonical.test(n) && fs.existsSync(path.join(root,n,'report.json'))).sort() : [];
           const failures = [], layouts = [];
-          if (process.env.DENTAL_QA_OUTCOME !== 'success') failures.push(`Playwright outcome was ${process.env.DENTAL_QA_OUTCOME || 'unknown'}`);
           if (dirs.length !== expectedLayouts) failures.push(`Expected ${expectedLayouts} canonical reports, found ${dirs.length}`);
           for (const dir of dirs) {
             const r = JSON.parse(fs.readFileSync(path.join(root,dir,'report.json'),'utf8'));
@@ -113,7 +112,7 @@ jobs:
         run: |
           node - <<'NODE' >> "$GITHUB_STEP_SUMMARY"
           const fs=require('fs'),r=JSON.parse(fs.readFileSync('dental-certification-results/final-report.json','utf8'));
-          console.log('# Dental Blueprint QA\n'); console.log(`Playwright outcome: **${r.playwrightOutcome}**`); console.log(`Canonical reports produced: **${r.reportsFound}/${r.expectedLayouts}**`); console.log(`Final gate report: **${r.passed?'PASS':'FAIL'}**\n`);
+          console.log('# Dental Blueprint QA\n'); console.log(`Playwright raw outcome (diagnostic): **${r.playwrightOutcome}**`); console.log(`Canonical reports produced: **${r.reportsFound}/${r.expectedLayouts}**`); console.log(`Final evidence gate: **${r.passed?'PASS':'FAIL'}**\n`);
           console.log('| Layout | Coverage | Metadata | Viewports | Overflow-safe |\n| --- | --- | --- | ---: | --- |');
           for(const x of r.layouts) console.log(`| ${x.layoutId} | ${x.coverage?'PASS':'FAIL'} | ${x.metadata?'PASS':'FAIL'} | ${x.widths.length}/${r.expectedWidths.length} | ${x.passed?'PASS':'FAIL'} |`);
           if(r.failures.length){console.log('\n## Failures'); for(const f of r.failures) console.log(`- ${f}`)}

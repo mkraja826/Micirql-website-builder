@@ -28,6 +28,7 @@ test("global shell sections remain protected from local structural actions", () 
   expect(source).toContain("onRequestImageChange && !contextMenu.globalShell");
   expect(source).toContain("onRequestMove && !contextMenu.globalShell");
   expect(source).toContain("onRequestVisibility && !contextMenu.globalShell");
+  expect(source).toContain("onRequestDuplicate && !contextMenu.globalShell");
   expect(source).toContain("onRequestRemove && !contextMenu.globalShell");
   expect(source).toContain("draggable={Boolean(onReorderSection && !globalShell)}");
 });
@@ -45,4 +46,13 @@ test("canvas removal is confirmed, undoable and routed through section.remove", 
   expect(workspace).toContain('window.confirm("Remove this section? You can undo this change.")');
   expect(workspace).toContain('commit({type:"section.remove",pageId:activePage.id,sectionId})');
   expect(workspace).toContain('selectPage(activePage.id);setMode("content")');
+});
+
+test("canvas duplication uses a fresh id and the existing section.add history path", () => {
+  expect(source).toContain('data-mi-canvas-action="duplicate"');
+  expect(source).toContain("onRequestDuplicate(contextMenu.sectionId)");
+  expect(workspace).toContain('if(family==="navbar"||family==="footer")return');
+  expect(workspace).toContain('const duplicate:SiteSection={...structuredClone(source),id:`${family??"section"}-${crypto.randomUUID().slice(0,8)}`}');
+  expect(workspace).toContain('commit({type:"section.add",pageId:activePage.id,section:duplicate,toIndex:index+1})');
+  expect(workspace).toContain('selectSection(activePage.id,duplicate.id);setMode("content")');
 });

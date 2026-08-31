@@ -106,6 +106,18 @@ test("batch duplication reuses certified duplicate controls and keeps the origin
   expect(batchActions).not.toContain('section.add');
 });
 
+test("batch movement preserves relative order and reuses certified move controls", () => {
+  expect(batchActions).toContain('async function moveBatchSelection(direction: "up" | "down")');
+  expect(batchActions).toContain('const orderedIds = direction === "up" ? ids : [...ids].reverse();');
+  expect(batchActions).toContain('section.dataset.miGlobalSection === "true"');
+  expect(batchActions).toContain('`[data-mi-canvas-action="move-${direction}"]`');
+  expect(batchActions).toContain('if (action && !action.disabled) action.click();');
+  expect(batchActions).toContain('restoreBatchSelection(ids);');
+  expect(batchActions).toContain('Move up</button>');
+  expect(batchActions).toContain('Move down</button>');
+  expect(batchActions).not.toContain('section.reorder');
+});
+
 test("batch removal confirms once and reuses the certified remove control", () => {
   expect(batchActions).toContain('async function removeBatchSelection()');
   expect(batchActions).toContain('window.confirm(`Remove ${label}? You can undo these changes.`)');

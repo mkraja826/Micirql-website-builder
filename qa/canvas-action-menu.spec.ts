@@ -105,3 +105,17 @@ test("batch duplication reuses certified duplicate controls and keeps the origin
   expect(batchActions).toContain('Duplicate</button>');
   expect(batchActions).not.toContain('section.add');
 });
+
+test("batch removal confirms once and reuses the certified remove control", () => {
+  expect(batchActions).toContain('async function removeBatchSelection()');
+  expect(batchActions).toContain('window.confirm(`Remove ${label}? You can undo these changes.`)');
+  expect(batchActions).toContain('section.dataset.miGlobalSection === "true"');
+  expect(batchActions).toContain("'[data-mi-canvas-action=\"remove\"]'");
+  expect(batchActions).toContain('const originalConfirm = window.confirm;');
+  expect(batchActions).toContain('window.confirm = () => true;');
+  expect(batchActions).toContain('remove.click();');
+  expect(batchActions).toContain('window.confirm = originalConfirm;');
+  expect(batchActions).toContain('detail: { sectionIds: [] }');
+  expect(batchActions).toContain('className="is-danger"');
+  expect(batchActions).not.toContain('section.remove');
+});

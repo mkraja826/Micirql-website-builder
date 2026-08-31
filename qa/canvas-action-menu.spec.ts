@@ -58,13 +58,15 @@ test("canvas duplication uses a fresh id and the existing section.add history pa
   expect(workspace).toContain('selectSection(activePage.id,duplicate.id);setMode("content")');
 });
 
-test("focused section keyboard shortcuts reuse certified duplicate and remove actions safely", () => {
+test("focused section keyboard shortcuts reuse certified structural actions safely", () => {
   expect(keyboard).toContain('target.closest<HTMLElement>("[data-mi-section-id]")');
   expect(keyboard).toContain('if (!section || target !== section) return');
   expect(keyboard).toContain('if (section.dataset.miGlobalSection === "true") return');
   expect(keyboard).toContain('(event.metaKey || event.ctrlKey)');
   expect(keyboard).toContain('event.key.toLowerCase() === "d"');
   expect(keyboard).toContain('event.key === "Delete" || event.key === "Backspace"');
-  expect(keyboard).toContain('data-mi-canvas-action="${duplicate ? "duplicate" : "remove"}"');
+  expect(keyboard).toContain('event.altKey && !event.shiftKey && event.key === "ArrowUp"');
+  expect(keyboard).toContain('event.altKey && !event.shiftKey && event.key === "ArrowDown"');
+  expect(keyboard).toContain('const actionName = duplicate ? "duplicate" : remove ? "remove" : moveUp ? "move-up" : "move-down"');
   expect(keyboard).toContain('action.click()');
 });

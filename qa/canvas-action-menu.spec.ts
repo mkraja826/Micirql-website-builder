@@ -95,6 +95,16 @@ test("multi-select discovery stays passive and desktop-only", () => {
   expect(canvasCss).toContain('.mi-editor-multiselect-hint{display:none}');
 });
 
+test("batch feedback clearly identifies selected sections and announces the count", () => {
+  expect(batchActions).toContain('const selectionLabel = sectionIds.length === 1 ? "1 section selected" : `${sectionIds.length} sections selected`;');
+  expect(batchActions).toContain('className="mi-editor-batch-status"');
+  expect(batchActions).toContain('role="status"');
+  expect(batchActions).toContain('aria-live="polite"');
+  expect(canvasCss).toContain('.mi-editor-section[data-mi-batch-selected="true"]{');
+  expect(canvasCss).toContain('.mi-editor-section[data-mi-batch-selected="true"]::before{content:"Selected"');
+  expect(canvasCss).toContain('.mi-editor-batch-status{');
+});
+
 test("batch visibility reuses certified section visibility controls safely", () => {
   expect(multiSelect).toContain('document.documentElement.dataset.miBatchAction === "true"');
   expect(batchActions).toContain('section.dataset.miGlobalSection !== "true"');

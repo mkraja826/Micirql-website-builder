@@ -167,9 +167,14 @@ export function BatchSectionActions() {
 
   if (!sectionIds.length) return null;
 
+  const selectionLabel = sectionIds.length === 1 ? "1 section selected" : `${sectionIds.length} sections selected`;
+
   return (
     <div className="mi-editor-batch-toolbar" role="toolbar" aria-label="Batch section actions" data-mi-canvas-action="batch-toolbar">
-      <strong>{sectionIds.length} selected</strong>
+      <div className="mi-editor-batch-status" role="status" aria-live="polite">
+        <span aria-hidden="true">✓</span>
+        <strong>{selectionLabel}</strong>
+      </div>
       <button type="button" onClick={() => void moveBatchSelection("up")}>Move up</button>
       <button type="button" onClick={() => void moveBatchSelection("down")}>Move down</button>
       <button type="button" onClick={() => void duplicateBatchSelection()}>Duplicate</button>

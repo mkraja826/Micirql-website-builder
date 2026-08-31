@@ -346,7 +346,7 @@ export function RendererPreview({
         {onRequestImageChange && !contextMenu.globalShell ? <button type="button" role="menuitem" style={contextMenuButtonStyle} onClick={() => runMenuAction(() => onRequestImageChange(contextMenu.sectionId, "image"))}>Change image</button> : null}
         {onRequestMove && !contextMenu.globalShell ? <>
           <button type="button" role="menuitem" disabled={contextMenu.index === 0} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === 0 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "up"))}>Move up</button>
-          <button type="button" role="menuitem" disabled={contextMenu.index === preview.sections.length - 1} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === preview.sections.length - 1 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "down"))}>Move down</button>
+          <button type="button" role="menuitem" disabled={contextMenu.index === (preview.sections?.length ?? 0) - 1} style={{ ...contextMenuButtonStyle, opacity: contextMenu.index === (preview.sections?.length ?? 0) - 1 ? .38 : 1 }} onClick={() => runMenuAction(() => onRequestMove(contextMenu.sectionId, "down"))}>Move down</button>
         </> : null}
         {onRequestVisibility && !contextMenu.globalShell ? <button type="button" role="menuitem" style={{ ...contextMenuButtonStyle, color: "#aaaab4" }} onClick={() => runMenuAction(() => onRequestVisibility(contextMenu.sectionId, !contextMenu.hidden))}>{contextMenu.hidden ? "Show section" : "Hide section"}</button> : null}
       </div> : null}

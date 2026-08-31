@@ -80,6 +80,7 @@ import "./canvas-multi-select.css";
 import { PreviewInteractionGuard } from "./preview-interaction-guard";
 import { KeyboardSectionActions } from "./keyboard-section-actions";
 import { CanvasMultiSelect } from "./canvas-multi-select";
+import { BatchSectionActions } from "./batch-section-actions";
 
 export const metadata: Metadata = {
   title: "MiCirql Builder",
@@ -89,7 +90,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><PreviewInteractionGuard /><KeyboardSectionActions /><CanvasMultiSelect />{children}</body>
+      <body><PreviewInteractionGuard /><KeyboardSectionActions /><CanvasMultiSelect /><BatchSectionActions />{children}</body>
     </html>
   );
 }

@@ -85,11 +85,24 @@ test("canvas batch selection stays separate from single-section editor selection
   expect(multiSelect).toContain('new CustomEvent("micirql:batch-selection-change"');
 });
 
+test("shift-click selects an inclusive non-global section range from the last anchor", () => {
+  expect(multiSelect).toContain('const anchorSectionId = useRef<string>();');
+  expect(multiSelect).toContain('function selectableSections()');
+  expect(multiSelect).toContain('.filter((section) => section.dataset.miGlobalSection !== "true")');
+  expect(multiSelect).toContain('if (event.shiftKey && anchorSectionId.current)');
+  expect(multiSelect).toContain('if (selectRange(anchorSectionId.current, sectionId)) return;');
+  expect(multiSelect).toContain('const start = Math.min(fromIndex, toIndex);');
+  expect(multiSelect).toContain('const end = Math.max(fromIndex, toIndex);');
+  expect(multiSelect).toContain('sections.slice(start, end + 1).forEach((candidate) => candidate.setAttribute(SELECTED_ATTR, "true"));');
+  expect(multiSelect).toContain('anchorSectionId.current = sectionId;');
+  expect(multiSelect).toContain('anchorSectionId.current = undefined;');
+});
+
 test("multi-select discovery stays passive and desktop-only", () => {
   expect(multiSelect).toContain('window.matchMedia("(hover: hover) and (pointer: fine)")');
   expect(multiSelect).toContain('if (!showHint || batchCount > 0) return null;');
   expect(multiSelect).toContain('data-mi-canvas-action="multiselect-hint"');
-  expect(multiSelect).toContain('Ctrl/Cmd-click sections');
+  expect(multiSelect).toContain('Ctrl/Cmd-click or Shift-click sections');
   expect(canvasCss).toContain('.mi-editor-multiselect-hint{');
   expect(canvasCss).toContain('pointer-events:none');
   expect(canvasCss).toContain('.mi-editor-multiselect-hint{display:none}');

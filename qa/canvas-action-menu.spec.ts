@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const source = readFileSync(resolve(process.cwd(), "apps/builder/app/renderer-preview.tsx"), "utf8");
 const workspace = readFileSync(resolve(process.cwd(), "apps/builder/app/workspace-client.tsx"), "utf8");
 const keyboard = readFileSync(resolve(process.cwd(), "apps/builder/app/keyboard-section-actions.tsx"), "utf8");
+const multiSelect = readFileSync(resolve(process.cwd(), "apps/builder/app/canvas-multi-select.tsx"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');
@@ -69,4 +70,15 @@ test("focused section keyboard shortcuts reuse certified structural actions safe
   expect(keyboard).toContain('event.altKey && !event.shiftKey && event.key === "ArrowDown"');
   expect(keyboard).toContain('const actionName = duplicate ? "duplicate" : remove ? "remove" : moveUp ? "move-up" : "move-down"');
   expect(keyboard).toContain('action.click()');
+});
+
+test("canvas batch selection stays separate from single-section editor selection", () => {
+  expect(multiSelect).toContain('const additive = event.metaKey || event.ctrlKey');
+  expect(multiSelect).toContain('if (!additive) {');
+  expect(multiSelect).toContain('clearBatchSelection();');
+  expect(multiSelect).toContain('if (section.dataset.miGlobalSection === "true") return');
+  expect(multiSelect).toContain('if (target.closest("[data-mi-canvas-action]")) return');
+  expect(multiSelect).toContain('event.stopPropagation();');
+  expect(multiSelect).toContain('section.setAttribute(SELECTED_ATTR, "true")');
+  expect(multiSelect).toContain('new CustomEvent("micirql:batch-selection-change"');
 });

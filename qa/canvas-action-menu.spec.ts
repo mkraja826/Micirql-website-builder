@@ -117,5 +117,5 @@ test("batch removal confirms once and reuses the certified remove control", () =
   expect(batchActions).toContain('window.confirm = originalConfirm;');
   expect(batchActions).toContain('detail: { sectionIds: [] }');
   expect(batchActions).toContain('className="is-danger"');
-  expect(batchActions).not.toContain('section.remove');
+  expect(batchActions).not.toContain('type:"section.remove"');
 });

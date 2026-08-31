@@ -6,6 +6,7 @@ const source = readFileSync(resolve(process.cwd(), "apps/builder/app/renderer-pr
 const workspace = readFileSync(resolve(process.cwd(), "apps/builder/app/workspace-client.tsx"), "utf8");
 const keyboard = readFileSync(resolve(process.cwd(), "apps/builder/app/keyboard-section-actions.tsx"), "utf8");
 const multiSelect = readFileSync(resolve(process.cwd(), "apps/builder/app/canvas-multi-select.tsx"), "utf8");
+const batchActions = readFileSync(resolve(process.cwd(), "apps/builder/app/batch-section-actions.tsx"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');
@@ -81,4 +82,16 @@ test("canvas batch selection stays separate from single-section editor selection
   expect(multiSelect).toContain('event.stopPropagation();');
   expect(multiSelect).toContain('section.setAttribute(SELECTED_ATTR, "true")');
   expect(multiSelect).toContain('new CustomEvent("micirql:batch-selection-change"');
+});
+
+test("batch visibility reuses certified section visibility controls safely", () => {
+  expect(multiSelect).toContain('document.documentElement.dataset.miBatchAction === "true"');
+  expect(batchActions).toContain('section.dataset.miGlobalSection !== "true"');
+  expect(batchActions).toContain('section.classList.contains("mi-editor-hidden")');
+  expect(batchActions).toContain('section.click();');
+  expect(batchActions).toContain("'[data-mi-canvas-action=\"visibility\"]'");
+  expect(batchActions).toContain('visibility.click();');
+  expect(batchActions).toContain('Hide all');
+  expect(batchActions).toContain('Show all');
+  expect(batchActions).toContain('micirql:batch-selection-change');
 });

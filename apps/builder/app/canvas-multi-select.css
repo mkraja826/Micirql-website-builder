@@ -17,3 +17,59 @@
   font: 600 10px/1 Inter, ui-sans-serif, system-ui, sans-serif;
   pointer-events: none;
 }
+
+.mi-editor-batch-toolbar {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 7px 9px 7px 12px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(16,16,22,.96);
+  box-shadow: 0 18px 48px rgba(0,0,0,.28);
+  backdrop-filter: blur(18px);
+  color: #f7f7fa;
+  font: 600 12px/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.mi-editor-batch-toolbar strong {
+  padding-right: 4px;
+  color: #c9bcff;
+  white-space: nowrap;
+}
+
+.mi-editor-batch-toolbar button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 9px;
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.mi-editor-batch-toolbar button:hover {
+  background: rgba(255,255,255,.11);
+}
+
+.mi-editor-batch-toolbar button.is-muted {
+  color: #aaaab4;
+}
+
+@media (max-width: 640px) {
+  .mi-editor-batch-toolbar {
+    right: 10px;
+    bottom: 12px;
+    left: 10px;
+    width: auto;
+    justify-content: center;
+    transform: none;
+  }
+}

@@ -18,6 +18,8 @@ export function CanvasMultiSelect() {
       const section = target.closest<HTMLElement>("[data-mi-section-id]");
       if (!section) return;
 
+      if (document.documentElement.dataset.miBatchAction === "true") return;
+
       const additive = event.metaKey || event.ctrlKey;
       if (!additive) {
         clearBatchSelection();

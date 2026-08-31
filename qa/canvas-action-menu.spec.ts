@@ -7,6 +7,7 @@ const workspace = readFileSync(resolve(process.cwd(), "apps/builder/app/workspac
 const keyboard = readFileSync(resolve(process.cwd(), "apps/builder/app/keyboard-section-actions.tsx"), "utf8");
 const multiSelect = readFileSync(resolve(process.cwd(), "apps/builder/app/canvas-multi-select.tsx"), "utf8");
 const batchActions = readFileSync(resolve(process.cwd(), "apps/builder/app/batch-section-actions.tsx"), "utf8");
+const canvasCss = readFileSync(resolve(process.cwd(), "apps/builder/app/canvas-controls.css"), "utf8");
 
 test("direct canvas action menu keeps mouse and keyboard entry points", () => {
   expect(source).toContain('onContextMenu={(event) => {');
@@ -76,12 +77,22 @@ test("focused section keyboard shortcuts reuse certified structural actions safe
 test("canvas batch selection stays separate from single-section editor selection", () => {
   expect(multiSelect).toContain('const additive = event.metaKey || event.ctrlKey');
   expect(multiSelect).toContain('if (!additive) {');
-  expect(multiSelect).toContain('clearBatchSelection();');
+  expect(multiSelect).toContain('clearAndEmit();');
   expect(multiSelect).toContain('if (section.dataset.miGlobalSection === "true") return');
   expect(multiSelect).toContain('if (target.closest("[data-mi-canvas-action]")) return');
   expect(multiSelect).toContain('event.stopPropagation();');
   expect(multiSelect).toContain('section.setAttribute(SELECTED_ATTR, "true")');
   expect(multiSelect).toContain('new CustomEvent("micirql:batch-selection-change"');
+});
+
+test("multi-select discovery stays passive and desktop-only", () => {
+  expect(multiSelect).toContain('window.matchMedia("(hover: hover) and (pointer: fine)")');
+  expect(multiSelect).toContain('if (!showHint || batchCount > 0) return null;');
+  expect(multiSelect).toContain('data-mi-canvas-action="multiselect-hint"');
+  expect(multiSelect).toContain('Ctrl/Cmd-click sections');
+  expect(canvasCss).toContain('.mi-editor-multiselect-hint{');
+  expect(canvasCss).toContain('pointer-events:none');
+  expect(canvasCss).toContain('.mi-editor-multiselect-hint{display:none}');
 });
 
 test("batch visibility reuses certified section visibility controls safely", () => {

@@ -24,7 +24,7 @@ function clearBatchSelection() {
 export function CanvasMultiSelect() {
   const [batchCount, setBatchCount] = useState(0);
   const [showHint, setShowHint] = useState(false);
-  const anchorSectionId = useRef<string>();
+  const anchorSectionId = useRef<string | null>(null);
 
   useEffect(() => {
     const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -92,7 +92,7 @@ export function CanvasMultiSelect() {
     };
 
     const clearOnPageNavigation = () => {
-      anchorSectionId.current = undefined;
+      anchorSectionId.current = null;
       clearAndEmit();
     };
 

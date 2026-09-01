@@ -18,6 +18,10 @@ test("preference state stays local to the existing safe logo replacement request
   expect(brandKit).not.toContain('type:"theme.set"');
 });
 
+test("approved website palette is exposed as a named group", () => {
+  expect(brandKit).toContain('className={styles.palette} role="group" aria-label="Approved website palette"');
+});
+
 test("brand history restore actions identify the saved version accessibly", () => {
   expect(brandKit).toContain('aria-label={`Restore ${historyReason(entry.reason)} from ${formatHistoryDate(entry.createdAt)}`}');
   expect(brandKit).toContain('onClick={()=>restoreBrand(entry)}');

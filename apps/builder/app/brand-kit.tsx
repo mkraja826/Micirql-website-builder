@@ -125,7 +125,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       <div className={styles.detail}><span>Social image</span><strong>{brand.socialImageStrategy?humanize(brand.socialImageStrategy):social?"Generated":"Pending"}</strong></div>
     </div>
 
-    {history.length?<div className={styles.history}>
+    {history.length?<div className={styles.history} role="group" aria-label="Brand history">
       <div className={styles.historyHeader}><span>Brand history</span><small>Last {history.length} saved {history.length===1?"version":"versions"}</small></div>
       <div className={styles.historyList}>{history.map(entry=><div className={styles.historyItem} key={entry.id}>
         <div className={styles.historyThumb}>{entry.logoAssetId?<img src={entry.logoAssetId} alt="Previous logo"/>:<span>—</span>}</div>

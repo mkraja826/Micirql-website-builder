@@ -33,6 +33,12 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
     onMove(duplicate.id, selectedIndex + 1);
   }
 
+  function removeSelected() {
+    if (!selected || selectedIsGlobal) return;
+    if (!window.confirm("Remove this section? You can undo this change.")) return;
+    onRemove(selected.id);
+  }
+
   return <div className={styles.root}>
     <div className={styles.heading}>
       <div><span>Page structure</span><strong>{page.sections.length} sections</strong></div>
@@ -54,7 +60,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
       <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
       <button type="button" onClick={duplicateSelected}>Duplicate</button>
-      <button type="button" className={styles.danger} onClick={() => onRemove(selected.id)}>Delete</button>
+      <button type="button" className={styles.danger} onClick={removeSelected}>Delete</button>
     </div> : null}
 
     {libraryOpen ? <SectionLibraryBrowser theme={activeTheme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {

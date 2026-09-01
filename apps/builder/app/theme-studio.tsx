@@ -45,7 +45,7 @@ export function ThemeStudio({ theme, onChange }: { theme: ThemeConfig; onChange(
       <label>Shape<small>Controls how sharp or rounded the site feels.</small><select value={theme.brand.shape} onChange={e=>patchBrand({shape:e.target.value as ThemeConfig["brand"]["shape"]})}>{SHAPES.map(v=><option key={v} value={v}>{humanLabel(v)}</option>)}</select></label>
       <label>Motion<small>Controls the amount of site-wide interface animation.</small><select value={theme.brand.motion} onChange={e=>patchBrand({motion:e.target.value as ThemeConfig["brand"]["motion"]})}>{MOTIONS.map(v=><option key={v} value={v}>{humanLabel(v)}</option>)}</select></label>
     </section>
-    <section className={styles.section}><span className={styles.label}>Fine tune</span><div className={styles.pickers}>
+    <section className={styles.section}><span className={styles.label}>Fine tune</span><div className={styles.pickers} role="group" aria-label="Fine tune colors">
       <label>Primary<span>{theme.brand.colors.primary}</span><input type="color" aria-label="Primary color" value={theme.brand.colors.primary} onChange={e=>patchBrand({colors:{...theme.brand.colors,primary:e.target.value}})}/></label>
       <label>Accent<span>{theme.brand.colors.accent}</span><input type="color" aria-label="Accent color" value={theme.brand.colors.accent} onChange={e=>patchBrand({colors:{...theme.brand.colors,accent:e.target.value}})}/></label>
       <label>Background<span>{theme.brand.colors.background}</span><input type="color" aria-label="Background color" value={theme.brand.colors.background} onChange={e=>patchBrand({colors:{...theme.brand.colors,background:e.target.value}})}/></label>

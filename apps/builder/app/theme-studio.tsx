@@ -26,6 +26,10 @@ function sameRecord<T extends Record<string,string>>(current:T,candidate:T){
   return Object.keys(candidate).every(key=>current[key as keyof T]===candidate[key as keyof T]);
 }
 
+function humanLabel(value:string){
+  return value.replace(/-/g," ").replace(/^./,char=>char.toUpperCase());
+}
+
 export function ThemeStudio({ theme, onChange }: { theme: ThemeConfig; onChange(next: ThemeConfig): void }) {
   const patchBrand = (patch: Partial<ThemeConfig["brand"]>) => onChange({ ...theme, brand: { ...theme.brand, ...patch, colors: { ...theme.brand.colors, ...(patch.colors ?? {}) }, typography: { ...theme.brand.typography, ...(patch.typography ?? {}) } } });
   const setFamily = (family: ThemeConfig["family"]) => onChange({ ...theme, family });
@@ -33,13 +37,13 @@ export function ThemeStudio({ theme, onChange }: { theme: ThemeConfig; onChange(
   return <div className={styles.studio}>
     <p className={styles.scopeNote}><strong>Site-wide styles</strong><span>Changes here update the visual system across every page and section.</span></p>
     <BrandKit brand={theme.brand} onChange={brand=>onChange({...theme,brand})}/>
-    <section className={styles.section}><span className={styles.label}>Theme</span><div className={styles.chips}>{FAMILIES.map(f=><button type="button" key={f} className={theme.family===f?styles.active:undefined} aria-pressed={theme.family===f} onClick={()=>setFamily(f)}>{f}</button>)}</div></section>
+    <section className={styles.section}><span className={styles.label}>Theme</span><div className={styles.chips}>{FAMILIES.map(f=><button type="button" key={f} className={theme.family===f?styles.active:undefined} aria-pressed={theme.family===f} onClick={()=>setFamily(f)}>{humanLabel(f)}</button>)}</div></section>
     <section className={styles.section}><span className={styles.label}>Palette</span><div className={styles.palette}>{PALETTES.map(p=>{const active=sameRecord(theme.brand.colors,p.colors);return <button type="button" key={p.id} className={active?styles.active:undefined} aria-pressed={active} onClick={()=>patchBrand({colors:p.colors})}><span className={styles.swatch} style={{background:`linear-gradient(135deg, ${p.colors.primary} 0 50%, ${p.colors.background} 50%)`}}/><span>{p.name}</span></button>})}</div></section>
     <section className={styles.section}><span className={styles.label}>Typography</span><div className={styles.type}>{TYPE.map(t=>{const active=sameRecord(theme.brand.typography,t.value);return <button type="button" key={t.id} className={active?styles.active:undefined} aria-pressed={active} onClick={()=>patchBrand({typography:t.value})}><strong style={{fontFamily:t.value.display}}>{t.name}</strong><small>{t.value.display}</small></button>})}</div></section>
     <section className={styles.controls}>
-      <label>Density<small>Controls overall spacing and content breathing room.</small><select value={theme.brand.density} onChange={e=>patchBrand({density:e.target.value as ThemeConfig["brand"]["density"]})}>{DENSITIES.map(v=><option key={v}>{v}</option>)}</select></label>
-      <label>Shape<small>Controls how sharp or rounded the site feels.</small><select value={theme.brand.shape} onChange={e=>patchBrand({shape:e.target.value as ThemeConfig["brand"]["shape"]})}>{SHAPES.map(v=><option key={v}>{v}</option>)}</select></label>
-      <label>Motion<small>Controls the amount of site-wide interface animation.</small><select value={theme.brand.motion} onChange={e=>patchBrand({motion:e.target.value as ThemeConfig["brand"]["motion"]})}>{MOTIONS.map(v=><option key={v}>{v}</option>)}</select></label>
+      <label>Density<small>Controls overall spacing and content breathing room.</small><select value={theme.brand.density} onChange={e=>patchBrand({density:e.target.value as ThemeConfig["brand"]["density"]})}>{DENSITIES.map(v=><option key={v} value={v}>{humanLabel(v)}</option>)}</select></label>
+      <label>Shape<small>Controls how sharp or rounded the site feels.</small><select value={theme.brand.shape} onChange={e=>patchBrand({shape:e.target.value as ThemeConfig["brand"]["shape"]})}>{SHAPES.map(v=><option key={v} value={v}>{humanLabel(v)}</option>)}</select></label>
+      <label>Motion<small>Controls the amount of site-wide interface animation.</small><select value={theme.brand.motion} onChange={e=>patchBrand({motion:e.target.value as ThemeConfig["brand"]["motion"]})}>{MOTIONS.map(v=><option key={v} value={v}>{humanLabel(v)}</option>)}</select></label>
     </section>
     <section className={styles.section}><span className={styles.label}>Fine tune</span><div className={styles.pickers}>
       <label>Primary<span>{theme.brand.colors.primary}</span><input type="color" value={theme.brand.colors.primary} onChange={e=>patchBrand({colors:{...theme.brand.colors,primary:e.target.value}})}/></label>

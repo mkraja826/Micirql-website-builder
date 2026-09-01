@@ -105,7 +105,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       </div>
     </div>
 
-    <div className={styles.social}>
+    <div className={styles.social} role="group" aria-label="Social share card preview">
       <div className={styles.assetLabel}><span>Social share card</span><span>1200 × 630</span></div>
       {social?<img src={social} alt="Social share card preview"/>:<div className={styles.socialEmpty}>A branded share card will appear here after generation.</div>}
     </div>

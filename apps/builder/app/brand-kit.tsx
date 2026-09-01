@@ -69,7 +69,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
   return <section className={styles.kit} aria-label="Brand Kit">
     <div className={styles.header}>
       <div><span>Brand Kit</span><strong>Your generated brand assets</strong></div>
-      <div className={styles.status}>{busy?"Working…":ready?"Ready":"Awaiting logo"}</div>
+      <div className={styles.status} role="status" aria-live="polite">{busy?"Working…":ready?"Ready":"Awaiting logo"}</div>
     </div>
 
     <div className={styles.preference} role="group" aria-label="Logo color preference">

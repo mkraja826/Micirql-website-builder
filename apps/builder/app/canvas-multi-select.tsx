@@ -97,10 +97,27 @@ export function CanvasMultiSelect() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || selectedIds().length === 0) return;
       const target = event.target;
-      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable=true]")) return;
-      clearSelectionState();
+      const editingText = target instanceof HTMLElement && Boolean(target.closest("input, textarea, select, [contenteditable=true]"));
+
+      if (event.key === "Escape" && selectedIds().length > 0) {
+        if (editingText) return;
+        clearSelectionState();
+        return;
+      }
+
+      const selectAll = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "a";
+      if (!selectAll || editingText) return;
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement) || !active.closest("[data-mi-section-id]")) return;
+
+      const sections = selectableSections();
+      if (!sections.length) return;
+      event.preventDefault();
+      clearBatchSelection();
+      sections.forEach((section) => section.setAttribute(SELECTED_ATTR, "true"));
+      anchorSectionId.current = sections[0]?.dataset.miSectionId ?? null;
+      emitSelection();
     };
 
     window.addEventListener("click", onClickCapture, true);
@@ -119,6 +136,6 @@ export function CanvasMultiSelect() {
 
   return <div className="mi-editor-multiselect-hint" role="status" aria-live="polite" data-mi-canvas-action="multiselect-hint">
     <span aria-hidden="true">⌘</span>
-    <span><strong>Multi-select</strong> · Ctrl/Cmd-click or Shift-click sections</span>
+    <span><strong>Multi-select</strong> · Ctrl/Cmd-click, Shift-click, or Ctrl/Cmd+A from the canvas</span>
   </div>;
 }

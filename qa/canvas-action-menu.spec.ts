@@ -99,18 +99,30 @@ test("shift-click selects an inclusive non-global section range from the last an
 });
 
 test("escape clears an active batch without stealing escape from text editing", () => {
-  expect(multiSelect).toContain('if (event.key !== "Escape" || selectedIds().length === 0) return;');
-  expect(multiSelect).toContain('target.closest("input, textarea, select, [contenteditable=true]")');
+  expect(multiSelect).toContain('if (event.key === "Escape" && selectedIds().length > 0) {');
+  expect(multiSelect).toContain('const editingText = target instanceof HTMLElement && Boolean(target.closest("input, textarea, select, [contenteditable=true]"));');
+  expect(multiSelect).toContain('if (editingText) return;');
   expect(multiSelect).toContain('clearSelectionState();');
   expect(multiSelect).toContain('window.addEventListener("keydown", onKeyDown);');
   expect(multiSelect).toContain('window.removeEventListener("keydown", onKeyDown);');
+});
+
+test("canvas select-all is scoped to section focus and excludes text editing and globals", () => {
+  expect(multiSelect).toContain('const selectAll = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "a";');
+  expect(multiSelect).toContain('if (!selectAll || editingText) return;');
+  expect(multiSelect).toContain('const active = document.activeElement;');
+  expect(multiSelect).toContain('if (!(active instanceof HTMLElement) || !active.closest("[data-mi-section-id]")) return;');
+  expect(multiSelect).toContain('const sections = selectableSections();');
+  expect(multiSelect).toContain('.filter((section) => section.dataset.miGlobalSection !== "true")');
+  expect(multiSelect).toContain('sections.forEach((section) => section.setAttribute(SELECTED_ATTR, "true"));');
+  expect(multiSelect).toContain('event.preventDefault();');
 });
 
 test("multi-select discovery stays passive and desktop-only", () => {
   expect(multiSelect).toContain('window.matchMedia("(hover: hover) and (pointer: fine)")');
   expect(multiSelect).toContain('if (!showHint || batchCount > 0) return null;');
   expect(multiSelect).toContain('data-mi-canvas-action="multiselect-hint"');
-  expect(multiSelect).toContain('Ctrl/Cmd-click or Shift-click sections');
+  expect(multiSelect).toContain('Ctrl/Cmd-click, Shift-click, or Ctrl/Cmd+A from the canvas');
   expect(canvasCss).toContain('.mi-editor-multiselect-hint{');
   expect(canvasCss).toContain('pointer-events:none');
   expect(canvasCss).toContain('.mi-editor-multiselect-hint{display:none}');

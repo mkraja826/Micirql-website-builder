@@ -4,8 +4,8 @@ import { resolve } from "node:path";
 
 const brandKit = readFileSync(resolve(process.cwd(), "apps/builder/app/brand-kit.tsx"), "utf8");
 
-test("logo color preference exposes its selected state accessibly", () => {
-  expect(brandKit).toContain('aria-label="Logo color preference"');
+test("logo color preference is exposed as a named group with selected state", () => {
+  expect(brandKit).toContain('className={styles.preference} role="group" aria-label="Logo color preference"');
   expect(brandKit).toContain('aria-pressed={colorPreference==="keep"}');
   expect(brandKit).toContain('aria-pressed={colorPreference==="match"}');
   expect(brandKit).toContain('className={colorPreference==="keep"?styles.preferenceActive:undefined}');

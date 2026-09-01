@@ -22,6 +22,10 @@ test("approved website palette is exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.palette} role="group" aria-label="Approved website palette"');
 });
 
+test("brand history is exposed as a named group", () => {
+  expect(brandKit).toContain('className={styles.history} role="group" aria-label="Brand history"');
+});
+
 test("brand history restore actions identify the saved version accessibly", () => {
   expect(brandKit).toContain('aria-label={`Restore ${historyReason(entry.reason)} from ${formatHistoryDate(entry.createdAt)}`}');
   expect(brandKit).toContain('onClick={()=>restoreBrand(entry)}');

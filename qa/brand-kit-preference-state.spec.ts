@@ -18,6 +18,11 @@ test("preference state stays local to the existing safe logo replacement request
   expect(brandKit).not.toContain('type:"theme.set"');
 });
 
+test("Brand Kit header status is announced politely", () => {
+  expect(brandKit).toContain('className={styles.status} role="status" aria-live="polite"');
+  expect(brandKit).toContain('{busy?"Working…":ready?"Ready":"Awaiting logo"}');
+});
+
 test("logo and favicon previews are exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.assetGrid} role="group" aria-label="Logo and favicon previews"');
 });

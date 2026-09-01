@@ -94,7 +94,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
     </div>
     {message?<div className={styles.message} role="status">{message}</div>:null}
 
-    <div className={styles.assetGrid}>
+    <div className={styles.assetGrid} role="group" aria-label="Logo and favicon previews">
       <div className={styles.asset}>
         <div className={styles.assetLabel}><span>Website logo</span><span>{cleanup?"Cleaned":"Original"}</span></div>
         {logo?<div className={styles.preview}><img src={logo} alt="Website logo preview"/></div>:<div className={styles.empty}>No logo uploaded</div>}

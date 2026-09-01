@@ -120,8 +120,8 @@ export function AiEditorAssistant({
       </div>
     </div>
 
-    <div className={styles.suggestionGroup}>
-      <span className={styles.groupLabel}>{sectionId ? "For this section" : "For this page"}</span>
+    <div className={styles.suggestionGroup} role="group" aria-labelledby="ai-editor-suggestions-label">
+      <span id="ai-editor-suggestions-label" className={styles.groupLabel}>{sectionId ? "For this section" : "For this page"}</span>
       <div className={styles.chips}>
         {sectionId ? <>
           <button type="button" onClick={() => void ask("Give me another layout for this section")}>Try another layout</button>

@@ -110,7 +110,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       {social?<img src={social} alt="Social share card preview"/>:<div className={styles.socialEmpty}>A branded share card will appear here after generation.</div>}
     </div>
 
-    <div className={styles.palette} aria-label="Approved website palette">
+    <div className={styles.palette} role="group" aria-label="Approved website palette">
       {COLOR_KEYS.map(key=><div className={styles.color} key={key} title={`${key}: ${brand.colors[key]}`}>
         <div className={styles.colorSwatch} style={{background:brand.colors[key]}}/>
         <div className={styles.colorMeta}><strong>{humanize(key)}</strong><span>{brand.colors[key]}</span></div>

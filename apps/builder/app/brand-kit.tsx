@@ -92,7 +92,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       </label>
       <span>MiCirql preserves the original and rebuilds dependent brand assets automatically.</span>
     </div>
-    {message?<div className={styles.message} role="status">{message}</div>:null}
+    {message?<div className={styles.message} role="status" aria-atomic="true">{message}</div>:null}
 
     <div className={styles.assetGrid} role="group" aria-label="Logo and favicon previews">
       <div className={styles.asset}>

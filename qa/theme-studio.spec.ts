@@ -21,3 +21,12 @@ test("theme palette and typography presets expose persisted active state accessi
   expect(themeStudio).toContain('className={active?styles.active:undefined}');
   expect(themeCss).toContain('.chips button.active,.palette button.active,.type button.active{');
 });
+
+test("density shape and motion explain their site-wide effect without changing persistence", () => {
+  expect(themeStudio).toContain('Controls overall spacing and content breathing room.');
+  expect(themeStudio).toContain('Controls how sharp or rounded the site feels.');
+  expect(themeStudio).toContain('Controls the amount of site-wide interface animation.');
+  expect(themeStudio).toContain('patchBrand({density:e.target.value as ThemeConfig["brand"]["density"]})');
+  expect(themeStudio).toContain('patchBrand({shape:e.target.value as ThemeConfig["brand"]["shape"]})');
+  expect(themeStudio).toContain('patchBrand({motion:e.target.value as ThemeConfig["brand"]["motion"]})');
+});

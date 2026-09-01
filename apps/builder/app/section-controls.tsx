@@ -66,7 +66,9 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
     </div> : null}
 
     {libraryOpen ? <SectionLibraryBrowser theme={activeTheme} onClose={() => setLibraryOpen(false)} onAdd={(family, variant, componentId) => {
-      onAdd(newSection(family, variant, componentId));
+      const section = newSection(family, variant, componentId);
+      onAdd(section);
+      if (selectedIndex >= 0 && !selectedIsGlobal) onMove(section.id, selectedIndex + 1);
       setLibraryOpen(false);
     }} /> : null}
   </div>;

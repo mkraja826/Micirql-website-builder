@@ -23,6 +23,10 @@ test("Brand Kit header status is announced politely", () => {
   expect(brandKit).toContain('{busy?"Working…":ready?"Ready":"Awaiting logo"}');
 });
 
+test("Brand Kit operation message is announced atomically", () => {
+  expect(brandKit).toContain('className={styles.message} role="status" aria-atomic="true"');
+});
+
 test("logo and favicon previews are exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.assetGrid} role="group" aria-label="Logo and favicon previews"');
 });

@@ -130,7 +130,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       <div className={styles.historyList}>{history.map(entry=><div className={styles.historyItem} key={entry.id}>
         <div className={styles.historyThumb}>{entry.logoAssetId?<img src={entry.logoAssetId} alt="Previous logo"/>:<span>—</span>}</div>
         <div className={styles.historyMeta}><strong>{historyReason(entry.reason)}</strong><span>{formatHistoryDate(entry.createdAt)}</span><div>{[entry.colors.primary,entry.colors.accent,entry.colors.background].map((color,index)=><i key={`${entry.id}-${index}`} style={{background:color}}/>)}</div></div>
-        <button type="button" onClick={()=>restoreBrand(entry)} disabled={busy}>Restore</button>
+        <button type="button" aria-label={`Restore ${historyReason(entry.reason)} from ${formatHistoryDate(entry.createdAt)}`} onClick={()=>restoreBrand(entry)} disabled={busy}>Restore</button>
       </div>)}</div>
     </div>:null}
 

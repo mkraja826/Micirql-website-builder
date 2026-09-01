@@ -139,6 +139,7 @@ export function AiEditorAssistant({
 
     <div className={styles.input}>
       <textarea
+        aria-label="Ask MiCirql edit request"
         value={prompt}
         onChange={(event) => setPrompt(event.target.value)}
         placeholder={sectionId ? "Ask MiCirql to change this section…" : "Ask MiCirql to improve this page…"}

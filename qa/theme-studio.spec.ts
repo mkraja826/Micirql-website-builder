@@ -56,6 +56,10 @@ test("fine tune color inputs keep concise accessible names", () => {
   expect(themeStudio).toContain('aria-label="Background color"');
 });
 
+test("fine tune color controls are exposed as one named group", () => {
+  expect(themeStudio).toContain('className={styles.pickers} role="group" aria-label="Fine tune colors"');
+});
+
 test("theme and select controls present human labels while preserving stored enum values", () => {
   expect(themeStudio).toContain('function humanLabel(value:string)');
   expect(themeStudio).toContain('>{humanLabel(f)}</button>');

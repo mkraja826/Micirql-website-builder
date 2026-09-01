@@ -22,6 +22,12 @@ test("theme palette and typography presets expose persisted active state accessi
   expect(themeCss).toContain('.chips button.active,.palette button.active,.type button.active{');
 });
 
+test("theme palette and typography preset buttons are exposed as named groups", () => {
+  expect(themeStudio).toContain('className={styles.chips} role="group" aria-label="Theme presets"');
+  expect(themeStudio).toContain('className={styles.palette} role="group" aria-label="Palette presets"');
+  expect(themeStudio).toContain('className={styles.type} role="group" aria-label="Typography presets"');
+});
+
 test("density shape and motion explain their site-wide effect without changing persistence", () => {
   expect(themeStudio).toContain('Controls overall spacing and content breathing room.');
   expect(themeStudio).toContain('Controls how sharp or rounded the site feels.');

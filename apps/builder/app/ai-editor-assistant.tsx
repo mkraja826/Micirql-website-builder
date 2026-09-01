@@ -110,11 +110,11 @@ export function AiEditorAssistant({
     ? `${sectionLabel ?? "Selected section"} on ${activePage?.name ?? "this page"}`
     : activePage?.name ? `${activePage.name} page` : "Current page";
 
-  return <section className={styles.shell}>
+  return <section className={styles.shell} aria-labelledby="ai-editor-title">
     <div className={styles.hero}>
       <div className={styles.spark}>✦</div>
       <div className={styles.heading}>
-        <span>Ask MiCirql</span>
+        <span id="ai-editor-title">Ask MiCirql</span>
         <strong>What would you like to improve?</strong>
         <small>{selectedContext}. MiCirql proposes a safe structured edit first—you decide whether to apply it.</small>
       </div>

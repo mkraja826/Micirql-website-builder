@@ -18,6 +18,10 @@ test("preference state stays local to the existing safe logo replacement request
   expect(brandKit).not.toContain('type:"theme.set"');
 });
 
+test("logo and favicon previews are exposed as a named group", () => {
+  expect(brandKit).toContain('className={styles.assetGrid} role="group" aria-label="Logo and favicon previews"');
+});
+
 test("approved website palette is exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.palette} role="group" aria-label="Approved website palette"');
 });

@@ -140,12 +140,13 @@ export function AiEditorAssistant({
     <div className={styles.input}>
       <textarea
         aria-label="Ask MiCirql edit request"
+        aria-describedby="ai-editor-prompt-help"
         value={prompt}
         onChange={(event) => setPrompt(event.target.value)}
         placeholder={sectionId ? "Ask MiCirql to change this section…" : "Ask MiCirql to improve this page…"}
       />
       <div className={styles.inputFooter}>
-        <small>Design-safe edits · Undo supported</small>
+        <small id="ai-editor-prompt-help">Design-safe edits · Undo supported</small>
         <button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Working…" : "Create proposal"}</button>
       </div>
     </div>

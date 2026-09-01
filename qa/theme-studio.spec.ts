@@ -39,3 +39,13 @@ test("fine tune color pickers expose their current persisted values", () => {
   expect(themeStudio).toContain('patchBrand({colors:{...theme.brand.colors,accent:e.target.value}})');
   expect(themeStudio).toContain('patchBrand({colors:{...theme.brand.colors,background:e.target.value}})');
 });
+
+test("theme and select controls present human labels while preserving stored enum values", () => {
+  expect(themeStudio).toContain('function humanLabel(value:string)');
+  expect(themeStudio).toContain('>{humanLabel(f)}</button>');
+  expect(themeStudio).toContain('<option key={v} value={v}>{humanLabel(v)}</option>');
+  expect(themeStudio).toContain('setFamily(f)');
+  expect(themeStudio).toContain('e.target.value as ThemeConfig["brand"]["density"]');
+  expect(themeStudio).toContain('e.target.value as ThemeConfig["brand"]["shape"]');
+  expect(themeStudio).toContain('e.target.value as ThemeConfig["brand"]["motion"]');
+});

@@ -34,7 +34,7 @@ export function ThemeStudio({ theme, onChange }: { theme: ThemeConfig; onChange(
   const patchBrand = (patch: Partial<ThemeConfig["brand"]>) => onChange({ ...theme, brand: { ...theme.brand, ...patch, colors: { ...theme.brand.colors, ...(patch.colors ?? {}) }, typography: { ...theme.brand.typography, ...(patch.typography ?? {}) } } });
   const setFamily = (family: ThemeConfig["family"]) => onChange({ ...theme, family });
 
-  return <div className={styles.studio}>
+  return <div className={styles.studio} role="region" aria-label="Site-wide design studio">
     <p className={styles.scopeNote}><strong>Site-wide styles</strong><span>Changes here update the visual system across every page and section.</span></p>
     <BrandKit brand={theme.brand} onChange={brand=>onChange({...theme,brand})}/>
     <section className={styles.section}><span className={styles.label}>Theme</span><div className={styles.chips} role="group" aria-label="Theme presets">{FAMILIES.map(f=><button type="button" key={f} className={theme.family===f?styles.active:undefined} aria-pressed={theme.family===f} onClick={()=>setFamily(f)}>{humanLabel(f)}</button>)}</div></section>

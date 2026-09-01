@@ -12,6 +12,10 @@ test("site-wide design controls stay on the certified theme.set mutation path", 
   expect(themeStudio).toContain('Changes here update the visual system across every page and section.');
 });
 
+test("site-wide design studio is exposed as a named region", () => {
+  expect(themeStudio).toContain('className={styles.studio} role="region" aria-label="Site-wide design studio"');
+});
+
 test("theme palette and typography presets expose persisted active state accessibly", () => {
   expect(themeStudio).toContain('function sameRecord');
   expect(themeStudio).toContain('const active=sameRecord(theme.brand.colors,p.colors);');

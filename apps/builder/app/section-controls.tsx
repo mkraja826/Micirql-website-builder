@@ -30,6 +30,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
       id: `${family ?? "section"}-${crypto.randomUUID()}`,
     };
     onAdd(duplicate);
+    onMove(duplicate.id, selectedIndex + 1);
   }
 
   return <div className={styles.root}>

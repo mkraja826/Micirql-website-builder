@@ -17,3 +17,9 @@ test("preference state stays local to the existing safe logo replacement request
   expect(brandKit).toContain('logoColors,colorPreference,brand');
   expect(brandKit).not.toContain('type:"theme.set"');
 });
+
+test("brand history restore actions identify the saved version accessibly", () => {
+  expect(brandKit).toContain('aria-label={`Restore ${historyReason(entry.reason)} from ${formatHistoryDate(entry.createdAt)}`}');
+  expect(brandKit).toContain('onClick={()=>restoreBrand(entry)}');
+  expect(brandKit).toContain('disabled={busy}>Restore</button>');
+});

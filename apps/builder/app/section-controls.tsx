@@ -56,8 +56,10 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
     </div>
 
     {selected ? selectedIsGlobal ? <div className={styles.actions}><span>Global section — edit its copy or design once and MiCirql applies it across the website.</span></div> : <div className={styles.actions}>
+      <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, 0)}>⇈ Top</button>
       <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>↑ Up</button>
       <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
+      <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, page.sections.length - 1)}>⇊ Bottom</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
       <button type="button" onClick={duplicateSelected}>Duplicate</button>
       <button type="button" className={styles.danger} onClick={removeSelected}>Delete</button>

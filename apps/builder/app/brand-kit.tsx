@@ -66,9 +66,9 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
     window.setTimeout(()=>setMessage(""),3000);
   }
 
-  return <section className={styles.kit} aria-label="Brand Kit">
+  return <section className={styles.kit} aria-labelledby="brand-kit-title">
     <div className={styles.header}>
-      <div><span>Brand Kit</span><strong>Your generated brand assets</strong></div>
+      <div><span id="brand-kit-title">Brand Kit</span><strong>Your generated brand assets</strong></div>
       <div className={styles.status} role="status" aria-live="polite">{busy?"Working…":ready?"Ready":"Awaiting logo"}</div>
     </div>
 

@@ -26,6 +26,10 @@ test("approved website palette is exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.palette} role="group" aria-label="Approved website palette"');
 });
 
+test("brand metadata is exposed as a named group", () => {
+  expect(brandKit).toContain('className={styles.details} role="group" aria-label="Brand asset details"');
+});
+
 test("brand history is exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.history} role="group" aria-label="Brand history"');
 });

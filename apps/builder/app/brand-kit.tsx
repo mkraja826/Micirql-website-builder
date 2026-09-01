@@ -117,7 +117,7 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       </div>)}
     </div>
 
-    <div className={styles.details}>
+    <div className={styles.details} role="group" aria-label="Brand asset details">
       <div className={styles.detail}><span>Logo treatment</span><strong>{presentation?humanize(presentation.treatment):"Automatic"}</strong></div>
       <div className={styles.detail}><span>Logo shape</span><strong>{presentation?humanize(presentation.shape):"Not measured"}</strong></div>
       <div className={styles.detail}><span>Background</span><strong>{presentation?.backgroundSignal?humanize(presentation.backgroundSignal):"Not measured"}</strong></div>

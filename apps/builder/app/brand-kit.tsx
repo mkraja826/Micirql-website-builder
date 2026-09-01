@@ -72,8 +72,8 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
       <div className={styles.status} role="status" aria-live="polite">{busy?"Working…":ready?"Ready":"Awaiting logo"}</div>
     </div>
 
-    <div className={styles.preference} role="group" aria-label="Logo color preference">
-      <span>When replacing the logo</span>
+    <div className={styles.preference} role="group" aria-labelledby="brand-logo-preference-label">
+      <span id="brand-logo-preference-label">When replacing the logo</span>
       <div className={styles.preferenceOptions}>
         <button type="button" className={colorPreference==="keep"?styles.preferenceActive:undefined} aria-pressed={colorPreference==="keep"} onClick={()=>setColorPreference("keep")} disabled={busy}>
           <strong>Keep current colors</strong><small>Change the logo only</small>

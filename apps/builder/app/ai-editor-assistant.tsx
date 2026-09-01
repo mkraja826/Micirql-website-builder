@@ -163,7 +163,7 @@ export function AiEditorAssistant({
         </button>
       </div>
     </div> : null}
-    {error ? <p className={styles.error}>{error}</p> : null}
+    {error ? <p className={styles.error} role="alert">{error}</p> : null}
   </section>;
 }
 

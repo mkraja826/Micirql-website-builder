@@ -75,10 +75,10 @@ export function BrandKit({ brand, onChange }: { brand: Brand; onChange(next: Bra
     <div className={styles.preference} aria-label="Logo color preference">
       <span>When replacing the logo</span>
       <div className={styles.preferenceOptions}>
-        <button type="button" className={colorPreference==="keep"?styles.preferenceActive:undefined} onClick={()=>setColorPreference("keep")} disabled={busy}>
+        <button type="button" className={colorPreference==="keep"?styles.preferenceActive:undefined} aria-pressed={colorPreference==="keep"} onClick={()=>setColorPreference("keep")} disabled={busy}>
           <strong>Keep current colors</strong><small>Change the logo only</small>
         </button>
-        <button type="button" className={colorPreference==="match"?styles.preferenceActive:undefined} onClick={()=>setColorPreference("match")} disabled={busy}>
+        <button type="button" className={colorPreference==="match"?styles.preferenceActive:undefined} aria-pressed={colorPreference==="match"} onClick={()=>setColorPreference("match")} disabled={busy}>
           <strong>Match website to logo</strong><small>Use only a safe approved palette</small>
         </button>
       </div>

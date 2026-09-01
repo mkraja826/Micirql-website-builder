@@ -151,7 +151,7 @@ export function AiEditorAssistant({
     </div>
 
     {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}>
-      <div className={styles.proposalCopy}>
+      <div className={styles.proposalCopy} role="status">
         <span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span>
         <strong>{proposal.operation.rationale}</strong>
         <small>{humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small>

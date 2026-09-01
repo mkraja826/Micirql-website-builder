@@ -22,6 +22,16 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
   const selectedIsGlobal = selected ? isGlobalShell(selected) : false;
   const activeTheme = theme ?? inferTheme(page);
 
+  function duplicateSelected() {
+    if (!selected || selectedIsGlobal) return;
+    const family = familyFor(selected);
+    const duplicate: SiteSection = {
+      ...structuredClone(selected),
+      id: `${family ?? "section"}-${crypto.randomUUID()}`,
+    };
+    onAdd(duplicate);
+  }
+
   return <div className={styles.root}>
     <div className={styles.heading}>
       <div><span>Page structure</span><strong>{page.sections.length} sections</strong></div>
@@ -42,6 +52,7 @@ export function SectionControls({ page, theme, selectedSectionId, onSelect, onAd
       <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>↑ Up</button>
       <button type="button" disabled={selectedIndex >= page.sections.length - 1} onClick={() => onMove(selected.id, selectedIndex + 1)}>↓ Down</button>
       <button type="button" onClick={() => onToggleHidden(selected.id, !selected.hidden)}>{selected.hidden ? "Show" : "Hide"}</button>
+      <button type="button" onClick={duplicateSelected}>Duplicate</button>
       <button type="button" className={styles.danger} onClick={() => onRemove(selected.id)}>Delete</button>
     </div> : null}
 
@@ -90,5 +101,6 @@ function labelFor(section: SiteSection): string {
   }
   return title(componentId.split(".")[0] || section.id);
 }
+function familyFor(section: SiteSection): string | undefined { const id=section.component.componentId.toLowerCase();return ["navbar","hero","about","services","features","process","testimonials","gallery","team","faq","cta","contact","footer"].find((family)=>id.startsWith(`${family}.`)||id.includes(`-${family === "services" ? "serv" : family === "features" ? "feat" : family === "process" ? "proc" : family === "testimonials" ? "test" : family === "gallery" ? "gall" : family === "contact" ? "cont" : family === "navbar" ? "nav" : family === "footer" ? "foot" : family}-`)); }
 function isGlobalShell(section: SiteSection): boolean { const id=section.component.componentId.toLowerCase();return id.startsWith("navbar.")||id.startsWith("footer.")||id.includes("-nav-")||id.includes("-foot-")||id.includes("-footer-"); }
 function title(value: string): string { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()); }

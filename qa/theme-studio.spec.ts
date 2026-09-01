@@ -30,3 +30,12 @@ test("density shape and motion explain their site-wide effect without changing p
   expect(themeStudio).toContain('patchBrand({shape:e.target.value as ThemeConfig["brand"]["shape"]})');
   expect(themeStudio).toContain('patchBrand({motion:e.target.value as ThemeConfig["brand"]["motion"]})');
 });
+
+test("fine tune color pickers expose their current persisted values", () => {
+  expect(themeStudio).toContain('<label>Primary<span>{theme.brand.colors.primary}</span><input type="color" value={theme.brand.colors.primary}');
+  expect(themeStudio).toContain('<label>Accent<span>{theme.brand.colors.accent}</span><input type="color" value={theme.brand.colors.accent}');
+  expect(themeStudio).toContain('<label>Background<span>{theme.brand.colors.background}</span><input type="color" value={theme.brand.colors.background}');
+  expect(themeStudio).toContain('patchBrand({colors:{...theme.brand.colors,primary:e.target.value}})');
+  expect(themeStudio).toContain('patchBrand({colors:{...theme.brand.colors,accent:e.target.value}})');
+  expect(themeStudio).toContain('patchBrand({colors:{...theme.brand.colors,background:e.target.value}})');
+});

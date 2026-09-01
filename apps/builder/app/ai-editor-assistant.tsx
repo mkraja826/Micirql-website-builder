@@ -137,7 +137,7 @@ export function AiEditorAssistant({
       </div>
     </div>
 
-    <div className={styles.input}>
+    <div className={styles.input} aria-busy={busy}>
       <textarea
         aria-label="Ask MiCirql edit request"
         aria-describedby="ai-editor-prompt-help"

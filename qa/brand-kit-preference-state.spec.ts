@@ -22,6 +22,10 @@ test("logo and favicon previews are exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.assetGrid} role="group" aria-label="Logo and favicon previews"');
 });
 
+test("social share card preview is exposed as a named group", () => {
+  expect(brandKit).toContain('className={styles.social} role="group" aria-label="Social share card preview"');
+});
+
 test("approved website palette is exposed as a named group", () => {
   expect(brandKit).toContain('className={styles.palette} role="group" aria-label="Approved website palette"');
 });

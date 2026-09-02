@@ -77,8 +77,10 @@ import "./editor-adaptive-breakpoints.css";
 import "./auth-signout-position.css";
 import "./mobile-layout-hardening.css";
 import "./canvas-multi-select.css";
+import "./keyboard-shortcuts-help.css";
 import { PreviewInteractionGuard } from "./preview-interaction-guard";
 import { KeyboardSectionActions } from "./keyboard-section-actions";
+import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
 import { CanvasMultiSelect } from "./canvas-multi-select";
 import { BatchSectionActions } from "./batch-section-actions";
 
@@ -90,7 +92,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body><PreviewInteractionGuard /><KeyboardSectionActions /><CanvasMultiSelect /><BatchSectionActions />{children}</body>
+      <body><PreviewInteractionGuard /><KeyboardSectionActions /><KeyboardShortcutsHelp /><CanvasMultiSelect /><BatchSectionActions />{children}</body>
     </html>
   );
 }

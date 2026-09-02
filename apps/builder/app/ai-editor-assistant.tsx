@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { readStoredSession } from "./auth-client";
-import { aiEditPlanOperations } from "./ai-edit-plan";
-import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
+import { aiEditPlanOperations, aiEditPlanSteps } from "./ai-edit-plan";
+import type { AiEditorOperation, AiEditorPlanStep, AiEditorResponse } from "./ai-edit-types";
 import { AiEditPreview } from "./ai-edit-preview";
 import { AiEditVisualPreview } from "./ai-edit-visual-preview";
 import { SectionCompositionPicker } from "./section-composition-picker";
@@ -13,7 +13,7 @@ import styles from "./ai-editor-assistant.module.css";
 
 type ProposalContext = { site: Site; pageId: string; sectionId?: string; label: string };
 
-export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: Site; pageId: string; sectionId?: string; onApply(operation: AiEditorOperation): void; }) {
+export function AiEditorAssistant({ site, pageId, sectionId, onApply, onApplyPlan }: { site: Site; pageId: string; sectionId?: string; onApply(operation: AiEditorOperation): void; onApplyPlan?(steps: AiEditorPlanStep[]): boolean; }) {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +61,11 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
   function apply() {
     if (!proposal || !proposalContext || proposalStale) return;
     if (proposal.operation.type === "section.add") { setPendingSectionAdd(proposal.operation); setProposal(undefined); return; }
+    if (proposal.plan && proposalOperations.length > 1 && onApplyPlan) {
+      const target = { pageId: proposalContext.pageId, ...(proposalContext.sectionId ? { sectionId: proposalContext.sectionId } : {}) };
+      const steps = aiEditPlanSteps(proposal.plan, proposal.operation, target);
+      if (onApplyPlan(steps)) { discardProposal(); setPrompt(""); return; }
+    }
     onApply(proposal.operation); discardProposal(); setPrompt("");
   }
 

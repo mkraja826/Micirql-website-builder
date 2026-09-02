@@ -68,8 +68,19 @@ export type AiEditorOperation =
       rationale: string;
     };
 
+export type AiEditorTarget = {
+  pageId: string;
+  sectionId?: string;
+};
+
+export type AiEditorPlanStep = {
+  operation: AiEditorOperation;
+  target: AiEditorTarget;
+};
+
 export type AiEditorPlan = {
   operations: [AiEditorOperation, ...AiEditorOperation[]];
+  steps?: [AiEditorPlanStep, ...AiEditorPlanStep[]];
   rationale: string;
 };
 

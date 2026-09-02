@@ -10,16 +10,21 @@ import { SectionCompositionPicker } from "./section-composition-picker";
 import "./section-composition-picker.css";
 import styles from "./ai-editor-assistant.module.css";
 
+type ProposalContext = { site: Site; pageId: string; sectionId?: string; label: string };
+
 export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: Site; pageId: string; sectionId?: string; onApply(operation: AiEditorOperation): void; }) {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [proposal, setProposal] = useState<AiEditorResponse>();
+  const [proposalContext, setProposalContext] = useState<ProposalContext>();
   const [pendingSectionAdd, setPendingSectionAdd] = useState<Extract<AiEditorOperation, { type: "section.add" }>>();
   const [preferenceProfile, setPreferenceProfile] = useState<unknown>(null);
   const activePage = useMemo(() => site.pages.find((page) => page.id === pageId) ?? site.pages[0], [site.pages, pageId]);
   const activeSection = useMemo(() => activePage?.sections.find((section) => section.id === sectionId), [activePage, sectionId]);
   const sectionLabel = activeSection ? sectionName(activeSection.component.componentId) : undefined;
+  const selectedContext = sectionId ? `${sectionLabel ?? "Selected section"} on ${activePage?.name ?? "this page"}` : activePage?.name ? `${activePage.name} page` : "Current page";
+  const proposalStale = Boolean(proposalContext && (proposalContext.site !== site || proposalContext.pageId !== pageId || proposalContext.sectionId !== sectionId));
 
   useEffect(() => {
     let cancelled = false;
@@ -38,30 +43,37 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
     if (!next || busy) return;
     const session = readStoredSession();
     if (!session?.access_token) { setError("Your session has expired. Sign in again to use Ask MiCirql."); return; }
-    setPrompt(next); setBusy(true); setError(""); setProposal(undefined); setPendingSectionAdd(undefined);
+    const context: ProposalContext = { site, pageId, ...(sectionId ? { sectionId } : {}), label: selectedContext };
+    setPrompt(next); setBusy(true); setError(""); setProposal(undefined); setProposalContext(undefined); setPendingSectionAdd(undefined);
     try {
-      const response = await fetch("/api/ai-edit", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ prompt: next, site, pageId, sectionId, preferenceProfile }) });
+      const response = await fetch("/api/ai-edit", { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ prompt: next, site: context.site, pageId: context.pageId, sectionId: context.sectionId, preferenceProfile }) });
       const payload = await response.json() as AiEditorResponse & { error?: string };
       if (!response.ok || !payload.operation) throw new Error(payload.error ?? "MiCirql could not interpret that edit.");
-      setProposal(payload);
+      setProposalContext(context); setProposal(payload);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "MiCirql could not interpret that edit."); }
     finally { setBusy(false); }
   }
 
+  function discardProposal() { setProposal(undefined); setProposalContext(undefined); setPendingSectionAdd(undefined); }
+
   function apply() {
-    if (!proposal) return;
+    if (!proposal || !proposalContext || proposalStale) return;
     if (proposal.operation.type === "section.add") { setPendingSectionAdd(proposal.operation); setProposal(undefined); return; }
-    onApply(proposal.operation); setProposal(undefined); setPrompt("");
+    onApply(proposal.operation); discardProposal(); setPrompt("");
   }
 
-  if (pendingSectionAdd) return <SectionCompositionPicker site={site} pageId={pageId} family={pendingSectionAdd.family} {...(pendingSectionAdd.position === "after-selected" && sectionId ? { afterSectionId: sectionId } : {})} onCancel={() => setPendingSectionAdd(undefined)} onChoose={(candidate) => {
-    const match = candidate.componentId.match(/-(00[1-5])$/);
-    const variant = Number(match?.[1] ?? 2) as 1 | 2 | 3 | 4 | 5;
-    onApply({ ...pendingSectionAdd, variant, componentId: candidate.componentId, version: candidate.version });
-    setPendingSectionAdd(undefined); setPrompt("");
-  }} />;
+  if (pendingSectionAdd && proposalContext) {
+    if (proposalStale) return <section className={styles.shell} aria-label="Stale MiCirql proposal"><p className={styles.error} role="alert">This proposal is out of date because the draft or selection changed. Recreate it before applying.</p><div className={styles.proposalActions}><button type="button" onClick={discardProposal}>Discard proposal</button></div></section>;
+    return <SectionCompositionPicker site={proposalContext.site} pageId={proposalContext.pageId} family={pendingSectionAdd.family} {...(pendingSectionAdd.position === "after-selected" && proposalContext.sectionId ? { afterSectionId: proposalContext.sectionId } : {})} onCancel={discardProposal} onChoose={(candidate) => {
+      if (proposalStale) return;
+      const match = candidate.componentId.match(/-(00[1-5])$/);
+      const variant = Number(match?.[1] ?? 2) as 1 | 2 | 3 | 4 | 5;
+      onApply({ ...pendingSectionAdd, variant, componentId: candidate.componentId, version: candidate.version });
+      discardProposal(); setPrompt("");
+    }} />;
+  }
 
-  const selectedContext = sectionId ? `${sectionLabel ?? "Selected section"} on ${activePage?.name ?? "this page"}` : activePage?.name ? `${activePage.name} page` : "Current page";
+  const previewContext = proposalContext ?? { site, pageId, ...(sectionId ? { sectionId } : {}), label: selectedContext };
 
   return <section className={styles.shell} aria-labelledby="ai-editor-title">
     <div className={styles.hero}><div className={styles.spark}>✦</div><div className={styles.heading}><span id="ai-editor-title">Ask MiCirql</span><strong>What would you like to improve?</strong><small>{selectedContext}. MiCirql proposes a safe structured edit first—you decide whether to apply it.</small></div></div>
@@ -69,9 +81,10 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
     <div className={styles.input} aria-busy={busy}><textarea aria-label="Ask MiCirql edit request" aria-describedby="ai-editor-prompt-help" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "Ask MiCirql to change this section…" : "Ask MiCirql to improve this page…"} /><div className={styles.inputFooter}><small id="ai-editor-prompt-help">Design-safe edits · Undo supported</small><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Working…" : "Create proposal"}</button></div></div>
     {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}>
       <div className={styles.proposalCopy} role="status"><span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small></div>
-      <AiEditPreview operation={proposal.operation} target={selectedContext} />
-      <AiEditVisualPreview site={site} pageId={pageId} {...(sectionId ? { sectionId } : {})} operation={proposal.operation} />
-      <div className={styles.proposalActions}><button type="button" onClick={() => setProposal(undefined)}>Not now</button><button type="button" className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>{proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}</button></div>
+      {proposalStale ? <p className={styles.error} role="alert">This proposal is out of date because the draft or selection changed. Recreate it before applying.</p> : null}
+      <AiEditPreview operation={proposal.operation} target={previewContext.label} />
+      <AiEditVisualPreview site={previewContext.site} pageId={previewContext.pageId} {...(previewContext.sectionId ? { sectionId: previewContext.sectionId } : {})} operation={proposal.operation} />
+      <div className={styles.proposalActions}><button type="button" onClick={discardProposal}>{proposalStale ? "Discard proposal" : "Not now"}</button><button type="button" disabled={proposalStale} className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>{proposalStale ? "Recreate proposal" : proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}</button></div>
     </div> : null}
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
   </section>;

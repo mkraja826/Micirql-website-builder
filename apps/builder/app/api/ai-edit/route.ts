@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { plannerModelFromEnvironment } from "@micirql/ai";
 import { siteSchema } from "@micirql/schema";
+import { aiEditPlanFromOperations } from "../../ai-edit-plan";
 import type { AiEditorOperation, AiEditorResponse, AiEditorSectionFamily } from "../../ai-edit-types";
 
 const VARIANTS = new Set([1, 2, 3, 4, 5]);
@@ -30,7 +31,10 @@ export async function POST(request: NextRequest) {
           system: [
             "You are MiCirql's safe visual editor command interpreter.",
             "Never write code, CSS, HTML, JavaScript, component IDs, SQL, secrets, or external-service URLs.",
-            "Return exactly one JSON operation and nothing else.",
+            "Return JSON and nothing else.",
+            "For one edit, return one allowed operation object.",
+            "For a request that clearly combines layout and copy changes on the selected section, you may return {operations:[...]} with 2 or 3 operations.",
+            "Multi-step plans are allowed only for section.variant and section.copy on the currently selected section. Do not place page, add/remove, visibility, move, Media, Functions, or SEO operations in a plan.",
             "Allowed operations:",
             "section.variant {type:'section.variant',variant:1|2|3|4|5,heading?:string,body?:string,rationale:string}",
             "section.copy {type:'section.copy',heading?:string,body?:string,rationale:string}",
@@ -59,6 +63,11 @@ export async function POST(request: NextRequest) {
           },
           responseFormat: "json",
         });
+        const planned = normalizePlan(raw, Boolean(section));
+        if (planned) {
+          const response: AiEditorResponse = { operation: planned.operation, plan: planned.plan, source: "ai", model: model.id };
+          return NextResponse.json(response);
+        }
         const operation = normalizeOperation(raw, Boolean(section));
         if (operation) {
           const response: AiEditorResponse = { operation, source: "ai", model: model.id };
@@ -69,6 +78,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const deterministicPlan = deterministicComposablePlan(prompt, Boolean(section));
+    if (deterministicPlan) return NextResponse.json({ operation: deterministicPlan.operation, plan: deterministicPlan.plan, source: "deterministic" } satisfies AiEditorResponse);
     const operation = deterministicOperation(prompt, Boolean(section));
     if (!operation) return NextResponse.json({ error: section ? "This request needs the configured AI model, or ask for a supported editor action." : "Select a section or ask MiCirql to add a page/section or improve SEO." }, { status: 422 });
     const response: AiEditorResponse = { operation, source: "deterministic" };
@@ -91,17 +102,51 @@ async function verifyUser(authorization: string) {
   }
 }
 
-function normalizeOperation(raw: unknown, hasSection: boolean): AiEditorOperation | null {
-  let value: unknown = raw;
-  if (typeof raw === "string") {
-    let cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1);
-    try { value = JSON.parse(cleaned); } catch { return null; }
+function normalizePlan(raw: unknown, hasSection: boolean): { operation: AiEditorOperation; plan: NonNullable<AiEditorResponse["plan"]> } | null {
+  if (!hasSection) return null;
+  const value = parseObject(raw);
+  if (!value || !Array.isArray(value.operations)) return null;
+  const operations = value.operations.slice(0, 3).map((item) => normalizeOperation(item, true)).filter((item): item is AiEditorOperation => Boolean(item));
+  if (operations.length < 2 || operations.some((item) => item.type !== "section.variant" && item.type !== "section.copy")) return null;
+  const operation = collapseComposablePlan(operations);
+  if (!operation) return null;
+  const plan = aiEditPlanFromOperations(operations, text(value.rationale) || "Combined layout and copy improvement");
+  return plan ? { operation, plan } : null;
+}
+
+function collapseComposablePlan(operations: AiEditorOperation[]): Extract<AiEditorOperation, { type: "section.variant" | "section.copy" }> | null {
+  const variant = [...operations].reverse().find((item): item is Extract<AiEditorOperation, { type: "section.variant" }> => item.type === "section.variant");
+  let heading: string | undefined;
+  let body: string | undefined;
+  for (const item of operations) {
+    if (item.type !== "section.variant" && item.type !== "section.copy") continue;
+    if (item.heading) heading = item.heading;
+    if (item.body) body = item.body;
   }
-  if (!value || typeof value !== "object") return null;
-  const obj = value as Record<string, unknown>;
+  const rationale = operations.map((item) => item.rationale).filter(Boolean).join(" · ") || "Combined MiCirql edit";
+  if (variant) return { type: "section.variant", variant: variant.variant, ...(heading ? { heading } : {}), ...(body ? { body } : {}), rationale };
+  if (!heading && !body) return null;
+  return { type: "section.copy", ...(heading ? { heading } : {}), ...(body ? { body } : {}), rationale };
+}
+
+function deterministicComposablePlan(prompt: string, hasSection: boolean): { operation: AiEditorOperation; plan: NonNullable<AiEditorResponse["plan"]> } | null {
+  if (!hasSection) return null;
+  const wantsLayout = /(layout|variant|design|premium|bolder|minimal|editorial|cinematic)/i.test(prompt);
+  const wantsCopy = /(rewrite|copy|wording|clearer|shorter|headline|heading|text)/i.test(prompt);
+  if (!wantsLayout || !wantsCopy) return null;
+  const variant = /cinematic|immersive|bold/i.test(prompt) ? 5 : /editorial/i.test(prompt) ? 4 : /center/i.test(prompt) ? 3 : /split/i.test(prompt) ? 2 : 2;
+  const operations: AiEditorOperation[] = [
+    { type: "section.variant", variant, rationale: "Use a different approved section composition." },
+    { type: "section.copy", heading: "Clearer section heading", body: "Refine this copy with verified business-specific details before publishing.", rationale: "Make the selected section clearer and more concise." },
+  ];
+  const plan = aiEditPlanFromOperations(operations, "Improve the selected section layout and copy together.");
+  const operation = collapseComposablePlan(operations);
+  return plan && operation ? { plan, operation } : null;
+}
+
+function normalizeOperation(raw: unknown, hasSection: boolean): AiEditorOperation | null {
+  const obj = parseObject(raw);
+  if (!obj) return null;
   const type = text(obj.type);
   const rationale = text(obj.rationale) || "Structured MiCirql edit";
 
@@ -147,6 +192,18 @@ function normalizeOperation(raw: unknown, hasSection: boolean): AiEditorOperatio
   return null;
 }
 
+function parseObject(raw: unknown): Record<string, unknown> | null {
+  let value: unknown = raw;
+  if (typeof raw === "string") {
+    let cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1);
+    try { value = JSON.parse(cleaned); } catch { return null; }
+  }
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
 function deterministicOperation(prompt: string, hasSection: boolean): AiEditorOperation | null {
   const lower = prompt.toLowerCase();
   if (/\b(add|create|make)\b.*\bpage\b/.test(lower)) {
@@ -175,9 +232,7 @@ function deterministicOperation(prompt: string, hasSection: boolean): AiEditorOp
 
 function detectFamily(value: string): AiEditorSectionFamily | undefined {
   const aliases: Array<[RegExp, AiEditorSectionFamily]> = [
-    [/\babout\b/, "about"], [/\bservices?\b|treatments?/, "services"], [/\bfeatures?\b|benefits?/, "features"],
-    [/\bprocess\b|steps?/, "process"], [/\btestimonials?\b|reviews?/, "testimonials"], [/\bgallery\b|portfolio/, "gallery"],
-    [/\bteam\b|doctors?|staff/, "team"], [/\bcta\b|call.to.action|conversion/, "cta"], [/\bcontact\b|enquiry|inquiry/, "contact"],
+    [/\babout\b/, "about"], [/\bservices?\b|treatments?/, "services"], [/\bfeatures?\b|benefits?/, "features"], [/\bprocess\b|steps?/, "process"], [/\btestimonials?\b|reviews?/, "testimonials"], [/\bgallery\b|portfolio/, "gallery"], [/\bteam\b|doctors?|staff/, "team"], [/\bcta\b|call.to.action|conversion/, "cta"], [/\bcontact\b|enquiry|inquiry/, "contact"],
   ];
   return aliases.find(([pattern]) => pattern.test(value))?.[1];
 }

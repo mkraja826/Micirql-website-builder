@@ -25,7 +25,7 @@ export function AiEditVisualPreview({ site, pageId, sectionId, operation }: { si
     </div>
     {proposal.site ? <div className={styles.viewport} aria-hidden="true">
       <div ref={frame} className={styles.frame}>
-        <RendererPreview site={proposal.site} path={proposal.path} viewport="desktop" selectedSectionId={proposal.selectedSectionId} onSelectSection={() => {}} />
+        <RendererPreview site={proposal.site} path={proposal.path} viewport="desktop" {...(proposal.selectedSectionId ? { selectedSectionId: proposal.selectedSectionId } : {})} onSelectSection={() => {}} />
       </div>
     </div> : null}
   </section>;

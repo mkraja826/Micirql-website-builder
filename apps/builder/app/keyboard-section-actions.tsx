@@ -29,7 +29,7 @@ export function KeyboardSectionActions() {
       if (!section || target !== section) return;
       if (section.dataset.miGlobalSection === "true") return;
 
-      const duplicate = modifier && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "d";
+      const duplicate = (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "d";
       const remove = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && (event.key === "Delete" || event.key === "Backspace");
       const moveUp = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey && event.key === "ArrowUp";
       const moveDown = !event.metaKey && !event.ctrlKey && event.altKey && !event.shiftKey && event.key === "ArrowDown";

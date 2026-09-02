@@ -68,8 +68,14 @@ export type AiEditorOperation =
       rationale: string;
     };
 
+export type AiEditorPlan = {
+  operations: [AiEditorOperation, ...AiEditorOperation[]];
+  rationale: string;
+};
+
 export type AiEditorResponse = {
   operation: AiEditorOperation;
+  plan?: AiEditorPlan;
   source: "ai" | "deterministic";
   model?: string;
 };

@@ -7,6 +7,24 @@ export function KeyboardSectionActions() {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+
+      const modifier = event.metaKey || event.ctrlKey;
+      const editable = target.matches("input, textarea, select") || target.isContentEditable || Boolean(target.closest("[contenteditable='true']"));
+      if (modifier && !event.altKey && !editable) {
+        const key = event.key.toLowerCase();
+        const undo = key === "z" && !event.shiftKey;
+        const redo = (key === "z" && event.shiftKey) || (event.ctrlKey && !event.metaKey && key === "y" && !event.shiftKey);
+        if (undo || redo) {
+          const action = document.querySelector<HTMLButtonElement>(`.workspace-actions button[title="${undo ? "Undo" : "Redo"}"]`);
+          if (action && !action.disabled) {
+            event.preventDefault();
+            event.stopPropagation();
+            action.click();
+          }
+          return;
+        }
+      }
+
       const section = target.closest<HTMLElement>("[data-mi-section-id]");
       if (!section || target !== section) return;
       if (section.dataset.miGlobalSection === "true") return;

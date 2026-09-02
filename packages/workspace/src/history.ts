@@ -17,7 +17,16 @@ export function executeEditorCommand(
   command: WorkspaceCommand,
   policy: WorkspaceMutationPolicy = {},
 ): EditorHistory {
-  const next = applyWorkspaceCommand(history.present, command, policy);
+  return executeEditorCommands(history, [command], policy);
+}
+
+export function executeEditorCommands(
+  history: EditorHistory,
+  commands: WorkspaceCommand[],
+  policy: WorkspaceMutationPolicy = {},
+): EditorHistory {
+  if (commands.length === 0) return history;
+  const next = commands.reduce((state, command) => applyWorkspaceCommand(state, command, policy), history.present);
   const past = [...history.past, history.present];
   return {
     present: next,

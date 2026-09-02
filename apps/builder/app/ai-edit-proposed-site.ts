@@ -52,7 +52,9 @@ export function proposedSiteForAiEdit(site: Site, pageId: string, sectionId: str
     if (operation.body) selected.props[selected.props.description !== undefined ? "description" : "body"] = operation.body;
   }
 
-  return { site: next, path: page.path, selectedSectionId: operation.type === "section.remove" ? undefined : selected.id };
+  return operation.type === "section.remove"
+    ? { site: next, path: page.path }
+    : { site: next, path: page.path, selectedSectionId: selected.id };
 }
 
 function previewNewSection(site: Site, family: AiEditorSectionFamily, variant: 1 | 2 | 3 | 4 | 5, componentId?: string, version?: string): SiteSection {

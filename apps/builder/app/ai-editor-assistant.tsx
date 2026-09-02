@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
+import type { EditorViewport } from "@micirql/workspace";
 import { readStoredSession } from "./auth-client";
 import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
 import { AiEditPreview } from "./ai-edit-preview";
@@ -10,7 +11,7 @@ import { SectionCompositionPicker } from "./section-composition-picker";
 import "./section-composition-picker.css";
 import styles from "./ai-editor-assistant.module.css";
 
-export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: Site; pageId: string; sectionId?: string; onApply(operation: AiEditorOperation): void; }) {
+export function AiEditorAssistant({ site, pageId, sectionId, viewport = "desktop", onApply }: { site: Site; pageId: string; sectionId?: string; viewport?: EditorViewport; onApply(operation: AiEditorOperation): void; }) {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -70,7 +71,7 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
     {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}>
       <div className={styles.proposalCopy} role="status"><span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small></div>
       <AiEditPreview operation={proposal.operation} target={selectedContext} />
-      <AiEditVisualPreview site={site} pageId={pageId} {...(sectionId ? { sectionId } : {})} operation={proposal.operation} />
+      <AiEditVisualPreview site={site} pageId={pageId} {...(sectionId ? { sectionId } : {})} operation={proposal.operation} viewport={viewport} />
       <div className={styles.proposalActions}><button type="button" onClick={() => setProposal(undefined)}>Not now</button><button type="button" className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>{proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}</button></div>
     </div> : null}
     {error ? <p className={styles.error} role="alert">{error}</p> : null}

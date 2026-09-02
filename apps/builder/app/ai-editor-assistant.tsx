@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Site } from "@micirql/schema";
 import { readStoredSession } from "./auth-client";
+import { aiEditPlanOperations } from "./ai-edit-plan";
 import type { AiEditorOperation, AiEditorResponse } from "./ai-edit-types";
 import { AiEditPreview } from "./ai-edit-preview";
 import { AiEditVisualPreview } from "./ai-edit-visual-preview";
@@ -25,6 +26,7 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
   const sectionLabel = activeSection ? sectionName(activeSection.component.componentId) : undefined;
   const selectedContext = sectionId ? `${sectionLabel ?? "Selected section"} on ${activePage?.name ?? "this page"}` : activePage?.name ? `${activePage.name} page` : "Current page";
   const proposalStale = Boolean(proposalContext && (proposalContext.site !== site || proposalContext.pageId !== pageId || proposalContext.sectionId !== sectionId));
+  const proposalOperations = proposal ? aiEditPlanOperations(proposal.plan, proposal.operation) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -80,11 +82,11 @@ export function AiEditorAssistant({ site, pageId, sectionId, onApply }: { site: 
     <div className={styles.suggestionGroup} role="group" aria-labelledby="ai-editor-suggestions-label"><span id="ai-editor-suggestions-label" className={styles.groupLabel}>{sectionId ? "For this section" : "For this page"}</span><div className={styles.chips}>{sectionId ? <><button type="button" onClick={() => void ask("Give me another layout for this section")}>Try another layout</button><button type="button" onClick={() => void ask("Make this section feel more premium")}>Make it more premium</button><button type="button" onClick={() => void ask("Rewrite this section to be clearer and shorter")}>Improve the copy</button><button type="button" onClick={() => void ask("Change the image in this section")}>Replace the image</button><button type="button" onClick={() => void ask("Connect an action for this section")}>Add an action</button></> : <><button type="button" onClick={() => setPrompt("Add a testimonials section")}>Add a section</button><button type="button" onClick={() => void ask("Improve the SEO title and description for this page")}>Improve page SEO</button><button type="button" onClick={() => setPrompt("Create an About page")}>Create an About page</button></>}</div></div>
     <div className={styles.input} aria-busy={busy}><textarea aria-label="Ask MiCirql edit request" aria-describedby="ai-editor-prompt-help" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={sectionId ? "Ask MiCirql to change this section…" : "Ask MiCirql to improve this page…"} /><div className={styles.inputFooter}><small id="ai-editor-prompt-help">Design-safe edits · Undo supported</small><button type="button" disabled={busy || !prompt.trim()} onClick={() => void ask()}>{busy ? "Working…" : "Create proposal"}</button></div></div>
     {proposal ? <div className={`${styles.proposal} ${proposal.operation.type === "section.remove" ? styles.destructive : ""}`}>
-      <div className={styles.proposalCopy} role="status"><span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span><strong>{proposal.operation.rationale}</strong><small>{humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small></div>
+      <div className={styles.proposalCopy} role="status"><span>{proposal.source === "ai" ? "MiCirql proposal" : "Safe fallback"}</span><strong>{proposal.plan?.rationale ?? proposal.operation.rationale}</strong><small>{proposalOperations.length > 1 ? `${proposalOperations.length} coordinated changes` : humanOperation(proposal.operation.type)}{proposal.model ? ` · ${proposal.model}` : ""}</small></div>
       {proposalStale ? <p className={styles.error} role="alert">This proposal is out of date because the draft or selection changed. Recreate it before applying.</p> : null}
-      <AiEditPreview operation={proposal.operation} target={previewContext.label} />
+      {proposalOperations.map((operation, index) => <div key={`${operation.type}-${index}`} aria-label={proposalOperations.length > 1 ? `Proposal step ${index + 1} of ${proposalOperations.length}` : undefined}><AiEditPreview operation={operation} target={previewContext.label} /></div>)}
       <AiEditVisualPreview site={previewContext.site} pageId={previewContext.pageId} {...(previewContext.sectionId ? { sectionId: previewContext.sectionId } : {})} operation={proposal.operation} />
-      <div className={styles.proposalActions}><button type="button" onClick={discardProposal}>{proposalStale ? "Discard proposal" : "Not now"}</button><button type="button" disabled={proposalStale} className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>{proposalStale ? "Recreate proposal" : proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : "Apply change"}</button></div>
+      <div className={styles.proposalActions}><button type="button" onClick={discardProposal}>{proposalStale ? "Discard proposal" : "Not now"}</button><button type="button" disabled={proposalStale} className={proposal.operation.type === "section.remove" ? styles.danger : styles.primary} onClick={apply}>{proposalStale ? "Recreate proposal" : proposal.operation.type === "section.add" ? "Choose design" : proposal.operation.type === "section.remove" ? "Remove section" : proposalOperations.length > 1 ? `Apply ${proposalOperations.length} changes` : "Apply change"}</button></div>
     </div> : null}
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
   </section>;

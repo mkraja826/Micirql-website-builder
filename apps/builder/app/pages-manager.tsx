@@ -31,7 +31,7 @@ export function PagesManager({ site, activePageId, onSelect, onAdd, onRemove, on
       {site.pages.map((page, index) => <div key={page.id} className={`page-row ${page.id === activePageId ? "is-active" : ""}`}>
         <button className="page-main" onClick={() => onSelect(page.id)}><strong>{page.name}</strong><span>{page.path}</span></button>
         <input aria-label={`${page.name} URL`} value={page.path} onChange={(event) => onPathChange(page.id, normalizePath(event.target.value))} />
-        <div className="page-row-actions"><button disabled={index === 0} onClick={() => onReorder(page.id, index - 1)}>↑</button><button disabled={index === site.pages.length - 1} onClick={() => onReorder(page.id, index + 1)}>↓</button><button onClick={() => onDuplicate(duplicatePage(page, site.pages))}>Duplicate</button><button disabled={site.pages.length <= 1 || page.path === "/"} onClick={() => removePage(page)}>Remove</button></div>
+        <div className="page-row-actions"><button disabled={index === 0} onClick={() => onReorder(page.id, 0)}>⇈</button><button disabled={index === 0} onClick={() => onReorder(page.id, index - 1)}>↑</button><button disabled={index === site.pages.length - 1} onClick={() => onReorder(page.id, index + 1)}>↓</button><button disabled={index === site.pages.length - 1} onClick={() => onReorder(page.id, site.pages.length - 1)}>⇊</button><button onClick={() => onDuplicate(duplicatePage(page, site.pages))}>Duplicate</button><button disabled={site.pages.length <= 1 || page.path === "/"} onClick={() => removePage(page)}>Remove</button></div>
       </div>)}
     </div>
 

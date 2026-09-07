@@ -3,6 +3,7 @@ import { siteSchema, type Site } from "@micirql/schema";
 import { applyLockedBlueprintPalette } from "./blueprint-palette-lock";
 import { repairContentDepth } from "./content-depth-repair";
 import { evaluateFirstBuildQuality, type FirstBuildQualityResult } from "./first-build-quality";
+import { applyPremiumArtDirection } from "./premium-art-direction";
 
 export type PremiumCorrectionResult = {
   site: Site;
@@ -19,10 +20,18 @@ const CONVERSION = new Set(["cta", "contact", "lead-capture", "form"]);
 type SiteSection = Site["pages"][number]["sections"][number];
 
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
-  // The certified blueprint gets the final say on palette family. This runs
-  // after generic AI/brand color advice, so later passes cannot collapse
-  // distinct layouts back into one color system.
-  const paletteLocked = applyLockedBlueprintPalette(site);
+  const intelligence = site.theme.brand.intelligence;
+  const artDirected = applyPremiumArtDirection(site, {
+    industry: site.domain,
+    subindustry: site.subtype ?? null,
+    styleTags: [intelligence?.tone, intelligence?.typographyMood, intelligence?.imageryStyle].filter((value): value is string => Boolean(value)),
+    goals: [],
+  });
+
+  // Art direction owns typography/density/shape/motion; the certified blueprint
+  // owns palette family. Both locks happen before generic repair so the repair
+  // engine cannot drift the site into an unrelated visual language.
+  const paletteLocked = applyLockedBlueprintPalette(artDirected.site);
   const depthRepaired = repairContentDepth(paletteLocked);
   const initial = evaluatePremiumQualityGate(depthRepaired);
   const initialFirstBuild = evaluateFirstBuildQuality(depthRepaired);
@@ -45,9 +54,15 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
   diversifyRepeatedVariants(candidate);
   repairLateConversion(candidate);
 
-  // Reassert the lock after any generic repair. Contrast/content can be fixed,
-  // but the blueprint-owned palette family cannot be replaced.
-  const validated = repairContentDepth(applyLockedBlueprintPalette(siteSchema.parse(candidate)));
+  // Reassert both premium locks after any generic repair. Contrast/content can
+  // be corrected, but art direction and blueprint-owned palette cannot drift.
+  const redirected = applyPremiumArtDirection(siteSchema.parse(candidate), {
+    industry: site.domain,
+    subindustry: site.subtype ?? null,
+    styleTags: [intelligence?.tone, intelligence?.typographyMood, intelligence?.imageryStyle].filter((value): value is string => Boolean(value)),
+    goals: [],
+  }).site;
+  const validated = repairContentDepth(applyLockedBlueprintPalette(redirected));
   const final = evaluatePremiumQualityGate(validated);
   const finalFirstBuild = evaluateFirstBuildQuality(validated);
   const useCandidate = qualityRank(final, finalFirstBuild) > qualityRank(initial, initialFirstBuild);

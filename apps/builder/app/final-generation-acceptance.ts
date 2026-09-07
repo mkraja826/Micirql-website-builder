@@ -1,9 +1,10 @@
 import { evaluateFlagshipVisualQuality, evaluatePremiumQualityGate, evaluateWebsiteContent } from "@micirql/design-engine";
 import type { Site } from "@micirql/schema";
 import { evaluateFirstBuildQuality } from "./first-build-quality";
+import { evaluateVisualCoherence } from "./visual-coherence-quality";
 
 export type FinalGenerationDimension = {
-  id: "flagship-visual" | "premium" | "content" | "typography" | "imagery" | "mobile-structure";
+  id: "flagship-visual" | "premium" | "visual-coherence" | "content" | "typography" | "imagery" | "mobile-structure";
   ready: boolean;
   score: number;
   blockers: string[];
@@ -18,6 +19,7 @@ export type FinalGenerationAcceptance = {
   warnings: string[];
   flagshipVisual: ReturnType<typeof evaluateFlagshipVisualQuality>;
   premium: ReturnType<typeof evaluatePremiumQualityGate>;
+  visualCoherence: ReturnType<typeof evaluateVisualCoherence>;
   firstBuild: ReturnType<typeof evaluateFirstBuildQuality>;
   content: ReturnType<typeof evaluateWebsiteContent>;
 };
@@ -30,9 +32,12 @@ const DEFAULT_FONT_FAMILIES = new Set([
   "sans-serif",
 ]);
 
+const FINAL_GENERATION_SCORE = 90;
+
 export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAcceptance {
   const flagshipVisual = evaluateFlagshipVisualQuality(site);
   const premium = evaluatePremiumQualityGate(site);
+  const visualCoherence = evaluateVisualCoherence(site);
   const firstBuild = evaluateFirstBuildQuality(site);
   const content = evaluateWebsiteContent(site);
 
@@ -44,17 +49,25 @@ export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAc
     ...premium.blockers.map((issue) => `${issue.code}: ${issue.message}`),
     ...firstBuild.issues.filter((issue) => issue.severity === "blocker").map((issue) => `${issue.code}: ${issue.message}`),
   ];
-  if (premium.score < 85) premiumBlockers.push(`PREMIUM_SCORE: Premium score ${premium.score} is below 85.`);
-  if (firstBuild.score < 88) premiumBlockers.push(`FIRST_BUILD_SCORE: First-build score ${firstBuild.score} is below 88.`);
+  if (premium.score < 90) premiumBlockers.push(`PREMIUM_SCORE: Premium score ${premium.score} is below 90.`);
+  if (firstBuild.score < 90) premiumBlockers.push(`FIRST_BUILD_SCORE: First-build score ${firstBuild.score} is below 90.`);
   const premiumWarnings = [
     ...premium.warnings.map((issue) => `${issue.code}: ${issue.message}`),
     ...firstBuild.issues.filter((issue) => issue.severity === "warning").map((issue) => `${issue.code}: ${issue.message}`),
   ];
 
+  const coherenceBlockers = visualCoherence.issues
+    .filter((issue) => issue.severity === "error")
+    .map((issue) => `${issue.code}: ${issue.message}`);
+  if (visualCoherence.score < 90) coherenceBlockers.push(`VISUAL_COHERENCE_SCORE: Visual coherence score ${visualCoherence.score} is below 90.`);
+  const coherenceWarnings = visualCoherence.issues
+    .filter((issue) => issue.severity === "warning")
+    .map((issue) => `${issue.code}: ${issue.message}`);
+
   const contentErrors = content.issues.filter((issue) => issue.severity === "error");
   const contentWarnings = content.issues.filter((issue) => issue.severity === "warning");
   const contentBlockers = contentErrors.map((issue) => `${issue.code}: ${issue.message}`);
-  if (content.score < 82) contentBlockers.push(`CONTENT_SCORE: Content score ${content.score} is below 82.`);
+  if (content.score < 90) contentBlockers.push(`CONTENT_SCORE: Content score ${content.score} is below 90.`);
 
   const typography = evaluateTypography(site);
   const imagery = evaluateImagery(site);
@@ -76,6 +89,13 @@ export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAc
       warnings: premiumWarnings,
     },
     {
+      id: "visual-coherence",
+      ready: visualCoherence.ready && coherenceBlockers.length === 0,
+      score: visualCoherence.score,
+      blockers: coherenceBlockers,
+      warnings: coherenceWarnings,
+    },
+    {
       id: "content",
       ready: contentBlockers.length === 0,
       score: content.score,
@@ -90,15 +110,18 @@ export function evaluateFinalGenerationAcceptance(site: Site): FinalGenerationAc
   const blockers = dimensions.flatMap((dimension) => dimension.blockers.map((message) => `${dimension.id}: ${message}`));
   const warnings = dimensions.flatMap((dimension) => dimension.warnings.map((message) => `${dimension.id}: ${message}`));
   const score = Math.round(dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length);
+  const ready = dimensions.every((dimension) => dimension.ready) && blockers.length === 0 && score >= FINAL_GENERATION_SCORE;
+  if (!ready && score < FINAL_GENERATION_SCORE) blockers.push(`final-generation: FINAL_SCORE: Final generation score ${score} is below ${FINAL_GENERATION_SCORE}.`);
 
   return {
-    ready: dimensions.every((dimension) => dimension.ready) && blockers.length === 0,
+    ready,
     score,
     dimensions,
     blockers,
     warnings,
     flagshipVisual,
     premium,
+    visualCoherence,
     firstBuild,
     content,
   };

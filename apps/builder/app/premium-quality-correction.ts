@@ -4,6 +4,7 @@ import { applyLockedBlueprintPalette } from "./blueprint-palette-lock";
 import { repairContentDepth } from "./content-depth-repair";
 import { evaluateFirstBuildQuality, type FirstBuildQualityResult } from "./first-build-quality";
 import { applyPremiumArtDirection } from "./premium-art-direction";
+import { applyPremiumCompositionGrammar } from "./premium-composition-grammar";
 
 export type PremiumCorrectionResult = {
   site: Site;
@@ -32,11 +33,13 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
     styleTags,
     goals: [],
   });
+  const composed = applyPremiumCompositionGrammar(artDirected.site);
 
-  // Art direction owns typography/density/shape/motion; the certified blueprint
-  // owns palette family. Both locks happen before generic repair so the repair
-  // engine cannot drift the site into an unrelated visual language.
-  const paletteLocked = applyLockedBlueprintPalette(artDirected.site);
+  // Art direction owns typography/density/shape/motion and composition grammar
+  // owns narrative rhythm. The certified blueprint still owns palette family.
+  // These locks happen before generic repair so later passes cannot drift the
+  // site into an unrelated visual language or repetitive section sequence.
+  const paletteLocked = applyLockedBlueprintPalette(composed.site);
   const depthRepaired = repairContentDepth(paletteLocked);
   const initial = evaluatePremiumQualityGate(depthRepaired);
   const initialFirstBuild = evaluateFirstBuildQuality(depthRepaired);
@@ -59,15 +62,17 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
   diversifyRepeatedVariants(candidate);
   repairLateConversion(candidate);
 
-  // Reassert both premium locks after any generic repair. Contrast/content can
-  // be corrected, but art direction and blueprint-owned palette cannot drift.
+  // Reassert all premium locks after generic repair. Contrast/content can be
+  // corrected, but art direction, composition grammar and blueprint palette
+  // are not allowed to drift.
   const redirected = applyPremiumArtDirection(siteSchema.parse(candidate), {
     industry: site.domain,
     subindustry: site.subtype ?? null,
     styleTags,
     goals: [],
   }).site;
-  const validated = repairContentDepth(applyLockedBlueprintPalette(redirected));
+  const recomposed = applyPremiumCompositionGrammar(redirected).site;
+  const validated = repairContentDepth(applyLockedBlueprintPalette(recomposed));
   const final = evaluatePremiumQualityGate(validated);
   const finalFirstBuild = evaluateFirstBuildQuality(validated);
   const useCandidate = qualityRank(final, finalFirstBuild) > qualityRank(initial, initialFirstBuild);

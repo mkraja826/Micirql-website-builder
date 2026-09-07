@@ -88,6 +88,7 @@ export function evaluateVisualCoherence(site: Site): VisualCoherenceResult {
     for (let index = 1; index < visible.length; index += 1) {
       const current = visible[index];
       const previous = visible[index - 1];
+      if (!current || !previous) continue;
       if (current.component.componentId === previous.component.componentId) {
         repeatedAdjacentComponents += 1;
         issues.push({
@@ -168,23 +169,30 @@ type Rgb = { r: number; g: number; b: number };
 function parseColor(value: string): Rgb | null {
   const normalized = value.trim().toLowerCase();
   const hex3 = normalized.match(/^#([0-9a-f]{3})$/i);
-  if (hex3) {
-    const [r, g, b] = hex3[1].split("").map((part) => Number.parseInt(part + part, 16));
+  const short = hex3?.[1];
+  if (short && short.length === 3) {
+    const r = Number.parseInt(`${short[0]}${short[0]}`, 16);
+    const g = Number.parseInt(`${short[1]}${short[1]}`, 16);
+    const b = Number.parseInt(`${short[2]}${short[2]}`, 16);
     return { r, g, b };
   }
 
   const hex6 = normalized.match(/^#([0-9a-f]{6})$/i);
-  if (hex6) {
+  const full = hex6?.[1];
+  if (full && full.length === 6) {
     return {
-      r: Number.parseInt(hex6[1].slice(0, 2), 16),
-      g: Number.parseInt(hex6[1].slice(2, 4), 16),
-      b: Number.parseInt(hex6[1].slice(4, 6), 16),
+      r: Number.parseInt(full.slice(0, 2), 16),
+      g: Number.parseInt(full.slice(2, 4), 16),
+      b: Number.parseInt(full.slice(4, 6), 16),
     };
   }
 
   const rgb = normalized.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
   if (!rgb) return null;
-  const [r, g, b] = rgb.slice(1).map(Number);
+  const r = Number(rgb[1]);
+  const g = Number(rgb[2]);
+  const b = Number(rgb[3]);
+  if (![r, g, b].every(Number.isFinite)) return null;
   if ([r, g, b].some((channel) => channel < 0 || channel > 255)) return null;
   return { r, g, b };
 }
@@ -196,11 +204,11 @@ function contrastRatio(a: Rgb, b: Rgb): number {
 }
 
 function relativeLuminance({ r, g, b }: Rgb): number {
-  const channels = [r, g, b].map((channel) => {
+  const linearize = (channel: number) => {
     const value = channel / 255;
     return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
 }
 
 function isGlobalShell(componentId: string): boolean {

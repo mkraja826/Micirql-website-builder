@@ -21,10 +21,15 @@ type SiteSection = Site["pages"][number]["sections"][number];
 
 export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResult {
   const intelligence = site.theme.brand.intelligence;
+  const styleTags = compactStrings([
+    intelligence?.tone,
+    intelligence?.typographyMood,
+    intelligence?.imageryStyle,
+  ]);
   const artDirected = applyPremiumArtDirection(site, {
     industry: site.domain,
     subindustry: site.subtype ?? null,
-    styleTags: [intelligence?.tone, intelligence?.typographyMood, intelligence?.imageryStyle].filter((value): value is string => Boolean(value)),
+    styleTags,
     goals: [],
   });
 
@@ -59,7 +64,7 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
   const redirected = applyPremiumArtDirection(siteSchema.parse(candidate), {
     industry: site.domain,
     subindustry: site.subtype ?? null,
-    styleTags: [intelligence?.tone, intelligence?.typographyMood, intelligence?.imageryStyle].filter((value): value is string => Boolean(value)),
+    styleTags,
     goals: [],
   }).site;
   const validated = repairContentDepth(applyLockedBlueprintPalette(redirected));
@@ -75,6 +80,10 @@ export function applyPremiumQualityCorrection(site: Site): PremiumCorrectionResu
     attempted: true,
     applied: useCandidate || contentChanged,
   };
+}
+
+function compactStrings(values: Array<string | undefined>): string[] {
+  return values.flatMap((value) => value ? [value] : []);
 }
 
 function qualityRank(premium: PremiumQualityResult, firstBuild: FirstBuildQualityResult): number {

@@ -1,7 +1,8 @@
 import { findWebsiteLayout, isProductionLayoutCertified, normalizeLayoutIndustry, recommendWebsiteLayouts, type LayoutSelectionInput, type RankedLayout } from "@micirql/design-engine";
-import { resolvePremiumCertifiedVariant, type SectionFamily, type SectionVariant } from "@micirql/sections";
+import { resolvePremiumCertifiedVariant, type SectionArtDirection, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { IndustryDesignPreset } from "./industry-design-preset-data";
 import { selectIndustryPack, type IndustryPackSelection } from "./industry-pack-intelligence";
+import { selectPremiumArtDirection } from "./premium-art-direction";
 import { rankPresets, type OnboardingProfile } from "./preset-ranking";
 
 export type CompositionIntent="conversion"|"trust"|"showcase"|"education"|"product"|"institutional";
@@ -26,6 +27,7 @@ export function composeWebsite(profile:OnboardingProfile,options:CompositionOpti
  const notes=profile.notes?.trim()||"";
  const priorities=[...(profile.services??[]),...(profile.required_capabilities??[]),...(notes?[notes]:[])];
  const styleTags=[...(profile.style_tags??[]),...(notes?[notes]:[])];
+ const artDirection=selectPremiumArtDirection({industry:profile.industry?.trim()||preset.id,subindustry:profile.subindustry?.trim()||null,styleTags,goals:profile.goals??[]});
  const layoutInput:LayoutSelectionInput={
   industry:profile.industry?.trim()||preset.id,
   ...(profile.subindustry?.trim()?{subindustryId:profile.subindustry.trim()}:{}),
@@ -37,12 +39,13 @@ export function composeWebsite(profile:OnboardingProfile,options:CompositionOpti
  const available=preset.variants;
  let sections:CompositionSection[];
  if(options.selectedLayoutId&&layoutCandidate){
-  sections=layoutCandidate.layout.sections
-   .filter(section=>COMPOSITION_FAMILIES.has(section.family as SectionFamily))
-   .map(section=>{
+  const layoutSections=layoutCandidate.layout.sections.filter(section=>COMPOSITION_FAMILIES.has(section.family as SectionFamily));
+  sections=layoutSections.map((section,index)=>{
     const family=section.family as SectionFamily;
-    return{family,variant:variantFor(profile,preset,intent,family),purpose:section.purpose||PURPOSE[family]||"Support the page narrative",priority:(section.required?"required":"recommended") as "required"|"recommended"};
-   });
+    const previousFamily=index>0?layoutSections[index-1]!.family as SectionFamily:undefined;
+    const nextFamily=index<layoutSections.length-1?layoutSections[index+1]!.family as SectionFamily:undefined;
+    return{family,variant:variantFor(profile,preset,intent,family,artDirection.id as SectionArtDirection,artDirection.density,previousFamily,nextFamily),purpose:section.purpose||PURPOSE[family]||"Support the page narrative",priority:(section.required?"required":"recommended") as "required"|"recommended"};
+  });
  }else{
   const recipeFamilies=industryPack?industryPack.recipe.sections.map(recipeFamily).filter((f):f is SectionFamily=>Boolean(f&&available[f]!=null)):[];
   const base=recipeFamilies.length>=3?recipeFamilies:FLOWS[intent];
@@ -51,10 +54,11 @@ export function composeWebsite(profile:OnboardingProfile,options:CompositionOpti
   const heroIndex=families.indexOf("hero");if(heroIndex>0){families.splice(heroIndex,1);families.unshift("hero");}
   const contactIndex=families.indexOf("contact");if(contactIndex>=0&&contactIndex!==families.length-1){families.splice(contactIndex,1);families.push("contact");}
   const ctaIndex=families.indexOf("cta");if(ctaIndex>=0&&families.includes("contact")&&ctaIndex!==families.length-2){families.splice(ctaIndex,1);families.splice(families.length-1,0,"cta");}
-  sections=families.slice(0,9).map((family,i)=>({family,variant:variantFor(profile,preset,intent,family),purpose:PURPOSE[family]||"Support the page narrative",priority:(i===0||family==="cta"||family==="contact"?"required":"recommended") as "required"|"recommended"}));
+  const selected=families.slice(0,9);
+  sections=selected.map((family,i)=>({family,variant:variantFor(profile,preset,intent,family,artDirection.id as SectionArtDirection,artDirection.density,i>0?selected[i-1]:undefined,i<selected.length-1?selected[i+1]:undefined),purpose:PURPOSE[family]||"Support the page narrative",priority:(i===0||family==="cta"||family==="contact"?"required":"recommended") as "required"|"recommended"}));
  }
  const changed=sections.filter(section=>section.variant!==available[section.family]);
- return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,...(notes?["Applied free-text business brief to preset, layout, intent and section selection"]:[]),...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[options.selectedLayoutId?`Planner-locked certified layout ${layoutCandidate.layout.id} is the single source of truth`:`Certified layout ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100; applies after full section coverage`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
+ return{preset,intent,sections,industryPack,layoutCandidate,reasoning:[`Selected ${preset.name} from the business description`,`Optimized the narrative for ${intent}`,`Resolved section variants against ${artDirection.id} compatibility metadata`,...(notes?["Applied free-text business brief to preset, layout, intent and section selection"]:[]),...(industryPack?industryPack.reasons:[]),...(layoutCandidate?[options.selectedLayoutId?`Planner-locked certified layout ${layoutCandidate.layout.id} is the single source of truth`:`Certified layout ${layoutCandidate.layout.id} ranked ${layoutCandidate.score}/100; applies after full section coverage`]:[]),`Composed ${sections.length} certified section families`,`Restricted automatic generation to premium-certified compatible section variants`,...(changed.length?[`Adapted ${changed.length} section layouts to the ${intent} intent`]:[]),...top.reasons]};
 }
 
 function plannerLockedLayout(profile:OnboardingProfile,options:CompositionOptions):RankedLayout{
@@ -79,7 +83,7 @@ function recipeFamily(value:string):SectionFamily|undefined{
  if(/treatment|property-category|offerings/.test(v))return"services";
  return undefined;
 }
-function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested);}
+function variantFor(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily,artDirection:SectionArtDirection,density:"compact"|"comfortable"|"spacious",previousFamily?:SectionFamily,nextFamily?:SectionFamily):SectionVariant{const requested=requestedVariant(profile,preset,intent,family);return resolvePremiumCertifiedVariant(family,requested,{artDirection,density,...(previousFamily?{previousFamily}:{}),...(nextFamily?{nextFamily}:{})});}
 function requestedVariant(profile:OnboardingProfile,preset:IndustryDesignPreset,intent:CompositionIntent,family:SectionFamily):SectionVariant{const fallback=preset.variants[family]??1,preferred=INTENT_VARIANTS[intent][family];if(!preferred)return fallback;const text=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),...(profile.services||[]),profile.notes].filter(Boolean).join(" ").toLowerCase();if(family==="hero"){if(/luxury|premium|portfolio|gallery|visual|hotel|resort|fashion|jewel|property|real estate|elegant|sophisticated/.test(text))return 5;if(/doctor|clinic|dental|medical|legal|finance|insurance|trust/.test(text))return 2;}if(family==="gallery"&&/before.?after|portfolio|property|project|hotel|food|fashion|jewel|interior|visual|results|transformation/.test(text))return 5;if(family==="cta"&&/book|appointment|buy|signup|trial|demo|download|quote|enquir|consultation|whatsapp|phone/.test(text))return intent==="product"?5:4;if(family==="contact"&&/clinic|local|service|legal|finance|insurance|whatsapp|phone/.test(text))return 1;return preferred;}
 function inferIntent(profile:OnboardingProfile,id:string):CompositionIntent{
  const primaryText=[profile.industry,profile.subindustry,...(profile.goals||[]),...(profile.required_capabilities||[]),profile.notes].filter(Boolean).join(" ").toLowerCase();

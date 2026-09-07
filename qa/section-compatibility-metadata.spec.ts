@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   compatibleCertifiedVariantsFor,
   isSectionVariantCompatible,
@@ -56,4 +58,11 @@ test("conversion sections expose preferred narrative neighbors", () => {
   const cta = sectionVariantCertification("cta", 4).compatibility;
   expect(cta.preferredPreviousFamilies).toContain("process");
   expect(cta.preferredNextFamilies).toContain("contact");
+});
+
+test("render-certified planner layouts are not rewritten by generic compatibility", () => {
+  const source = readFileSync(resolve(process.cwd(), "apps/builder/app/composition-intelligence.ts"), "utf8");
+  expect(source).toContain("lockedCertifiedVariantFor(profile,preset,intent,family)");
+  expect(source).toContain("Preserved render-certified layout variant behavior");
+  expect(source).toContain("function lockedCertifiedVariantFor");
 });

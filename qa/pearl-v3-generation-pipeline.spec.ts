@@ -38,6 +38,7 @@ test("Pearl Dental reaches V3 final generation acceptance through automatic comp
 
   const quality = inferGenerationQuality(pearlProfile, composition);
   let generated = applyComposition(initial, composition, quality);
+  generated = applyDeterministicMediaStage(generated);
   generated = applyPremiumQualityCorrection(generated).site;
 
   let acceptance = evaluateFinalGenerationAcceptance(generated);
@@ -91,7 +92,6 @@ function buildPearlSourceDraft(): Site {
       eyebrow: "Dental care in Hyderabad",
       heading: "Thoughtful dentistry, planned around you",
       body: "Explore treatment options with clear consultation, careful planning and a calm path to the next step.",
-      imageUrl: "https://media.micirql.test/pearl-dental/hero-clinic.webp",
       primaryAction: { label: "Book appointment", href: "#contact" },
       secondaryAction: { label: "View treatments", href: "#treatments" },
     }),
@@ -102,7 +102,6 @@ function buildPearlSourceDraft(): Site {
     section("treatments", "services", themeFamily, {
       heading: "Treatments",
       body: "Understand the purpose of each treatment and discuss the options that may suit your needs.",
-      imageUrl: "https://media.micirql.test/pearl-dental/treatment-room.webp",
       items: PEARL_SERVICES.map((title) => ({
         title,
         description: `Learn what to discuss with the clinic when considering ${title.toLowerCase()}.`,
@@ -129,7 +128,6 @@ function buildPearlSourceDraft(): Site {
     section("team", "team", themeFamily, {
       heading: "Meet the dental team",
       body: "Clinician biographies and qualifications are published only after Pearl Dental supplies verified details.",
-      imageUrl: "https://media.micirql.test/pearl-dental/clinical-team.webp",
       items: [{ title: "Clinical team", description: "Verified clinician details can be added here when supplied by the clinic." }],
     }),
     section("patient-feedback", "testimonials", themeFamily, {
@@ -217,6 +215,28 @@ function buildPearlSourceDraft(): Site {
     integrations: [],
     domains: [],
   });
+}
+
+function applyDeterministicMediaStage(site: Site): Site {
+  const next = structuredClone(site);
+  const home = next.pages.find((page) => page.path === "/") ?? next.pages[0];
+  if (!home) return next;
+  const mediaByFamily: Record<string, string> = {
+    hero: "https://media.micirql.test/pearl-dental/hero-clinic.webp",
+    services: "https://media.micirql.test/pearl-dental/treatment-room.webp",
+    team: "https://media.micirql.test/pearl-dental/clinical-team.webp",
+    features: "https://media.micirql.test/pearl-dental/care-detail.webp",
+    testimonials: "https://media.micirql.test/pearl-dental/patient-space.webp",
+  };
+  let applied = 0;
+  for (const current of home.sections) {
+    const family = familyFromId(current.component.componentId);
+    const imageUrl = family ? mediaByFamily[family] : undefined;
+    if (!imageUrl || applied >= 3) continue;
+    current.props = { ...current.props, imageUrl };
+    applied += 1;
+  }
+  return siteSchema.parse(next);
 }
 
 function section(id: string, family: SectionFamily, theme: Site["theme"]["family"], props: Record<string, unknown>) {

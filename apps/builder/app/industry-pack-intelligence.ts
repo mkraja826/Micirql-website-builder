@@ -24,6 +24,7 @@ export type IndustryPackSelection = {
   reasons: string[];
 };
 
+const MIN_BODY_TEXT_CONTRAST = 4.5;
 const MIN_ACCENT_DISTINCTION = 1.5;
 
 export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryPackSelection | null {
@@ -102,14 +103,23 @@ function normalize(values: Array<string | null | undefined>) {
 }
 
 function paletteCompatibility(palette: IndustryPalette) {
+  const primaryText = parseHex(palette.colors.text);
+  const secondaryText = parseHex(palette.colors.mutedText);
   const accent = parseHex(palette.colors.accent);
   const background = parseHex(palette.colors.background);
   const surface = parseHex(palette.colors.surface);
-  if (!accent || !background || !surface) return -100;
-  return contrastRatio(accent, background) >= MIN_ACCENT_DISTINCTION
-    && contrastRatio(accent, surface) >= MIN_ACCENT_DISTINCTION
-    ? 0
-    : -100;
+  if (!primaryText || !secondaryText || !accent || !background || !surface) return -1000;
+
+  const bodyTextCompatible = [
+    contrastRatio(primaryText, background),
+    contrastRatio(primaryText, surface),
+    contrastRatio(secondaryText, background),
+    contrastRatio(secondaryText, surface),
+  ].every((ratio) => ratio >= MIN_BODY_TEXT_CONTRAST);
+  const accentCompatible = contrastRatio(accent, background) >= MIN_ACCENT_DISTINCTION
+    && contrastRatio(accent, surface) >= MIN_ACCENT_DISTINCTION;
+
+  return bodyTextCompatible && accentCompatible ? 0 : -1000;
 }
 
 type Rgb = { r: number; g: number; b: number };

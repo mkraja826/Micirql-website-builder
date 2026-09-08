@@ -1,5 +1,6 @@
 import { siteSchema, type Site } from "@micirql/schema";
 import type { ResponsiveCompositionRepairPlan, ResponsiveCompositionRepairViewport } from "./rendered-responsive-composition-repair";
+import { applyRenderedVisualRepairTransaction } from "./rendered-visual-repair-transaction";
 
 export type PersistedResponsiveCompositionRepair = {
   version: 1;
@@ -14,20 +15,22 @@ const PROP_KEY = "responsiveCompositionRepairs";
 
 export function persistResponsiveCompositionRepair(site: Site, plan: ResponsiveCompositionRepairPlan, path = "/"): Site {
   if (!plan.required || !plan.css) return site;
-  const next = structuredClone(site);
-  const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
-  const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
-  if (!hero) return site;
-  const current = readRepairMap(hero.props?.[PROP_KEY]);
-  current[plan.viewport] = {
-    version: 1,
-    viewport: plan.viewport,
-    operations: [...plan.operations],
-    reasons: [...plan.reasons],
-    css: plan.css,
-  };
-  hero.props = { ...hero.props, [PROP_KEY]: current };
-  return siteSchema.parse(next);
+  return applyRenderedVisualRepairTransaction(site, "responsive-composition", (currentSite) => {
+    const next = structuredClone(currentSite);
+    const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
+    const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+    if (!hero) return currentSite;
+    const current = readRepairMap(hero.props?.[PROP_KEY]);
+    current[plan.viewport] = {
+      version: 1,
+      viewport: plan.viewport,
+      operations: [...plan.operations],
+      reasons: [...plan.reasons],
+      css: plan.css,
+    };
+    hero.props = { ...hero.props, [PROP_KEY]: current };
+    return siteSchema.parse(next);
+  });
 }
 
 export function persistedResponsiveCompositionRepairCss(site: Site, viewport: ResponsiveCompositionRepairViewport, path = "/"): string {

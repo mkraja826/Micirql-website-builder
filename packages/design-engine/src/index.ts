@@ -3,6 +3,7 @@ export * from "./component-taxonomy";
 export * from "./core-structural-blueprints";
 export * from "./content-structural-blueprints";
 export * from "./website-layout-blueprints";
+export * from "./candidate-competition";
 export * from "./dental-layout-blueprints";
 export * from "./layout-library";
 export * from "./palette-strategies";

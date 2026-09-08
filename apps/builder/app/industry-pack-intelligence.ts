@@ -41,7 +41,9 @@ export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryP
 
   const subindustry = chooseSubindustry(pack, text);
   const personality = normalize(input.styleTags ?? []);
-  const compatiblePalettes = pack.palettes.filter(isPaletteCompatible);
+  const compatiblePalettes = pack.palettes
+    .map(compileIndustryPalette)
+    .filter((candidate): candidate is IndustryPalette => Boolean(candidate));
 
   const palette = chooseByScore(
     compatiblePalettes,
@@ -65,6 +67,7 @@ export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryP
     `Resolved ${pack.label} industry pack`,
     subindustry ? `Matched ${subindustry.label} sub-industry` : `Used ${pack.label} general fallback`,
     `Selected ${palette.label} certified palette`,
+    `Compiled palette tokens against emitted background and surface roles`,
     `Selected ${typography.label} typography system`,
     `Selected ${recipe.label} composition recipe`,
   ];
@@ -102,24 +105,51 @@ function normalize(values: Array<string | null | undefined>) {
   return values.filter((value): value is string => typeof value === "string" && Boolean(value.trim())).join(" ").toLowerCase();
 }
 
-function isPaletteCompatible(palette: IndustryPalette) {
+function compileIndustryPalette(palette: IndustryPalette): IndustryPalette | null {
   const primaryText = parseHex(palette.colors.text);
   const secondaryText = parseHex(palette.colors.mutedText);
   const accent = parseHex(palette.colors.accent);
   const compiledBackground = parseHex(palette.colors.surfaceAlt);
   const compiledSurface = parseHex(palette.colors.surface);
-  if (!primaryText || !secondaryText || !accent || !compiledBackground || !compiledSurface) return false;
+  if (!primaryText || !secondaryText || !accent || !compiledBackground || !compiledSurface) return null;
 
-  const bodyTextCompatible = [
-    contrastRatio(primaryText, compiledBackground),
-    contrastRatio(primaryText, compiledSurface),
-    contrastRatio(secondaryText, compiledBackground),
-    contrastRatio(secondaryText, compiledSurface),
-  ].every((ratio) => ratio >= MIN_BODY_TEXT_CONTRAST);
-  const accentCompatible = contrastRatio(accent, compiledBackground) >= MIN_ACCENT_DISTINCTION
-    && contrastRatio(accent, compiledSurface) >= MIN_ACCENT_DISTINCTION;
+  const backgrounds = [compiledBackground, compiledSurface];
+  if (!meetsAll(primaryText, backgrounds, MIN_BODY_TEXT_CONTRAST)) return null;
 
-  return bodyTextCompatible && accentCompatible;
+  const compiledSecondary = compileContrastColor(secondaryText, backgrounds, MIN_BODY_TEXT_CONTRAST);
+  const compiledAccent = compileContrastColor(accent, backgrounds, MIN_ACCENT_DISTINCTION);
+  if (!compiledSecondary || !compiledAccent) return null;
+
+  return {
+    ...palette,
+    colors: {
+      ...palette.colors,
+      mutedText: toHex(compiledSecondary),
+      accent: toHex(compiledAccent),
+    },
+  };
+}
+
+function compileContrastColor(seed: Rgb, backgrounds: Rgb[], minimum: number): Rgb | null {
+  if (meetsAll(seed, backgrounds, minimum)) return seed;
+
+  for (let step = 1; step <= 20; step += 1) {
+    const amount = step * 0.04;
+    const darker = mix(seed, { r: 0, g: 0, b: 0 }, amount);
+    if (meetsAll(darker, backgrounds, minimum)) return darker;
+    const lighter = mix(seed, { r: 255, g: 255, b: 255 }, amount);
+    if (meetsAll(lighter, backgrounds, minimum)) return lighter;
+  }
+  return null;
+}
+
+function meetsAll(color: Rgb, backgrounds: Rgb[], minimum: number) {
+  return backgrounds.every((background) => contrastRatio(color, background) >= minimum);
+}
+
+function mix(from: Rgb, to: Rgb, amount: number): Rgb {
+  const blend = (a: number, b: number) => Math.round(a + (b - a) * amount);
+  return { r: blend(from.r, to.r), g: blend(from.g, to.g), b: blend(from.b, to.b) };
 }
 
 type Rgb = { r: number; g: number; b: number };
@@ -132,6 +162,10 @@ function parseHex(value: string): Rgb | null {
     g: Number.parseInt(hex.slice(2, 4), 16),
     b: Number.parseInt(hex.slice(4, 6), 16),
   };
+}
+function toHex({ r, g, b }: Rgb) {
+  const channel = (value: number) => Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0").toUpperCase();
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
 }
 function contrastRatio(a: Rgb, b: Rgb) {
   const lighter = Math.max(luminance(a), luminance(b));

@@ -74,6 +74,8 @@ jobs:
       MICIRQL_SUPABASE_SECRET_KEY: ${{ secrets.MICIRQL_SUPABASE_SECRET_KEY }}
       MICIRQL_LIBRARY_ADMIN_TOKEN: ${{ secrets.MICIRQL_LIBRARY_ADMIN_TOKEN }}
       PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
       NEXT_PUBLIC_SUPABASE_URL: https://buodqfijzaqmzbkghche.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_6HLaWSmycSxj3Dd2wKrcpg_Xw0ywbq7
       MICIRQL_DRAFT_STORE: supabase
@@ -96,6 +98,31 @@ jobs:
           test -n "$MICIRQL_SUPABASE_SECRET_KEY" || { echo "Missing MICIRQL_SUPABASE_SECRET_KEY"; exit 1; }
           test -n "$MICIRQL_LIBRARY_ADMIN_TOKEN" || { echo "Missing MICIRQL_LIBRARY_ADMIN_TOKEN"; exit 1; }
           test -n "$PEXELS_API_KEY" || { echo "Missing PEXELS_API_KEY"; exit 1; }
+          test -n "$GEMINI_API_KEY" || { echo "Missing GEMINI_API_KEY"; exit 1; }
+
+      - name: Verify live text provider API
+        shell: bash
+        run: |
+          model="${GEMINI_MODEL:-gemini-3.1-flash-lite}"
+          status=$(curl --silent --show-error --output /tmp/text-provider-smoke.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $GEMINI_API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "{\"model\":\"$model\",\"messages\":[{\"role\":\"system\",\"content\":\"Return JSON only.\"},{\"role\":\"user\",\"content\":\"Return {\\\"healthCheck\\\":\\\"micirql-text-provider\\\"}.\"}],\"response_format\":{\"type\":\"json_object\"},\"max_tokens\":64}" \
+            'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions')
+          if [ "$status" != "200" ]; then
+            echo "Text provider smoke test failed with HTTP $status for model $model"
+            head -c 600 /tmp/text-provider-smoke.json || true
+            exit 1
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/text-provider-smoke.json', 'utf8'));
+          const content = payload?.choices?.[0]?.message?.content;
+          if (typeof content !== 'string' || !content.includes('micirql-text-provider')) {
+            throw new Error(`Text provider returned an invalid smoke payload: ${JSON.stringify(payload).slice(0, 500)}`);
+          }
+          console.log('Text provider live smoke check passed.');
+          NODE
 
       - name: Verify live Pexels API
         shell: bash
@@ -178,6 +205,42 @@ jobs:
         working-directory: apps/builder
         shell: bash
         run: printf '%s' "$PEXELS_API_KEY" | pnpm exec wrangler secret put PEXELS_API_KEY
+
+      - name: Upload text provider API key to Builder Worker
+        working-directory: apps/builder
+        shell: bash
+        run: |
+          printf '%s' "$GEMINI_API_KEY" | pnpm exec wrangler secret put GEMINI_API_KEY
+          if [ -n "$GEMINI_MODEL" ]; then
+            printf '%s' "$GEMINI_MODEL" | pnpm exec wrangler secret put GEMINI_MODEL
+          fi
+
+      - name: Verify deployed Builder text provider runtime
+        shell: bash
+        run: |
+          url='https://builder.micirql.com/api/admin/text-provider-health'
+          status='000'
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl --silent --show-error --output /tmp/text-provider-runtime.json --write-out '%{http_code}' \
+              --header "x-micirql-library-token: $MICIRQL_LIBRARY_ADMIN_TOKEN" \
+              "$url" || true)
+            [ "$status" = "200" ] && break
+            echo "Text provider runtime health attempt $attempt returned HTTP $status; waiting for Worker propagation..."
+            sleep 5
+          done
+          if [ "$status" != "200" ]; then
+            echo "Deployed Builder text provider runtime check failed with HTTP $status"
+            head -c 800 /tmp/text-provider-runtime.json || true
+            exit 1
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const payload = JSON.parse(fs.readFileSync('/tmp/text-provider-runtime.json', 'utf8'));
+          if (payload.ok !== true || payload.modelHealth !== 'verified' || !payload.provider) {
+            throw new Error(`Deployed Builder returned an invalid text provider health payload: ${JSON.stringify(payload).slice(0, 500)}`);
+          }
+          console.log(`Deployed Builder text provider runtime passed (${payload.provider}).`);
+          NODE
 
       - name: Verify deployed Builder Pexels runtime
         shell: bash

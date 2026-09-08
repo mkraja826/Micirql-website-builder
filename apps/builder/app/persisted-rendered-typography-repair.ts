@@ -1,5 +1,6 @@
 import { siteSchema, type Site } from "@micirql/schema";
 import type { RenderedTypographyRepairPlan, RenderedTypographyRepairViewport } from "./rendered-page-typography-repair";
+import { applyRenderedVisualRepairTransaction } from "./rendered-visual-repair-transaction";
 
 export type PersistedRenderedTypographyRepair = {
   version: 1;
@@ -15,47 +16,49 @@ const PROP_KEY = "renderedTypographyRepairs";
 
 export function persistRenderedTypographyRepair(site: Site, plan: RenderedTypographyRepairPlan, path = "/"): Site {
   if (!plan.required || !plan.css) return site;
-  const next = structuredClone(site);
-  const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
-  const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
-  if (!hero) return site;
+  return applyRenderedVisualRepairTransaction(site, "typography", (currentSite) => {
+    const next = structuredClone(currentSite);
+    const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
+    const hero = page?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+    if (!hero) return currentSite;
 
-  const current = readRepairMap(hero.props?.[PROP_KEY]);
-  current[plan.viewport] = {
-    version: 1,
-    viewport: plan.viewport,
-    operations: [...plan.operations],
-    reasons: [...plan.reasons],
-    css: plan.css,
-  };
-
-  const rawPageTypography = hero.props?.pageTypographyRepair;
-  const pageTypography = rawPageTypography && typeof rawPageTypography === "object" && !Array.isArray(rawPageTypography)
-    ? { ...(rawPageTypography as Record<string, unknown>) }
-    : {};
-  const previousResponsive = readRepairMap(pageTypography.renderedResponsive);
-  previousResponsive[plan.viewport] = current[plan.viewport]!;
-  const baseCss = typeof pageTypography.baseCss === "string"
-    ? pageTypography.baseCss
-    : previousResponsiveHasEntries(pageTypography.renderedResponsive)
-      ? ""
-      : typeof pageTypography.css === "string"
-        ? pageTypography.css
-        : "";
-  const liveResponsiveCss = responsiveLiveCss(previousResponsive);
-
-  hero.props = {
-    ...hero.props,
-    [PROP_KEY]: current,
-    pageTypographyRepair: {
-      ...pageTypography,
+    const current = readRepairMap(hero.props?.[PROP_KEY]);
+    current[plan.viewport] = {
       version: 1,
-      baseCss,
-      renderedResponsive: previousResponsive,
-      css: [baseCss, liveResponsiveCss].filter((value) => value.trim()).join("\n"),
-    },
-  };
-  return siteSchema.parse(next);
+      viewport: plan.viewport,
+      operations: [...plan.operations],
+      reasons: [...plan.reasons],
+      css: plan.css,
+    };
+
+    const rawPageTypography = hero.props?.pageTypographyRepair;
+    const pageTypography = rawPageTypography && typeof rawPageTypography === "object" && !Array.isArray(rawPageTypography)
+      ? { ...(rawPageTypography as Record<string, unknown>) }
+      : {};
+    const previousResponsive = readRepairMap(pageTypography.renderedResponsive);
+    previousResponsive[plan.viewport] = current[plan.viewport]!;
+    const baseCss = typeof pageTypography.baseCss === "string"
+      ? pageTypography.baseCss
+      : previousResponsiveHasEntries(pageTypography.renderedResponsive)
+        ? ""
+        : typeof pageTypography.css === "string"
+          ? pageTypography.css
+          : "";
+    const liveResponsiveCss = responsiveLiveCss(previousResponsive);
+
+    hero.props = {
+      ...hero.props,
+      [PROP_KEY]: current,
+      pageTypographyRepair: {
+        ...pageTypography,
+        version: 1,
+        baseCss,
+        renderedResponsive: previousResponsive,
+        css: [baseCss, liveResponsiveCss].filter((value) => value.trim()).join("\n"),
+      },
+    };
+    return siteSchema.parse(next);
+  });
 }
 
 export function persistedRenderedTypographyRepairCss(

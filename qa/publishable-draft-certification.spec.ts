@@ -61,6 +61,8 @@ test("production publish is gated by the aggregate publishable draft contract", 
   expect(orchestrator).toContain("evaluateFinalGenerationAcceptance(input.site)");
   expect(orchestrator).toContain("evaluateFunctionalPublishGate(input.site, input.architecture)");
   expect(orchestrator).toContain("fingerprintPublishInput(input.site, input.architecture, input.backend)");
-  expect(orchestrator).toContain("evaluateFullStackPublishCertification(input)");
+  expect(orchestrator).toContain("const visualStore = input.renderedVisualStore ?? renderedVisualStore");
+  expect(orchestrator).toContain("evaluateFullStackPublishCertification({");
+  expect(orchestrator).toContain("...(input.fullStackStore ? { store: input.fullStackStore } : {})");
   expect(orchestrator).toContain("renderedVisual.certified && fullStack.allowed");
 });

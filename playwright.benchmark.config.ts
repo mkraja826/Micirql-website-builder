@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: ["generation-benchmark.spec.ts", "content-grounding-claims.spec.ts"],
+  testMatch: ["generation-benchmark.spec.ts", "content-grounding-claims.spec.ts", "pearl-v3-generation-pipeline.spec.ts"],
   timeout: 30_000,
   fullyParallel: false,
   workers: 1,

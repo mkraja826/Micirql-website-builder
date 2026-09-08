@@ -18,10 +18,6 @@ export function applyComposition(site: Site, composition: WebsiteComposition, qu
   next.theme = mergeThemeKeepingBrand(next, composition, quality);
   const candidate = composition.layoutCandidate;
 
-  // A complete certified full-site blueprint is more authoritative than the
-  // generic composition pass. Check coverage before generic family filtering or
-  // singleton de-duplication can discard a section the blueprint explicitly
-  // requires (for example separate trust and proof testimonial blocks).
   if (candidate?.layout.status === "certified") {
     const layoutReady = structuredClone(next);
     for (const page of layoutReady.pages) {
@@ -120,7 +116,7 @@ function imagePresentation(section:SiteSection,family:SectionFamily,packId:strin
 function isImageObject(value:unknown):boolean{return isRecord(value)&&typeof value.src==="string"&&value.src.trim().length>0;}
 function isRecord(value:unknown):value is Record<string,unknown>{return Boolean(value)&&typeof value==="object"&&!Array.isArray(value);}
 
-function prioritize(sections:WebsiteComposition["sections"],q:GenerationQualityProfile){const weighted=sections.map((s,index)=>({s,index,weight:weight(s.family,q)})),hero=weighted.find(x=>x.s.family==="hero"),tail=weighted.filter(x=>x.s.family==="cta"||x.s.family==="contact"),middle=weighted.filter(x=>x!==hero&&!tail.includes(x)).sort((a,b)=>b.weight-a.weight||a.index-b.index),max=Math.max(3,q.maxPrimarySections),result=[...(hero?[hero]:[]),...middle,...tail].slice(0,max);for(const item of tail){if(!result.includes(item)){if(result.length>=max)result.splice(Math.max(1,result.length-1),1);result.push(item);}}return result.map(x=>x.s);}
+function prioritize(sections:WebsiteComposition["sections"],q:GenerationQualityProfile){const weighted=sections.map((s,index)=>({s,index,weight:weight(s.family,q)})),required=weighted.filter(x=>x.s.priority==="required"),optional=weighted.filter(x=>x.s.priority!=="required").sort((a,b)=>b.weight-a.weight||a.index-b.index),max=Math.max(3,q.maxPrimarySections,required.length),selected=[...required,...optional.slice(0,Math.max(0,max-required.length))],selectedSet=new Set(selected),result=weighted.filter(item=>selectedSet.has(item));return result.map(x=>x.s);}
 function weight(f:SectionFamily,q:GenerationQualityProfile){let w=50;if(f==="hero")return 100;if(f==="cta"||f==="contact")w+=q.ctaStrength==="strong"?35:20;if(f==="testimonials"||f==="team"||f==="about")w+=Math.round(q.trustWeight/4);if(f==="gallery")w+=Math.round(q.visualWeight/3);if(f==="features"||f==="process")w+=q.heroEmphasis==="product"?25:5;if(f==="services")w+=q.mobileStrategy==="conversion-first"?20:8;return w;}
 
 function mergeThemeKeepingBrand(site:Site,composition:WebsiteComposition,quality?:GenerationQualityProfile){

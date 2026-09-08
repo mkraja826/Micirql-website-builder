@@ -41,13 +41,13 @@ export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryP
 
   const subindustry = chooseSubindustry(pack, text);
   const personality = normalize(input.styleTags ?? []);
+  const compatiblePalettes = pack.palettes.filter(isPaletteCompatible);
 
   const palette = chooseByScore(
-    pack.palettes,
-    (candidate) => paletteCompatibility(candidate)
-      + scorePreferred(candidate.id, subindustry?.preferredPaletteIds)
+    compatiblePalettes,
+    (candidate) => scorePreferred(candidate.id, subindustry?.preferredPaletteIds)
       + scoreTerms(candidate.personality, `${text} ${personality}`),
-  ) ?? pack.palettes[0];
+  );
 
   const typography = chooseByScore(
     pack.typography,
@@ -102,13 +102,13 @@ function normalize(values: Array<string | null | undefined>) {
   return values.filter((value): value is string => typeof value === "string" && Boolean(value.trim())).join(" ").toLowerCase();
 }
 
-function paletteCompatibility(palette: IndustryPalette) {
+function isPaletteCompatible(palette: IndustryPalette) {
   const primaryText = parseHex(palette.colors.text);
   const secondaryText = parseHex(palette.colors.mutedText);
   const accent = parseHex(palette.colors.accent);
   const background = parseHex(palette.colors.background);
   const surface = parseHex(palette.colors.surface);
-  if (!primaryText || !secondaryText || !accent || !background || !surface) return -1000;
+  if (!primaryText || !secondaryText || !accent || !background || !surface) return false;
 
   const bodyTextCompatible = [
     contrastRatio(primaryText, background),
@@ -119,7 +119,7 @@ function paletteCompatibility(palette: IndustryPalette) {
   const accentCompatible = contrastRatio(accent, background) >= MIN_ACCENT_DISTINCTION
     && contrastRatio(accent, surface) >= MIN_ACCENT_DISTINCTION;
 
-  return bodyTextCompatible && accentCompatible ? 0 : -1000;
+  return bodyTextCompatible && accentCompatible;
 }
 
 type Rgb = { r: number; g: number; b: number };

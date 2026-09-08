@@ -106,18 +106,18 @@ function isPaletteCompatible(palette: IndustryPalette) {
   const primaryText = parseHex(palette.colors.text);
   const secondaryText = parseHex(palette.colors.mutedText);
   const accent = parseHex(palette.colors.accent);
-  const background = parseHex(palette.colors.background);
-  const surface = parseHex(palette.colors.surface);
-  if (!primaryText || !secondaryText || !accent || !background || !surface) return false;
+  const compiledBackground = parseHex(palette.colors.surfaceAlt);
+  const compiledSurface = parseHex(palette.colors.surface);
+  if (!primaryText || !secondaryText || !accent || !compiledBackground || !compiledSurface) return false;
 
   const bodyTextCompatible = [
-    contrastRatio(primaryText, background),
-    contrastRatio(primaryText, surface),
-    contrastRatio(secondaryText, background),
-    contrastRatio(secondaryText, surface),
+    contrastRatio(primaryText, compiledBackground),
+    contrastRatio(primaryText, compiledSurface),
+    contrastRatio(secondaryText, compiledBackground),
+    contrastRatio(secondaryText, compiledSurface),
   ].every((ratio) => ratio >= MIN_BODY_TEXT_CONTRAST);
-  const accentCompatible = contrastRatio(accent, background) >= MIN_ACCENT_DISTINCTION
-    && contrastRatio(accent, surface) >= MIN_ACCENT_DISTINCTION;
+  const accentCompatible = contrastRatio(accent, compiledBackground) >= MIN_ACCENT_DISTINCTION
+    && contrastRatio(accent, compiledSurface) >= MIN_ACCENT_DISTINCTION;
 
   return bodyTextCompatible && accentCompatible;
 }

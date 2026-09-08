@@ -52,6 +52,24 @@ test("candidate competition keeps factual fit dominant while using structure as 
   expect(competed[0]!.reasons.some((reason) => reason.includes("candidate competition"))).toBe(true);
 });
 
+test("unclamped semantic specificity remains authoritative above structural preference", () => {
+  const moreSpecific: RankedLayout = {
+    layout: layout("specific", ["navbar", "hero", "services", "gallery", "process", "cta", "contact", "footer"]),
+    score: 100,
+    selectionScore: 138,
+    reasons: ["specific fit"],
+  };
+  const moreStructural: RankedLayout = {
+    layout: layout("structural", ["navbar", "hero", "about", "services", "process", "team", "cta", "contact", "footer"]),
+    score: 100,
+    selectionScore: 122,
+    reasons: ["broader fit"],
+  };
+  const competed = competeWebsiteLayoutCandidates([moreSpecific, moreStructural]);
+  expect(competed[0]!.layout.id).toBe("specific");
+  expect(competed[0]!.reasons).toContain("semantic specificity 138");
+});
+
 test("composition only competes automatic layouts and preserves planner locks", () => {
   const source = readFileSync(resolve(process.cwd(), "apps/builder/app/composition-intelligence.ts"), "utf8");
   expect(source).toContain("competeWebsiteLayoutCandidates(recommendWebsiteLayouts(layoutInput,3))");

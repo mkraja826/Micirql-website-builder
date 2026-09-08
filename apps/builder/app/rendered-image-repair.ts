@@ -1,5 +1,6 @@
 import { siteSchema, type Site } from "@micirql/schema";
 import type { RenderedImageQualityIssue } from "./rendered-image-quality";
+import { applyRenderedVisualRepairTransaction } from "./rendered-visual-repair-transaction";
 
 export type RenderedImageRepairPlan = {
   required: boolean;
@@ -42,53 +43,55 @@ export function planRenderedImageRepair(input: {
 
 export function applyRenderedImageRepair(site: Site, plan: RenderedImageRepairPlan, path = "/"): Site {
   if (!plan.required) return site;
-  const next = structuredClone(site);
-  const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
-  if (!page) return site;
-  const usedUrls = collectUsedImageUrls(page.sections.map((section) => section.props as Record<string, unknown>));
+  return applyRenderedVisualRepairTransaction(site, "image", (currentSite) => {
+    const next = structuredClone(currentSite);
+    const page = next.pages.find((candidate) => candidate.path === path) ?? next.pages[0];
+    if (!page) return currentSite;
+    const usedUrls = collectUsedImageUrls(page.sections.map((section) => section.props as Record<string, unknown>));
 
-  for (const section of page.sections) {
-    if (!plan.sectionIds.includes(section.id)) continue;
-    const props = section.props as Record<string, unknown>;
-    let reselection: Record<string, unknown> | undefined;
+    for (const section of page.sections) {
+      if (!plan.sectionIds.includes(section.id)) continue;
+      const props = section.props as Record<string, unknown>;
+      let reselection: Record<string, unknown> | undefined;
 
-    if (plan.operations.includes("reselect-qualified-alternate") && plan.reselectSectionIds.includes(section.id)) {
-      const currentUrl = imageUrl(props.image);
-      if (currentUrl) usedUrls.delete(currentUrl);
-      const alternate = bestQualifiedAlternate(props.qualifiedMediaAlternates, usedUrls);
-      if (alternate) {
-        const alt = stringValue(alternate.alt) ?? firstText(props.title, props.heading, props.eyebrow, "Clinic image");
-        props.image = { src: alternate.url, alt };
-        if (typeof alternate.aspect === "string") props.imageRatio = normalizeRatio(alternate.aspect) ?? props.imageRatio;
-        props.imageFit = "cover";
-        props.imageFocalPoint = Array.isArray(alternate.tags) && alternate.tags.some((tag) => typeof tag === "string" && /person|people|team|portrait|face/i.test(tag)) ? "face-safe" : "center";
-        usedUrls.add(alternate.url as string);
-        reselection = { id: alternate.id, url: alternate.url, score: alternate.score, reason: alternate.reason };
+      if (plan.operations.includes("reselect-qualified-alternate") && plan.reselectSectionIds.includes(section.id)) {
+        const currentUrl = imageUrl(props.image);
+        if (currentUrl) usedUrls.delete(currentUrl);
+        const alternate = bestQualifiedAlternate(props.qualifiedMediaAlternates, usedUrls);
+        if (alternate) {
+          const alt = stringValue(alternate.alt) ?? firstText(props.title, props.heading, props.eyebrow, "Clinic image");
+          props.image = { src: alternate.url, alt };
+          if (typeof alternate.aspect === "string") props.imageRatio = normalizeRatio(alternate.aspect) ?? props.imageRatio;
+          props.imageFit = "cover";
+          props.imageFocalPoint = Array.isArray(alternate.tags) && alternate.tags.some((tag) => typeof tag === "string" && /person|people|team|portrait|face/i.test(tag)) ? "face-safe" : "center";
+          usedUrls.add(alternate.url as string);
+          reselection = { id: alternate.id, url: alternate.url, score: alternate.score, reason: alternate.reason };
+        }
       }
-    }
 
-    if (plan.operations.includes("relax-aggressive-crop") && !reselection) {
-      props.imageFit = "contain";
-      props.imageFocalPoint = "center";
-    }
-
-    if (plan.operations.includes("restore-image-alt")) {
-      const image = props.image;
-      if (image && typeof image === "object" && !Array.isArray(image)) {
-        const record = image as Record<string, unknown>;
-        if (typeof record.alt !== "string" || !record.alt.trim()) record.alt = firstText(props.title, props.heading, props.eyebrow, "Clinic image");
+      if (plan.operations.includes("relax-aggressive-crop") && !reselection) {
+        props.imageFit = "contain";
+        props.imageFocalPoint = "center";
       }
+
+      if (plan.operations.includes("restore-image-alt")) {
+        const image = props.image;
+        if (image && typeof image === "object" && !Array.isArray(image)) {
+          const record = image as Record<string, unknown>;
+          if (typeof record.alt !== "string" || !record.alt.trim()) record.alt = firstText(props.title, props.heading, props.eyebrow, "Clinic image");
+        }
+      }
+
+      props.renderedImageRepair = {
+        version: 2,
+        operations: [...plan.operations],
+        reasons: [...plan.reasons],
+        ...(reselection ? { reselection } : { reselectionUnavailable: plan.reselectSectionIds.includes(section.id) }),
+      };
     }
 
-    props.renderedImageRepair = {
-      version: 2,
-      operations: [...plan.operations],
-      reasons: [...plan.reasons],
-      ...(reselection ? { reselection } : { reselectionUnavailable: plan.reselectSectionIds.includes(section.id) }),
-    };
-  }
-
-  return siteSchema.parse(next);
+    return siteSchema.parse(next);
+  });
 }
 
 function bestQualifiedAlternate(value: unknown, usedUrls: Set<string>): Record<string, unknown> | undefined {

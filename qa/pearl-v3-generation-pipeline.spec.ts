@@ -66,8 +66,8 @@ test("Pearl Dental reaches V3 final generation acceptance through automatic comp
   expect(families[0]).toBe("navbar");
   expect(families).toContain("hero");
   expect(families).toContain("services");
-  expect(families).toContain("process");
   expect(families).toContain("team");
+  expect(families).toContain("testimonials");
   expect(families).toContain("cta");
   expect(families).toContain("contact");
   expect(families.at(-1)).toBe("footer");
@@ -82,6 +82,7 @@ function buildPearlSourceDraft(): Site {
   const themeFamily = "minimalist" as const;
   const sections = [
     section("global-navbar", "navbar", themeFamily, {
+      title: "Pearl Dental",
       brandName: "Pearl Dental",
       items: [{ title: "Treatments" }, { title: "About" }, { title: "Contact" }],
       primaryAction: { label: "Book appointment", href: "#contact" },
@@ -90,6 +91,7 @@ function buildPearlSourceDraft(): Site {
       eyebrow: "Dental care in Hyderabad",
       heading: "Thoughtful dentistry, planned around you",
       body: "Explore treatment options with clear consultation, careful planning and a calm path to the next step.",
+      imageUrl: "https://media.micirql.test/pearl-dental/hero-clinic.webp",
       primaryAction: { label: "Book appointment", href: "#contact" },
       secondaryAction: { label: "View treatments", href: "#treatments" },
     }),
@@ -100,6 +102,7 @@ function buildPearlSourceDraft(): Site {
     section("treatments", "services", themeFamily, {
       heading: "Treatments",
       body: "Understand the purpose of each treatment and discuss the options that may suit your needs.",
+      imageUrl: "https://media.micirql.test/pearl-dental/treatment-room.webp",
       items: PEARL_SERVICES.map((title) => ({
         title,
         description: `Learn what to discuss with the clinic when considering ${title.toLowerCase()}.`,
@@ -126,7 +129,13 @@ function buildPearlSourceDraft(): Site {
     section("team", "team", themeFamily, {
       heading: "Meet the dental team",
       body: "Clinician biographies and qualifications are published only after Pearl Dental supplies verified details.",
+      imageUrl: "https://media.micirql.test/pearl-dental/clinical-team.webp",
       items: [{ title: "Clinical team", description: "Verified clinician details can be added here when supplied by the clinic." }],
+    }),
+    section("patient-feedback", "testimonials", themeFamily, {
+      heading: "Patient feedback",
+      body: "Verified patient reviews can be published here when Pearl Dental supplies approved feedback.",
+      items: [{ title: "Verified reviews only", description: "No testimonial is shown until the clinic supplies approved patient feedback." }],
     }),
     section("cta", "cta", themeFamily, {
       heading: "Ready to discuss your dental care?",
@@ -139,6 +148,7 @@ function buildPearlSourceDraft(): Site {
       primaryAction: { label: "Contact clinic", href: "#contact-form" },
     }),
     section("global-footer", "footer", themeFamily, {
+      title: "Pearl Dental",
       brandName: "Pearl Dental",
       description: "Dental care information and appointment enquiries in Hyderabad.",
     }),

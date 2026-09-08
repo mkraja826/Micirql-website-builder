@@ -3,6 +3,7 @@ import type { FirstScreenRepairPlan, FirstScreenRepairViewport } from "./rendere
 import { persistedPageTypographyRepairCss } from "./page-typography-repair";
 import { persistedRenderedTypographyRepairCss } from "./persisted-rendered-typography-repair";
 import { persistedResponsiveCompositionRepairCss } from "./persisted-responsive-composition-repair";
+import { applyRenderedVisualRepairTransaction } from "./rendered-visual-repair-transaction";
 
 export type PersistedFirstScreenRepair = {
   version: 1;
@@ -18,21 +19,23 @@ const PROP_KEY = "renderedFirstScreenRepairs";
 
 export function persistFirstScreenRepair(site: Site, plan: FirstScreenRepairPlan): Site {
   if (!plan.required || !plan.css) return site;
-  const next = structuredClone(site);
-  const home = next.pages.find((page) => page.path === "/") ?? next.pages[0];
-  const hero = home?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
-  if (!hero) return site;
+  return applyRenderedVisualRepairTransaction(site, "first-screen", (currentSite) => {
+    const next = structuredClone(currentSite);
+    const home = next.pages.find((page) => page.path === "/") ?? next.pages[0];
+    const hero = home?.sections.find((section) => /-HERO-|^HERO\./i.test(section.component.componentId));
+    if (!hero) return currentSite;
 
-  const current = readRepairMap(hero.props?.[PROP_KEY]);
-  current[plan.viewport] = {
-    version: 1,
-    viewport: plan.viewport,
-    operations: [...plan.operations],
-    reasons: [...plan.reasons],
-    css: plan.css,
-  };
-  hero.props = { ...hero.props, [PROP_KEY]: current };
-  return siteSchema.parse(next);
+    const current = readRepairMap(hero.props?.[PROP_KEY]);
+    current[plan.viewport] = {
+      version: 1,
+      viewport: plan.viewport,
+      operations: [...plan.operations],
+      reasons: [...plan.reasons],
+      css: plan.css,
+    };
+    hero.props = { ...hero.props, [PROP_KEY]: current };
+    return siteSchema.parse(next);
+  });
 }
 
 export function persistedFirstScreenRepairCss(site: Site, viewport: FirstScreenRepairViewport, path = "/"): string {

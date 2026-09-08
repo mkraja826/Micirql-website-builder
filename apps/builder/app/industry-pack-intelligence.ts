@@ -24,6 +24,8 @@ export type IndustryPackSelection = {
   reasons: string[];
 };
 
+const MIN_ACCENT_DISTINCTION = 1.5;
+
 export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryPackSelection | null {
   const pack = resolveIndustryDesignPack(input.industry ?? undefined, input.subindustry ?? undefined);
   if (!pack) return null;
@@ -41,7 +43,9 @@ export function selectIndustryPack(input: IndustryPackSelectionInput): IndustryP
 
   const palette = chooseByScore(
     pack.palettes,
-    (candidate) => scorePreferred(candidate.id, subindustry?.preferredPaletteIds) + scoreTerms(candidate.personality, `${text} ${personality}`),
+    (candidate) => paletteCompatibility(candidate)
+      + scorePreferred(candidate.id, subindustry?.preferredPaletteIds)
+      + scoreTerms(candidate.personality, `${text} ${personality}`),
   ) ?? pack.palettes[0];
 
   const typography = chooseByScore(
@@ -95,4 +99,39 @@ function scoreTerms(terms: string[], text: string) {
 
 function normalize(values: Array<string | null | undefined>) {
   return values.filter((value): value is string => typeof value === "string" && Boolean(value.trim())).join(" ").toLowerCase();
+}
+
+function paletteCompatibility(palette: IndustryPalette) {
+  const accent = parseHex(palette.colors.accent);
+  const background = parseHex(palette.colors.background);
+  const surface = parseHex(palette.colors.surface);
+  if (!accent || !background || !surface) return -100;
+  return contrastRatio(accent, background) >= MIN_ACCENT_DISTINCTION
+    && contrastRatio(accent, surface) >= MIN_ACCENT_DISTINCTION
+    ? 0
+    : -100;
+}
+
+type Rgb = { r: number; g: number; b: number };
+function parseHex(value: string): Rgb | null {
+  const match = value.trim().match(/^#([0-9a-f]{6})$/i);
+  const hex = match?.[1];
+  if (!hex) return null;
+  return {
+    r: Number.parseInt(hex.slice(0, 2), 16),
+    g: Number.parseInt(hex.slice(2, 4), 16),
+    b: Number.parseInt(hex.slice(4, 6), 16),
+  };
+}
+function contrastRatio(a: Rgb, b: Rgb) {
+  const lighter = Math.max(luminance(a), luminance(b));
+  const darker = Math.min(luminance(a), luminance(b));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+function luminance({ r, g, b }: Rgb) {
+  const linearize = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
 }

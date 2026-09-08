@@ -130,7 +130,9 @@ export function competeWebsiteLayoutCandidates(candidates: readonly RankedLayout
   return candidates
     .map((candidate) => {
       const structural = scoreStructuralCandidate(candidate.layout);
-      const competitionScore = clamp(candidate.score * 0.65 + structural.score * 0.35);
+      const semanticFit = candidate.selectionScore ?? candidate.score;
+      const weightedCompetition = semanticFit * 0.65 + structural.score * 0.35;
+      const competitionScore = clamp(weightedCompetition);
       return {
         ...candidate,
         score: competitionScore,
@@ -138,8 +140,16 @@ export function competeWebsiteLayoutCandidates(candidates: readonly RankedLayout
         structuralScore: structural.score,
         competitionScore,
         dimensions: structural.dimensions,
-        reasons: [...candidate.reasons, ...structural.reasons, `candidate competition ${competitionScore}/100`],
+        reasons: [
+          ...candidate.reasons,
+          ...(candidate.selectionScore !== undefined ? [`semantic specificity ${candidate.selectionScore}`] : []),
+          ...structural.reasons,
+          `candidate competition ${competitionScore}/100`,
+        ],
+        _weightedCompetition: weightedCompetition,
+        _semanticFit: semanticFit,
       };
     })
-    .sort((a, b) => b.competitionScore - a.competitionScore || b.fitScore - a.fitScore || a.layout.id.localeCompare(b.layout.id));
+    .sort((a, b) => b._weightedCompetition - a._weightedCompetition || b._semanticFit - a._semanticFit || a.layout.id.localeCompare(b.layout.id))
+    .map(({ _weightedCompetition, _semanticFit, ...result }) => result);
 }

@@ -5,7 +5,12 @@ import {
   evaluateFullStackPublishCertification,
 } from "../apps/builder/app/publish-full-stack-certification";
 
-const site = { siteId: "site-pearl", workspaceId: "workspace-1", name: "Pearl Dental" } as Site;
+const site = {
+  siteId: "site-pearl",
+  workspaceId: "workspace-1",
+  name: "Pearl Dental",
+  pages: [],
+} as Site;
 
 function architecture(backendRequired: boolean): FunctionalArchitecture {
   return {

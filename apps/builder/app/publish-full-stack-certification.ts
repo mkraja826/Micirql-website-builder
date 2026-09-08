@@ -1,5 +1,12 @@
 import type { BackendImplementationContract, FunctionalArchitecture, Site } from "@micirql/schema";
 
+export type FunctionalInteractionCertification = {
+  requiredInteractionIds: string[];
+  certifiedInteractionIds: string[];
+  builderPassed: boolean;
+  livePassed: boolean;
+};
+
 export type FullStackPublishCertificationReceipt = {
   siteId: string;
   draftFingerprint: string;
@@ -9,6 +16,7 @@ export type FullStackPublishCertificationReceipt = {
   certifiedAt: string;
   architecture: FunctionalArchitecture;
   backend: BackendImplementationContract;
+  interactionCertification?: FunctionalInteractionCertification;
   observedErrors?: string[];
 };
 
@@ -21,6 +29,7 @@ export type FullStackPublishGateResult = {
   enforced: boolean;
   allowed: boolean;
   draftFingerprint: string;
+  requiredInteractionIds: string[];
   status: "not-required" | "not-enforced" | "missing" | "failed" | "certified";
   receipt?: FullStackPublishCertificationReceipt;
 };
@@ -29,6 +38,10 @@ let store: FullStackPublishCertificationStore | undefined;
 
 export function configureFullStackPublishCertificationStore(next: FullStackPublishCertificationStore) {
   store = next;
+}
+
+export function resetFullStackPublishCertificationStore() {
+  store = undefined;
 }
 
 export function getFullStackPublishCertificationStore() {
@@ -42,19 +55,45 @@ export async function evaluateFullStackPublishCertification(input: {
   enforce?: boolean;
 }): Promise<FullStackPublishGateResult> {
   const draftFingerprint = await fingerprintPublishInput(input.site, input.architecture, input.backend);
-  const required = requiresRuntimeCertification(input.architecture, input.backend);
-  const enforced = input.enforce ?? process.env.MICIRQL_ENFORCE_FULL_STACK_PUBLISH_CERTIFICATION === "1";
+  const requiredInteractionIds = deriveRequiredFunctionalInteractions(input.site);
+  const runtimeRequired = requiresRuntimeCertification(input.architecture, input.backend);
+  const required = runtimeRequired || requiredInteractionIds.length > 0;
+  const enforced = input.enforce
+    ?? (requiredInteractionIds.length > 0 || process.env.MICIRQL_ENFORCE_FULL_STACK_PUBLISH_CERTIFICATION === "1");
+  const base = { draftFingerprint, requiredInteractionIds };
 
-  if (!required) return { required: false, enforced, allowed: true, draftFingerprint, status: "not-required" };
-  if (!enforced) return { required: true, enforced: false, allowed: true, draftFingerprint, status: "not-enforced" };
-  if (!store) return { required: true, enforced: true, allowed: false, draftFingerprint, status: "missing" };
+  if (!required) return { ...base, required: false, enforced, allowed: true, status: "not-required" };
+  if (!enforced) return { ...base, required: true, enforced: false, allowed: true, status: "not-enforced" };
+  if (!store) return { ...base, required: true, enforced: true, allowed: false, status: "missing" };
 
   const receipt = await store.find({ siteId: input.site.siteId, draftFingerprint });
-  if (!receipt) return { required: true, enforced: true, allowed: false, draftFingerprint, status: "missing" };
-  if (!receipt.passed) return { required: true, enforced: true, allowed: false, draftFingerprint, status: "failed", receipt };
-  if (!/^https?:\/\//i.test(receipt.previewUrl)) return { required: true, enforced: true, allowed: false, draftFingerprint, status: "failed", receipt };
+  if (!receipt) return { ...base, required: true, enforced: true, allowed: false, status: "missing" };
+  if (!receipt.passed) return { ...base, required: true, enforced: true, allowed: false, status: "failed", receipt };
+  if (!/^https?:\/\//i.test(receipt.previewUrl)) return { ...base, required: true, enforced: true, allowed: false, status: "failed", receipt };
+  if (!certifiesRequiredInteractions(receipt.interactionCertification, requiredInteractionIds)) {
+    return { ...base, required: true, enforced: true, allowed: false, status: "failed", receipt };
+  }
 
-  return { required: true, enforced: true, allowed: true, draftFingerprint, status: "certified", receipt };
+  return { ...base, required: true, enforced: true, allowed: true, status: "certified", receipt };
+}
+
+export function deriveRequiredFunctionalInteractions(site: Site): string[] {
+  const required = new Set<string>();
+
+  for (const page of site.pages) {
+    for (const section of page.sections) {
+      for (const binding of Object.values(section.bindings)) {
+        const actionId = binding?.actionId?.trim();
+        if (actionId) required.add(`action:${actionId}`);
+      }
+
+      const componentId = section.component.componentId.toLowerCase();
+      if (componentId.includes("faq")) required.add("interaction:faq-accordion");
+      if (componentId.includes("gallery")) required.add("interaction:gallery-lightbox");
+    }
+  }
+
+  return [...required].sort();
 }
 
 export function requiresRuntimeCertification(
@@ -77,6 +116,17 @@ export async function fingerprintPublishInput(
   const canonical = stableStringify({ site, architecture, backend });
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function certifiesRequiredInteractions(
+  certification: FunctionalInteractionCertification | undefined,
+  requiredInteractionIds: string[],
+) {
+  if (requiredInteractionIds.length === 0) return true;
+  if (!certification?.builderPassed || !certification.livePassed) return false;
+  const declaredRequired = new Set(certification.requiredInteractionIds);
+  const certified = new Set(certification.certifiedInteractionIds);
+  return requiredInteractionIds.every((id) => declaredRequired.has(id) && certified.has(id));
 }
 
 function stableStringify(value: unknown): string {

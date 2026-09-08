@@ -17,19 +17,25 @@ export function applyRenderedVisualRepairTransaction(
   dimension: RenderedVisualRepairDimension,
   repair: (current: Site) => Site,
 ): Site {
-  const before = protectedSnapshot(site, dimension);
   const next = siteSchema.parse(repair(site));
-  const after = protectedSnapshot(next, dimension);
-
-  if (before !== after) {
-    throw new Error(`Rendered visual repair escaped ${dimension} ownership`);
-  }
-
+  assertRenderedVisualRepairOwnership(site, next, dimension);
   return next;
 }
 
-function protectedSnapshot(site: Site, dimension: RenderedVisualRepairDimension): string {
-  return JSON.stringify(stripAllowedRepairState(site, dimension));
+export function assertRenderedVisualRepairOwnership(
+  before: unknown,
+  after: unknown,
+  dimension: RenderedVisualRepairDimension,
+): void {
+  const protectedBefore = protectedSnapshot(before, dimension);
+  const protectedAfter = protectedSnapshot(after, dimension);
+  if (protectedBefore !== protectedAfter) {
+    throw new Error(`Rendered visual repair escaped ${dimension} ownership`);
+  }
+}
+
+function protectedSnapshot(value: unknown, dimension: RenderedVisualRepairDimension): string {
+  return JSON.stringify(stripAllowedRepairState(value, dimension));
 }
 
 function stripAllowedRepairState(value: unknown, dimension: RenderedVisualRepairDimension): unknown {

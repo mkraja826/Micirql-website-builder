@@ -53,6 +53,7 @@ export async function evaluateFullStackPublishCertification(input: {
   architecture: FunctionalArchitecture;
   backend: BackendImplementationContract;
   enforce?: boolean;
+  store?: FullStackPublishCertificationStore;
 }): Promise<FullStackPublishGateResult> {
   const draftFingerprint = await fingerprintPublishInput(input.site, input.architecture, input.backend);
   const requiredInteractionIds = deriveRequiredFunctionalInteractions(input.site);
@@ -61,12 +62,13 @@ export async function evaluateFullStackPublishCertification(input: {
   const enforced = input.enforce
     ?? (requiredInteractionIds.length > 0 || process.env.MICIRQL_ENFORCE_FULL_STACK_PUBLISH_CERTIFICATION === "1");
   const base = { draftFingerprint, requiredInteractionIds };
+  const certificationStore = input.store ?? store;
 
   if (!required) return { ...base, required: false, enforced, allowed: true, status: "not-required" };
   if (!enforced) return { ...base, required: true, enforced: false, allowed: true, status: "not-enforced" };
-  if (!store) return { ...base, required: true, enforced: true, allowed: false, status: "missing" };
+  if (!certificationStore) return { ...base, required: true, enforced: true, allowed: false, status: "missing" };
 
-  const receipt = await store.find({ siteId: input.site.siteId, draftFingerprint });
+  const receipt = await certificationStore.find({ siteId: input.site.siteId, draftFingerprint });
   if (!receipt) return { ...base, required: true, enforced: true, allowed: false, status: "missing" };
   if (!receipt.passed) return { ...base, required: true, enforced: true, allowed: false, status: "failed", receipt };
   if (!/^https?:\/\//i.test(receipt.previewUrl)) return { ...base, required: true, enforced: true, allowed: false, status: "failed", receipt };

@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./qa",
-  testMatch: /(?:full-stack-app-certification|full-stack-runtime-probe-executor|full-stack-playwright-runtime-adapter|generated-runtime-probe-instrumentation|full-stack-publish-certification|publishable-draft-certification|canonical-runtime-family-quality)\.spec\.ts/,
+  testMatch: /(?:full-stack-app-certification|full-stack-runtime-probe-executor|full-stack-playwright-runtime-adapter|generated-runtime-probe-instrumentation|full-stack-publish-certification|publishable-draft-certification|publish-certification-persistence|canonical-runtime-family-quality)\.spec\.ts/,
   timeout: 15_000,
   fullyParallel: false,
   workers: 1,

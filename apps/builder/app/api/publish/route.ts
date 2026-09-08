@@ -7,6 +7,10 @@ import { deriveFunctionalArchitecture } from "../../functional-architecture";
 import { evaluateFunctionalPublishGate } from "../../functional-publish-gate";
 import { repairFunctionalPublishIssues } from "../../functional-publish-repair";
 import { evaluatePublishableDraftCertification } from "../../publishable-draft-certification";
+import {
+  createSupabaseFullStackCertificationStore,
+  createSupabaseRenderedVisualCertificationStore,
+} from "../../publish-certification-supabase-store";
 import { assessPublishRepairSync } from "../../publish-repair-sync";
 import { getPublishRuntime } from "../../publish-runtime";
 
@@ -94,6 +98,8 @@ export async function POST(request: NextRequest) {
       site: publishSite,
       architecture,
       backend: backendContract,
+      renderedVisualStore: createSupabaseRenderedVisualCertificationStore(request),
+      fullStackStore: createSupabaseFullStackCertificationStore(request),
     });
     if (!publishableDraft.publishable) {
       return Response.json({

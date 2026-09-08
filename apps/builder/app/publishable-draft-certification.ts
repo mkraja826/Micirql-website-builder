@@ -4,6 +4,7 @@ import { evaluateFunctionalPublishGate, type FunctionalPublishGateResult } from 
 import {
   evaluateFullStackPublishCertification,
   fingerprintPublishInput,
+  type FullStackPublishCertificationStore,
   type FullStackPublishGateResult,
 } from "./publish-full-stack-certification";
 
@@ -56,13 +57,21 @@ export async function evaluatePublishableDraftCertification(input: {
   site: Site;
   architecture: FunctionalArchitecture;
   backend: BackendImplementationContract;
+  renderedVisualStore?: RenderedVisualCertificationStore;
+  fullStackStore?: FullStackPublishCertificationStore;
 }): Promise<PublishableDraftCertification> {
   const generation = evaluateFinalGenerationAcceptance(input.site);
   const functional = evaluateFunctionalPublishGate(input.site, input.architecture);
   const draftFingerprint = await fingerprintPublishInput(input.site, input.architecture, input.backend);
-  const visualReceipt = await renderedVisualStore?.find({ siteId: input.site.siteId, draftFingerprint });
+  const visualStore = input.renderedVisualStore ?? renderedVisualStore;
+  const visualReceipt = await visualStore?.find({ siteId: input.site.siteId, draftFingerprint });
   const renderedVisual = evaluateRenderedVisualReceipt(visualReceipt, input.site.siteId, draftFingerprint);
-  const fullStack = await evaluateFullStackPublishCertification(input);
+  const fullStack = await evaluateFullStackPublishCertification({
+    site: input.site,
+    architecture: input.architecture,
+    backend: input.backend,
+    ...(input.fullStackStore ? { store: input.fullStackStore } : {}),
+  });
   const blockers: string[] = [];
 
   if (!generation.ready) blockers.push(...generation.blockers.map((message) => `generation: ${message}`));

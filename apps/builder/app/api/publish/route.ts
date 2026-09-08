@@ -6,7 +6,7 @@ import { deriveBackendImplementationContract } from "../../backend-implementatio
 import { deriveFunctionalArchitecture } from "../../functional-architecture";
 import { evaluateFunctionalPublishGate } from "../../functional-publish-gate";
 import { repairFunctionalPublishIssues } from "../../functional-publish-repair";
-import { evaluateFullStackPublishCertification } from "../../publish-full-stack-certification";
+import { evaluatePublishableDraftCertification } from "../../publishable-draft-certification";
 import { assessPublishRepairSync } from "../../publish-repair-sync";
 import { getPublishRuntime } from "../../publish-runtime";
 
@@ -90,28 +90,24 @@ export async function POST(request: NextRequest) {
       notes: groundingFacts.notes ?? null,
     });
     const backendContract = deriveBackendImplementationContract(architecture);
-    const fullStackCertification = await evaluateFullStackPublishCertification({
+    const publishableDraft = await evaluatePublishableDraftCertification({
       site: publishSite,
       architecture,
       backend: backendContract,
     });
-    if (!fullStackCertification.allowed) {
+    if (!publishableDraft.publishable) {
       return Response.json({
         ok: false,
-        code: "FULL_STACK_CERTIFICATION_REQUIRED",
+        code: "PUBLISHABLE_DRAFT_REQUIRED",
         readiness,
         contentQuality,
         grounding,
         functionalRepairs: functionalRepair.repairs,
         architecture,
         backendContract,
-        fullStackCertification,
-        issues: [{
-          code: "FULL_STACK_CERTIFICATION_REQUIRED",
-          message: fullStackCertification.status === "failed"
-            ? "The exact preview build failed full-stack runtime certification. Fix the reported runtime failures and certify a new preview before publishing."
-            : "This backend-enabled build must pass full-stack runtime certification on an isolated preview before production publishing is allowed.",
-        }],
+        publishableDraft,
+        fullStackCertification: publishableDraft.fullStack,
+        issues: publishableDraft.blockers.map((message) => ({ code: "PUBLISHABLE_DRAFT_REQUIRED", message })),
       }, { status: 422 });
     }
 
@@ -175,7 +171,8 @@ export async function POST(request: NextRequest) {
       grounding,
       architecture,
       backendContract,
-      fullStackCertification,
+      publishableDraft,
+      fullStackCertification: publishableDraft.fullStack,
       functionalRepairs: functionalRepair.repairs,
       repairedSite: functionalRepair.repaired ? publishSite : undefined,
       draftRepairPersisted,

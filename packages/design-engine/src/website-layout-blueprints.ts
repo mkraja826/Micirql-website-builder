@@ -71,6 +71,8 @@ export type LayoutSelectionInput = {
 export type RankedLayout = {
   layout: WebsiteLayoutBlueprint;
   score: number;
+  /** Unclamped semantic-fit score retained for second-stage candidate competition. */
+  selectionScore?: number;
   reasons: string[];
 };
 
@@ -180,12 +182,11 @@ function rank(layouts: readonly WebsiteLayoutBlueprint[], input: LayoutSelection
 
     if (layout.status === "certified") reasons.push("certified layout");
     else reasons.push("draft candidate - not eligible for production generation");
-    return { layout, score: Math.min(100, rawScore), rawScore, reasons };
+    return { layout, score: Math.min(100, rawScore), selectionScore: rawScore, reasons };
   });
 
   return ranked
-    .sort((a, b) => b.rawScore - a.rawScore || a.layout.id.localeCompare(b.layout.id))
-    .map(({ layout, score, reasons }) => ({ layout, score, reasons }));
+    .sort((a, b) => (b.selectionScore ?? b.score) - (a.selectionScore ?? a.score) || a.layout.id.localeCompare(b.layout.id));
 }
 
 /**

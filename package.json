@@ -2,20 +2,32 @@
   "name": "micirql-website-builder",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "dev:cloudflare": "vite dev",
+    "build:cloudflare": "vite build",
+    "preview:cloudflare": "vite preview",
+    "deploy": "vinext-cloudflare deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "next": "15.5.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "vinext": "latest",
+    "@vinext/cloudflare": "latest"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "latest",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.9.2"
+    "@vitejs/plugin-rsc": "latest",
+    "typescript": "^5.9.2",
+    "vite": "latest",
+    "wrangler": "latest"
   }
 }

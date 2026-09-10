@@ -3,6 +3,7 @@ import { generatePearlDentalBenchmark } from "../../../src/core/generation/pearl
 import { ConversionCleanNavbar } from "../../../src/sections/navbar/conversion-clean";
 import { EditorialSplitHero } from "../../../src/sections/hero/editorial-split";
 import { EditorialServiceIndex } from "../../../src/sections/services/editorial-index";
+import { TrustManifesto } from "../../../src/sections/about/trust-manifesto";
 import { EditorialCtaBand } from "../../../src/sections/cta/editorial-band";
 import { LocalConversionContact } from "../../../src/sections/contact/local-conversion";
 import { FunctionalLocalFooter } from "../../../src/sections/footer/functional-local";
@@ -29,53 +30,54 @@ export default async function GeneratedPearlPage() {
   return <main style={style}>
     <ConversionCleanNavbar
       brand={brand}
-      links={[{label:"Care",href:"#care"},{label:"About",href:"#about"},{label:"Contact",href:"#contact"}]}
-      primaryCta={{label:"Book appointment",href:"#contact"}}
+      links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]}
+      primaryCta={{label:"Request appointment",href:"#contact"}}
     />
     <EditorialSplitHero
       brand={brand}
       eyebrow="Dental care in Hyderabad"
       headline={hero?.headline ?? "Calm, considered dental care."}
       body={hero?.body ?? "A clear introduction to Pearl Dental, shaped around reassurance, useful information and an easy next step."}
-      primaryCta={{label:hero?.primaryCta?.label ?? "Book appointment",href:"#contact"}}
+      primaryCta={{label:"Get in touch",href:"#contact"}}
       secondaryCta={{label:"Explore care",href:"#care"}}
       trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]}
-      visualNote="Automatically composed from the MiCirql V1 pipeline"
+      visualNote="A calm, clear place to begin your dental care journey."
     />
     <EditorialServiceIndex
       eyebrow="Care"
       headline={services?.headline ?? "Understand the care before choosing the next step."}
-      intro={services?.body ?? "These are general care categories for the benchmark. Specific services must be verified before a production site is published."}
+      intro="Explore common dental care needs and use the enquiry form to discuss what may be appropriate for you."
       items={serviceItems}
     />
-    <section className="manifesto shell" id="about">
-      <p className="eyebrow">About this benchmark</p>
-      <h2>Generated from a two-part brief: Pearl Dental, Hyderabad.</h2>
-      <p>This page is assembled through Brief Interpreter → Industry Knowledge → Art Director → Content Director → Theme Intelligence → complete-section selection → deterministic rendering. Unknown business facts remain intentionally absent.</p>
-    </section>
+    <TrustManifesto
+      eyebrow="Our approach"
+      headline="Clear information. Thoughtful next steps."
+      body="Dental care decisions are personal. This site keeps the first step simple: understand the care area, ask a question and continue with verified clinic guidance."
+      note="Specific treatments, clinicians, pricing and outcomes should be confirmed directly with the clinic before care begins."
+    />
     <EditorialCtaBand
       eyebrow="Next step"
       headline={cta?.headline ?? "Ready when you are."}
-      body={cta?.body ?? "Use the enquiry route to start a conversation without relying on unverified phone, address, pricing or staff details."}
-      primaryCta={{label:cta?.primaryCta?.label ?? "Book appointment",href:"#contact"}}
+      body="Tell the clinic what you would like help with and continue from there."
+      primaryCta={{label:"Start an enquiry",href:"#contact"}}
       secondaryCta={{label:"Review care",href:"#care"}}
     />
     <LocalConversionContact
       eyebrow="Contact"
       headline={contact?.headline ?? "Start with a simple enquiry."}
-      body={contact?.body ?? "Share what you would like help with. Verified clinic contact details can be connected before publishing."}
-      status="Benchmark form — backend capability not activated yet"
+      body="Share what you would like help with. Verified clinic contact details can be connected before publishing."
+      status="Online enquiry preview"
       submitLabel="Send enquiry"
-      note="This milestone validates composition first; functional backend activation follows in the backend-capability phase."
+      note="Form submission is not active in this preview yet."
     />
     <FunctionalLocalFooter
       brand={brand}
-      description="Automatically generated V1 benchmark with business-specific unknowns kept out of published copy."
+      description="Clear, patient-friendly dental information with a simple route to enquire."
       location="Hyderabad"
       contactLabel="Enquiry form"
       contactHref="#contact"
-      links={[{label:"Care",href:"#care"},{label:"About",href:"#about"},{label:"Contact",href:"#contact"}]}
-      legal="MiCirql automatic Pearl Dental benchmark"
+      links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]}
+      legal="Pearl Dental · Hyderabad"
     />
   </main>;
 }

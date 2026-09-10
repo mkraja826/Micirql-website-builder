@@ -14,6 +14,10 @@ export type SiteCandidatePlan = {
   cssVariables: ReturnType<typeof themeTokensToCssVariables>;
 };
 
+const MAJOR_VISUAL_TYPES = ["hero", "services", "about", "cta"];
+const DIVERSITY_TYPES = ["hero", "services", "about", "cta", "navbar", "footer"];
+const MIN_MAJOR_DISTANCE = 2;
+
 function matchesIndustry(section: CompleteSectionDefinition, brief: InterpretedBrief) {
   const industry = brief.business.industry.value;
   const subIndustry = brief.business.subIndustry?.value;
@@ -60,31 +64,65 @@ function compositionSignature(sections: Record<string, string>) {
     .join("|");
 }
 
-function diversifyCollision(
-  selectedSections: Record<string, string>,
+function compositionDistance(
+  a: Record<string, string>,
+  b: Record<string, string>,
+  types = DIVERSITY_TYPES,
+) {
+  return types.reduce((distance, type) => distance + (a[type] !== b[type] ? 1 : 0), 0);
+}
+
+function buildCompositionOptions(
+  initial: Record<string, string>,
   direction: ArtDirection,
   brief: InterpretedBrief,
-  usedSignatures: Set<string>,
 ) {
-  if (!usedSignatures.has(compositionSignature(selectedSections))) return selectedSections;
+  const varying = DIVERSITY_TYPES
+    .map((type) => {
+      const ranked = rankedSections(type, direction, brief).slice(0, 2);
+      return ranked.length ? { type, ranked } : undefined;
+    })
+    .filter(Boolean) as Array<{ type: string; ranked: ReturnType<typeof rankedSections> }>;
 
-  const diversified = { ...selectedSections };
-  const expressiveTypes = ["services", "about", "cta", "navbar", "footer", "hero"];
+  let options: Array<{ sections: Record<string, string>; score: number }> = [{ sections: { ...initial }, score: 0 }];
 
-  for (const type of expressiveTypes) {
-    const ranked = rankedSections(type, direction, brief);
-    if (ranked.length < 2) continue;
-
-    const current = diversified[type];
-    const currentIndex = ranked.findIndex((item) => item.section.id === current);
-    const next = ranked[(Math.max(currentIndex, 0) + 1) % ranked.length]?.section.id;
-    if (!next || next === current) continue;
-
-    diversified[type] = next;
-    if (!usedSignatures.has(compositionSignature(diversified))) return diversified;
+  for (const { type, ranked } of varying) {
+    options = options.flatMap((option) =>
+      ranked.map((choice) => ({
+        sections: { ...option.sections, [type]: choice.section.id },
+        score: option.score + choice.score,
+      })),
+    );
   }
 
-  return diversified;
+  return Array.from(
+    new Map(options.map((option) => [compositionSignature(option.sections), option])).values(),
+  );
+}
+
+function diversifyComposition(
+  initial: Record<string, string>,
+  direction: ArtDirection,
+  brief: InterpretedBrief,
+  previous: Record<string, string>[],
+) {
+  if (!previous.length) return initial;
+
+  const options = buildCompositionOptions(initial, direction, brief)
+    .map((option) => {
+      const majorDistance = Math.min(...previous.map((sections) => compositionDistance(option.sections, sections, MAJOR_VISUAL_TYPES)));
+      const totalDistance = Math.min(...previous.map((sections) => compositionDistance(option.sections, sections)));
+      return { ...option, majorDistance, totalDistance };
+    })
+    .sort((a, b) =>
+      Number(b.majorDistance >= MIN_MAJOR_DISTANCE) - Number(a.majorDistance >= MIN_MAJOR_DISTANCE)
+      || b.majorDistance - a.majorDistance
+      || b.totalDistance - a.totalDistance
+      || b.score - a.score
+      || compositionSignature(a.sections).localeCompare(compositionSignature(b.sections)),
+    );
+
+  return options[0]?.sections ?? initial;
 }
 
 export function generateCandidatePlans({
@@ -115,7 +153,7 @@ export function generateCandidatePlans({
     },
   }, count);
 
-  const usedSignatures = new Set<string>();
+  const previousCompositions: Record<string, string>[] = [];
 
   return directions.map((direction, index) => {
     const sectionTypes = knowledge.requiredSectionTypes;
@@ -125,8 +163,8 @@ export function generateCandidatePlans({
         return selected ? [[type, selected]] : [];
       }),
     );
-    const selectedSections = diversifyCollision(initialSections, direction, brief, usedSignatures);
-    usedSignatures.add(compositionSignature(selectedSections));
+    const selectedSections = diversifyComposition(initialSections, direction, brief, previousCompositions);
+    previousCompositions.push(selectedSections);
 
     const theme = compileThemeTokens(brief, direction);
 

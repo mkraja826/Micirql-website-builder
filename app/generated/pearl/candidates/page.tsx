@@ -33,15 +33,15 @@ function assertCandidateDiversity(candidates: ReturnType<typeof generatePearlDen
 }
 
 export default function PearlCandidatesPage() {
-  const candidates = generatePearlDentalCandidates(8);
+  const candidates = generatePearlDentalCandidates(20);
   assertCandidateDiversity(candidates);
 
   return (
     <main style={{ minHeight: "100vh", background: "#f3eee6", color: "#1c2422", padding: "48px 24px 80px", fontFamily: "Arial, Helvetica, sans-serif" }}>
       <div style={{ width: "min(1180px, 100%)", margin: "0 auto" }}>
         <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: ".18em", fontSize: 11, fontWeight: 700, color: "#4b7770" }}>Phase 10 candidate rendering</p>
-        <h1 style={{ margin: "14px 0 12px", maxWidth: 900, fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400, fontSize: "clamp(42px, 7vw, 76px)", lineHeight: .96, letterSpacing: "-.045em" }}>Eight distinct directions from one tiny brief.</h1>
-        <p style={{ maxWidth: 760, color: "#59645f", fontSize: 17, lineHeight: 1.7, marginBottom: 42 }}>Input: “Pearl Dental, Hyderabad”. Each candidate uses a different art direction and must differ from every other candidate in at least two major visual sections before this gallery can render.</p>
+        <h1 style={{ margin: "14px 0 12px", maxWidth: 900, fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 400, fontSize: "clamp(42px, 7vw, 76px)", lineHeight: .96, letterSpacing: "-.045em" }}>Twenty distinct directions from one tiny brief.</h1>
+        <p style={{ maxWidth: 760, color: "#59645f", fontSize: 17, lineHeight: 1.7, marginBottom: 42 }}>Input: “Pearl Dental, Hyderabad”. Each candidate uses its own art direction and must differ from every other candidate in at least two major visual sections before this gallery can render.</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
           {candidates.map((candidate) => {

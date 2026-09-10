@@ -29,7 +29,8 @@ export default function Home() {
           <div className="trustLine"><span>Patient-first consultation</span><span>Clear treatment guidance</span><span>Comfort-led experience</span></div>
         </div>
         <div className="heroVisual" aria-label="Abstract warm dental clinic visual">
-          <div className="arch archOne"/><div className="arch archTwo"/><div className="pearlOrb"/><div className="visualNote">A quieter kind of dental visit.</div>
+          <div className="heroFrame"/><div className="arch archOne"/><div className="arch archTwo"/><div className="pearlOrb"/>
+          <div className="visualKicker">Pearl Dental</div><div className="visualNote">A quieter kind of dental visit.</div>
         </div>
       </section>
 
@@ -39,8 +40,8 @@ export default function Home() {
       </section>
 
       <section className="services shell" id="care">
-        <div className="sectionHead"><div><p className="eyebrow">Care, thoughtfully organised</p><h2>Explore treatment areas</h2></div><p>Simple, useful information without turning treatment into a catalogue of cards.</p></div>
-        <div className="serviceList">{treatments.map((item,index)=><article key={item.title}><span>0{index+1}</span><h3>{item.title}</h3><p>{item.body}</p><a href="#contact" aria-label={`Ask about ${item.title}`}>Ask about this care ↗</a></article>)}</div>
+        <div className="sectionHead"><div><p className="eyebrow">Care, thoughtfully organised</p><h2>Explore treatment areas</h2></div><p>Useful guidance, presented with enough breathing room to feel considered rather than catalogued.</p></div>
+        <div className="serviceList">{treatments.map((item,index)=><article key={item.title}><span>0{index+1}</span><div className="serviceTitle"><h3>{item.title}</h3><i aria-hidden="true"/></div><p>{item.body}</p><a href="#contact" aria-label={`Ask about ${item.title}`}>Ask about this care ↗</a></article>)}</div>
       </section>
 
       <section className="journey">
@@ -50,7 +51,7 @@ export default function Home() {
       <section className="faq shell" id="faq"><div><p className="eyebrow">Useful answers</p><h2>Questions before your visit.</h2></div><div className="faqList">{faqs.map(([q,a])=><details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></section>
 
       <section className="contact shell" id="contact">
-        <div className="contactIntro"><p className="eyebrow">Start with a conversation</p><h2>Request an appointment.</h2><p>Share the basic details below. No medical or business-specific facts are invented in this benchmark.</p><a className="textLink" href="tel:#">Call clinic <span>↗</span></a></div>
+        <div className="contactIntro"><p className="eyebrow">Start with a conversation</p><h2>Request an appointment.</h2><p>Share the basic details below and the clinic can follow up to confirm availability.</p><span className="availabilityNote">Appointment requests are enquiries until confirmed.</span></div>
         <form><label>Name<input name="name" placeholder="Your name"/></label><label>Phone<input name="phone" inputMode="tel" placeholder="Your phone number"/></label><label>What can we help with?<textarea name="message" rows={4} placeholder="Tell us briefly"/></label><button className="button" type="button">Send appointment enquiry</button><small>Benchmark UI only — form backend will be connected through MiCirql's appointment capability.</small></form>
       </section>
 

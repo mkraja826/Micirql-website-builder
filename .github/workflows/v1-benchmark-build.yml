@@ -21,8 +21,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Build benchmark
+      - name: Build Next benchmark
         run: npm run build
+      - name: Build Cloudflare target
+        run: npm run build:cloudflare
       - name: Install screenshot runtime
         run: |
           npm install --no-save playwright

@@ -8,7 +8,7 @@ import { CinematicFullscreenHero } from "../../../../../src/sections/hero/cinema
 import { TypographyLedHero } from "../../../../../src/sections/hero/typography-led";
 import { ConversionSplitHero } from "../../../../../src/sections/hero/conversion-split";
 import { EditorialServiceIndex } from "../../../../../src/sections/services/editorial-index";
-import { VisualServiceStories } from "../../../../../src/sections/services/visual-stories";
+import { VisualStoryServices } from "../../../../../src/sections/services/visual-stories";
 import { TrustManifesto } from "../../../../../src/sections/about/trust-manifesto";
 import { EditorialStory } from "../../../../../src/sections/about/editorial-story";
 import { EditorialCtaBand } from "../../../../../src/sections/cta/editorial-band";
@@ -52,7 +52,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
         : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote="A calm, clear place to begin your dental care journey." />;
 
   const services = sections.services === "services-visual-stories"
-    ? <VisualServiceStories eyebrow="Care" headline="Explore common dental care needs." intro="Start with the care area closest to what you want help with." items={careItems.map((item) => ({ ...item, cta: { label: "Ask about this care", href: "#contact" } }))} />
+    ? <VisualStoryServices eyebrow="Care" headline="Explore common dental care needs." stories={careItems.map((item) => ({ ...item, link: { label: "Ask about this care", href: "#contact" } }))} />
     : <EditorialServiceIndex eyebrow="Care" headline="Understand the care before choosing the next step." intro="Explore common dental care needs and use the enquiry form to discuss what may be appropriate for you." items={careItems} />;
 
   const about = sections.about === "about-editorial-story"

@@ -1,4 +1,5 @@
 import { InterpretedBrief, NEVER_FABRICATE } from "./schema";
+import { interpretMinimalBrief } from "./interpreter";
 
 export type TaxonomyMatch = {
   industry: string;
@@ -30,6 +31,8 @@ export type ModelInterpretation = Partial<{
   suitableStyles: string[];
   avoidStyles: string[];
   imagery: string[];
+  // Kept in the model contract for compatibility with existing callers, but it is
+  // intentionally ignored below. A model may never promote facts to known truth.
   knownFacts: Record<string, unknown>;
   unknownFacts: string[];
 }>;
@@ -56,6 +59,10 @@ export async function interpretBriefHybrid(
   const input = rawBrief.trim();
   if (!input) throw new Error("Brief must not be empty");
 
+  // This is the truth boundary. Only deterministic extraction from the user's
+  // literal brief may contribute to knownFacts or a user-sourced location.
+  const deterministic = interpretMinimalBrief(input);
+
   const candidates = (await deps.taxonomy.resolve(input))
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 8);
@@ -76,44 +83,92 @@ export async function interpretBriefHybrid(
   }
 
   const taxonomyWins = !!top && strong(top.confidence);
-  const industry = taxonomyWins ? top.industry : model.industry ?? top?.industry ?? "local-business";
-  const subIndustry = taxonomyWins ? top.subIndustry : model.subIndustry ?? top?.subIndustry;
-  const businessType = taxonomyWins ? top.businessType : model.businessType ?? top?.businessType;
-  const source = taxonomyWins ? "industry_knowledge" as const : model.industry ? "model_inference" as const : "industry_knowledge" as const;
-  const confidence = taxonomyWins ? "strong_inference" as const : "weak_inference" as const;
+  const industry = taxonomyWins ? top.industry : model.industry ?? top?.industry ?? deterministic.business.industry.value;
+  const subIndustry = taxonomyWins ? top.subIndustry : model.subIndustry ?? top?.subIndustry ?? deterministic.business.subIndustry?.value;
+  const businessType = taxonomyWins ? top.businessType : model.businessType ?? top?.businessType ?? deterministic.business.businessType?.value;
+  const classificationSource = taxonomyWins ? "industry_knowledge" as const : model.industry ? "model_inference" as const : deterministic.business.industry.source;
+  const classificationConfidence = taxonomyWins ? "strong_inference" as const : "weak_inference" as const;
 
   const capabilities = unique(model.capabilities, top?.capabilities, defaultCapabilities(industry));
   const goals = unique(model.secondaryGoals, top?.goals);
   const primaryGoal = model.primaryGoal ?? top?.goals?.[0] ?? defaultPrimaryGoal(industry);
 
+  const businessName = deterministic.business.name ?? (model.businessName
+    ? { value: model.businessName, confidence: "weak_inference" as const, source: "model_inference" as const }
+    : undefined);
+  const location = deterministic.business.location ?? (model.location
+    ? { value: model.location, confidence: "weak_inference" as const, source: "model_inference" as const }
+    : undefined);
+
+  const primaryGoalFromModel = Boolean(model.primaryGoal);
+  const primaryGoalFromIndustry = !primaryGoalFromModel && Boolean(top?.goals?.length);
+
   return {
     version: "1.0",
     rawBrief: input,
     business: {
-      ...(model.businessName ? { name: { value: model.businessName, confidence: "weak_inference", source: "model_inference" } } : {}),
-      industry: { value: industry, confidence, source },
-      ...(subIndustry ? { subIndustry: { value: subIndustry, confidence, source } } : {}),
-      ...(businessType ? { businessType: { value: businessType, confidence, source } } : {}),
-      ...(model.location ? { location: { value: model.location, confidence: "weak_inference", source: "model_inference" } } : {}),
+      ...(businessName ? { name: businessName } : {}),
+      industry: { value: industry, confidence: classificationConfidence, source: classificationSource },
+      ...(subIndustry ? { subIndustry: { value: subIndustry, confidence: classificationConfidence, source: classificationSource } } : {}),
+      ...(businessType ? { businessType: { value: businessType, confidence: classificationConfidence, source: classificationSource } } : {}),
+      ...(location ? { location } : {}),
     },
     positioning: {
-      audience: { value: model.audience ?? defaultAudience(industry), confidence: model.audience ? "weak_inference" : "strong_inference", source: model.audience ? "model_inference" : "industry_knowledge" },
-      primaryGoal: { value: primaryGoal, confidence: top?.goals?.length ? "strong_inference" : "weak_inference", source: top?.goals?.length ? "industry_knowledge" : "model_inference" },
-      secondaryGoals: { value: goals, confidence: "weak_inference", source: "industry_knowledge" },
-      brandTraits: { value: model.brandTraits ?? ["clear", "credible", "professional"], confidence: "weak_inference", source: model.brandTraits ? "model_inference" : "industry_knowledge" },
+      audience: {
+        value: model.audience ?? defaultAudience(industry),
+        confidence: model.audience ? "weak_inference" : "strong_inference",
+        source: model.audience ? "model_inference" : "industry_knowledge",
+      },
+      primaryGoal: {
+        value: primaryGoal,
+        confidence: primaryGoalFromIndustry ? "strong_inference" : "weak_inference",
+        source: primaryGoalFromModel ? "model_inference" : "industry_knowledge",
+      },
+      secondaryGoals: {
+        value: goals,
+        confidence: "weak_inference",
+        source: model.secondaryGoals ? "model_inference" : "industry_knowledge",
+      },
+      brandTraits: {
+        value: model.brandTraits ?? ["clear", "credible", "professional"],
+        confidence: "weak_inference",
+        source: model.brandTraits ? "model_inference" : "industry_knowledge",
+      },
       ...(model.pricePosition ? { pricePosition: { value: model.pricePosition, confidence: "weak_inference", source: "model_inference" } } : {}),
     },
     website: {
-      recommendedPages: { value: model.recommendedPages ?? defaultPages(industry), confidence: "strong_inference", source: "industry_knowledge" },
-      requiredSectionTypes: { value: model.requiredSectionTypes ?? defaultSections(industry), confidence: "strong_inference", source: "industry_knowledge" },
-      optionalSectionTypes: { value: model.optionalSectionTypes ?? ["testimonials", "faq", "gallery"], confidence: "weak_inference", source: "industry_knowledge" },
-      capabilities: { value: capabilities, confidence: "strong_inference", source: "industry_knowledge" },
-      conversionActions: { value: model.conversionActions ?? conversionActions(capabilities), confidence: "strong_inference", source: "industry_knowledge" },
+      recommendedPages: {
+        value: model.recommendedPages ?? defaultPages(industry),
+        confidence: model.recommendedPages ? "weak_inference" : "strong_inference",
+        source: model.recommendedPages ? "model_inference" : "industry_knowledge",
+      },
+      requiredSectionTypes: {
+        value: model.requiredSectionTypes ?? defaultSections(industry),
+        confidence: model.requiredSectionTypes ? "weak_inference" : "strong_inference",
+        source: model.requiredSectionTypes ? "model_inference" : "industry_knowledge",
+      },
+      optionalSectionTypes: {
+        value: model.optionalSectionTypes ?? ["testimonials", "faq", "gallery"],
+        confidence: "weak_inference",
+        source: model.optionalSectionTypes ? "model_inference" : "industry_knowledge",
+      },
+      capabilities: {
+        value: capabilities,
+        confidence: model.capabilities ? "weak_inference" : "strong_inference",
+        source: model.capabilities ? "model_inference" : "industry_knowledge",
+      },
+      conversionActions: {
+        value: model.conversionActions ?? conversionActions(capabilities),
+        confidence: model.conversionActions ? "weak_inference" : "strong_inference",
+        source: model.conversionActions ? "model_inference" : "industry_knowledge",
+      },
     },
     truth: {
-      knownFacts: model.knownFacts ?? {},
+      // Never accept model.knownFacts. This object is derived only from explicit,
+      // deterministic evidence in the user's brief.
+      knownFacts: { ...deterministic.truth.knownFacts },
       inferredContext: { industry, subIndustry, businessType },
-      unknownFacts: unique(model.unknownFacts, ["verified contact details", "verified business claims", "verified people/team data"]),
+      unknownFacts: unique(model.unknownFacts, deterministic.truth.unknownFacts, ["verified contact details", "verified business claims", "verified people/team data"]),
       prohibitedClaims: [...NEVER_FABRICATE],
     },
     artDirectionHints: {

@@ -7,6 +7,13 @@ import { CalmDisclosureFaq } from "../src/sections/faq/calm-disclosure";
 import { LocalConversionContact } from "../src/sections/contact/local-conversion";
 import { EditorialMinimalFooter } from "../src/sections/footer/editorial-minimal";
 
+const navLinks = [
+  { label: "Care", href: "#care" },
+  { label: "Approach", href: "#approach" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Contact", href: "#contact" },
+];
+
 const treatments = [
   { title: "Preventive care", body: "Routine care focused on protecting long-term oral health with clarity and comfort." },
   { title: "Smile restoration", body: "Thoughtful restorative treatment planning with a calm, patient-first approach." },
@@ -29,14 +36,23 @@ const journey = [
 export default function Home() {
   return (
     <main>
-      <QuietLuxuryNavbar brand="Pearl Dental" />
-      <EditorialSplitHero brand="Pearl Dental" eyebrow="Modern dental care · Hyderabad" headline="Calm, considered dentistry for everyday confidence." body="A warm, contemporary dental experience built around clear conversations, thoughtful treatment planning and care that never feels rushed." primaryCta="Request an appointment" secondaryCta="Explore care" />
+      <QuietLuxuryNavbar brand="Pearl Dental" links={navLinks} cta={{ label: "Book appointment", href: "#contact" }} />
+      <EditorialSplitHero
+        brand="Pearl Dental"
+        eyebrow="Modern dental care · Hyderabad"
+        headline="Calm, considered dentistry for everyday confidence."
+        body="A warm, contemporary dental experience built around clear conversations, thoughtful treatment planning and care that never feels rushed."
+        primaryCta={{ label: "Request an appointment", href: "#contact" }}
+        secondaryCta={{ label: "Explore care", href: "#care" }}
+        trustItems={[{ label: "Patient-first consultation" }, { label: "Clear treatment guidance" }, { label: "Comfort-led experience" }]}
+        visualNote="A quieter kind of dental visit."
+      />
       <TrustManifesto eyebrow="Our approach" headline="Good care begins with understanding." body="Dental decisions should feel informed, not overwhelming. Pearl Dental is presented here as a clinic experience centred on listening first, explaining clearly and recommending care with purpose." note="This benchmark intentionally avoids invented doctor names, awards, ratings, experience claims, pricing and treatment outcomes." />
       <EditorialServiceIndex eyebrow="Care, thoughtfully organised" headline="Explore treatment areas" intro="Useful guidance, presented with enough breathing room to feel considered rather than catalogued." items={treatments} />
       <CareJourney eyebrow="Your visit" headline="A clear path from first conversation to next step." steps={journey} />
       <CalmDisclosureFaq eyebrow="Useful answers" headline="Questions before your visit." items={faqs} />
-      <LocalConversionContact eyebrow="Start with a conversation" headline="Request an appointment." body="Share the basic details below and the clinic can follow up to confirm availability." note="Benchmark UI only — form backend will be connected through MiCirql's appointment capability." />
-      <EditorialMinimalFooter brand="Pearl Dental" statement="Calm, considered dental care." note="MiCirql manual quality benchmark · no fabricated clinic facts." />
+      <LocalConversionContact eyebrow="Start with a conversation" headline="Request an appointment." body="Share the basic details below and the clinic can follow up to confirm availability." status="Appointment requests are enquiries until confirmed." submitLabel="Send appointment enquiry" note="Benchmark UI only — form backend will be connected through MiCirql's appointment capability." />
+      <EditorialMinimalFooter brand="Pearl Dental" statement="Calm, considered dental care." links={[{ label: "Care", href: "#care" }, { label: "FAQ", href: "#faq" }, { label: "Contact", href: "#contact" }]} note="MiCirql manual quality benchmark · no fabricated clinic facts." />
     </main>
   );
 }

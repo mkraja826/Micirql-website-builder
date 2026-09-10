@@ -4,6 +4,7 @@ import type { InterpretedBrief } from "../brief/schema";
 import { compileThemeTokens, themeTokensToCssVariables } from "../theme/compiler";
 import type { IndustryKnowledge } from "../industry/knowledge";
 import { SECTION_CATALOG } from "../../sections/catalog";
+import { EXPANDED_SECTION_CATALOG } from "../../sections/expansion";
 import type { CompleteSectionDefinition } from "../../sections/schema";
 
 export type SiteCandidatePlan = {
@@ -14,6 +15,7 @@ export type SiteCandidatePlan = {
   cssVariables: ReturnType<typeof themeTokensToCssVariables>;
 };
 
+const ALL_SECTIONS = [...SECTION_CATALOG, ...EXPANDED_SECTION_CATALOG];
 const MAJOR_VISUAL_TYPES = ["hero", "services", "about", "cta"];
 const DIVERSITY_TYPES = ["hero", "services", "about", "cta", "navbar", "footer"];
 const MIN_MAJOR_DISTANCE = 2;
@@ -42,7 +44,7 @@ function scoreSection(section: CompleteSectionDefinition, type: string, directio
 }
 
 function rankedSections(type: string, direction: ArtDirection, brief: InterpretedBrief) {
-  return SECTION_CATALOG
+  return ALL_SECTIONS
     .filter((section) => section.type === type && matchesIndustry(section, brief))
     .map((section) => ({ section, score: scoreSection(section, type, direction, brief) }))
     .sort((a, b) => b.score - a.score || a.section.id.localeCompare(b.section.id));
@@ -79,7 +81,7 @@ function buildCompositionOptions(
 ) {
   const varying = DIVERSITY_TYPES
     .map((type) => {
-      const ranked = rankedSections(type, direction, brief).slice(0, 2);
+      const ranked = rankedSections(type, direction, brief).slice(0, 3);
       return ranked.length ? { type, ranked } : undefined;
     })
     .filter(Boolean) as Array<{ type: string; ranked: ReturnType<typeof rankedSections> }>;

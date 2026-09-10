@@ -3,6 +3,7 @@ import { createArtDirections } from "../art-direction/director";
 import { directContent } from "../content/director";
 import { compileThemeTokens, themeTokensToCssVariables } from "../theme/compiler";
 import type { IndustryKnowledge } from "../industry/knowledge";
+import { competeGenerationCandidates } from "./competition";
 
 const PEARL_DENTAL_KNOWLEDGE: IndustryKnowledge = {
   industry: { slug: "dental", name: "Dental" },
@@ -41,10 +42,11 @@ export async function generatePearlDentalBenchmark() {
       conversionActions: PEARL_DENTAL_KNOWLEDGE.conversionActions,
       avoid: PEARL_DENTAL_KNOWLEDGE.visualVocabulary.avoid as string[],
     },
-  }, 1);
+  }, 20);
   const artDirection = directions[0];
   const content = await directContent({ brief, knowledge: PEARL_DENTAL_KNOWLEDGE });
   const theme = compileThemeTokens(brief, artDirection);
+  const candidates = competeGenerationCandidates(brief, directions, 20);
 
   return {
     brief,
@@ -53,6 +55,8 @@ export async function generatePearlDentalBenchmark() {
     content,
     theme,
     cssVariables: themeTokensToCssVariables(theme),
+    candidates,
+    competitionWinner: candidates[0],
     selectedSections: {
       navbar: "navbar-conversion-clean",
       hero: "hero-editorial-split",

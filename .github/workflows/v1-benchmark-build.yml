@@ -50,3 +50,8 @@ jobs:
         with:
           name: v1-section-lab-screenshots
           path: artifacts/section-lab/*.png
+      - name: Upload generated Pearl screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-pearl-screenshots
+          path: artifacts/generated-pearl/*.png

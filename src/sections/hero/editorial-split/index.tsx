@@ -1,0 +1,5 @@
+export type HeroTrustItem = { label: string };
+
+export function EditorialSplitHero({ brand, eyebrow, headline, body, primaryCta, secondaryCta, trustItems, visualNote }: { brand:string; eyebrow:string; headline:string; body:string; primaryCta:{label:string; href:string}; secondaryCta:{label:string; href:string}; trustItems:HeroTrustItem[]; visualNote:string }) {
+  return <section className="hero shell" id="top"><div className="heroCopy"><p className="eyebrow">{eyebrow}</p><h1>{headline}</h1><p className="lede">{body}</p><div className="actions"><a className="button" href={primaryCta.href}>{primaryCta.label}</a><a className="textLink" href={secondaryCta.href}>{secondaryCta.label} <span>↘</span></a></div><div className="trustLine">{trustItems.map((item)=><span key={item.label}>{item.label}</span>)}</div></div><div className="heroVisual" aria-label={`${brand} visual`}><div className="heroFrame"/><div className="arch archOne"/><div className="arch archTwo"/><div className="pearlOrb"/><div className="visualKicker">{brand}</div><div className="visualNote">{visualNote}</div></div></section>;
+}

@@ -3,7 +3,6 @@ name: V1 Benchmark Build
 on:
   push:
     branches:
-      - main
       - v1/industry-intelligence
   pull_request:
     branches:
@@ -12,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,5 +21,27 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Build benchmark
+      - name: Build Next benchmark
         run: npm run build
+      - name: Build Cloudflare target
+        run: npm run build:cloudflare
+      - name: Install screenshot runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start benchmark
+        run: |
+          npm run start > /tmp/micirql-next.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/micirql-next.log
+          exit 1
+      - name: Capture benchmark
+        run: node scripts/capture-benchmark.mjs
+      - name: Upload benchmark screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: pearl-dental-benchmark-screenshots
+          path: artifacts/benchmark/*.png

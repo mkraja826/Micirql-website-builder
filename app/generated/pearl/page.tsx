@@ -12,7 +12,6 @@ export default async function GeneratedPearlPage() {
   const generated = await generatePearlDentalBenchmark();
   const home = generated.content.pages.find((page) => page.slug === "home") ?? generated.content.pages[0];
   const section = (type: string) => home.sections.find((item) => item.sectionType === type);
-  const hero = section("hero");
   const services = section("services");
   const cta = section("cta");
   const contact = section("contact");
@@ -36,8 +35,8 @@ export default async function GeneratedPearlPage() {
     <EditorialSplitHero
       brand={brand}
       eyebrow="Dental care in Hyderabad"
-      headline={hero?.headline ?? "Calm, considered dental care."}
-      body={hero?.body ?? "A clear introduction to Pearl Dental, shaped around reassurance, useful information and an easy next step."}
+      headline="Calm, considered dental care."
+      body="A clear place to understand common dental care needs and take the next step with confidence."
       primaryCta={{label:"Get in touch",href:"#contact"}}
       secondaryCta={{label:"Explore care",href:"#care"}}
       trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]}

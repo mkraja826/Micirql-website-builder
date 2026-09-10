@@ -4,6 +4,7 @@ import fs from 'node:fs';
 fs.mkdirSync('artifacts/benchmark', { recursive: true });
 fs.mkdirSync('artifacts/section-lab', { recursive: true });
 fs.mkdirSync('artifacts/generated-pearl', { recursive: true });
+fs.mkdirSync('artifacts/pearl-candidates', { recursive: true });
 const browser = await chromium.launch({ headless: true });
 
 const targets = [
@@ -19,6 +20,8 @@ for (const target of targets) {
   await page.screenshot({ path: `artifacts/section-lab/${target.name}.png`, fullPage: true });
   await page.goto('http://127.0.0.1:3000/generated/pearl', { waitUntil: 'networkidle' });
   await page.screenshot({ path: `artifacts/generated-pearl/${target.name}.png`, fullPage: true });
+  await page.goto('http://127.0.0.1:3000/generated/pearl/candidates', { waitUntil: 'networkidle' });
+  await page.screenshot({ path: `artifacts/pearl-candidates/${target.name}.png`, fullPage: true });
   await page.close();
 }
 

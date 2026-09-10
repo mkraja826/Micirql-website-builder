@@ -3,8 +3,9 @@ import { createArtDirections } from "../art-direction/director";
 import { directContent } from "../content/director";
 import { compileThemeTokens, themeTokensToCssVariables } from "../theme/compiler";
 import type { IndustryKnowledge } from "../industry/knowledge";
+import { generateCandidatePlans } from "./candidates";
 
-const PEARL_DENTAL_KNOWLEDGE: IndustryKnowledge = {
+export const PEARL_DENTAL_KNOWLEDGE: IndustryKnowledge = {
   industry: { slug: "dental", name: "Dental" },
   subIndustry: { slug: "general-dentistry", name: "General dentistry" },
   audience: ["prospective patients", "families seeking dental care"],
@@ -22,8 +23,20 @@ const PEARL_DENTAL_KNOWLEDGE: IndustryKnowledge = {
   backendCapabilities: ["appointment", "contact"],
 };
 
+export function createPearlDentalBrief() {
+  return interpretMinimalBrief("Pearl Dental, Hyderabad");
+}
+
+export function generatePearlDentalCandidates(count = 8) {
+  return generateCandidatePlans({
+    brief: createPearlDentalBrief(),
+    knowledge: PEARL_DENTAL_KNOWLEDGE,
+    count,
+  });
+}
+
 export async function generatePearlDentalBenchmark() {
-  const brief = interpretMinimalBrief("Pearl Dental, Hyderabad");
+  const brief = createPearlDentalBrief();
   const directions = createArtDirections({
     industry: brief.business.industry.value,
     subIndustry: brief.business.subIndustry?.value,

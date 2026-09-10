@@ -3,7 +3,7 @@ name: V1 Benchmark Build
 on:
   push:
     branches:
-      - v1/industry-intelligence
+      - 'v1/**'
   pull_request:
     branches:
       - main
@@ -38,10 +38,15 @@ jobs:
           done
           cat /tmp/micirql-next.log
           exit 1
-      - name: Capture benchmark
+      - name: Capture visual baselines
         run: node scripts/capture-benchmark.mjs
-      - name: Upload benchmark screenshots
+      - name: Upload Pearl benchmark screenshots
         uses: actions/upload-artifact@v4
         with:
           name: pearl-dental-benchmark-screenshots
           path: artifacts/benchmark/*.png
+      - name: Upload section lab screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-section-lab-screenshots
+          path: artifacts/section-lab/*.png

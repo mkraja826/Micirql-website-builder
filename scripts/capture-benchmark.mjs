@@ -5,12 +5,15 @@ fs.mkdirSync('artifacts/benchmark', { recursive: true });
 fs.mkdirSync('artifacts/section-lab', { recursive: true });
 fs.mkdirSync('artifacts/generated-pearl', { recursive: true });
 fs.mkdirSync('artifacts/pearl-candidates', { recursive: true });
+fs.mkdirSync('artifacts/pearl-rendered-candidates', { recursive: true });
 const browser = await chromium.launch({ headless: true });
 
 const targets = [
   { name: 'desktop', width: 1440, height: 1200 },
   { name: 'mobile', width: 390, height: 844 },
 ];
+
+const renderedCandidateIds = ['candidate-01', 'candidate-02', 'candidate-05', 'candidate-08'];
 
 for (const target of targets) {
   const page = await browser.newPage({ viewport: { width: target.width, height: target.height }, deviceScaleFactor: 1 });
@@ -22,6 +25,10 @@ for (const target of targets) {
   await page.screenshot({ path: `artifacts/generated-pearl/${target.name}.png`, fullPage: true });
   await page.goto('http://127.0.0.1:3000/generated/pearl/candidates', { waitUntil: 'networkidle' });
   await page.screenshot({ path: `artifacts/pearl-candidates/${target.name}.png`, fullPage: true });
+  for (const candidateId of renderedCandidateIds) {
+    await page.goto(`http://127.0.0.1:3000/generated/pearl/candidates/${candidateId}`, { waitUntil: 'networkidle' });
+    await page.screenshot({ path: `artifacts/pearl-rendered-candidates/${candidateId}-${target.name}.png`, fullPage: true });
+  }
   await page.close();
 }
 

@@ -13,7 +13,7 @@ const targets = [
   { name: 'mobile', width: 390, height: 844 },
 ];
 
-const renderedCandidateIds = Array.from({ length: 8 }, (_, index) => `candidate-${String(index + 1).padStart(2, '0')}`);
+const renderedCandidateIds = Array.from({ length: 20 }, (_, index) => `candidate-${String(index + 1).padStart(2, '0')}`);
 
 for (const target of targets) {
   const page = await browser.newPage({ viewport: { width: target.width, height: target.height }, deviceScaleFactor: 1 });

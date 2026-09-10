@@ -3,6 +3,12 @@ import { TypographyLedHero } from "../../src/sections/hero/typography-led";
 import { EditorialStory } from "../../src/sections/about/editorial-story";
 import { EditorialCtaBand } from "../../src/sections/cta/editorial-band";
 
+const SECTION_LAB_PEXELS_MEDIA = {
+  src: "https://images.pexels.com/photos/19829800/pexels-photo-19829800/free-photo-of-pool-on-terrace-in-valley-in-mountains.jpeg?auto=compress&dpr=1&h=1080&w=1920",
+  alt: "Aerial view of a mountain resort with an infinity pool surrounded by forest and mountains",
+  kind: "image" as const,
+};
+
 export default function SectionLabPage() {
   return (
     <main>
@@ -12,7 +18,8 @@ export default function SectionLabPage() {
         body="An immersive hero intended for destination-led hospitality, retreats and premium experience businesses."
         primaryCta={{ label: "Explore stays", href: "#story" }}
         secondaryCta={{ label: "View experiences", href: "#cta" }}
-        visualLabel="Section lab · 01"
+        media={SECTION_LAB_PEXELS_MEDIA}
+        visualLabel="Pexels · Tina Lu · photo 19829800"
       />
       <TypographyLedHero
         eyebrow="Typography-led direction"

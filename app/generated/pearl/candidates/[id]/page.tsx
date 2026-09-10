@@ -33,7 +33,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const brand = "Pearl Dental";
 
   const navbar = sections.navbar === "navbar-quiet-luxury"
-    ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={{label:"Enquire",href:"#contact"}} />
+    ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={{label:"Enquire",href:"#contact"}} />
     : <ConversionCleanNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={{label:"Request appointment",href:"#contact"}} />;
 
   const heroProps = {
@@ -64,7 +64,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
     : <EditorialCtaBand eyebrow="Next step" headline="Ready when you are." body="Tell the clinic what you would like help with and continue from there." primaryCta={{label:"Start an enquiry",href:"#contact"}} secondaryCta={{label:"Review care",href:"#care"}} />;
 
   const footer = sections.footer === "footer-editorial-minimal"
-    ? <EditorialMinimalFooter brand={brand} statement="Clear, patient-friendly dental information with a simple route to enquire." links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} contactLabel="Enquiry form" contactHref="#contact" legal="Pearl Dental · Hyderabad" />
+    ? <EditorialMinimalFooter brand={brand} statement="Clear, patient-friendly dental information with a simple route to enquire." links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" />
     : <FunctionalLocalFooter brand={brand} description="Clear, patient-friendly dental information with a simple route to enquire." location="Hyderabad" contactLabel="Enquiry form" contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
 
   return <main style={style}>{navbar}{hero}<div id="care">{services}</div><div id="approach">{about}</div>{cta}<LocalConversionContact eyebrow="Contact" headline="Start with a simple enquiry." body="Share what you would like help with. Verified clinic contact details can be connected before publishing." status="Online enquiry preview" submitLabel="Send enquiry" note="Form submission is not active in this preview yet." />{footer}</main>;

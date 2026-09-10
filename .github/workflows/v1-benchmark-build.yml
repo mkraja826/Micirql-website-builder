@@ -55,3 +55,8 @@ jobs:
         with:
           name: generated-pearl-screenshots
           path: artifacts/generated-pearl/*.png
+      - name: Upload Pearl candidate gallery screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: pearl-candidate-gallery-screenshots
+          path: artifacts/pearl-candidates/*.png

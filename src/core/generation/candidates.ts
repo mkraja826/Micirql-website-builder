@@ -16,16 +16,27 @@ export type SiteCandidatePlan = {
   cssVariables: ReturnType<typeof themeTokensToCssVariables>;
 };
 
+type CompositionFamily = {
+  id: string;
+  narrativeOrder: string[];
+  optionalSlots?: string[];
+};
+
 const ALL_SECTIONS = [...SECTION_CATALOG, ...EXPANDED_SECTION_CATALOG];
 const MAJOR_VISUAL_TYPES = ["hero", "services", "about", "cta"];
 const DIVERSITY_TYPES = ["hero", "services", "about", "cta", "navbar", "footer"];
 const MIN_MAJOR_DISTANCE = 2;
-const CHOREOGRAPHIES = [
-  ["navbar", "hero", "services", "about", "cta", "contact", "footer"],
-  ["navbar", "hero", "about", "services", "cta", "contact", "footer"],
-  ["navbar", "hero", "services", "cta", "about", "contact", "footer"],
-  ["navbar", "hero", "about", "cta", "services", "contact", "footer"],
-] as const;
+
+const COMPOSITION_FAMILIES: CompositionFamily[] = [
+  { id: "offer-led", narrativeOrder: ["hero", "services", "about", "cta", "contact"] },
+  { id: "story-led", narrativeOrder: ["hero", "about", "services", "cta", "contact"] },
+  { id: "conversion-led", narrativeOrder: ["hero", "services", "cta", "about", "contact"] },
+  { id: "credibility-led", narrativeOrder: ["hero", "about", "cta", "services", "contact"] },
+  { id: "journey-led", narrativeOrder: ["hero", "about", "process", "services", "cta", "contact"], optionalSlots: ["process"] },
+  { id: "decision-led", narrativeOrder: ["hero", "services", "process", "cta", "about", "contact"], optionalSlots: ["process"] },
+  { id: "editorial-led", narrativeOrder: ["hero", "about", "services", "process", "cta", "contact"], optionalSlots: ["process"] },
+  { id: "action-led", narrativeOrder: ["hero", "cta", "services", "about", "contact"] },
+];
 
 function matchesIndustry(section: CompleteSectionDefinition, brief: InterpretedBrief) {
   const industry = brief.business.industry.value;
@@ -64,9 +75,11 @@ function chooseSection(type: string, direction: ArtDirection, brief: Interpreted
 function compositionSignature(sections: Record<string, string>) {
   return Object.entries(sections).sort(([a], [b]) => a.localeCompare(b)).map(([type, id]) => `${type}:${id}`).join("|");
 }
+
 function compositionDistance(a: Record<string, string>, b: Record<string, string>, types = DIVERSITY_TYPES) {
   return types.reduce((distance, type) => distance + (a[type] !== b[type] ? 1 : 0), 0);
 }
+
 function buildCompositionOptions(initial: Record<string, string>, direction: ArtDirection, brief: InterpretedBrief) {
   const varying = DIVERSITY_TYPES.map((type) => {
     const ranked = rankedSections(type, direction, brief).slice(0, 3);
@@ -78,6 +91,7 @@ function buildCompositionOptions(initial: Record<string, string>, direction: Art
   }
   return Array.from(new Map(options.map((option) => [compositionSignature(option.sections), option])).values());
 }
+
 function diversifyComposition(initial: Record<string, string>, direction: ArtDirection, brief: InterpretedBrief, previous: Record<string, string>[]) {
   if (!previous.length) return initial;
   const options = buildCompositionOptions(initial, direction, brief).map((option) => {
@@ -88,6 +102,23 @@ function diversifyComposition(initial: Record<string, string>, direction: ArtDir
   return options[0]?.sections ?? initial;
 }
 
+function stableSeed(parts: Array<string | undefined>) {
+  const value = parts.filter(Boolean).join("|");
+  return [...value].reduce((seed, character) => ((seed * 31) + character.charCodeAt(0)) >>> 0, 0);
+}
+
+function chooseCompositionFamily(index: number, brief: InterpretedBrief, knowledge: IndustryKnowledge) {
+  const seed = stableSeed([
+    brief.business.industry.value,
+    brief.business.subIndustry?.value,
+    brief.business.businessType?.value,
+    brief.positioning.primaryGoal.value,
+    ...brief.positioning.secondaryGoals.value,
+    ...knowledge.requiredSectionTypes,
+  ]);
+  return COMPOSITION_FAMILIES[(seed + index) % COMPOSITION_FAMILIES.length];
+}
+
 function createSectionOrder(
   index: number,
   selectedSections: Record<string, string>,
@@ -95,17 +126,28 @@ function createSectionOrder(
   direction: ArtDirection,
   brief: InterpretedBrief,
 ) {
-  const order: string[] = [...CHOREOGRAPHIES[index % CHOREOGRAPHIES.length]];
-  const canUseProcess = knowledge.optionalSectionTypes.includes("process");
-  if (canUseProcess && index % 3 === 1) {
-    const selectedProcess = chooseSection("process", direction, brief, index);
-    if (selectedProcess) {
-      selectedSections.process = selectedProcess;
-      const insertion = index % 2 === 0 ? order.indexOf("about") : order.indexOf("cta");
-      order.splice(Math.max(2, insertion), 0, "process");
+  const family = chooseCompositionFamily(index, brief, knowledge);
+  const required = new Set(knowledge.requiredSectionTypes);
+  const order = ["navbar"];
+
+  for (const type of family.narrativeOrder) {
+    const isRequired = required.has(type);
+    const isOptionalSlot = family.optionalSlots?.includes(type) && knowledge.optionalSectionTypes.includes(type);
+    if (!isRequired && !isOptionalSlot) continue;
+    if (isOptionalSlot && !selectedSections[type]) {
+      const selected = chooseSection(type, direction, brief, index);
+      if (selected) selectedSections[type] = selected;
     }
+    if (selectedSections[type] || isRequired) order.push(type);
   }
-  return order;
+
+  for (const type of knowledge.requiredSectionTypes) {
+    if (type === "navbar" || type === "footer") continue;
+    if (!order.includes(type)) order.push(type);
+  }
+
+  if (required.has("footer")) order.push("footer");
+  return Array.from(new Set(order));
 }
 
 export function generateCandidatePlans({ brief, knowledge, count = 8 }: { brief: InterpretedBrief; knowledge: IndustryKnowledge; count?: number; }): SiteCandidatePlan[] {

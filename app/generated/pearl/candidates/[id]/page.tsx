@@ -31,8 +31,11 @@ import { DecisionPanelCta } from "../../../../../src/sections/cta/decision-panel
 import { CareJourney } from "../../../../../src/sections/process/care-journey";
 import { EditorialProcessSteps } from "../../../../../src/sections/process/editorial-steps";
 import { AsymmetricEditorialGallery } from "../../../../../src/sections/gallery/asymmetric-editorial";
+import { FeatureMosaicGallery } from "../../../../../src/sections/gallery/feature-mosaic";
 import { CalmDisclosureFaq } from "../../../../../src/sections/faq/calm-disclosure";
+import { EditorialIndexFaq } from "../../../../../src/sections/faq/editorial-index";
 import { LocalConversionContact } from "../../../../../src/sections/contact/local-conversion";
+import { EditorialInquiryContact } from "../../../../../src/sections/contact/editorial-inquiry";
 import { FunctionalLocalFooter } from "../../../../../src/sections/footer/functional-local";
 import { EditorialMinimalFooter } from "../../../../../src/sections/footer/editorial-minimal";
 
@@ -71,7 +74,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
 
   const resolvedHeroMedia = await resolvePearlHeroMedia(candidate.direction);
   const usedProviderIds = resolvedHeroMedia ? [resolvedHeroMedia.providerId] : [];
-  const needsServiceMedia = sections.services === "services-visual-stories" || sections.gallery === "gallery-asymmetric-editorial";
+  const needsServiceMedia = sections.services === "services-visual-stories" || Boolean(sections.gallery);
   const resolvedServiceMedia = needsServiceMedia ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds) : [];
   usedProviderIds.push(...resolvedServiceMedia.map((media) => media.providerId));
   const resolvedAboutMedia = sections.about === "about-editorial-story" ? await resolvePearlAboutMedia(candidate.direction, usedProviderIds) : undefined;
@@ -98,9 +101,10 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
 
   const process = sections.process === "process-editorial-steps" ? <EditorialProcessSteps eyebrow="What to expect" headline={narrative.process.headline} intro="A clear path from the first question to an informed next step." steps={journey} /> : sections.process ? <CareJourney eyebrow="What to expect" headline={narrative.process.headline} steps={journey} /> : null;
   const galleryItems = serviceMedia.map((media, index) => ({ ...media, caption: careItems[index]?.title }));
-  const gallery = sections.gallery === "gallery-asymmetric-editorial" && galleryItems.length ? <AsymmetricEditorialGallery eyebrow="A sense of the experience" headline="Care should feel considered before it ever feels clinical." items={galleryItems} /> : null;
-  const faq = sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow="Questions" headline="Useful context before you take the next step." items={faqItems} /> : null;
-  const contact = <LocalConversionContact eyebrow={capabilityPlan.primary === "appointment" ? "Appointment request" : "Contact"} headline={narrative.contact.headline} body={narrative.contact.body} status={contactCapability.status === "preview" ? "Request form preview" : "Online enquiry"} submitLabel={contactCapability.label} note="This preview collects intent only; form submission is not active until a backend is configured." />;
+  const gallery = sections.gallery === "gallery-feature-mosaic" && galleryItems.length ? <FeatureMosaicGallery eyebrow="A sense of the experience" headline="Care should feel considered before it ever feels clinical." items={galleryItems} /> : sections.gallery === "gallery-asymmetric-editorial" && galleryItems.length ? <AsymmetricEditorialGallery eyebrow="A sense of the experience" headline="Care should feel considered before it ever feels clinical." items={galleryItems} /> : null;
+  const faq = sections.faq === "faq-editorial-index" ? <EditorialIndexFaq eyebrow="Questions" headline="Useful context before you take the next step." intro="Clear answers should make the next decision easier, not add pressure." items={faqItems} /> : sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow="Questions" headline="Useful context before you take the next step." items={faqItems} /> : null;
+  const contactProps = { eyebrow: capabilityPlan.primary === "appointment" ? "Appointment request" : "Contact", headline: narrative.contact.headline, body: narrative.contact.body, status: contactCapability.status === "preview" ? "Request form preview" : "Online enquiry", submitLabel: contactCapability.label, note: "This preview collects intent only; form submission is not active until a backend is configured." };
+  const contact = sections.contact === "contact-editorial-inquiry" ? <EditorialInquiryContact {...contactProps} /> : <LocalConversionContact {...contactProps} />;
   const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={narrative.footer} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" /> : <FunctionalLocalFooter brand={brand} description={narrative.footer} location="Hyderabad" contactLabel={primaryCapability.label} contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
 
   const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, gallery, faq, contact: <div id="contact">{contact}</div>, footer };

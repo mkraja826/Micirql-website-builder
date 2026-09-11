@@ -44,6 +44,8 @@ jobs:
         run: node scripts/audit-rendered-candidates.mjs
       - name: Score perceptual quality
         run: node scripts/score-perceptual-candidates.mjs
+      - name: Compose final candidate ranking
+        run: node scripts/compose-final-ranking.mjs
       - name: Upload Pearl benchmark screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -79,3 +81,8 @@ jobs:
         with:
           name: pearl-perceptual-candidate-ranking
           path: artifacts/pearl-perceptual-ranking/report.json
+      - name: Upload final candidate ranking
+        uses: actions/upload-artifact@v4
+        with:
+          name: pearl-final-candidate-ranking
+          path: artifacts/pearl-final-ranking/report.json

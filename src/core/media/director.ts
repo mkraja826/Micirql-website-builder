@@ -11,6 +11,7 @@ export type SectionMediaContext = {
   desiredAspect?: string;
   businessFacts?: Record<string, string>;
   visualGoal: string;
+  excludedProviderIds?: string[];
 };
 
 export type ResolvedSectionMedia = {
@@ -52,6 +53,7 @@ export async function resolveSectionMedia(
     industry: context.industry,
     desiredAspect: context.desiredAspect,
     preferredTags: [context.artDirection, ...preferredTags],
+    excludedProviderIds: context.excludedProviderIds,
   };
 
   return { intent, candidates: await providers.media.search(intent) };

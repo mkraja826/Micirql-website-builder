@@ -36,6 +36,10 @@ const COMPOSITION_FAMILIES: CompositionFamily[] = [
   { id: "decision-led", narrativeOrder: ["hero", "services", "process", "cta", "about", "contact"], optionalSlots: ["process"] },
   { id: "editorial-led", narrativeOrder: ["hero", "about", "services", "process", "cta", "contact"], optionalSlots: ["process"] },
   { id: "action-led", narrativeOrder: ["hero", "cta", "services", "about", "contact"] },
+  { id: "experience-led", narrativeOrder: ["hero", "gallery", "about", "services", "cta", "contact"], optionalSlots: ["gallery"] },
+  { id: "assurance-led", narrativeOrder: ["hero", "services", "faq", "about", "cta", "contact"], optionalSlots: ["faq"] },
+  { id: "story-proof-led", narrativeOrder: ["hero", "about", "gallery", "services", "faq", "cta", "contact"], optionalSlots: ["gallery", "faq"] },
+  { id: "guided-depth", narrativeOrder: ["hero", "services", "process", "faq", "about", "cta", "contact"], optionalSlots: ["process", "faq"] },
 ];
 
 function matchesIndustry(section: CompleteSectionDefinition, brief: InterpretedBrief) {

@@ -1,0 +1,198 @@
+import type { ArtDirection } from "../art-direction/schema";
+
+export type ArtDirectedNarrative = {
+  hero: { eyebrow: string; headline: string; body: string; primary: string; secondary: string };
+  services: { headline: string; intro: string };
+  about: { headline: string; body: string };
+  cta: { headline: string; body: string; primary: string; secondary: string };
+  process: { headline: string };
+  contact: { headline: string; body: string; submit: string };
+  footer: string;
+};
+
+const PROFILES: Record<string, ArtDirectedNarrative> = {
+  editorial: {
+    hero: { eyebrow: "Dental care in Hyderabad", headline: "Good care starts with understanding.", body: "Explore common dental needs with clear information before deciding what to discuss with the clinic.", primary: "Start an enquiry", secondary: "Explore care" },
+    services: { headline: "Care, explained before it is chosen.", intro: "A considered overview of common dental needs, written to support better questions and clearer next steps." },
+    about: { headline: "Clarity is part of the experience.", body: "The website is designed to help visitors understand the care area first, while leaving personal recommendations to the clinic." },
+    cta: { headline: "Begin with the question you already have.", body: "Share what you would like help with and continue from there.", primary: "Start an enquiry", secondary: "Review care" },
+    process: { headline: "From first question to a clearer next step." },
+    contact: { headline: "Tell the clinic what brings you here.", body: "A simple enquiry is enough to begin. Verified clinic contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Clear dental information with a considered route to enquire.",
+  },
+  cinematic: {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "A calmer beginning to dental care.", body: "Step away from rushed decisions. Understand the care area, ask what matters, then decide what comes next.", primary: "Begin here", secondary: "See care options" },
+    services: { headline: "Three reasons people begin the conversation.", intro: "Common care needs presented as simple starting points rather than promises or prescriptions." },
+    about: { headline: "Make space for a better decision.", body: "The first interaction should reduce uncertainty, not add to it. Specific recommendations stay with a verified consultation." },
+    cta: { headline: "One question can be enough to begin.", body: "Tell the clinic what you are concerned about and let the next step become clearer.", primary: "Ask a question", secondary: "Explore care" },
+    process: { headline: "A quiet path from concern to clarity." },
+    contact: { headline: "Start with what is on your mind.", body: "Share the care area or concern you want to discuss. Verified contact details can be connected before publishing.", submit: "Begin enquiry" },
+    footer: "A calmer digital first step for dental care in Hyderabad.",
+  },
+  "quiet-luxury": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Considered dental care begins with clarity.", body: "A restrained, straightforward introduction to common dental needs and the questions worth asking next.", primary: "Enquire", secondary: "View care" },
+    services: { headline: "Essential care, thoughtfully presented.", intro: "A concise view of common dental needs without overstating what only an individual assessment can determine." },
+    about: { headline: "Less noise. Better-informed next steps.", body: "The experience keeps information calm and focused so visitors can move forward without unnecessary claims or pressure." },
+    cta: { headline: "When you are ready, begin simply.", body: "Share what you would like to discuss with the clinic.", primary: "Make an enquiry", secondary: "Review care" },
+    process: { headline: "A measured route from question to next step." },
+    contact: { headline: "A simple place to begin.", body: "Send a short enquiry about the care area you want to discuss. Verified clinic details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Considered dental information for a simpler first step.",
+  },
+  "warm-modern": {
+    hero: { eyebrow: "Dental care in Hyderabad", headline: "Start with a clearer, more comfortable first step.", body: "Understand common dental needs in plain language and reach out when you are ready to discuss your own situation.", primary: "Talk to the clinic", secondary: "Explore care" },
+    services: { headline: "Everyday dental needs, made easier to navigate.", intro: "Friendly, practical information designed to make the first conversation feel less complicated." },
+    about: { headline: "A more human way to find your next step.", body: "Visitors get a useful starting point without business-specific claims that the clinic has not verified." },
+    cta: { headline: "Not sure where to begin? Start with the concern.", body: "Tell the clinic what you would like help with and continue from there.", primary: "Start a conversation", secondary: "See care areas" },
+    process: { headline: "A simple, reassuring path into care." },
+    contact: { headline: "Share what you would like help with.", body: "A short message is enough to start. Verified clinic contact details can be connected before publishing.", submit: "Send message" },
+    footer: "Patient-friendly dental information with a welcoming path to enquire.",
+  },
+  "typography-led": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "UNDERSTAND FIRST. DECIDE SECOND.", body: "Dental care becomes easier to navigate when the information is clear and the next action is obvious.", primary: "START HERE", secondary: "EXPLORE CARE" },
+    services: { headline: "THREE COMMON REASONS TO START.", intro: "Preventive, restorative and smile-focused care presented as clear conversation starters." },
+    about: { headline: "CLARITY BEFORE COMMITMENT.", body: "The website gives visitors enough context to ask better questions while keeping personal recommendations with the clinic." },
+    cta: { headline: "ONE QUESTION. ONE CLEAR NEXT STEP.", body: "Tell the clinic what you want to discuss.", primary: "START AN ENQUIRY", secondary: "REVIEW CARE" },
+    process: { headline: "QUESTION → DISCUSSION → NEXT STEP" },
+    contact: { headline: "START WITH THE QUESTION.", body: "Share the care area or concern you want to discuss. Verified contact details can be connected before publishing.", submit: "SEND ENQUIRY" },
+    footer: "Clear dental information. Direct next steps.",
+  },
+  "conversion-focused": {
+    hero: { eyebrow: "Dental care in Hyderabad", headline: "Find the right place to start your dental enquiry.", body: "Identify the care area, review the basics and send a simple enquiry when you are ready to continue.", primary: "Request a conversation", secondary: "Compare care areas" },
+    services: { headline: "Choose the care area closest to your concern.", intro: "Use these common categories to make your first message more specific without guessing at a diagnosis." },
+    about: { headline: "Built to reduce friction between question and enquiry.", body: "The experience keeps the path direct while avoiding unverified claims about clinicians, outcomes or pricing." },
+    cta: { headline: "Know what you want to ask about? Continue now.", body: "Send the clinic the care area or concern you want to discuss.", primary: "Request an appointment", secondary: "Review options" },
+    process: { headline: "Three steps from interest to enquiry." },
+    contact: { headline: "Send the clinic your care enquiry.", body: "Share the care area and a short note. Verified clinic contact details can be connected before publishing.", submit: "Request contact" },
+    footer: "A direct route from dental information to enquiry.",
+  },
+  "gallery-led": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "See dental care from a clearer point of view.", body: "A visual-first introduction to common care needs, balanced with grounded information and simple next steps.", primary: "Explore care", secondary: "Start an enquiry" },
+    services: { headline: "A visual guide to common care conversations.", intro: "Each care area becomes its own story: what it relates to, why people ask about it and how to continue the conversation." },
+    about: { headline: "Information should feel easy to take in.", body: "The site uses visual storytelling to support understanding while keeping specific treatment recommendations with the clinic." },
+    cta: { headline: "Seen something relevant to your concern? Ask about it.", body: "Continue from the care area that feels closest to what you want to discuss.", primary: "Ask about care", secondary: "Keep exploring" },
+    process: { headline: "From what you notice to what you ask next." },
+    contact: { headline: "Continue the story with a simple enquiry.", body: "Tell the clinic which care area you want to discuss. Verified contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Visual dental information with a simple route to continue.",
+  },
+  "immersive-dark": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Clarity can change how dental care feels.", body: "Begin with the concern, understand the care area and move forward without promises that belong in a clinical discussion.", primary: "Enter the enquiry", secondary: "Explore care" },
+    services: { headline: "Three paths into the conversation.", intro: "Common dental needs reduced to clear, grounded starting points." },
+    about: { headline: "Confidence starts before the consultation.", body: "Better context can make the next conversation more useful, while personal recommendations remain with the clinic." },
+    cta: { headline: "Move from uncertainty to a clearer question.", body: "Tell the clinic what you want to understand next.", primary: "Begin enquiry", secondary: "Review care" },
+    process: { headline: "Concern. Context. Conversation." },
+    contact: { headline: "Bring the question. Start there.", body: "Share the concern or care area you want to discuss. Verified clinic details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "A focused first step into dental care in Hyderabad.",
+  },
+  "framed-minimal": {
+    hero: { eyebrow: "Dental care · Hyderabad", headline: "A clear frame for your first dental question.", body: "Only the essentials: common care areas, useful context and a simple way to continue.", primary: "Enquire", secondary: "Care areas" },
+    services: { headline: "Three care areas. No unnecessary noise.", intro: "A minimal overview designed to support a more focused first conversation." },
+    about: { headline: "Keep the first step simple.", body: "The site avoids assumptions and gives visitors a clean route from information to enquiry." },
+    cta: { headline: "Ready to ask? Start here.", body: "Share the care area or concern you want to discuss.", primary: "Start enquiry", secondary: "Review care" },
+    process: { headline: "A simple three-part path." },
+    contact: { headline: "One short enquiry is enough.", body: "Verified clinic contact details can be connected before publishing.", submit: "Send" },
+    footer: "Essential dental information with a clean path forward.",
+  },
+  "soft-editorial": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "A gentler way to understand what comes next.", body: "Explore common dental care needs in a calm, readable way before deciding what to ask the clinic.", primary: "Start gently", secondary: "Explore care" },
+    services: { headline: "A thoughtful introduction to common care needs.", intro: "Clear explanations designed to support understanding rather than urgency." },
+    about: { headline: "Better decisions begin with less pressure.", body: "The site keeps the tone calm and grounded while leaving personal recommendations to the clinic." },
+    cta: { headline: "Take the next step at your own pace.", body: "Share what you would like help with when you are ready.", primary: "Send an enquiry", secondary: "Read more" },
+    process: { headline: "A calm route from question to conversation." },
+    contact: { headline: "Start with a simple note.", body: "Tell the clinic what you would like to discuss. Verified contact details can be connected before publishing.", submit: "Send note" },
+    footer: "Calm, patient-friendly dental information for a more comfortable first step.",
+  },
+  "clinical-refined": {
+    hero: { eyebrow: "Dental care in Hyderabad", headline: "Clear information for a more precise first conversation.", body: "Understand the care category, identify the question and leave individual clinical recommendations to the clinic.", primary: "Submit an enquiry", secondary: "Review care areas" },
+    services: { headline: "Common dental needs, clearly categorised.", intro: "A structured overview of preventive, restorative and smile-focused care for easier navigation." },
+    about: { headline: "Precision starts with accurate expectations.", body: "The site separates general information from the business-specific and clinical facts that require verification." },
+    cta: { headline: "Turn the care category into a focused enquiry.", body: "Tell the clinic what you want to discuss so the next conversation starts with context.", primary: "Send care enquiry", secondary: "Review categories" },
+    process: { headline: "A structured route from question to next step." },
+    contact: { headline: "Send a focused dental enquiry.", body: "Include the care area and a short description of what you want to discuss. Verified clinic details can be connected before publishing.", submit: "Submit enquiry" },
+    footer: "Structured dental information with a precise path to enquire.",
+  },
+  "human-narrative": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Every dental question starts somewhere.", body: "Maybe it is routine care, discomfort, or something about your smile. Begin with the part you already know.", primary: "Tell us what brings you here", secondary: "Explore care" },
+    services: { headline: "Three familiar reasons people start asking questions.", intro: "Each care area is presented as a human starting point, not a diagnosis or promise." },
+    about: { headline: "The first conversation should meet people where they are.", body: "The site helps visitors describe what they need without expecting them to already know the treatment answer." },
+    cta: { headline: "You do not need the perfect words to begin.", body: "Share what has been on your mind and continue from there.", primary: "Start the conversation", secondary: "See care areas" },
+    process: { headline: "From your question to a clearer conversation." },
+    contact: { headline: "Tell the clinic what is bringing you here.", body: "A short description is enough to start. Verified contact details can be connected before publishing.", submit: "Share my enquiry" },
+    footer: "Dental information designed around the questions people actually bring.",
+  },
+  "modern-heritage": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Thoughtful dental care starts with sound information.", body: "A timeless, straightforward approach to understanding common care needs before moving into a personal discussion.", primary: "Make an enquiry", secondary: "Explore care" },
+    services: { headline: "Core dental care, presented with lasting clarity.", intro: "A grounded introduction to common needs without relying on trends, hype or unsupported claims." },
+    about: { headline: "Trust grows from what is stated carefully.", body: "The site keeps business-specific facts separate from general dental information and invites verification where it matters." },
+    cta: { headline: "When the question is clear, the next step is simple.", body: "Share what you would like to discuss with the clinic.", primary: "Begin an enquiry", secondary: "Review care" },
+    process: { headline: "A considered path from question to care conversation." },
+    contact: { headline: "Start with a straightforward enquiry.", body: "Verified clinic contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Grounded dental information with a considered route forward.",
+  },
+  "bold-contrast": {
+    hero: { eyebrow: "DENTAL CARE · HYDERABAD", headline: "ASK BETTER. DECIDE CLEARER.", body: "Start with the care area. Get the context. Then continue the conversation with the clinic.", primary: "START NOW", secondary: "SEE CARE" },
+    services: { headline: "THREE CLEAR STARTING POINTS.", intro: "Preventive. Restorative. Smile-focused. Choose the category closest to what you want to discuss." },
+    about: { headline: "NO CLAIMS FOR THE SAKE OF CLAIMS.", body: "The site stays direct: general information here, personal clinical recommendations with the clinic." },
+    cta: { headline: "KNOW YOUR QUESTION? MOVE.", body: "Send the clinic the care area or concern you want to discuss.", primary: "SEND ENQUIRY", secondary: "REVIEW CARE" },
+    process: { headline: "QUESTION / CONTEXT / NEXT STEP" },
+    contact: { headline: "START THE CONVERSATION.", body: "Verified clinic details can be connected before publishing.", submit: "SEND" },
+    footer: "Direct dental information. Clear next action.",
+  },
+  "calm-monochrome": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Clear care information, without the noise.", body: "A restrained place to understand common dental needs and decide what you want to ask next.", primary: "Enquire", secondary: "Explore" },
+    services: { headline: "Three common needs, simply stated.", intro: "A quiet overview that keeps attention on the information rather than on marketing language." },
+    about: { headline: "Restraint can make information easier to trust.", body: "The site avoids unnecessary claims and keeps specific clinical recommendations with the clinic." },
+    cta: { headline: "A simple question is enough.", body: "Share what you would like help understanding.", primary: "Send enquiry", secondary: "Review care" },
+    process: { headline: "A quiet three-step route forward." },
+    contact: { headline: "Start with one clear message.", body: "Verified clinic contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Restrained dental information for a clearer first step.",
+  },
+  "precision-grid": {
+    hero: { eyebrow: "Dental care · Hyderabad", headline: "Identify the care area. Understand the next action.", body: "A structured route through common dental needs designed for fast scanning and clear enquiry decisions.", primary: "Open enquiry", secondary: "View categories" },
+    services: { headline: "Care categories, organised for quick understanding.", intro: "Preventive, restorative and smile-focused needs separated into clear information routes." },
+    about: { headline: "Structure reduces uncertainty.", body: "The site organises general dental context while keeping unverified business facts and personal treatment advice out." },
+    cta: { headline: "Select the category. Send the question.", body: "Continue with the care area closest to what you want to discuss.", primary: "Send enquiry", secondary: "Review categories" },
+    process: { headline: "1. Question  2. Context  3. Next step" },
+    contact: { headline: "Submit a structured care enquiry.", body: "Share the care category and short context. Verified clinic contact details can be connected before publishing.", submit: "Submit" },
+    footer: "Structured dental information with efficient navigation and enquiry.",
+  },
+  "organic-premium": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "A more natural rhythm for your first step into dental care.", body: "Take in the essentials, understand the care area and continue when the next question feels clear.", primary: "Begin a conversation", secondary: "Explore care" },
+    services: { headline: "Care needs presented with space to understand them.", intro: "A softer, more spacious guide to preventive, restorative and smile-focused care." },
+    about: { headline: "A good first experience can feel unhurried.", body: "The site supports informed questions in a calm way while keeping personal recommendations with the clinic." },
+    cta: { headline: "Move forward when the next step feels clear.", body: "Share what you would like to discuss with the clinic.", primary: "Start an enquiry", secondary: "Review care" },
+    process: { headline: "A gentle progression from question to conversation." },
+    contact: { headline: "Begin with what feels most relevant to you.", body: "A short enquiry is enough. Verified clinic contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Calm dental information with a natural path into conversation.",
+  },
+  "statement-first": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "START WITH THE QUESTION.", body: "You do not need to know the treatment answer before contacting the clinic.", primary: "Ask now", secondary: "Explore care" },
+    services: { headline: "THREE PLACES TO BEGIN.", intro: "Common dental care areas turned into clear conversation starters." },
+    about: { headline: "UNDERSTANDING COMES BEFORE DECIDING.", body: "General information belongs on the website. Personal recommendations belong in a verified clinical conversation." },
+    cta: { headline: "YOUR NEXT STEP CAN BE ONE SENTENCE.", body: "Tell the clinic what you want help understanding.", primary: "Send the question", secondary: "Review care" },
+    process: { headline: "ASK → UNDERSTAND → CONTINUE" },
+    contact: { headline: "WRITE THE QUESTION.", body: "Verified clinic contact details can be connected before publishing.", submit: "SEND" },
+    footer: "Start with the question. Build clarity from there.",
+  },
+  "layered-depth": {
+    hero: { eyebrow: "Dental care in Hyderabad", headline: "There is more than one layer to a good dental decision.", body: "Start with the visible concern, add the right context and continue into a more informed clinic conversation.", primary: "Start exploring", secondary: "Ask the clinic" },
+    services: { headline: "Three care layers visitors commonly explore.", intro: "Routine health, restoration and smile-focused concerns each open a different kind of conversation." },
+    about: { headline: "Context gives the next step more depth.", body: "The site combines useful general information with a clear boundary around what only the clinic can verify or recommend." },
+    cta: { headline: "Add the next layer: your question.", body: "Tell the clinic which care area or concern you want to discuss.", primary: "Continue the conversation", secondary: "Review care" },
+    process: { headline: "Concern, context and conversation in sequence." },
+    contact: { headline: "Bring the context you already have.", body: "Share what you want to discuss. Verified clinic contact details can be connected before publishing.", submit: "Send enquiry" },
+    footer: "Layered dental information with a grounded route to continue.",
+  },
+  "direct-modern": {
+    hero: { eyebrow: "Pearl Dental · Hyderabad", headline: "Find the care area. Send the enquiry. Keep moving.", body: "Fast, clear information for people who want a straightforward next step without unnecessary marketing claims.", primary: "Send enquiry", secondary: "See care areas" },
+    services: { headline: "Choose what you want to discuss.", intro: "Three common dental care categories for a faster first step." },
+    about: { headline: "Useful first. Decorative second.", body: "The site prioritises clear navigation, grounded information and a direct enquiry path." },
+    cta: { headline: "Ready to continue? Send the question.", body: "Tell the clinic the care area or concern you want to discuss.", primary: "Contact clinic", secondary: "Review care" },
+    process: { headline: "Question → care area → enquiry" },
+    contact: { headline: "Send your dental enquiry.", body: "Verified clinic contact details can be connected before publishing.", submit: "Send now" },
+    footer: "Direct dental information with a fast route to enquiry.",
+  },
+};
+
+export function createArtDirectedNarrative(direction: ArtDirection): ArtDirectedNarrative {
+  return PROFILES[direction.visualStyle] ?? PROFILES.editorial;
+}

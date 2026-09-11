@@ -11,6 +11,7 @@ const INDUSTRY_RULES = [
   { industry: "ai-data", subIndustry: "ai-products", businessType: "startup", terms: ["ai", "artificial intelligence", "automation", "machine learning"] },
   { industry: "education", subIndustry: "school", businessType: "school", terms: ["school", "academy", "college", "university", "education"] },
   { industry: "recruitment-hr", subIndustry: "recruitment-agency", businessType: "agency", terms: ["recruitment", "staffing", "jobs", "talent", "hr"] },
+  { industry: "professional-services", subIndustry: "law-firm", businessType: "law-firm", terms: ["law firm", "lawyer", "lawyers", "legal", "attorney", "advocate"] },
 ] as const;
 
 const CITY_TERMS = [
@@ -60,6 +61,7 @@ const INDUSTRY_ENRICHMENT: Record<string, Partial<typeof GENERIC> & { primaryGoa
   "ai-data": { primaryGoal: "demo or signup", capabilities: ["demo_request", "lead_capture", "contact"], conversionActions: ["request demo", "try product", "contact"], suitableStyles: ["technical editorial", "product-led", "research-inspired"], avoidStyles: ["generic glowing AI orb"], imagery: ["product UI", "data visualization", "real use cases"] },
   education: { primaryGoal: "admissions", capabilities: ["admission_enquiry", "contact", "lead_capture"], conversionActions: ["apply", "enquire", "explore programs"], suitableStyles: ["institutional modern", "warm academic", "student-led"], avoidStyles: ["overly corporate"], imagery: ["students", "campus", "learning"] },
   "recruitment-hr": { primaryGoal: "applications and employer leads", capabilities: ["job_application", "employer_enquiry", "contact"], conversionActions: ["find jobs", "apply", "hire talent"], suitableStyles: ["professional editorial", "people-led", "modern corporate"], avoidStyles: ["generic stock-office overload"], imagery: ["people", "workplaces", "roles"] },
+  "professional-services": { primaryGoal: "qualified enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["enquire", "contact"], suitableStyles: ["authoritative editorial", "restrained premium", "trust-led"], avoidStyles: ["salesy claims", "generic corporate stock"], imagery: ["professional context", "office", "documents", "city"] },
 };
 
 export function interpretMinimalBrief(rawBrief: string): InterpretedBrief {

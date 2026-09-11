@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } from "../../../../src/core/generation/pearl";
+import { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } from "../../../../src/benchmarks/pearl";
 import { rankCandidates } from "../../../../src/core/ranking/candidates";
 
 const MAJOR_VISUAL_TYPES = ["hero", "services", "about", "cta"] as const;

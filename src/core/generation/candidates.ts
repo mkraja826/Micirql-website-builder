@@ -28,14 +28,14 @@ const DIVERSITY_TYPES = ["hero", "services", "about", "cta", "navbar", "footer"]
 const MIN_MAJOR_DISTANCE = 2;
 
 const COMPOSITION_FAMILIES: CompositionFamily[] = [
-  { id: "offer-led", narrativeOrder: ["hero", "services", "about", "cta", "contact"] },
-  { id: "story-led", narrativeOrder: ["hero", "about", "services", "cta", "contact"] },
-  { id: "conversion-led", narrativeOrder: ["hero", "services", "cta", "about", "contact"] },
-  { id: "credibility-led", narrativeOrder: ["hero", "about", "cta", "services", "contact"] },
+  { id: "offer-led", narrativeOrder: ["hero", "services", "about", "faq", "cta", "contact"], optionalSlots: ["faq"] },
+  { id: "story-led", narrativeOrder: ["hero", "about", "gallery", "services", "cta", "contact"], optionalSlots: ["gallery"] },
+  { id: "conversion-led", narrativeOrder: ["hero", "services", "faq", "cta", "about", "contact"], optionalSlots: ["faq"] },
+  { id: "credibility-led", narrativeOrder: ["hero", "about", "process", "cta", "services", "contact"], optionalSlots: ["process"] },
   { id: "journey-led", narrativeOrder: ["hero", "about", "process", "services", "cta", "contact"], optionalSlots: ["process"] },
   { id: "decision-led", narrativeOrder: ["hero", "services", "process", "cta", "about", "contact"], optionalSlots: ["process"] },
   { id: "editorial-led", narrativeOrder: ["hero", "about", "services", "process", "cta", "contact"], optionalSlots: ["process"] },
-  { id: "action-led", narrativeOrder: ["hero", "cta", "services", "about", "contact"] },
+  { id: "action-led", narrativeOrder: ["hero", "cta", "services", "faq", "about", "contact"], optionalSlots: ["faq"] },
   { id: "experience-led", narrativeOrder: ["hero", "gallery", "about", "services", "cta", "contact"], optionalSlots: ["gallery"] },
   { id: "assurance-led", narrativeOrder: ["hero", "services", "faq", "about", "cta", "contact"], optionalSlots: ["faq"] },
   { id: "story-proof-led", narrativeOrder: ["hero", "about", "gallery", "services", "faq", "cta", "contact"], optionalSlots: ["gallery", "faq"] },

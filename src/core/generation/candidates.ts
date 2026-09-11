@@ -88,13 +88,22 @@ function diversifyComposition(initial: Record<string, string>, direction: ArtDir
   return options[0]?.sections ?? initial;
 }
 
-function createSectionOrder(index: number, selectedSections: Record<string, string>, knowledge: IndustryKnowledge) {
+function createSectionOrder(
+  index: number,
+  selectedSections: Record<string, string>,
+  knowledge: IndustryKnowledge,
+  direction: ArtDirection,
+  brief: InterpretedBrief,
+) {
   const order: string[] = [...CHOREOGRAPHIES[index % CHOREOGRAPHIES.length]];
-  const canUseProcess = knowledge.optionalSectionTypes.includes("process") && ALL_SECTIONS.some((section) => section.type === "process");
+  const canUseProcess = knowledge.optionalSectionTypes.includes("process");
   if (canUseProcess && index % 3 === 1) {
-    selectedSections.process = "process-care-journey";
-    const insertion = index % 2 === 0 ? order.indexOf("about") : order.indexOf("cta");
-    order.splice(Math.max(2, insertion), 0, "process");
+    const selectedProcess = chooseSection("process", direction, brief, index);
+    if (selectedProcess) {
+      selectedSections.process = selectedProcess;
+      const insertion = index % 2 === 0 ? order.indexOf("about") : order.indexOf("cta");
+      order.splice(Math.max(2, insertion), 0, "process");
+    }
   }
   return order;
 }
@@ -118,7 +127,7 @@ export function generateCandidatePlans({ brief, knowledge, count = 8 }: { brief:
       return selected ? [[type, selected]] : [];
     }));
     const selectedSections = diversifyComposition(initialSections, direction, brief, previousCompositions);
-    const sectionOrder = createSectionOrder(index, selectedSections, knowledge);
+    const sectionOrder = createSectionOrder(index, selectedSections, knowledge, direction, brief);
     previousCompositions.push(selectedSections);
     const theme = compileThemeTokens(brief, direction);
     return { id: `candidate-${String(index + 1).padStart(2, "0")}`, direction, selectedSections, sectionOrder, theme, cssVariables: themeTokensToCssVariables(theme) };

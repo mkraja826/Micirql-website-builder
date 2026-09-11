@@ -30,6 +30,8 @@ import { InvertedMarqueeCta } from "../../../../../src/sections/cta/inverted-mar
 import { DecisionPanelCta } from "../../../../../src/sections/cta/decision-panel";
 import { CareJourney } from "../../../../../src/sections/process/care-journey";
 import { EditorialProcessSteps } from "../../../../../src/sections/process/editorial-steps";
+import { AsymmetricEditorialGallery } from "../../../../../src/sections/gallery/asymmetric-editorial";
+import { CalmDisclosureFaq } from "../../../../../src/sections/faq/calm-disclosure";
 import { LocalConversionContact } from "../../../../../src/sections/contact/local-conversion";
 import { FunctionalLocalFooter } from "../../../../../src/sections/footer/functional-local";
 import { EditorialMinimalFooter } from "../../../../../src/sections/footer/editorial-minimal";
@@ -49,6 +51,11 @@ const journey = [
   { title: "Discuss the care area", body: "Use verified clinic guidance to understand what may be appropriate for your situation." },
   { title: "Choose the next step", body: "Continue only after questions, options and expectations are clear." },
 ];
+const faqItems: [string, string][] = [
+  ["How should I decide what to ask about?", "Start with the concern or goal you want help with. The clinic can then guide which care area is appropriate to discuss."],
+  ["Are treatment outcomes guaranteed?", "No. Appropriate care and expected outcomes depend on an individual clinical assessment and should be discussed directly with the clinic."],
+  ["Can I get exact pricing from this preview?", "Not from this benchmark page. Pricing should only be shown when the clinic has supplied and verified it."],
+];
 
 export default async function PearlCandidatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -64,7 +71,8 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
 
   const resolvedHeroMedia = await resolvePearlHeroMedia(candidate.direction);
   const usedProviderIds = resolvedHeroMedia ? [resolvedHeroMedia.providerId] : [];
-  const resolvedServiceMedia = sections.services === "services-visual-stories" ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds) : [];
+  const needsServiceMedia = sections.services === "services-visual-stories" || sections.gallery === "gallery-asymmetric-editorial";
+  const resolvedServiceMedia = needsServiceMedia ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds) : [];
   usedProviderIds.push(...resolvedServiceMedia.map((media) => media.providerId));
   const resolvedAboutMedia = sections.about === "about-editorial-story" ? await resolvePearlAboutMedia(candidate.direction, usedProviderIds) : undefined;
 
@@ -89,10 +97,13 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : sections.cta === "cta-decision-panel" ? <DecisionPanelCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : <EditorialCtaBand eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} />;
 
   const process = sections.process === "process-editorial-steps" ? <EditorialProcessSteps eyebrow="What to expect" headline={narrative.process.headline} intro="A clear path from the first question to an informed next step." steps={journey} /> : sections.process ? <CareJourney eyebrow="What to expect" headline={narrative.process.headline} steps={journey} /> : null;
+  const galleryItems = serviceMedia.map((media, index) => ({ ...media, caption: careItems[index]?.title }));
+  const gallery = sections.gallery === "gallery-asymmetric-editorial" && galleryItems.length ? <AsymmetricEditorialGallery eyebrow="A sense of the experience" headline="Care should feel considered before it ever feels clinical." items={galleryItems} /> : null;
+  const faq = sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow="Questions" headline="Useful context before you take the next step." items={faqItems} /> : null;
   const contact = <LocalConversionContact eyebrow={capabilityPlan.primary === "appointment" ? "Appointment request" : "Contact"} headline={narrative.contact.headline} body={narrative.contact.body} status={contactCapability.status === "preview" ? "Request form preview" : "Online enquiry"} submitLabel={contactCapability.label} note="This preview collects intent only; form submission is not active until a backend is configured." />;
   const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={narrative.footer} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" /> : <FunctionalLocalFooter brand={brand} description={narrative.footer} location="Hyderabad" contactLabel={primaryCapability.label} contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
 
-  const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, contact: <div id="contact">{contact}</div>, footer };
+  const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, gallery, faq, contact: <div id="contact">{contact}</div>, footer };
   const capabilityIds = capabilityPlan.capabilities.map((item) => `${item.id}:${item.status}`).join(",");
   return <main style={style} data-capabilities={capabilityIds}>{candidate.sectionOrder.map((type, index) => {
     const sectionType = type as ChoreographedSectionType;

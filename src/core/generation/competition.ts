@@ -1,5 +1,5 @@
 import type { ArtDirection } from "../art-direction/schema";
-import type { CanonicalBrief } from "../brief/schema";
+import type { InterpretedBrief } from "../brief/schema";
 import { compileThemeTokens, themeTokensToCssVariables } from "../theme/compiler";
 import { SECTION_CATALOG } from "../../sections/catalog";
 import type { CompleteSectionDefinition, SectionType } from "../../sections/schema";
@@ -47,7 +47,7 @@ function selectSection(type: SectionType, direction: ArtDirection, industry: str
   return credible[seed % credible.length]?.section;
 }
 
-export function competeGenerationCandidates(brief: CanonicalBrief, directions: ArtDirection[], count = 20): GenerationCandidate[] {
+export function competeGenerationCandidates(brief: InterpretedBrief, directions: ArtDirection[], count = 20): GenerationCandidate[] {
   const industry = brief.business.industry.value;
   const subIndustry = brief.business.subIndustry?.value;
 

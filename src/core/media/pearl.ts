@@ -34,10 +34,16 @@ const PHOTO_LANGUAGE: Record<string, string> = {
   "bold-contrast": "high contrast graphic composition strong light shadow bold geometry striking crop",
   "calm-monochrome": "monochrome restrained neutral tonal photography soft shadows minimal quiet detail",
   "precision-grid": "precise modular geometry straight-on architectural detail ordered clinical composition",
-  "organic-premium": "organic premium daylight natural textures soft curves greenery stone wood serene close-up",
+  "organic-premium": "organic premium daylight natural materials soft curves greenery stone wood serene composition",
   "statement-first": "single striking subject strong negative space poster-like crop minimal visual noise",
   "layered-depth": "layered foreground background depth shallow focus reflective surfaces dimensional composition",
   "direct-modern": "crisp contemporary bright clean direct composition practical modern detail",
+};
+
+const SUBJECT_ANCHOR: Record<"hero" | "services" | "about", string> = {
+  hero: "modern dental clinic treatment room dental chair dental equipment",
+  services: "dental clinic treatment room dental instruments oral care equipment",
+  about: "modern dental clinic interior reception treatment room dental environment",
 };
 
 function photoLanguage(direction: ArtDirection) {
@@ -58,7 +64,7 @@ async function resolvePearlSectionMedia(
   if (!process.env.PEXELS_API_KEY?.trim()) return [];
 
   const exclusions = [...new Set(options.excludedProviderIds ?? [])].sort();
-  const directedGoal = `${photoLanguage(direction)} ${options.visualGoal}`;
+  const directedGoal = `${SUBJECT_ANCHOR[options.family]} ${photoLanguage(direction)} ${options.visualGoal}`;
   const key = [direction.id, options.family, options.sectionId, options.desiredAspect, directedGoal, options.count ?? 1, exclusions.join(",")].join("|");
   const cached = mediaCache.get(key);
   if (cached) return cached;
@@ -99,7 +105,7 @@ export async function resolvePearlHeroMedia(direction: ArtDirection): Promise<Me
     family: "hero",
     sectionId: `pearl-${direction.id}-hero`,
     desiredAspect: direction.layout.heroArchitecture.toLowerCase().includes("split") ? "4:5" : "16:9",
-    visualGoal: "professional dental care environment or abstract care detail without identifiable clinicians, procedures, branding or outcome claims",
+    visualGoal: "professional environment without identifiable clinicians, procedures, branding or outcome claims",
   });
   return media[0];
 }
@@ -109,7 +115,7 @@ export async function resolvePearlServiceMedia(direction: ArtDirection, excluded
     family: "services",
     sectionId: `pearl-${direction.id}-services`,
     desiredAspect: "16:9",
-    visualGoal: "dental care objects, clean oral-health environment and patient-friendly clinical details without procedures, identifiable clinicians or outcome claims",
+    visualGoal: "clean patient-friendly details without procedures, identifiable clinicians or outcome claims",
     count: 3,
     excludedProviderIds,
   });
@@ -120,7 +126,7 @@ export async function resolvePearlAboutMedia(direction: ArtDirection, excludedPr
     family: "about",
     sectionId: `pearl-${direction.id}-about`,
     desiredAspect: "4:5",
-    visualGoal: "welcoming dental clinic atmosphere, material detail or abstract care cue without identifiable clinicians, credentials or claims",
+    visualGoal: "welcoming atmosphere without identifiable clinicians, credentials, branding or claims",
     excludedProviderIds,
   });
   return media[0];

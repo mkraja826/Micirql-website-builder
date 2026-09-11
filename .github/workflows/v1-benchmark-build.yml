@@ -40,6 +40,8 @@ jobs:
           exit 1
       - name: Capture visual baselines
         run: node scripts/capture-benchmark.mjs
+      - name: Audit rendered candidates
+        run: node scripts/audit-rendered-candidates.mjs
       - name: Upload Pearl benchmark screenshots
         uses: actions/upload-artifact@v4
         with:
@@ -65,3 +67,8 @@ jobs:
         with:
           name: pearl-rendered-candidate-screenshots
           path: artifacts/pearl-rendered-candidates/*.png
+      - name: Upload rendered candidate audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: pearl-rendered-candidate-audit
+          path: artifacts/pearl-render-audit/report.json

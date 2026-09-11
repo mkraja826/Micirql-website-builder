@@ -10,6 +10,31 @@ const TYPOGRAPHY = {
   luxury: { displayFamily: "'Times New Roman', Georgia, serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.055em", bodyTracking: "0.012em", headingScale: "expressive" as const },
 };
 
+type Typography = (typeof TYPOGRAPHY)[keyof typeof TYPOGRAPHY];
+
+const ART_DIRECTION_TYPOGRAPHY: Record<string, Typography> = {
+  editorial: { displayFamily: "Georgia, 'Times New Roman', serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.04em", bodyTracking: "0.002em", headingScale: "expressive" },
+  cinematic: { displayFamily: "Impact, 'Arial Black', Arial, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.055em", bodyTracking: "0.01em", headingScale: "expressive" },
+  "quiet-luxury": { displayFamily: "'Times New Roman', Georgia, serif", bodyFamily: "Verdana, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.065em", bodyTracking: "0.018em", headingScale: "expressive" },
+  "warm-modern": { displayFamily: "Trebuchet MS, Arial, sans-serif", bodyFamily: "Verdana, Arial, sans-serif", displayWeight: 600, bodyWeight: 400, headingTracking: "-0.035em", bodyTracking: "0.004em", headingScale: "balanced" },
+  "typography-led": { displayFamily: "Arial, Helvetica, sans-serif", bodyFamily: "Georgia, 'Times New Roman', serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.075em", bodyTracking: "0.008em", headingScale: "expressive" },
+  "conversion-focused": { displayFamily: "Arial, Helvetica, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.035em", bodyTracking: "-0.004em", headingScale: "balanced" },
+  "gallery-led": { displayFamily: "Georgia, 'Times New Roman', serif", bodyFamily: "Trebuchet MS, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.05em", bodyTracking: "0.012em", headingScale: "expressive" },
+  "immersive-dark": { displayFamily: "Impact, 'Arial Black', Arial, sans-serif", bodyFamily: "Trebuchet MS, Arial, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.045em", bodyTracking: "0.014em", headingScale: "expressive" },
+  "framed-minimal": { displayFamily: "Arial, Helvetica, sans-serif", bodyFamily: "Verdana, Arial, sans-serif", displayWeight: 500, bodyWeight: 400, headingTracking: "-0.025em", bodyTracking: "0.018em", headingScale: "balanced" },
+  "soft-editorial": { displayFamily: "Georgia, 'Times New Roman', serif", bodyFamily: "Verdana, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.025em", bodyTracking: "0.01em", headingScale: "balanced" },
+  "clinical-refined": { displayFamily: "Trebuchet MS, Arial, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 600, bodyWeight: 400, headingTracking: "-0.03em", bodyTracking: "0.006em", headingScale: "balanced" },
+  "human-narrative": { displayFamily: "Georgia, 'Times New Roman', serif", bodyFamily: "Trebuchet MS, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.018em", bodyTracking: "0.01em", headingScale: "balanced" },
+  "modern-heritage": { displayFamily: "'Times New Roman', Georgia, serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.035em", bodyTracking: "0.012em", headingScale: "balanced" },
+  "bold-contrast": { displayFamily: "Impact, 'Arial Black', Arial, sans-serif", bodyFamily: "Georgia, 'Times New Roman', serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.07em", bodyTracking: "0.004em", headingScale: "expressive" },
+  "calm-monochrome": { displayFamily: "Verdana, Arial, sans-serif", bodyFamily: "Verdana, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.018em", bodyTracking: "0.018em", headingScale: "balanced" },
+  "precision-grid": { displayFamily: "'Arial Narrow', Arial, Helvetica, sans-serif", bodyFamily: "'Courier New', Courier, monospace", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.045em", bodyTracking: "0.012em", headingScale: "compact" },
+  "organic-premium": { displayFamily: "Georgia, 'Times New Roman', serif", bodyFamily: "Trebuchet MS, Arial, sans-serif", displayWeight: 400, bodyWeight: 400, headingTracking: "-0.02em", bodyTracking: "0.014em", headingScale: "balanced" },
+  "statement-first": { displayFamily: "'Arial Black', Arial, Helvetica, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.075em", bodyTracking: "-0.002em", headingScale: "expressive" },
+  "layered-depth": { displayFamily: "Trebuchet MS, Arial, sans-serif", bodyFamily: "Georgia, 'Times New Roman', serif", displayWeight: 600, bodyWeight: 400, headingTracking: "-0.04em", bodyTracking: "0.006em", headingScale: "balanced" },
+  "direct-modern": { displayFamily: "'Arial Narrow', Arial, Helvetica, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.055em", bodyTracking: "0em", headingScale: "compact" },
+};
+
 const PALETTES = {
   "warm-light": { background: "#f5f0e8", surface: "#fbf8f2", surfaceStrong: "#e9dfd0", text: "#211f1b", textMuted: "#6c655c", accent: "#315f58", accentContrast: "#ffffff", border: "#d9d0c4" },
   "cool-light": { background: "#edf4f2", surface: "#f9fcfb", surfaceStrong: "#cfdeda", text: "#12201e", textMuted: "#5d6e6a", accent: "#146c63", accentContrast: "#ffffff", border: "#c9d8d4" },
@@ -56,7 +81,7 @@ export function inferThemeIntent(brief: InterpretedBrief, art: ArtDirection): Th
 export function compileThemeTokens(brief: InterpretedBrief, art: ArtDirection): ThemeTokens {
   const intent = inferThemeIntent(brief, art);
   const density = art.layout.density;
-  const typography = TYPOGRAPHY[intent.typographyMood];
+  const typography = ART_DIRECTION_TYPOGRAPHY[art.visualStyle] ?? TYPOGRAPHY[intent.typographyMood];
   const color = ART_DIRECTION_PALETTES[art.visualStyle] ?? PALETTES[intent.paletteMood];
   const radius = intent.radiusMood === "sharp" ? "none" : intent.radiusMood === "soft" ? "soft" : "subtle";
   const sectionY = density === "low" ? 132 : density === "high" ? 64 : 94;

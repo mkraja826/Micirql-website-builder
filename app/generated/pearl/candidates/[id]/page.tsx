@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import { generatePearlDentalCandidates } from "../../../../../src/core/generation/pearl";
+import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
 import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/core/media/pearl";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
@@ -50,6 +51,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const style = candidate.cssVariables as CSSProperties;
   const sections = candidate.selectedSections;
   const brand = "Pearl Dental";
+  const narrative = createArtDirectedNarrative(candidate.direction);
 
   const resolvedHeroMedia = await resolvePearlHeroMedia(candidate.direction);
   const usedProviderIds = resolvedHeroMedia ? [resolvedHeroMedia.providerId] : [];
@@ -65,18 +67,61 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const serviceMedia = resolvedServiceMedia.map((media) => ({ src: media.imageUrl, alt: media.alt }));
   const aboutMedia = resolvedAboutMedia ? { src: resolvedAboutMedia.imageUrl, alt: resolvedAboutMedia.alt, focalPoint: resolvedAboutMedia.focalPoint } : undefined;
 
-  const navbar = sections.navbar === "navbar-quiet-luxury" ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={{label:"Enquire",href:"#contact"}} /> : <ConversionCleanNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={{label:"Request appointment",href:"#contact"}} />;
-  const heroProps = { eyebrow: "Dental care in Hyderabad", headline: candidate.direction.visualStyle === "cinematic" || candidate.direction.visualStyle === "immersive-dark" ? "A calmer way to begin dental care." : candidate.direction.visualStyle === "typography-led" || candidate.direction.visualStyle === "statement-first" || candidate.direction.visualStyle === "bold-contrast" ? "Dental care, made easier to understand." : "Calm, considered dental care.", body: "Understand common dental care needs, ask questions and take the next step with confidence.", primaryCta: { label: "Get in touch", href: "#contact" } };
-  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} media={heroMedia} visualLabel={candidate.direction.label} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent="Pearl" /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={{label:"Explore care",href:"#care"}} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote="A calm, clear place to begin your dental care journey." media={heroMedia} />;
+  const navbar = sections.navbar === "navbar-quiet-luxury"
+    ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={{label:narrative.hero.primary,href:"#contact"}} />
+    : <ConversionCleanNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={{label:narrative.hero.primary,href:"#contact"}} />;
 
-  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow="Care" headline="Explore common dental care needs." stories={careItems.map((item, index) => ({ ...item, media: serviceMedia[index], link: { label: "Ask about this care", href: "#contact" } }))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow="Care" headline="Care areas, presented with clarity." items={careItems} /> : sections.services === "services-rail" ? <RailServices eyebrow="Care" headline="Three clear routes into everyday dental care." items={careItems} /> : <EditorialServiceIndex eyebrow="Care" headline="Understand the care before choosing the next step." intro="Explore common dental care needs and use the enquiry form to discuss what may be appropriate for you." items={careItems} />;
+  const heroProps = {
+    eyebrow: narrative.hero.eyebrow,
+    headline: narrative.hero.headline,
+    body: narrative.hero.body,
+    primaryCta: { label: narrative.hero.primary, href: "#contact" },
+  };
+  const secondaryHeroCta = { label: narrative.hero.secondary, href: "#care" };
+  const hero = sections.hero === "hero-cinematic-fullscreen"
+    ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} visualLabel={candidate.direction.label} />
+    : sections.hero === "hero-typography-led"
+      ? <TypographyLedHero {...heroProps} accent="Pearl" />
+      : sections.hero === "hero-conversion-split"
+        ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} />
+        : sections.hero === "hero-framed-statement"
+          ? <FramedStatementHero {...heroProps} secondaryCta={secondaryHeroCta} />
+          : sections.hero === "hero-poster-offset"
+            ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryHeroCta} />
+            : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryHeroCta} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote={narrative.about.headline} media={heroMedia} />;
 
-  const about = sections.about === "about-editorial-story" ? <EditorialStory eyebrow="Approach" headline="A clear first step for better-informed care." body="Dental decisions are personal. Pearl Dental’s website keeps the starting point simple and leaves specific clinical recommendations to a verified consultation." visualLabel="Pearl Dental" media={aboutMedia} /> : sections.about === "about-split-principles" ? <SplitPrinciplesAbout eyebrow="Approach" headline="A thoughtful route from question to care." body="The website supports informed first steps while keeping clinical recommendations with the clinic." principles={principles} /> : sections.about === "about-statement-ledger" ? <StatementLedgerAbout eyebrow="Approach" headline="Clarity is part of the care experience." body="The website supports informed first steps while keeping specific clinical recommendations with the clinic." principles={principles} /> : <TrustManifesto eyebrow="Our approach" headline="Clear information. Thoughtful next steps." body="Dental care decisions are personal. This site keeps the first step simple: understand the care area, ask a question and continue with verified clinic guidance." note="Specific treatments, clinicians, pricing and outcomes should be confirmed directly with the clinic before care begins." />;
+  const services = sections.services === "services-visual-stories"
+    ? <VisualStoryServices eyebrow="Care" headline={narrative.services.headline} stories={careItems.map((item, index) => ({ ...item, media: serviceMedia[index], link: { label: narrative.hero.primary, href: "#contact" } }))} />
+    : sections.services === "services-banded-list"
+      ? <BandedServiceList eyebrow="Care" headline={narrative.services.headline} items={careItems} />
+      : sections.services === "services-rail"
+        ? <RailServices eyebrow="Care" headline={narrative.services.headline} items={careItems} />
+        : <EditorialServiceIndex eyebrow="Care" headline={narrative.services.headline} intro={narrative.services.intro} items={careItems} />;
 
-  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline="Ask first. Decide with clarity." body="Tell the clinic what you would like help with and continue from there." primaryCta={{label:"Start an enquiry",href:"#contact"}} secondaryCta={{label:"Review care",href:"#care"}} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline="A clearer next step starts with one question." body="Tell the clinic what you would like help with and continue from there." primaryCta={{label:"Start an enquiry",href:"#contact"}} secondaryCta={{label:"Review care",href:"#care"}} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline="Ask. Understand. Then decide." body="Tell the clinic what you would like help with and continue from there." primaryCta={{label:"Start an enquiry",href:"#contact"}} secondaryCta={{label:"Review care",href:"#care"}} /> : <EditorialCtaBand eyebrow="Next step" headline="Ready when you are." body="Tell the clinic what you would like help with and continue from there." primaryCta={{label:"Start an enquiry",href:"#contact"}} secondaryCta={{label:"Review care",href:"#care"}} />;
-  const process = sections.process ? <CareJourney eyebrow="What to expect" headline="A simple route from question to next step." steps={journey} /> : null;
-  const contact = <LocalConversionContact eyebrow="Contact" headline="Start with a simple enquiry." body="Share what you would like help with. Verified clinic contact details can be connected before publishing." status="Online enquiry preview" submitLabel="Send enquiry" note="Form submission is not active in this preview yet." />;
-  const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement="Clear, patient-friendly dental information with a simple route to enquire." links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" /> : <FunctionalLocalFooter brand={brand} description="Clear, patient-friendly dental information with a simple route to enquire." location="Hyderabad" contactLabel="Enquiry form" contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
+  const about = sections.about === "about-editorial-story"
+    ? <EditorialStory eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} visualLabel="Pearl Dental" media={aboutMedia} />
+    : sections.about === "about-split-principles"
+      ? <SplitPrinciplesAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} />
+      : sections.about === "about-statement-ledger"
+        ? <StatementLedgerAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} />
+        : <TrustManifesto eyebrow="Our approach" headline={narrative.about.headline} body={narrative.about.body} note="Specific treatments, clinicians, pricing and outcomes should be confirmed directly with the clinic before care begins." />;
+
+  const primaryCta = { label: narrative.cta.primary, href: "#contact" };
+  const secondaryCta = { label: narrative.cta.secondary, href: "#care" };
+  const cta = sections.cta === "cta-human-split"
+    ? <HumanSplitCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
+    : sections.cta === "cta-stacked-statement"
+      ? <StackedStatementCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
+      : sections.cta === "cta-inverted-marquee"
+        ? <InvertedMarqueeCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
+        : <EditorialCtaBand eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />;
+
+  const process = sections.process ? <CareJourney eyebrow="What to expect" headline={narrative.process.headline} steps={journey} /> : null;
+  const contact = <LocalConversionContact eyebrow="Contact" headline={narrative.contact.headline} body={narrative.contact.body} status="Online enquiry preview" submitLabel={narrative.contact.submit} note="Form submission is not active in this preview yet." />;
+  const footer = sections.footer === "footer-editorial-minimal"
+    ? <EditorialMinimalFooter brand={brand} statement={narrative.footer} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" />
+    : <FunctionalLocalFooter brand={brand} description={narrative.footer} location="Hyderabad" contactLabel="Enquiry form" contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
+
   const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, contact: <div id="contact">{contact}</div>, footer };
   return <main style={style}>{candidate.sectionOrder.map((type, index) => <div key={`${type}-${index}`}>{blocks[type]}</div>)}</main>;
 }

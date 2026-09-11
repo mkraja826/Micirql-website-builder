@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { generatePearlDentalCandidates } from "../../../../../src/core/generation/pearl";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
 import { capability, planDentalCapabilities } from "../../../../../src/core/capabilities/planner";
+import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
 import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/core/media/pearl";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
@@ -89,5 +90,9 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
 
   const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, contact: <div id="contact">{contact}</div>, footer };
   const capabilityIds = capabilityPlan.capabilities.map((item) => `${item.id}:${item.status}`).join(",");
-  return <main style={style} data-capabilities={capabilityIds}>{candidate.sectionOrder.map((type, index) => <div key={`${type}-${index}`}>{blocks[type]}</div>)}</main>;
+  return <main style={style} data-capabilities={capabilityIds}>{candidate.sectionOrder.map((type, index) => {
+    const sectionType = type as ChoreographedSectionType;
+    const sectionStyle = getSectionColorStyle(candidate.theme, candidate.direction, sectionType) as CSSProperties;
+    return <div key={`${type}-${index}`} style={sectionStyle} data-section-tone={sectionType}>{blocks[type]}</div>;
+  })}</main>;
 }

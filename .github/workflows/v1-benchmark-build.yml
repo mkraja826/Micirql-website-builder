@@ -44,6 +44,8 @@ jobs:
           exit 1
       - name: Capture visual baselines
         run: node scripts/capture-benchmark.mjs
+      - name: Audit universal section archetype usage
+        run: node scripts/audit-section-archetype-usage.mjs
       - name: Audit rendered candidates
         run: node scripts/audit-rendered-candidates.mjs
       - name: Score perceptual quality
@@ -75,6 +77,12 @@ jobs:
         with:
           name: pearl-rendered-candidate-screenshots
           path: artifacts/pearl-rendered-candidates/*.png
+      - name: Upload section archetype usage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: section-archetype-usage
+          path: artifacts/section-archetype-usage/report.json
       - name: Upload rendered candidate audit
         uses: actions/upload-artifact@v4
         with:

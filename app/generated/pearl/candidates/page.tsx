@@ -39,7 +39,13 @@ export default function PearlCandidatesPage() {
           {ranked.map(({ candidate, rank, score, strengths, cautions }) => {
             const style = candidate.cssVariables as CSSProperties;
             return (
-              <article key={candidate.id} style={{ ...style, background: "var(--theme-bg)", color: "var(--theme-text)", border: rank <= 3 ? "2px solid var(--theme-accent)" : "1px solid var(--theme-border)", borderRadius: 24, padding: 24, minHeight: 540, display: "flex", flexDirection: "column" }}>
+              <article
+                key={candidate.id}
+                data-candidate-id={candidate.id}
+                data-selected-sections={JSON.stringify(candidate.selectedSections)}
+                data-section-order={candidate.sectionOrder.join(",")}
+                style={{ ...style, background: "var(--theme-bg)", color: "var(--theme-text)", border: rank <= 3 ? "2px solid var(--theme-accent)" : "1px solid var(--theme-border)", borderRadius: 24, padding: 24, minHeight: 540, display: "flex", flexDirection: "column" }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}>
                   <span style={{ color: "var(--theme-accent)", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".15em" }}>#{rank} · {candidate.id}</span>
                   <strong style={{ fontSize: 24 }}>{score.total.toFixed(1)}</strong>

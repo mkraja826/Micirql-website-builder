@@ -89,7 +89,7 @@ function diversifyComposition(initial: Record<string, string>, direction: ArtDir
 }
 
 function createSectionOrder(index: number, selectedSections: Record<string, string>, knowledge: IndustryKnowledge) {
-  const order = [...CHOREOGRAPHIES[index % CHOREOGRAPHIES.length]];
+  const order: string[] = [...CHOREOGRAPHIES[index % CHOREOGRAPHIES.length]];
   const canUseProcess = knowledge.optionalSectionTypes.includes("process") && ALL_SECTIONS.some((section) => section.type === "process");
   if (canUseProcess && index % 3 === 1) {
     selectedSections.process = "process-care-journey";

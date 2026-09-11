@@ -14,7 +14,7 @@ const CHOREOGRAPHIES: Record<string, Choreography> = {
   "typography-led": { hero: "base", services: "surface", about: "strong", cta: "accent", process: "base", contact: "surface" },
   "conversion-focused": { hero: "base", services: "surface", about: "base", cta: "accent", process: "strong", contact: "surface" },
   "gallery-led": { hero: "base", services: "surface", about: "strong", cta: "accent", process: "surface", contact: "base" },
-  "immersive-dark": { hero: "base", services: "surface", about: "strong", cta: "accent", process: "surface", contact: "strong" },
+  "immersive-dark": { hero: "base", services: "surface", about: "strong", cta: "strong", process: "surface", contact: "strong" },
   "framed-minimal": { hero: "base", services: "surface", about: "base", cta: "strong", process: "surface", contact: "base" },
   "soft-editorial": { hero: "base", services: "surface", about: "strong", cta: "surface", process: "accent", contact: "base" },
   "clinical-refined": { hero: "base", services: "surface", about: "strong", cta: "accent", process: "surface", contact: "base" },

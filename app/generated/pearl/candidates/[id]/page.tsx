@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
-import { generatePearlDentalCandidates } from "../../../../../src/core/generation/pearl";
+import { generatePearlDentalCandidates } from "../../../../../src/benchmarks/pearl";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
 import { capability, planDentalCapabilities } from "../../../../../src/core/capabilities/planner";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";

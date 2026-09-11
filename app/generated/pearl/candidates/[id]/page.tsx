@@ -51,11 +51,15 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const sections = candidate.selectedSections;
   const brand = "Pearl Dental";
 
-  const [resolvedHeroMedia, resolvedServiceMedia, resolvedAboutMedia] = await Promise.all([
-    resolvePearlHeroMedia(candidate.direction),
-    sections.services === "services-visual-stories" ? resolvePearlServiceMedia(candidate.direction) : Promise.resolve([]),
-    sections.about === "about-editorial-story" ? resolvePearlAboutMedia(candidate.direction) : Promise.resolve(undefined),
-  ]);
+  const resolvedHeroMedia = await resolvePearlHeroMedia(candidate.direction);
+  const usedProviderIds = resolvedHeroMedia ? [resolvedHeroMedia.providerId] : [];
+  const resolvedServiceMedia = sections.services === "services-visual-stories"
+    ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds)
+    : [];
+  usedProviderIds.push(...resolvedServiceMedia.map((media) => media.providerId));
+  const resolvedAboutMedia = sections.about === "about-editorial-story"
+    ? await resolvePearlAboutMedia(candidate.direction, usedProviderIds)
+    : undefined;
 
   const heroMedia = resolvedHeroMedia ? { src: resolvedHeroMedia.imageUrl, alt: resolvedHeroMedia.alt, focalPoint: resolvedHeroMedia.focalPoint } : undefined;
   const serviceMedia = resolvedServiceMedia.map((media) => ({ src: media.imageUrl, alt: media.alt }));

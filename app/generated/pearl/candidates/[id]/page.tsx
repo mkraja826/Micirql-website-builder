@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import { generatePearlDentalCandidates } from "../../../../../src/core/generation/pearl";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
+import { capability, planDentalCapabilities } from "../../../../../src/core/capabilities/planner";
 import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/core/media/pearl";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
@@ -52,76 +53,41 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const sections = candidate.selectedSections;
   const brand = "Pearl Dental";
   const narrative = createArtDirectedNarrative(candidate.direction);
+  const capabilityPlan = planDentalCapabilities(candidate.direction);
+  const primaryCapability = capability(capabilityPlan, capabilityPlan.primary)!;
+  const contactCapability = capability(capabilityPlan, "contact")!;
 
   const resolvedHeroMedia = await resolvePearlHeroMedia(candidate.direction);
   const usedProviderIds = resolvedHeroMedia ? [resolvedHeroMedia.providerId] : [];
-  const resolvedServiceMedia = sections.services === "services-visual-stories"
-    ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds)
-    : [];
+  const resolvedServiceMedia = sections.services === "services-visual-stories" ? await resolvePearlServiceMedia(candidate.direction, usedProviderIds) : [];
   usedProviderIds.push(...resolvedServiceMedia.map((media) => media.providerId));
-  const resolvedAboutMedia = sections.about === "about-editorial-story"
-    ? await resolvePearlAboutMedia(candidate.direction, usedProviderIds)
-    : undefined;
+  const resolvedAboutMedia = sections.about === "about-editorial-story" ? await resolvePearlAboutMedia(candidate.direction, usedProviderIds) : undefined;
 
   const heroMedia = resolvedHeroMedia ? { src: resolvedHeroMedia.imageUrl, alt: resolvedHeroMedia.alt, focalPoint: resolvedHeroMedia.focalPoint } : undefined;
   const serviceMedia = resolvedServiceMedia.map((media) => ({ src: media.imageUrl, alt: media.alt }));
   const aboutMedia = resolvedAboutMedia ? { src: resolvedAboutMedia.imageUrl, alt: resolvedAboutMedia.alt, focalPoint: resolvedAboutMedia.focalPoint } : undefined;
+  const primaryAction = { label: primaryCapability.label, href: primaryCapability.href ?? "#contact" };
 
   const navbar = sections.navbar === "navbar-quiet-luxury"
-    ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={{label:narrative.hero.primary,href:"#contact"}} />
-    : <ConversionCleanNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={{label:narrative.hero.primary,href:"#contact"}} />;
+    ? <QuietLuxuryNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={primaryAction} />
+    : <ConversionCleanNavbar brand={brand} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={primaryAction} />;
 
-  const heroProps = {
-    eyebrow: narrative.hero.eyebrow,
-    headline: narrative.hero.headline,
-    body: narrative.hero.body,
-    primaryCta: { label: narrative.hero.primary, href: "#contact" },
-  };
+  const heroProps = { eyebrow: narrative.hero.eyebrow, headline: narrative.hero.headline, body: narrative.hero.body, primaryCta: primaryAction };
   const secondaryHeroCta = { label: narrative.hero.secondary, href: "#care" };
-  const hero = sections.hero === "hero-cinematic-fullscreen"
-    ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} visualLabel={candidate.direction.label} />
-    : sections.hero === "hero-typography-led"
-      ? <TypographyLedHero {...heroProps} accent="Pearl" />
-      : sections.hero === "hero-conversion-split"
-        ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} />
-        : sections.hero === "hero-framed-statement"
-          ? <FramedStatementHero {...heroProps} secondaryCta={secondaryHeroCta} />
-          : sections.hero === "hero-poster-offset"
-            ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryHeroCta} />
-            : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryHeroCta} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote={narrative.about.headline} media={heroMedia} />;
+  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} visualLabel={candidate.direction.label} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent="Pearl" /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryHeroCta} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryHeroCta} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryHeroCta} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote={narrative.about.headline} media={heroMedia} />;
 
-  const services = sections.services === "services-visual-stories"
-    ? <VisualStoryServices eyebrow="Care" headline={narrative.services.headline} stories={careItems.map((item, index) => ({ ...item, media: serviceMedia[index], link: { label: narrative.hero.primary, href: "#contact" } }))} />
-    : sections.services === "services-banded-list"
-      ? <BandedServiceList eyebrow="Care" headline={narrative.services.headline} items={careItems} />
-      : sections.services === "services-rail"
-        ? <RailServices eyebrow="Care" headline={narrative.services.headline} items={careItems} />
-        : <EditorialServiceIndex eyebrow="Care" headline={narrative.services.headline} intro={narrative.services.intro} items={careItems} />;
+  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow="Care" headline={narrative.services.headline} stories={careItems.map((item, index) => ({ ...item, media: serviceMedia[index], link: primaryAction }))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow="Care" headline={narrative.services.headline} items={careItems} /> : sections.services === "services-rail" ? <RailServices eyebrow="Care" headline={narrative.services.headline} items={careItems} /> : <EditorialServiceIndex eyebrow="Care" headline={narrative.services.headline} intro={narrative.services.intro} items={careItems} />;
 
-  const about = sections.about === "about-editorial-story"
-    ? <EditorialStory eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} visualLabel="Pearl Dental" media={aboutMedia} />
-    : sections.about === "about-split-principles"
-      ? <SplitPrinciplesAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} />
-      : sections.about === "about-statement-ledger"
-        ? <StatementLedgerAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} />
-        : <TrustManifesto eyebrow="Our approach" headline={narrative.about.headline} body={narrative.about.body} note="Specific treatments, clinicians, pricing and outcomes should be confirmed directly with the clinic before care begins." />;
+  const about = sections.about === "about-editorial-story" ? <EditorialStory eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} visualLabel="Pearl Dental" media={aboutMedia} /> : sections.about === "about-split-principles" ? <SplitPrinciplesAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} /> : sections.about === "about-statement-ledger" ? <StatementLedgerAbout eyebrow="Approach" headline={narrative.about.headline} body={narrative.about.body} principles={principles} /> : <TrustManifesto eyebrow="Our approach" headline={narrative.about.headline} body={narrative.about.body} note="Specific treatments, clinicians, pricing and outcomes should be confirmed directly with the clinic before care begins." />;
 
-  const primaryCta = { label: narrative.cta.primary, href: "#contact" };
   const secondaryCta = { label: narrative.cta.secondary, href: "#care" };
-  const cta = sections.cta === "cta-human-split"
-    ? <HumanSplitCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
-    : sections.cta === "cta-stacked-statement"
-      ? <StackedStatementCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
-      : sections.cta === "cta-inverted-marquee"
-        ? <InvertedMarqueeCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />
-        : <EditorialCtaBand eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryCta} secondaryCta={secondaryCta} />;
+  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} /> : <EditorialCtaBand eyebrow="Next step" headline={narrative.cta.headline} body={narrative.cta.body} primaryCta={primaryAction} secondaryCta={secondaryCta} />;
 
   const process = sections.process ? <CareJourney eyebrow="What to expect" headline={narrative.process.headline} steps={journey} /> : null;
-  const contact = <LocalConversionContact eyebrow="Contact" headline={narrative.contact.headline} body={narrative.contact.body} status="Online enquiry preview" submitLabel={narrative.contact.submit} note="Form submission is not active in this preview yet." />;
-  const footer = sections.footer === "footer-editorial-minimal"
-    ? <EditorialMinimalFooter brand={brand} statement={narrative.footer} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" />
-    : <FunctionalLocalFooter brand={brand} description={narrative.footer} location="Hyderabad" contactLabel="Enquiry form" contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
+  const contact = <LocalConversionContact eyebrow={capabilityPlan.primary === "appointment" ? "Appointment request" : "Contact"} headline={narrative.contact.headline} body={narrative.contact.body} status={contactCapability.status === "preview" ? "Request form preview" : "Online enquiry"} submitLabel={contactCapability.label} note="This preview collects intent only; form submission is not active until a backend is configured." />;
+  const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={narrative.footer} links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note="Pearl Dental · Hyderabad" /> : <FunctionalLocalFooter brand={brand} description={narrative.footer} location="Hyderabad" contactLabel={primaryCapability.label} contactHref="#contact" links={[{label:"Care",href:"#care"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal="Pearl Dental · Hyderabad" />;
 
   const blocks: Record<string, ReactNode> = { navbar, hero, services: <div id="care">{services}</div>, about: <div id="approach">{about}</div>, cta, process, contact: <div id="contact">{contact}</div>, footer };
-  return <main style={style}>{candidate.sectionOrder.map((type, index) => <div key={`${type}-${index}`}>{blocks[type]}</div>)}</main>;
+  const capabilityIds = capabilityPlan.capabilities.map((item) => `${item.id}:${item.status}`).join(",");
+  return <main style={style} data-capabilities={capabilityIds}>{candidate.sectionOrder.map((type, index) => <div key={`${type}-${index}`}>{blocks[type]}</div>)}</main>;
 }

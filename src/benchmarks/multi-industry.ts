@@ -80,9 +80,10 @@ function knowledgeForFixture(fixture: MultiIndustryBenchmarkFixture): IndustryKn
 export function generateMultiIndustryBenchmarkFixture(fixtureId: string, count = 4) {
   const fixture = MULTI_INDUSTRY_BENCHMARKS.find((item) => item.id === fixtureId);
   if (!fixture) return undefined;
-  const brief = interpretMinimalBrief(fixture.brief);
+  const generationBrief = interpretMinimalBrief(fixture.brief);
   const knowledge = knowledgeForFixture(fixture);
-  const candidates = generateCandidatePlans({ brief, knowledge, count });
+  const candidates = generateCandidatePlans({ brief: generationBrief, knowledge, count });
+  const brief = interpretMinimalBrief(fixture.brief);
   return { fixture, brief, knowledge, candidates };
 }
 

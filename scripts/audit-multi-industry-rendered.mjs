@@ -46,8 +46,11 @@ function score(metrics, target, fixture) {
   if (metrics.heroMediaApplicable && metrics.heroMediaSource === 'not-applicable') { value -= 30; failures.push('media-capable hero reports hero media as not-applicable'); }
   if (!metrics.heroMediaApplicable && metrics.heroMediaSource !== 'not-applicable') { value -= 30; failures.push(`image-free hero unexpectedly reports hero media ${metrics.heroMediaSource}`); }
   if (metrics.heroMediaSource === 'provider' && metrics.providerMediaCount === 0) { value -= 30; failures.push('hero reports provider media with zero resolved provider assets'); }
+  if (!['provider','fallback','not-applicable'].includes(metrics.aboutMediaSource)) { value -= 30; failures.push(`unexpected about media source state ${metrics.aboutMediaSource || 'missing'}`); }
+  if (metrics.aboutMediaSource === 'provider' && metrics.providerMediaCount === 0) { value -= 30; failures.push('about reports provider media with zero resolved provider assets'); }
   if (metrics.mediaSource === 'fallback') cautions.push('neutral media fallback used');
   if (metrics.heroMediaSource === 'fallback') cautions.push('neutral hero media fallback used');
+  if (metrics.aboutMediaSource === 'fallback') cautions.push('neutral about media fallback used');
   if (metrics.elementsOutsideViewport > 0) { value -= Math.min(15, metrics.elementsOutsideViewport * 3); cautions.push(`${metrics.elementsOutsideViewport} visible element(s) outside viewport`); }
   if (target.name === 'mobile' && metrics.smallTapTargetCount > 0) { value -= Math.min(12, metrics.smallTapTargetCount * 2); cautions.push(`${metrics.smallTapTargetCount} small tap target(s)`); }
   if (metrics.tinyTextCount > 0) { value -= Math.min(8, metrics.tinyTextCount * 2); cautions.push(`${metrics.tinyTextCount} tiny text element(s)`); }
@@ -118,6 +121,7 @@ for (const fixture of fixtures) {
         const textElements = visible.filter((element) => element.childElementCount === 0 && (element.textContent ?? '').trim());
         const bodyText = body.innerText;
         const heroMediaSource = main?.getAttribute('data-hero-media-source') ?? '';
+        const aboutMediaSource = main?.getAttribute('data-about-media-source') ?? '';
         return {
           horizontalOverflow:Math.max(0,root.scrollWidth-window.innerWidth,body.scrollWidth-window.innerWidth),
           elementsOutsideViewport:visible.filter((element)=>{ const r=element.getBoundingClientRect(); return r.left < -1 || r.right > window.innerWidth + 1; }).length,
@@ -133,6 +137,7 @@ for (const fixture of fixtures) {
           providerMediaCount:Number(main?.getAttribute('data-media-provider-count') ?? -1),
           heroMediaSource,
           heroMediaApplicable:heroMediaSource !== 'not-applicable',
+          aboutMediaSource,
         };
       }, forbiddenText);
       if (status < 200 || status >= 400) metrics.forbiddenMatches.push(`HTTP ${status}`);
@@ -154,6 +159,9 @@ const fallbackPages = all.filter((item)=>item.targets.desktop.mediaSource === 'f
 const heroProviderPages = all.filter((item)=>item.targets.desktop.heroMediaSource === 'provider').length;
 const heroFallbackPages = all.filter((item)=>item.targets.desktop.heroMediaSource === 'fallback').length;
 const imageFreeHeroPages = all.filter((item)=>item.targets.desktop.heroMediaSource === 'not-applicable').length;
+const aboutProviderPages = all.filter((item)=>item.targets.desktop.aboutMediaSource === 'provider').length;
+const aboutFallbackPages = all.filter((item)=>item.targets.desktop.aboutMediaSource === 'fallback').length;
+const imageFreeAboutPages = all.filter((item)=>item.targets.desktop.aboutMediaSource === 'not-applicable').length;
 report.summary = {
   pageCount:all.length,
   mediaPlanCount:all.length,
@@ -162,6 +170,9 @@ report.summary = {
   heroProviderPages,
   heroFallbackPages,
   imageFreeHeroPages,
+  aboutProviderPages,
+  aboutFallbackPages,
+  imageFreeAboutPages,
   minScore:Math.min(...all.map((item)=>item.renderedScore)),
   maxScore:Math.max(...all.map((item)=>item.renderedScore)),
   averageScore:Math.round(all.reduce((sum,item)=>sum+item.renderedScore,0)/all.length),

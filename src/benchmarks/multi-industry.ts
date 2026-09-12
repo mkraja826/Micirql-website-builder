@@ -52,6 +52,38 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     conversionActions: ["enquire", "contact"],
     imagery: ["professional context", "office", "documents", "city"],
   },
+  {
+    id: "real-estate",
+    label: "Real estate brokerage",
+    brief: "Meridian Estates real estate, Hyderabad",
+    traits: ["property-led", "editorial", "premium", "decisive"],
+    conversionActions: ["explore properties", "enquire", "schedule visit"],
+    imagery: ["properties", "architecture", "neighborhood", "interiors"],
+  },
+  {
+    id: "school",
+    label: "School",
+    brief: "Northstar Academy school, Chennai",
+    traits: ["warm academic", "clear", "student-led", "credible"],
+    conversionActions: ["apply", "enquire", "explore programs"],
+    imagery: ["students", "campus", "learning", "activities"],
+  },
+  {
+    id: "recruitment",
+    label: "Recruitment agency",
+    brief: "Vertex Talent recruitment agency, Bengaluru",
+    traits: ["people-led", "professional", "editorial", "direct"],
+    conversionActions: ["find jobs", "apply", "hire talent"],
+    imagery: ["people", "workplaces", "roles", "interviews"],
+  },
+  {
+    id: "ai-data",
+    label: "AI and data company",
+    brief: "SignalForge artificial intelligence automation, Pune",
+    traits: ["technical", "research-inspired", "precise", "product-led"],
+    conversionActions: ["request demo", "try product", "contact"],
+    imagery: ["product UI", "data visualization", "real use cases", "workflow"],
+  },
 ];
 
 function knowledgeForFixture(fixture: MultiIndustryBenchmarkFixture): IndustryKnowledge {

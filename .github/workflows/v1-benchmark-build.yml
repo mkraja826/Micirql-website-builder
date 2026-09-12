@@ -54,6 +54,8 @@ jobs:
         run: node scripts/audit-multi-industry-rendered.mjs
       - name: Audit multi-industry content plans
         run: node scripts/audit-multi-industry-content.mjs
+      - name: Audit multi-industry candidate diversity
+        run: node scripts/audit-multi-industry-diversity.mjs
       - name: Score perceptual quality
         run: node scripts/score-perceptual-candidates.mjs
       - name: Compose final candidate ranking
@@ -112,6 +114,12 @@ jobs:
         with:
           name: multi-industry-content-audit
           path: artifacts/multi-industry-content-audit/report.json
+      - name: Upload multi-industry diversity audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-diversity-audit
+          path: artifacts/multi-industry-diversity-audit/report.json
       - name: Upload perceptual candidate ranking
         uses: actions/upload-artifact@v4
         with:

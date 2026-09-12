@@ -59,7 +59,10 @@ function sectionContent(sections: SectionContent[], type: string) {
   return sections.find((section) => section.sectionType === type);
 }
 function contentItems(section: SectionContent | undefined, fallback: string) {
-  return section?.items?.length ? section.items : [{ title:fallback, body:section?.body }];
+  const fallbackBody = section?.body ?? "Use verified business information and safe industry context.";
+  return section?.items?.length
+    ? section.items.map((item) => ({ title:item.title, body:item.body ?? fallbackBody }))
+    : [{ title:fallback, body:fallbackBody }];
 }
 
 export default async function MultiIndustryCandidatePage({ params }: { params: Promise<{ fixture: string; id: string }> }) {
@@ -93,11 +96,13 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const secondaryAction = { label:heroContent?.secondaryCta?.label ?? ctaContent?.secondaryCta?.label ?? "Explore the offer", href:"#offer" };
   const items = contentItems(servicesContent,"Business offer");
   const principles = contentItems(aboutContent,"Grounded business context");
-  const steps = processContent?.items?.length ? processContent.items : [
-    { title:"Understand the offer", body:processContent?.body ?? "Start with the relevant business context." },
-    { title:"Review the relevant detail", body:"Use verified business information and safe industry context." },
-    { title:"Take the next step", body:`Continue through the ${primaryLabel.toLowerCase()} path when more information is needed.` },
-  ];
+  const steps = processContent?.items?.length
+    ? processContent.items.map((item) => ({ title:item.title, body:item.body ?? processContent.body ?? "Use verified business information and safe industry context." }))
+    : [
+        { title:"Understand the offer", body:processContent?.body ?? "Start with the relevant business context." },
+        { title:"Review the relevant detail", body:"Use verified business information and safe industry context." },
+        { title:"Take the next step", body:`Continue through the ${primaryLabel.toLowerCase()} path when more information is needed.` },
+      ];
   const faqItems = (contentPlan.faq?.length ? contentPlan.faq : [{ question:faqContent?.headline ?? "What should I know?", answer:faqContent?.body ?? "Use verified business information before publication.", claims:[] }]).map((item) => [item.question,item.answer] as [string,string]);
 
   const heroSupportsMedia = sections.hero === "hero-editorial-split" || sections.hero === "hero-cinematic-fullscreen";
@@ -120,7 +125,7 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryAction} visualLabel={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt } : undefined} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent={entry.fixture.label} /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryAction} proof={[entry.fixture.label,"Grounded content","Clear next step"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryAction} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryAction} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryAction} trustItems={[{label:entry.fixture.label},{label:"Grounded content"},{label:"Clear next step"}]} visualNote={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt, focalPoint:heroVisual.focalPoint } : undefined} />;
   const servicesEyebrow = servicesContent?.eyebrow ?? "Offer";
   const servicesHeadline = servicesContent?.headline ?? "Understand the offer clearly.";
-  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow={servicesEyebrow} headline={servicesHeadline} stories={items.map((item,index)=>({ title:item.title, body:item.body ?? servicesContent?.body ?? homeContent.purpose, media:{src:serviceVisuals[index].src,alt:serviceVisuals[index].alt},link:primaryAction}))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-rail" ? <RailServices eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-featured-offer" ? <FeaturedOfferServices eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} /> : <EditorialServiceIndex eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} />;
+  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow={servicesEyebrow} headline={servicesHeadline} stories={items.map((item,index)=>({ title:item.title, body:item.body, media:{src:serviceVisuals[index].src,alt:serviceVisuals[index].alt},link:primaryAction}))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-rail" ? <RailServices eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-featured-offer" ? <FeaturedOfferServices eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} /> : <EditorialServiceIndex eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} />;
   const aboutEyebrow = aboutContent?.eyebrow ?? "About";
   const aboutHeadline = aboutContent?.headline ?? `Understand ${brand}.`;
   const aboutBody = aboutContent?.body ?? homeContent.purpose;

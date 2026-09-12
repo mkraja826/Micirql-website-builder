@@ -16,6 +16,13 @@ const expectedPrimaryCapabilities = {
   construction: new Set(['lead_capture','contact']),
   'law-firm': new Set(['lead_capture','contact']),
 };
+const expectedMedia = {
+  'luxury-hotel': { industry:'hospitality', hero:'property' },
+  restaurant: { industry:'food-beverage', hero:'food' },
+  saas: { industry:'technology', hero:'product ui' },
+  construction: { industry:'construction', hero:'projects' },
+  'law-firm': { industry:'professional-services', hero:'professional context' },
+};
 
 fs.mkdirSync('artifacts/multi-industry-render-audit', { recursive:true });
 
@@ -37,13 +44,53 @@ function score(metrics, target, fixture) {
   return { score:Math.max(0,value), failures, cautions };
 }
 
+function auditMediaPlan(metrics, fixture) {
+  const failures = [];
+  const expected = expectedMedia[fixture];
+  if (!expected) return failures;
+  if (metrics.renderedFixture !== fixture) failures.push(`media cross-fixture contamination: expected ${fixture}, found ${metrics.renderedFixture || 'missing'}`);
+  if (metrics.industry !== expected.industry) failures.push(`media taxonomy mismatch: expected ${expected.industry}, found ${metrics.industry || 'missing'}`);
+  if (metrics.intentCount !== 3) failures.push(`expected 3 media intents, found ${metrics.intentCount}`);
+  for (const role of ['hero','services','about']) if (!metrics.roles.includes(role)) failures.push(`missing ${role} media intent`);
+  if (metrics.sourceIntents.some((value) => value !== 'curated')) failures.push(`unexpected media source intent: ${metrics.sourceIntents.join(', ')}`);
+  if (metrics.verificationStates.some((value) => value !== 'generic-safe')) failures.push(`unsafe media verification state: ${metrics.verificationStates.join(', ')}`);
+  if (!metrics.heroSubject.toLowerCase().includes(expected.hero)) failures.push(`hero media subject mismatch: expected ${expected.hero}, found ${metrics.heroSubject || 'missing'}`);
+  return failures;
+}
+
 const browser = await chromium.launch({ headless:true });
 const report = { generatedAt:new Date().toISOString(), fixtures:[], summary:{} };
 
 for (const fixture of fixtures) {
   const fixtureReport = { fixture, candidates:[] };
   for (const candidateId of candidateIds) {
-    const candidate = { id:candidateId, targets:{}, failures:[], renderedScore:0 };
+    const candidate = { id:candidateId, targets:{}, mediaPlan:{}, failures:[], renderedScore:0 };
+
+    const mediaPage = await browser.newPage({ viewport:{ width:1200, height:900 }, deviceScaleFactor:1 });
+    const mediaResponse = await mediaPage.goto(`${BASE_URL}/generated/benchmarks/${fixture}/${candidateId}/media`, { waitUntil:'networkidle' });
+    const mediaStatus = mediaResponse?.status() ?? 0;
+    const mediaMetrics = await mediaPage.evaluate(() => {
+      const main = document.querySelector('main');
+      const intents = [...document.querySelectorAll('[data-media-role]')];
+      const hero = intents.find((element) => element.getAttribute('data-media-role') === 'hero');
+      return {
+        renderedFixture:main?.getAttribute('data-benchmark-fixture') ?? '',
+        industry:main?.getAttribute('data-media-industry') ?? '',
+        subIndustry:main?.getAttribute('data-media-sub-industry') ?? '',
+        businessType:main?.getAttribute('data-media-business-type') ?? '',
+        intentCount:Number(main?.getAttribute('data-media-intent-count') ?? 0),
+        roles:intents.map((element) => element.getAttribute('data-media-role') ?? ''),
+        sourceIntents:intents.map((element) => element.getAttribute('data-media-source-intent') ?? ''),
+        verificationStates:intents.map((element) => element.getAttribute('data-media-verification') ?? ''),
+        heroSubject:hero?.getAttribute('data-media-subject') ?? '',
+      };
+    });
+    const mediaFailures = auditMediaPlan(mediaMetrics, fixture);
+    if (mediaStatus < 200 || mediaStatus >= 400) mediaFailures.push(`media probe HTTP ${mediaStatus}`);
+    candidate.mediaPlan = { ...mediaMetrics, failures:mediaFailures };
+    candidate.failures.push(...mediaFailures.map((item)=>`media: ${item}`));
+    await mediaPage.close();
+
     for (const target of targets) {
       const page = await browser.newPage({ viewport:{ width:target.width, height:target.height }, deviceScaleFactor:1 });
       const response = await page.goto(`${BASE_URL}/generated/benchmarks/${fixture}/${candidateId}`, { waitUntil:'networkidle' });
@@ -89,6 +136,7 @@ await browser.close();
 const all = report.fixtures.flatMap((fixture)=>fixture.candidates.map((candidate)=>({ fixture:fixture.fixture, ...candidate })));
 report.summary = {
   pageCount:all.length,
+  mediaPlanCount:all.length,
   minScore:Math.min(...all.map((item)=>item.renderedScore)),
   maxScore:Math.max(...all.map((item)=>item.renderedScore)),
   averageScore:Math.round(all.reduce((sum,item)=>sum+item.renderedScore,0)/all.length),

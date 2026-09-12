@@ -41,14 +41,6 @@ import { EditorialMinimalFooter } from "../../../../../src/sections/footer/edito
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const COPY = {
-  "luxury-hotel": { offer:"A considered stay shaped around place, comfort and a clear booking path.", services:["Rooms and stays","Guest experience","Destination context"], principles:["Lead with the stay","Keep details verifiable","Make booking simple"], faq:["What can I explore before booking?","How should availability be confirmed?","Where do verified stay details come from?"] },
-  restaurant: { offer:"A dining experience introduced through atmosphere, menu context and an easy next step.", services:["Dining experience","Menu highlights","Visit planning"], principles:["Make the offer clear","Let atmosphere support the story","Keep reservations straightforward"], faq:["What can I see before visiting?","How should menu details be confirmed?","How do I plan a visit?"] },
-  saas: { offer:"A product-led story that explains the value, shows the workflow and creates a clear path to evaluate it.", services:["Core workflow","Team use cases","Evaluation path"], principles:["Explain the problem first","Show the product clearly","Make evaluation low-friction"], faq:["What problem does the platform address?","How should product claims be verified?","What is the next evaluation step?"] },
-  construction: { offer:"A substantial, project-led presentation focused on capability, process and a clear enquiry path.", services:["Project delivery","Construction capability","Project enquiry"], principles:["Lead with capability","Show process clearly","Keep claims grounded"], faq:["What project information can be reviewed?","How should capability claims be confirmed?","How do I start an enquiry?"] },
-  "law-firm": { offer:"A restrained professional-services presentation built around clarity, trust and an appropriate enquiry path.", services:["Practice context","Client guidance","Initial enquiry"], principles:["Use clear language","Avoid unverified claims","Make contact discreet"], faq:["What can I understand before contacting the firm?","Are outcomes guaranteed?","How should I begin an enquiry?"] },
-} as const;
-
 function titleFromBrief(brief: string) { return brief.split(",")[0]; }
 function placeFromBrief(brief: string) { return brief.split(",")[1]?.trim() ?? ""; }
 function svgData(label: string, index: number) {
@@ -69,8 +61,7 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const candidate = entry.candidates.find((item) => item.id === id);
   if (!candidate) notFound();
 
-  const copy = COPY[fixtureId as keyof typeof COPY];
-  if (!copy) notFound();
+  const copy = entry.fixture.copy;
   const sections = candidate.selectedSections;
   const brand = titleFromBrief(entry.fixture.brief);
   const location = placeFromBrief(entry.fixture.brief);

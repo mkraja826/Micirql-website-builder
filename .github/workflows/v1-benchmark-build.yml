@@ -48,6 +48,8 @@ jobs:
         run: node scripts/audit-section-archetype-usage.mjs
       - name: Audit rendered candidates
         run: node scripts/audit-rendered-candidates.mjs
+      - name: Audit rendered multi-industry candidates
+        run: node scripts/audit-multi-industry-rendered.mjs
       - name: Score perceptual quality
         run: node scripts/score-perceptual-candidates.mjs
       - name: Compose final candidate ranking
@@ -77,6 +79,12 @@ jobs:
         with:
           name: pearl-rendered-candidate-screenshots
           path: artifacts/pearl-rendered-candidates/*.png
+      - name: Upload rendered multi-industry screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-rendered-screenshots
+          path: artifacts/multi-industry-rendered/*.png
       - name: Upload section archetype usage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -88,6 +96,12 @@ jobs:
         with:
           name: pearl-rendered-candidate-audit
           path: artifacts/pearl-render-audit/report.json
+      - name: Upload multi-industry rendered audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-rendered-audit
+          path: artifacts/multi-industry-render-audit/report.json
       - name: Upload perceptual candidate ranking
         uses: actions/upload-artifact@v4
         with:

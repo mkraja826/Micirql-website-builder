@@ -9,10 +9,17 @@ const targets = [
   { name:'mobile', width:390, height:844 },
 ];
 const forbiddenText = ['Pearl Dental','patient-friendly','the clinic'];
+const expectedPrimaryCapabilities = {
+  'luxury-hotel': new Set(['booking_enquiry','contact']),
+  restaurant: new Set(['reservation','contact']),
+  saas: new Set(['demo_request','lead_capture','contact']),
+  construction: new Set(['lead_capture','contact']),
+  'law-firm': new Set(['lead_capture','contact']),
+};
 
 fs.mkdirSync('artifacts/multi-industry-render-audit', { recursive:true });
 
-function score(metrics, target) {
+function score(metrics, target, fixture) {
   let value = 100;
   const failures = [];
   const cautions = [];
@@ -20,6 +27,9 @@ function score(metrics, target) {
   if (metrics.h1Count !== 1) { value -= 15; failures.push(`expected exactly one h1, found ${metrics.h1Count}`); }
   if (metrics.sectionCount < 5) { value -= 20; failures.push(`only ${metrics.sectionCount} major sections detected`); }
   if (metrics.forbiddenMatches.length) { value -= 30; failures.push(`cross-industry leakage: ${metrics.forbiddenMatches.join(', ')}`); }
+  if (!metrics.primaryCapability) { value -= 30; failures.push('missing canonical primary capability metadata'); }
+  else if (!expectedPrimaryCapabilities[fixture]?.has(metrics.primaryCapability)) { value -= 30; failures.push(`unexpected primary capability ${metrics.primaryCapability}`); }
+  if (metrics.primaryCapabilityStatus !== 'preview') { value -= 30; failures.push(`expected unconfigured primary workflow to remain preview, found ${metrics.primaryCapabilityStatus || 'missing'}`); }
   if (metrics.elementsOutsideViewport > 0) { value -= Math.min(15, metrics.elementsOutsideViewport * 3); cautions.push(`${metrics.elementsOutsideViewport} visible element(s) outside viewport`); }
   if (target.name === 'mobile' && metrics.smallTapTargetCount > 0) { value -= Math.min(12, metrics.smallTapTargetCount * 2); cautions.push(`${metrics.smallTapTargetCount} small tap target(s)`); }
   if (metrics.tinyTextCount > 0) { value -= Math.min(8, metrics.tinyTextCount * 2); cautions.push(`${metrics.tinyTextCount} tiny text element(s)`); }
@@ -40,6 +50,7 @@ for (const fixture of fixtures) {
       const metrics = await page.evaluate((forbidden) => {
         const root = document.documentElement;
         const body = document.body;
+        const main = document.querySelector('main');
         const visible = [...document.querySelectorAll('body *')].filter((element) => {
           const style = getComputedStyle(element);
           const rect = element.getBoundingClientRect();
@@ -56,10 +67,12 @@ for (const fixture of fixtures) {
           h1Count:document.querySelectorAll('h1').length,
           sectionCount:document.querySelectorAll('main section').length,
           forbiddenMatches:forbidden.filter((term)=>bodyText.toLowerCase().includes(term.toLowerCase())),
+          primaryCapability:main?.getAttribute('data-primary-capability') ?? '',
+          primaryCapabilityStatus:main?.getAttribute('data-primary-capability-status') ?? '',
         };
       }, forbiddenText);
       if (status < 200 || status >= 400) metrics.forbiddenMatches.push(`HTTP ${status}`);
-      const result = score(metrics,target);
+      const result = score(metrics,target,fixture);
       candidate.targets[target.name] = { ...metrics, ...result };
       candidate.failures.push(...result.failures.map((item)=>`${target.name}: ${item}`));
       await page.close();

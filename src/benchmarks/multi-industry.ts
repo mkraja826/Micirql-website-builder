@@ -9,6 +9,12 @@ export type MultiIndustryBenchmarkFixture = {
   traits: string[];
   conversionActions: string[];
   imagery: string[];
+  copy: {
+    offer: string;
+    services: string[];
+    principles: string[];
+    faq: string[];
+  };
 };
 
 export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
@@ -19,6 +25,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["cinematic", "refined", "destination-led", "warm"],
     conversionActions: ["check stay", "book", "enquire"],
     imagery: ["property", "rooms", "destination", "guest experience"],
+    copy: { offer:"A considered stay shaped around place, comfort and a clear booking path.", services:["Rooms and stays","Guest experience","Destination context"], principles:["Lead with the stay","Keep details verifiable","Make booking simple"], faq:["What can I explore before booking?","How should availability be confirmed?","Where do verified stay details come from?"] },
   },
   {
     id: "restaurant",
@@ -27,6 +34,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["sensory", "editorial", "welcoming", "confident"],
     conversionActions: ["reserve", "view menu", "visit"],
     imagery: ["food", "chef", "ambience", "shared dining"],
+    copy: { offer:"A dining experience introduced through atmosphere, menu context and an easy next step.", services:["Dining experience","Menu highlights","Visit planning"], principles:["Make the offer clear","Let atmosphere support the story","Keep reservations straightforward"], faq:["What can I see before visiting?","How should menu details be confirmed?","How do I plan a visit?"] },
   },
   {
     id: "saas",
@@ -35,6 +43,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["product-led", "precise", "modern", "credible"],
     conversionActions: ["request demo", "start", "contact sales"],
     imagery: ["product UI", "workflow", "customer context"],
+    copy: { offer:"A product-led story that explains the value, shows the workflow and creates a clear path to evaluate it.", services:["Core workflow","Team use cases","Evaluation path"], principles:["Explain the problem first","Show the product clearly","Make evaluation low-friction"], faq:["What problem does the platform address?","How should product claims be verified?","What is the next evaluation step?"] },
   },
   {
     id: "construction",
@@ -43,6 +52,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["architectural", "substantial", "technical", "premium"],
     conversionActions: ["request quote", "view projects", "contact"],
     imagery: ["projects", "sites", "materials", "team at work"],
+    copy: { offer:"A substantial, project-led presentation focused on capability, process and a clear enquiry path.", services:["Project delivery","Construction capability","Project enquiry"], principles:["Lead with capability","Show process clearly","Keep claims grounded"], faq:["What project information can be reviewed?","How should capability claims be confirmed?","How do I start an enquiry?"] },
   },
   {
     id: "law-firm",
@@ -51,6 +61,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["authoritative", "restrained", "clear", "trust-led"],
     conversionActions: ["enquire", "contact"],
     imagery: ["professional context", "office", "documents", "city"],
+    copy: { offer:"A restrained professional-services presentation built around clarity, trust and an appropriate enquiry path.", services:["Practice context","Client guidance","Initial enquiry"], principles:["Use clear language","Avoid unverified claims","Make contact discreet"], faq:["What can I understand before contacting the firm?","Are outcomes guaranteed?","How should I begin an enquiry?"] },
   },
   {
     id: "real-estate",
@@ -59,6 +70,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["property-led", "editorial", "premium", "decisive"],
     conversionActions: ["explore properties", "enquire", "schedule visit"],
     imagery: ["properties", "architecture", "neighborhood", "interiors"],
+    copy: { offer:"A property-led experience that makes discovery, context and the enquiry path easy to understand.", services:["Property discovery","Location context","Viewing enquiry"], principles:["Lead with properties","Keep availability verifiable","Make enquiries direct"], faq:["What property information can I review?","How should availability be confirmed?","How do I arrange a viewing?"] },
   },
   {
     id: "school",
@@ -67,6 +79,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["warm academic", "clear", "student-led", "credible"],
     conversionActions: ["apply", "enquire", "explore programs"],
     imagery: ["students", "campus", "learning", "activities"],
+    copy: { offer:"A clear, welcoming school presentation focused on learning context, family confidence and admissions enquiry.", services:["Learning programs","Student experience","Admissions guidance"], principles:["Explain learning clearly","Keep claims grounded","Make admissions approachable"], faq:["What can families explore before enquiring?","How should program details be confirmed?","How do I begin an admissions enquiry?"] },
   },
   {
     id: "recruitment",
@@ -75,6 +88,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["people-led", "professional", "editorial", "direct"],
     conversionActions: ["find jobs", "apply", "hire talent"],
     imagery: ["people", "workplaces", "roles", "interviews"],
+    copy: { offer:"A people-led recruitment experience that serves candidates and employers with distinct, low-friction paths.", services:["Candidate opportunities","Employer hiring","Recruitment process"], principles:["Separate candidate and employer needs","Keep roles verifiable","Make next steps obvious"], faq:["How can candidates explore opportunities?","How should open roles be verified?","How can employers start a hiring enquiry?"] },
   },
   {
     id: "ai-data",
@@ -83,6 +97,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
     traits: ["technical", "research-inspired", "precise", "product-led"],
     conversionActions: ["request demo", "try product", "contact"],
     imagery: ["product UI", "data visualization", "real use cases", "workflow"],
+    copy: { offer:"A technical product story that explains the problem, shows credible use context and creates a clear evaluation path.", services:["Product capability","Workflow context","Evaluation path"], principles:["Explain value before novelty","Avoid unsupported AI claims","Show concrete use context"], faq:["What problem does the product address?","How should AI capabilities be verified?","What is the next evaluation step?"] },
   },
 ];
 

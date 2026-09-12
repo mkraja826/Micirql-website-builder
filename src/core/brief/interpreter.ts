@@ -28,9 +28,22 @@ function inferLocation(raw: string): Fact | undefined {
   return city ? fact(city.replace(/\b\w/g, (c) => c.toUpperCase()), "known", "user") : undefined;
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsTerm(text: string, term: string) {
+  const pattern = term
+    .trim()
+    .split(/\s+/)
+    .map(escapeRegex)
+    .join("\\s+");
+  return new RegExp(`(^|[^a-z0-9])${pattern}([^a-z0-9]|$)`, "i").test(text);
+}
+
 function inferClassification(raw: string) {
   const lower = raw.toLowerCase();
-  return INDUSTRY_RULES.find((rule) => rule.terms.some((term) => lower.includes(term)));
+  return INDUSTRY_RULES.find((rule) => rule.terms.some((term) => containsTerm(lower, term)));
 }
 
 function inferBusinessName(raw: string, classification?: (typeof INDUSTRY_RULES)[number]): Fact | undefined {

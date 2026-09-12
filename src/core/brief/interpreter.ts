@@ -12,6 +12,12 @@ const INDUSTRY_RULES = [
   { industry: "education", subIndustry: "school", businessType: "school", terms: ["school", "academy", "college", "university", "education"] },
   { industry: "recruitment-hr", subIndustry: "recruitment-agency", businessType: "agency", terms: ["recruitment", "staffing", "jobs", "talent", "hr"] },
   { industry: "professional-services", subIndustry: "law-firm", businessType: "law-firm", terms: ["law firm", "lawyer", "lawyers", "legal", "attorney", "advocate"] },
+  { industry: "beauty-wellness", subIndustry: "salon", businessType: "salon", terms: ["salon", "beauty studio", "hair studio", "spa"] },
+  { industry: "fitness", subIndustry: "gym", businessType: "gym", terms: ["gym", "fitness studio", "fitness centre", "fitness center"] },
+  { industry: "manufacturing", subIndustry: "industrial-manufacturing", businessType: "manufacturer", terms: ["manufacturing", "manufacturer", "factory", "industrial products"] },
+  { industry: "automotive-services", subIndustry: "auto-service", businessType: "service-center", terms: ["auto service", "automotive service", "car service", "garage", "service center", "service centre"] },
+  { industry: "architecture-design", subIndustry: "architecture-studio", businessType: "studio", terms: ["architecture studio", "architects", "architectural studio", "architecture firm"] },
+  { industry: "nonprofit", subIndustry: "ngo", businessType: "ngo", terms: ["ngo", "nonprofit", "non-profit", "charity", "foundation"] },
 ] as const;
 
 const CITY_TERMS = [
@@ -75,6 +81,12 @@ const INDUSTRY_ENRICHMENT: Record<string, Partial<typeof GENERIC> & { primaryGoa
   education: { primaryGoal: "admissions", capabilities: ["admission_enquiry", "contact", "lead_capture"], conversionActions: ["apply", "enquire", "explore programs"], suitableStyles: ["institutional modern", "warm academic", "student-led"], avoidStyles: ["overly corporate"], imagery: ["students", "campus", "learning"] },
   "recruitment-hr": { primaryGoal: "applications and employer leads", capabilities: ["job_application", "employer_enquiry", "contact"], conversionActions: ["find jobs", "apply", "hire talent"], suitableStyles: ["professional editorial", "people-led", "modern corporate"], avoidStyles: ["generic stock-office overload"], imagery: ["people", "workplaces", "roles"] },
   "professional-services": { primaryGoal: "qualified enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["enquire", "contact"], suitableStyles: ["authoritative editorial", "restrained premium", "trust-led"], avoidStyles: ["salesy claims", "generic corporate stock"], imagery: ["professional context", "office", "documents", "city"] },
+  "beauty-wellness": { primaryGoal: "appointments", capabilities: ["appointment", "contact", "location"], conversionActions: ["book appointment", "explore services", "contact"], suitableStyles: ["editorial beauty", "warm premium", "image-led"], avoidStyles: ["clinical styling", "generic ecommerce"], imagery: ["salon interior", "styling", "beauty services", "client experience"] },
+  fitness: { primaryGoal: "membership enquiries", capabilities: ["lead_capture", "contact", "location"], conversionActions: ["join", "enquire", "visit"], suitableStyles: ["energetic editorial", "bold modern", "community-led"], avoidStyles: ["generic bodybuilding clichés"], imagery: ["training", "people exercising", "equipment", "community"] },
+  manufacturing: { primaryGoal: "qualified enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["request quote", "explore capabilities", "contact"], suitableStyles: ["industrial premium", "precision-led", "technical editorial"], avoidStyles: ["consumer lifestyle styling"], imagery: ["factory", "production", "materials", "industrial detail"] },
+  "automotive-services": { primaryGoal: "service bookings", capabilities: ["appointment", "contact", "location"], conversionActions: ["book service", "enquire", "visit"], suitableStyles: ["technical modern", "trust-led", "service-focused"], avoidStyles: ["racing aesthetics", "unsupported performance claims"], imagery: ["vehicle service", "workshop", "technician", "inspection"] },
+  "architecture-design": { primaryGoal: "project enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["start a project", "view work", "contact"], suitableStyles: ["editorial minimal", "gallery-led", "architectural"], avoidStyles: ["generic corporate templates"], imagery: ["architecture", "spaces", "materials", "drawings"] },
+  nonprofit: { primaryGoal: "support and enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["support", "learn more", "contact"], suitableStyles: ["human narrative", "editorial documentary", "clear modern"], avoidStyles: ["guilt-heavy messaging", "unverified impact claims"], imagery: ["people", "community", "program context", "field work"] },
 };
 
 export function interpretMinimalBrief(rawBrief: string): InterpretedBrief {

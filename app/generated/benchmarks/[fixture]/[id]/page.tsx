@@ -3,6 +3,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { generateMultiIndustryBenchmarkMatrix } from "../../../../../src/benchmarks/multi-industry";
 import { resolveMultiIndustryBenchmarkMedia } from "../../../../../src/benchmarks/multi-industry-media";
 import { planCapabilitiesFromBrief } from "../../../../../src/core/capabilities/planner";
+import { directContent } from "../../../../../src/core/content/director";
+import type { SectionContent } from "../../../../../src/core/content/schema";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
 import type { MediaCandidate } from "../../../../../src/providers/media/schema";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
@@ -53,6 +55,12 @@ function renderedMediaItem(label: string, index: number, candidates: MediaCandid
   if (!candidate) return { src:svgData(label,index), alt:`Neutral benchmark fallback for ${label}`, caption:label, provider:"fallback" };
   return { src:candidate.imageUrl, alt:candidate.alt, caption:label, provider:candidate.provider, focalPoint:candidate.focalPoint };
 }
+function sectionContent(sections: SectionContent[], type: string) {
+  return sections.find((section) => section.sectionType === type);
+}
+function contentItems(section: SectionContent | undefined, fallback: string) {
+  return section?.items?.length ? section.items : [{ title:fallback, body:section?.body }];
+}
 
 export default async function MultiIndustryCandidatePage({ params }: { params: Promise<{ fixture: string; id: string }> }) {
   const { fixture: fixtureId, id } = await params;
@@ -61,24 +69,37 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const candidate = entry.candidates.find((item) => item.id === id);
   if (!candidate) notFound();
 
-  const copy = entry.fixture.copy;
   const sections = candidate.selectedSections;
   const brand = titleFromBrief(entry.fixture.brief);
   const location = placeFromBrief(entry.fixture.brief);
+  const contentPlan = await directContent({ brief:entry.brief, knowledge:entry.knowledge, artDirection:candidate.direction });
+  const homeContent = contentPlan.pages.find((page) => page.slug === "home") ?? contentPlan.pages[0];
+  if (!homeContent) notFound();
+  const heroContent = sectionContent(homeContent.sections,"hero");
+  const servicesContent = sectionContent(homeContent.sections,"services");
+  const aboutContent = sectionContent(homeContent.sections,"about");
+  const processContent = sectionContent(homeContent.sections,"process");
+  const galleryContent = sectionContent(homeContent.sections,"gallery");
+  const faqContent = sectionContent(homeContent.sections,"faq");
+  const ctaContent = sectionContent(homeContent.sections,"cta");
+  const contactContent = sectionContent(homeContent.sections,"contact");
+  const footerContent = sectionContent(homeContent.sections,"footer");
+
   const capabilityPlan = planCapabilitiesFromBrief(entry.brief, candidate.direction);
   const primaryCapability = capabilityPlan.capabilities.find((item) => item.id === capabilityPlan.primary) ?? capabilityPlan.capabilities[0];
   if (!primaryCapability) notFound();
   const primaryLabel = primaryCapability.label;
-  const primaryAction = { label: primaryLabel, href: primaryCapability.href ?? "#contact" };
-  const secondaryAction = { label: entry.fixture.conversionActions[1] ?? "Learn more", href: "#offer" };
-  const items = copy.services.map((title) => ({ title, body: `Explore ${title.toLowerCase()} with concise, verifiable information appropriate to this ${entry.fixture.label.toLowerCase()} benchmark.` }));
-  const principles = copy.principles.map((title) => ({ title, body: "This benchmark keeps the structure useful while avoiding invented business claims, people, prices, ratings or outcomes." }));
-  const steps = [
-    { title:"Understand the offer", body:"Start with the business context and the decision the visitor is trying to make." },
-    { title:"Review the relevant detail", body:"Present only the information that is appropriate and supported by the supplied brief." },
+  const primaryAction = { label:primaryLabel, href:primaryCapability.href ?? "#contact" };
+  const secondaryAction = { label:heroContent?.secondaryCta?.label ?? ctaContent?.secondaryCta?.label ?? "Explore the offer", href:"#offer" };
+  const items = contentItems(servicesContent,"Business offer");
+  const principles = contentItems(aboutContent,"Grounded business context");
+  const steps = processContent?.items?.length ? processContent.items : [
+    { title:"Understand the offer", body:processContent?.body ?? "Start with the relevant business context." },
+    { title:"Review the relevant detail", body:"Use verified business information and safe industry context." },
     { title:"Take the next step", body:`Continue through the ${primaryLabel.toLowerCase()} path when more information is needed.` },
   ];
-  const faqItems = copy.faq.map((question) => [question, "This benchmark intentionally avoids inventing unsupported facts. Verified business information should be supplied before publication."] as [string,string]);
+  const faqItems = (contentPlan.faq?.length ? contentPlan.faq : [{ question:faqContent?.headline ?? "What should I know?", answer:faqContent?.body ?? "Use verified business information before publication.", claims:[] }]).map((item) => [item.question,item.answer] as [string,string]);
+
   const heroSupportsMedia = sections.hero === "hero-editorial-split" || sections.hero === "hero-cinematic-fullscreen";
   const aboutSupportsMedia = sections.about === "about-editorial-story";
   const requestedMediaRoles = [heroSupportsMedia ? "hero" : null, sections.services === "services-visual-stories" ? "services" : null, aboutSupportsMedia ? "about" : null, sections.gallery ? "gallery" : null].filter((role): role is "hero" | "services" | "about" | "gallery" => Boolean(role));
@@ -87,26 +108,33 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const serviceMedia = resolvedMedia.services ?? [];
   const aboutMedia = resolvedMedia.about ?? [];
   const galleryMedia = resolvedMedia.gallery?.length ? resolvedMedia.gallery : serviceMedia;
-  const heroVisual = renderedMediaItem(`${entry.fixture.label}: hero`, 0, heroMedia);
-  const aboutVisual = renderedMediaItem(`${entry.fixture.label}: about`, 0, aboutMedia);
-  const galleryItems = copy.services.map((title,index) => renderedMediaItem(`${entry.fixture.label}: ${title}`, index, galleryMedia));
-  const serviceVisuals = copy.services.map((title,index) => renderedMediaItem(`${entry.fixture.label}: ${title}`, index, serviceMedia));
-  const realMediaCount = [...heroMedia, ...serviceMedia, ...aboutMedia, ...(resolvedMedia.gallery ?? [])].length;
+  const heroVisual = renderedMediaItem(`${entry.fixture.label}: hero`,0,heroMedia);
+  const aboutVisual = renderedMediaItem(`${entry.fixture.label}: about`,0,aboutMedia);
+  const galleryItems = items.map((item,index) => renderedMediaItem(`${entry.fixture.label}: ${item.title}`,index,galleryMedia));
+  const serviceVisuals = items.map((item,index) => renderedMediaItem(`${entry.fixture.label}: ${item.title}`,index,serviceMedia));
+  const realMediaCount = [...heroMedia,...serviceMedia,...aboutMedia,...(resolvedMedia.gallery ?? [])].length;
   const style = candidate.cssVariables as CSSProperties;
 
   const navbar = sections.navbar === "navbar-quiet-luxury" ? <QuietLuxuryNavbar brand={brand} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} cta={primaryAction} /> : <ConversionCleanNavbar brand={brand} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} primaryCta={primaryAction} />;
-  const heroProps = { eyebrow:entry.fixture.label, headline:copy.offer, body:`${brand}${location ? ` · ${location}` : ""}. This rendered fixture tests MiCirql's shared multi-industry composition engine.`, primaryCta:primaryAction };
-  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryAction} visualLabel={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt } : undefined} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent={entry.fixture.label} /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryAction} proof={[entry.fixture.label,"Verified-content first","Clear next step"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryAction} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryAction} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryAction} trustItems={[{label:entry.fixture.label},{label:"Grounded content"},{label:"Clear next step"}]} visualNote={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt, focalPoint:heroVisual.focalPoint } : undefined} />;
-  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow="Offer" headline="What the visitor needs to understand." stories={items.map((item,index)=>({...item,media:{src:serviceVisuals[index].src,alt:serviceVisuals[index].alt},link:primaryAction}))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow="Offer" headline="What the visitor needs to understand." items={items} /> : sections.services === "services-rail" ? <RailServices eyebrow="Offer" headline="What the visitor needs to understand." items={items} /> : sections.services === "services-featured-offer" ? <FeaturedOfferServices eyebrow="Offer" headline="What the visitor needs to understand." intro={copy.offer} items={items} /> : <EditorialServiceIndex eyebrow="Offer" headline="What the visitor needs to understand." intro={copy.offer} items={items} />;
-  const about = sections.about === "about-editorial-story" ? <EditorialStory eyebrow="Approach" headline="Built around the decision, not a generic template." body="The same MiCirql engine adapts section structure, rhythm and art direction to the interpreted business brief." visualLabel={entry.fixture.label} media={aboutMedia.length ? { src:aboutVisual.src, alt:aboutVisual.alt, focalPoint:aboutVisual.focalPoint } : undefined} /> : sections.about === "about-split-principles" ? <SplitPrinciplesAbout eyebrow="Approach" headline="A grounded structure for this business type." body="The benchmark keeps specialization in industry knowledge while preserving an industry-neutral core." principles={principles} /> : sections.about === "about-statement-ledger" ? <StatementLedgerAbout eyebrow="Approach" headline="A grounded structure for this business type." body="The benchmark keeps specialization in industry knowledge while preserving an industry-neutral core." principles={principles} /> : sections.about === "about-manifesto-columns" ? <ManifestoColumnsAbout eyebrow="Approach" headline="A grounded structure for this business type." body="The benchmark keeps specialization in industry knowledge while preserving an industry-neutral core." principles={principles} /> : <TrustManifesto eyebrow="Approach" headline="Useful structure without fabricated proof." body="MiCirql should adapt to the industry without inventing facts the business did not provide." note="Names, ratings, prices, credentials, outcomes and other unsupported claims remain excluded." />;
-  const process = sections.process ? <EditorialProcessSteps eyebrow="Process" headline="A clear path from context to action." intro="The sequence stays understandable across industries." steps={steps} /> : null;
-  const gallery = sections.gallery === "gallery-feature-mosaic" ? <FeatureMosaicGallery eyebrow="Visual story" headline="A visual structure appropriate to the business context." items={galleryItems} /> : sections.gallery === "gallery-asymmetric-editorial" ? <AsymmetricEditorialGallery eyebrow="Visual story" headline="A visual structure appropriate to the business context." items={galleryItems} /> : null;
-  const faq = sections.faq === "faq-editorial-index" ? <EditorialIndexFaq eyebrow="Questions" headline="Useful context before the next step." intro="Answers stay grounded in what the benchmark actually knows." items={faqItems} /> : sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow="Questions" headline="Useful context before the next step." items={faqItems} /> : null;
-  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-decision-panel" ? <DecisionPanelCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : <EditorialCtaBand eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} />;
-  const contactProps = { eyebrow:"Contact", headline:`Continue with ${brand}.`, body:primaryCapability.reason, status:`${primaryCapability.label} · ${primaryCapability.status.replace(/_/g," ")}`, submitLabel:primaryLabel, note:"No submission is sent from this benchmark route until a real backend is provisioned." };
+  const heroProps = { eyebrow:heroContent?.eyebrow ?? entry.fixture.label, headline:heroContent?.headline ?? brand, body:heroContent?.body ?? homeContent.purpose, primaryCta:primaryAction };
+  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryAction} visualLabel={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt } : undefined} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent={entry.fixture.label} /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryAction} proof={[entry.fixture.label,"Grounded content","Clear next step"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryAction} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryAction} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryAction} trustItems={[{label:entry.fixture.label},{label:"Grounded content"},{label:"Clear next step"}]} visualNote={candidate.direction.label} media={heroMedia.length ? { src:heroVisual.src, alt:heroVisual.alt, focalPoint:heroVisual.focalPoint } : undefined} />;
+  const servicesEyebrow = servicesContent?.eyebrow ?? "Offer";
+  const servicesHeadline = servicesContent?.headline ?? "Understand the offer clearly.";
+  const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow={servicesEyebrow} headline={servicesHeadline} stories={items.map((item,index)=>({...item,media:{src:serviceVisuals[index].src,alt:serviceVisuals[index].alt},link:primaryAction}))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-rail" ? <RailServices eyebrow={servicesEyebrow} headline={servicesHeadline} items={items} /> : sections.services === "services-featured-offer" ? <FeaturedOfferServices eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} /> : <EditorialServiceIndex eyebrow={servicesEyebrow} headline={servicesHeadline} intro={servicesContent?.body ?? homeContent.purpose} items={items} />;
+  const aboutEyebrow = aboutContent?.eyebrow ?? "About";
+  const aboutHeadline = aboutContent?.headline ?? `Understand ${brand}.`;
+  const aboutBody = aboutContent?.body ?? homeContent.purpose;
+  const about = sections.about === "about-editorial-story" ? <EditorialStory eyebrow={aboutEyebrow} headline={aboutHeadline} body={aboutBody} visualLabel={entry.fixture.label} media={aboutMedia.length ? { src:aboutVisual.src, alt:aboutVisual.alt, focalPoint:aboutVisual.focalPoint } : undefined} /> : sections.about === "about-split-principles" ? <SplitPrinciplesAbout eyebrow={aboutEyebrow} headline={aboutHeadline} body={aboutBody} principles={principles} /> : sections.about === "about-statement-ledger" ? <StatementLedgerAbout eyebrow={aboutEyebrow} headline={aboutHeadline} body={aboutBody} principles={principles} /> : sections.about === "about-manifesto-columns" ? <ManifestoColumnsAbout eyebrow={aboutEyebrow} headline={aboutHeadline} body={aboutBody} principles={principles} /> : <TrustManifesto eyebrow={aboutEyebrow} headline={aboutHeadline} body={aboutBody} note="Unsupported business-specific proof remains excluded until verified." />;
+  const process = sections.process ? <EditorialProcessSteps eyebrow={processContent?.eyebrow ?? "Process"} headline={processContent?.headline ?? "A clear path from context to action."} intro={processContent?.body ?? "A useful decision sequence without invented operational claims."} steps={steps} /> : null;
+  const gallery = sections.gallery === "gallery-feature-mosaic" ? <FeatureMosaicGallery eyebrow={galleryContent?.eyebrow ?? "Visual story"} headline={galleryContent?.headline ?? "See the business context."} items={galleryItems} /> : sections.gallery === "gallery-asymmetric-editorial" ? <AsymmetricEditorialGallery eyebrow={galleryContent?.eyebrow ?? "Visual story"} headline={galleryContent?.headline ?? "See the business context."} items={galleryItems} /> : null;
+  const faq = sections.faq === "faq-editorial-index" ? <EditorialIndexFaq eyebrow={faqContent?.eyebrow ?? "Questions"} headline={faqContent?.headline ?? "Useful context before the next step."} intro={faqContent?.body ?? "Answers stay within verified facts and safe industry context."} items={faqItems} /> : sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow={faqContent?.eyebrow ?? "Questions"} headline={faqContent?.headline ?? "Useful context before the next step."} items={faqItems} /> : null;
+  const ctaProps = { eyebrow:ctaContent?.eyebrow ?? "Next step", headline:ctaContent?.headline ?? `Ready to ${primaryLabel.toLowerCase()}?`, body:ctaContent?.body ?? "Continue when you have enough context to decide what you need.", primaryCta:primaryAction, secondaryCta:secondaryAction };
+  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta {...ctaProps} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta {...ctaProps} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta {...ctaProps} /> : sections.cta === "cta-decision-panel" ? <DecisionPanelCta {...ctaProps} /> : <EditorialCtaBand {...ctaProps} />;
+  const contactProps = { eyebrow:contactContent?.eyebrow ?? "Contact", headline:contactContent?.headline ?? `Continue with ${brand}.`, body:contactContent?.body ?? primaryCapability.reason, status:`${primaryCapability.label} · ${primaryCapability.status.replace(/_/g," ")}`, submitLabel:primaryLabel, note:"No submission is sent from this benchmark route until a real backend is provisioned." };
   const contact = sections.contact === "contact-editorial-inquiry" ? <EditorialInquiryContact {...contactProps} /> : <LocalConversionContact {...contactProps} />;
-  const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={copy.offer} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note={[entry.fixture.label,location].filter(Boolean).join(" · ")} /> : <FunctionalLocalFooter brand={brand} description={copy.offer} location={location || entry.fixture.label} contactLabel={primaryLabel} contactHref={primaryAction.href} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal={[brand,location].filter(Boolean).join(" · ")} />;
+  const footerDescription = footerContent?.body ?? contentPlan.seo.description;
+  const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={footerDescription} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note={[entry.fixture.label,location].filter(Boolean).join(" · ")} /> : <FunctionalLocalFooter brand={brand} description={footerDescription} location={location || entry.fixture.label} contactLabel={primaryLabel} contactHref={primaryAction.href} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal={[brand,location].filter(Boolean).join(" · ")} />;
 
   const blocks: Record<string,ReactNode> = { navbar, hero, services:<div id="offer">{services}</div>, about:<div id="approach">{about}</div>, process, gallery, faq, cta, contact:<div id="contact">{contact}</div>, footer };
-  return <main style={style} data-benchmark-fixture={fixtureId} data-candidate-id={candidate.id} data-primary-capability={primaryCapability.id} data-primary-capability-status={primaryCapability.status} data-media-source={realMediaCount > 0 ? "provider" : "fallback"} data-media-provider-count={realMediaCount} data-hero-media-source={heroSupportsMedia ? (heroMedia.length ? "provider" : "fallback") : "not-applicable"} data-about-media-source={aboutSupportsMedia ? (aboutMedia.length ? "provider" : "fallback") : "not-applicable"}>{candidate.sectionOrder.map((type,index)=>{ const sectionType=type as ChoreographedSectionType; return <div key={`${type}-${index}`} style={getSectionColorStyle(candidate.theme,candidate.direction,sectionType) as CSSProperties} data-section-tone={sectionType}>{blocks[type]}</div>; })}</main>;
+  return <main style={style} data-benchmark-fixture={fixtureId} data-candidate-id={candidate.id} data-primary-capability={primaryCapability.id} data-primary-capability-status={primaryCapability.status} data-content-source="deterministic-safe" data-content-warning-count={contentPlan.warnings.length} data-content-section-count={homeContent.sections.length} data-media-source={realMediaCount > 0 ? "provider" : "fallback"} data-media-provider-count={realMediaCount} data-hero-media-source={heroSupportsMedia ? (heroMedia.length ? "provider" : "fallback") : "not-applicable"} data-about-media-source={aboutSupportsMedia ? (aboutMedia.length ? "provider" : "fallback") : "not-applicable"}>{candidate.sectionOrder.map((type,index)=>{ const sectionType=type as ChoreographedSectionType; return <div key={`${type}-${index}`} style={getSectionColorStyle(candidate.theme,candidate.direction,sectionType) as CSSProperties} data-section-tone={sectionType}>{blocks[type]}</div>; })}</main>;
 }

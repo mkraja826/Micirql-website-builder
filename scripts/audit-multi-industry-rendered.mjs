@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const BASE_URL = process.env.MICIRQL_BENCHMARK_URL ?? 'http://127.0.0.1:3000';
-const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data'];
+const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data','salon','gym','manufacturing','automotive-service','architecture-studio','ngo'];
 const candidateIds = Array.from({ length: 4 }, (_, index) => `candidate-${String(index + 1).padStart(2, '0')}`);
 const targets = [
   { name:'desktop', width:1440, height:1200 },
@@ -11,10 +11,10 @@ const targets = [
 const forbiddenText = ['Pearl Dental','patient-friendly','the clinic'];
 const forbiddenClaims = ['award-winning','5-star','guaranteed results','years of experience','decades of experience'];
 const expectedPrimaryCapabilities = {
-  'luxury-hotel': new Set(['booking_enquiry','contact']), restaurant:new Set(['reservation','contact']), saas:new Set(['demo_request','lead_capture','contact']), construction:new Set(['lead_capture','contact']), 'law-firm':new Set(['lead_capture','contact']), 'real-estate':new Set(['property_enquiry','lead_capture','contact']), school:new Set(['admission_enquiry','lead_capture','contact']), recruitment:new Set(['job_application','employer_enquiry','contact']), 'ai-data':new Set(['demo_request','lead_capture','contact']),
+  'luxury-hotel':new Set(['booking_enquiry','contact']), restaurant:new Set(['reservation','contact']), saas:new Set(['demo_request','lead_capture','contact']), construction:new Set(['lead_capture','contact']), 'law-firm':new Set(['lead_capture','contact']), 'real-estate':new Set(['property_enquiry','lead_capture','contact']), school:new Set(['admission_enquiry','lead_capture','contact']), recruitment:new Set(['job_application','employer_enquiry','contact']), 'ai-data':new Set(['demo_request','lead_capture','contact']), salon:new Set(['appointment','contact']), gym:new Set(['lead_capture','contact']), manufacturing:new Set(['lead_capture','contact']), 'automotive-service':new Set(['appointment','contact']), 'architecture-studio':new Set(['lead_capture','contact']), ngo:new Set(['lead_capture','contact']),
 };
 const expectedMedia = {
-  'luxury-hotel':{industry:'hospitality',hero:'property'}, restaurant:{industry:'food-beverage',hero:'food'}, saas:{industry:'technology',hero:'product ui'}, construction:{industry:'construction',hero:'projects'}, 'law-firm':{industry:'professional-services',hero:'professional context'}, 'real-estate':{industry:'real-estate',hero:'properties'}, school:{industry:'education',hero:'students'}, recruitment:{industry:'recruitment-hr',hero:'people'}, 'ai-data':{industry:'ai-data',hero:'product ui'},
+  'luxury-hotel':{industry:'hospitality',hero:'property'}, restaurant:{industry:'food-beverage',hero:'food'}, saas:{industry:'technology',hero:'product ui'}, construction:{industry:'construction',hero:'projects'}, 'law-firm':{industry:'professional-services',hero:'professional context'}, 'real-estate':{industry:'real-estate',hero:'properties'}, school:{industry:'education',hero:'students'}, recruitment:{industry:'recruitment-hr',hero:'people'}, 'ai-data':{industry:'ai-data',hero:'product ui'}, salon:{industry:'beauty-wellness',hero:'salon interior'}, gym:{industry:'fitness',hero:'training'}, manufacturing:{industry:'manufacturing',hero:'factory'}, 'automotive-service':{industry:'automotive-services',hero:'vehicle service'}, 'architecture-studio':{industry:'architecture-design',hero:'architecture'}, ngo:{industry:'nonprofit',hero:'people'},
 };
 fs.mkdirSync('artifacts/multi-industry-render-audit',{recursive:true});
 

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { createPearlDentalBrief, generatePearlDentalCandidates } from "../../../../../src/benchmarks/pearl";
 import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/benchmarks/pearl-media";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
-import { capability, planCapabilities } from "../../../../../src/core/capabilities/planner";
+import { capability, planCapabilitiesFromBrief } from "../../../../../src/core/capabilities/planner";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
@@ -69,12 +69,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const brand = "Pearl Dental";
   const brief = createPearlDentalBrief();
   const narrative = createArtDirectedNarrative(candidate.direction);
-  const capabilityPlan = planCapabilities({
-    direction: candidate.direction,
-    requestedCapabilities: brief.website.capabilities.value,
-    primaryGoal: brief.positioning.primaryGoal.value,
-    knownFacts: brief.truth.knownFacts,
-  });
+  const capabilityPlan = planCapabilitiesFromBrief(brief, candidate.direction);
   const primaryCapability = capability(capabilityPlan, capabilityPlan.primary)!;
   const contactCapability = capability(capabilityPlan, "contact")!;
 

@@ -38,6 +38,11 @@ function score(metrics, target, fixture) {
   if (!metrics.primaryCapability) { value -= 30; failures.push('missing canonical primary capability metadata'); }
   else if (!expectedPrimaryCapabilities[fixture]?.has(metrics.primaryCapability)) { value -= 30; failures.push(`unexpected primary capability ${metrics.primaryCapability}`); }
   if (metrics.primaryCapabilityStatus !== 'preview') { value -= 30; failures.push(`expected unconfigured primary workflow to remain preview, found ${metrics.primaryCapabilityStatus || 'missing'}`); }
+  if (!['provider','fallback'].includes(metrics.mediaSource)) { value -= 30; failures.push(`unexpected media source state ${metrics.mediaSource || 'missing'}`); }
+  if (metrics.providerMediaCount < 0) { value -= 30; failures.push(`invalid provider media count ${metrics.providerMediaCount}`); }
+  if (metrics.mediaSource === 'provider' && metrics.providerMediaCount === 0) { value -= 30; failures.push('media source reports provider with zero resolved provider assets'); }
+  if (metrics.mediaSource === 'fallback' && metrics.providerMediaCount > 0) { value -= 30; failures.push(`media source reports fallback with ${metrics.providerMediaCount} provider asset(s)`); }
+  if (metrics.mediaSource === 'fallback') cautions.push('neutral media fallback used');
   if (metrics.elementsOutsideViewport > 0) { value -= Math.min(15, metrics.elementsOutsideViewport * 3); cautions.push(`${metrics.elementsOutsideViewport} visible element(s) outside viewport`); }
   if (target.name === 'mobile' && metrics.smallTapTargetCount > 0) { value -= Math.min(12, metrics.smallTapTargetCount * 2); cautions.push(`${metrics.smallTapTargetCount} small tap target(s)`); }
   if (metrics.tinyTextCount > 0) { value -= Math.min(8, metrics.tinyTextCount * 2); cautions.push(`${metrics.tinyTextCount} tiny text element(s)`); }
@@ -118,6 +123,8 @@ for (const fixture of fixtures) {
           renderedFixture:main?.getAttribute('data-benchmark-fixture') ?? '',
           primaryCapability:main?.getAttribute('data-primary-capability') ?? '',
           primaryCapabilityStatus:main?.getAttribute('data-primary-capability-status') ?? '',
+          mediaSource:main?.getAttribute('data-media-source') ?? '',
+          providerMediaCount:Number(main?.getAttribute('data-provider-media-count') ?? -1),
         };
       }, forbiddenText);
       if (status < 200 || status >= 400) metrics.forbiddenMatches.push(`HTTP ${status}`);
@@ -134,9 +141,13 @@ for (const fixture of fixtures) {
 
 await browser.close();
 const all = report.fixtures.flatMap((fixture)=>fixture.candidates.map((candidate)=>({ fixture:fixture.fixture, ...candidate })));
+const providerPages = all.filter((item)=>item.targets.desktop.mediaSource === 'provider').length;
+const fallbackPages = all.filter((item)=>item.targets.desktop.mediaSource === 'fallback').length;
 report.summary = {
   pageCount:all.length,
   mediaPlanCount:all.length,
+  providerPages,
+  fallbackPages,
   minScore:Math.min(...all.map((item)=>item.renderedScore)),
   maxScore:Math.max(...all.map((item)=>item.renderedScore)),
   averageScore:Math.round(all.reduce((sum,item)=>sum+item.renderedScore,0)/all.length),

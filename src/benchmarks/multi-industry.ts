@@ -88,5 +88,8 @@ export function generateMultiIndustryBenchmarkFixture(fixtureId: string, count =
 }
 
 export function generateMultiIndustryBenchmarkMatrix(countPerFixture = 4) {
-  return MULTI_INDUSTRY_BENCHMARKS.map((fixture) => generateMultiIndustryBenchmarkFixture(fixture.id, countPerFixture)).filter(Boolean);
+  return MULTI_INDUSTRY_BENCHMARKS.flatMap((fixture) => {
+    const entry = generateMultiIndustryBenchmarkFixture(fixture.id, countPerFixture);
+    return entry ? [entry] : [];
+  });
 }

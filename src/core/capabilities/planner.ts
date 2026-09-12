@@ -1,7 +1,7 @@
 import type { ArtDirection } from "../art-direction/schema";
 
 export type CapabilityStatus = "available" | "preview" | "needs_configuration";
-export type CapabilityId = "appointment" | "contact" | "click_to_call" | "location";
+export type CapabilityId = string;
 
 export type PlannedCapability = {
   id: CapabilityId;
@@ -16,7 +16,15 @@ export type CandidateCapabilityPlan = {
   capabilities: PlannedCapability[];
 };
 
-const APPOINTMENT_LED = new Set([
+export type CapabilityPlanningInput = {
+  direction: ArtDirection;
+  requestedCapabilities: string[];
+  primaryGoal?: string;
+  knownFacts?: Record<string, unknown>;
+  labels?: Partial<Record<string, string>>;
+};
+
+const ACTION_LED_STYLES = new Set([
   "conversion-focused",
   "direct-modern",
   "precision-grid",
@@ -24,42 +32,59 @@ const APPOINTMENT_LED = new Set([
   "warm-modern",
 ]);
 
-export function planDentalCapabilities(direction: ArtDirection): CandidateCapabilityPlan {
-  const appointmentLed = APPOINTMENT_LED.has(direction.visualStyle);
+const DEFAULT_LABELS: Record<string, string> = {
+  appointment: "Request an appointment",
+  contact: "Send enquiry",
+  click_to_call: "Call",
+  location: "View location",
+  booking_enquiry: "Check availability",
+  reservation: "Request a reservation",
+  menu: "View menu",
+  lead_capture: "Send enquiry",
+  property_enquiry: "Enquire about a property",
+  demo_request: "Request a demo",
+  admission_enquiry: "Admissions enquiry",
+  job_application: "Apply",
+  employer_enquiry: "Hire talent",
+};
 
-  const capabilities: PlannedCapability[] = [
-    {
-      id: "appointment",
-      status: "available",
-      label: appointmentLed ? "Request an appointment" : "Discuss a visit",
-      href: "#contact",
-      reason: "Appointment intent can be collected through the contact experience without claiming a live booking system.",
-    },
-    {
-      id: "contact",
-      status: "preview",
-      label: appointmentLed ? "Send appointment request" : "Send enquiry",
-      href: "#contact",
-      reason: "The preview form is rendered but no submission backend is activated yet.",
-    },
-    {
-      id: "location",
-      status: "needs_configuration",
-      label: "Open clinic location",
-      reason: "Hyderabad is known, but an exact verified address or map target has not been supplied.",
-    },
-    {
-      id: "click_to_call",
-      status: "needs_configuration",
-      label: "Call the clinic",
-      reason: "A verified clinic phone number has not been supplied.",
-    },
-  ];
+const PASSIVE_CAPABILITIES = new Set(["location", "menu"]);
+const CONFIGURATION_CAPABILITIES = new Set(["click_to_call", "location"]);
 
-  return {
-    primary: appointmentLed ? "appointment" : "contact",
-    capabilities,
-  };
+function capabilityLabel(id: string, labels?: Partial<Record<string, string>>) {
+  return labels?.[id] ?? DEFAULT_LABELS[id] ?? id.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function choosePrimary(requested: string[], direction: ArtDirection) {
+  if (!requested.length) return "contact";
+  const actionable = requested.filter((id) => !PASSIVE_CAPABILITIES.has(id));
+  if (!actionable.length) return requested[0];
+  if (ACTION_LED_STYLES.has(direction.visualStyle)) return actionable[0];
+  return actionable.includes("contact") ? "contact" : actionable[0];
+}
+
+export function planCapabilities(input: CapabilityPlanningInput): CandidateCapabilityPlan {
+  const requested = [...new Set(input.requestedCapabilities.filter(Boolean))];
+  if (!requested.includes("contact")) requested.push("contact");
+  const primary = choosePrimary(requested, input.direction);
+
+  const capabilities = requested.map<PlannedCapability>((id) => {
+    const missingConfiguration = CONFIGURATION_CAPABILITIES.has(id);
+    const isContact = id === "contact";
+    return {
+      id,
+      status: missingConfiguration ? "needs_configuration" : isContact ? "preview" : "available",
+      label: capabilityLabel(id, input.labels),
+      href: missingConfiguration ? undefined : "#contact",
+      reason: missingConfiguration
+        ? `${capabilityLabel(id, input.labels)} requires verified business data before activation.`
+        : isContact
+          ? "The enquiry experience is rendered in preview mode until a submission backend is configured."
+          : `The ${id.replace(/_/g, " ")} intent can be represented without claiming an activated external system.`,
+    };
+  });
+
+  return { primary, capabilities };
 }
 
 export function capability(plan: CandidateCapabilityPlan, id: CapabilityId) {

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import { generateMultiIndustryBenchmarkMatrix } from "../../../../../src/benchmarks/multi-industry";
-import { capability, planCapabilitiesFromBrief } from "../../../../../src/core/capabilities/planner";
+import { planCapabilitiesFromBrief } from "../../../../../src/core/capabilities/planner";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
@@ -36,6 +36,9 @@ import { EditorialInquiryContact } from "../../../../../src/sections/contact/edi
 import { FunctionalLocalFooter } from "../../../../../src/sections/footer/functional-local";
 import { EditorialMinimalFooter } from "../../../../../src/sections/footer/editorial-minimal";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const COPY = {
   "luxury-hotel": { offer:"A considered stay shaped around place, comfort and a clear booking path.", services:["Rooms and stays","Guest experience","Destination context"], principles:["Lead with the stay","Keep details verifiable","Make booking simple"], faq:["What can I explore before booking?","How should availability be confirmed?","Where do verified stay details come from?"] },
   restaurant: { offer:"A dining experience introduced through atmosphere, menu context and an easy next step.", services:["Dining experience","Menu highlights","Visit planning"], principles:["Make the offer clear","Let atmosphere support the story","Keep reservations straightforward"], faq:["What can I see before visiting?","How should menu details be confirmed?","How do I plan a visit?"] },
@@ -65,11 +68,11 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const brand = titleFromBrief(entry.fixture.brief);
   const location = placeFromBrief(entry.fixture.brief);
   const capabilityPlan = planCapabilitiesFromBrief(entry.brief, candidate.direction);
-  const primaryCapability = capability(capabilityPlan, capabilityPlan.primary)!;
-  const secondaryCapability = capabilityPlan.capabilities.find((item) => item.id !== capabilityPlan.primary && item.status !== "needs_configuration");
+  const primaryCapability = capabilityPlan.capabilities.find((item) => item.id === capabilityPlan.primary) ?? capabilityPlan.capabilities[0];
+  if (!primaryCapability) notFound();
   const primaryLabel = primaryCapability.label;
   const primaryAction = { label: primaryLabel, href: primaryCapability.href ?? "#contact" };
-  const secondaryAction = secondaryCapability ? { label: secondaryCapability.label, href: secondaryCapability.href ?? "#offer" } : { label: "Learn more", href: "#offer" };
+  const secondaryAction = { label: entry.fixture.conversionActions[1] ?? "Learn more", href: "#offer" };
   const items = copy.services.map((title) => ({ title, body: `Explore ${title.toLowerCase()} with concise, verifiable information appropriate to this ${entry.fixture.label.toLowerCase()} benchmark.` }));
   const principles = copy.principles.map((title) => ({ title, body: "This benchmark keeps the structure useful while avoiding invented business claims, people, prices, ratings or outcomes." }));
   const steps = [
@@ -89,8 +92,8 @@ export default async function MultiIndustryCandidatePage({ params }: { params: P
   const process = sections.process ? <EditorialProcessSteps eyebrow="Process" headline="A clear path from context to action." intro="The sequence stays understandable across industries." steps={steps} /> : null;
   const gallery = sections.gallery === "gallery-feature-mosaic" ? <FeatureMosaicGallery eyebrow="Visual story" headline="A visual structure appropriate to the business context." items={galleryItems} /> : sections.gallery === "gallery-asymmetric-editorial" ? <AsymmetricEditorialGallery eyebrow="Visual story" headline="A visual structure appropriate to the business context." items={galleryItems} /> : null;
   const faq = sections.faq === "faq-editorial-index" ? <EditorialIndexFaq eyebrow="Questions" headline="Useful context before the next step." intro="Answers stay grounded in what the benchmark actually knows." items={faqItems} /> : sections.faq === "faq-calm-disclosure" ? <CalmDisclosureFaq eyebrow="Questions" headline="Useful context before the next step." items={faqItems} /> : null;
-  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body={primaryCapability.reason} primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body={primaryCapability.reason} primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body={primaryCapability.reason} primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-decision-panel" ? <DecisionPanelCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body={primaryCapability.reason} primaryCta={primaryAction} secondaryCta={secondaryAction} /> : <EditorialCtaBand eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body={primaryCapability.reason} primaryCta={primaryAction} secondaryCta={secondaryAction} />;
-  const contactProps = { eyebrow:"Contact", headline:`Continue with ${brand}.`, body:primaryCapability.reason, status:`${primaryCapability.label} · ${primaryCapability.status}`, submitLabel:primaryLabel, note:"No submission is sent unless the underlying workflow is activated and verified." };
+  const cta = sections.cta === "cta-human-split" ? <HumanSplitCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-stacked-statement" ? <StackedStatementCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-inverted-marquee" ? <InvertedMarqueeCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : sections.cta === "cta-decision-panel" ? <DecisionPanelCta eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} /> : <EditorialCtaBand eyebrow="Next step" headline={`Ready to ${primaryLabel.toLowerCase()}?`} body="Continue when you need verified business-specific information." primaryCta={primaryAction} secondaryCta={secondaryAction} />;
+  const contactProps = { eyebrow:"Contact", headline:`Continue with ${brand}.`, body:primaryCapability.reason, status:`${primaryCapability.label} · ${primaryCapability.status.replace(/_/g," ")}`, submitLabel:primaryLabel, note:"No submission is sent from this benchmark route until a real backend is provisioned." };
   const contact = sections.contact === "contact-editorial-inquiry" ? <EditorialInquiryContact {...contactProps} /> : <LocalConversionContact {...contactProps} />;
   const footer = sections.footer === "footer-editorial-minimal" ? <EditorialMinimalFooter brand={brand} statement={copy.offer} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} note={[entry.fixture.label,location].filter(Boolean).join(" · ")} /> : <FunctionalLocalFooter brand={brand} description={copy.offer} location={location || entry.fixture.label} contactLabel={primaryLabel} contactHref={primaryAction.href} links={[{label:"Offer",href:"#offer"},{label:"Approach",href:"#approach"},{label:"Contact",href:"#contact"}]} legal={[brand,location].filter(Boolean).join(" · ")} />;
 

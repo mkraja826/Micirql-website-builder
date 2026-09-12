@@ -25,6 +25,8 @@ jobs:
         run: npm install
       - name: Enforce generic core section boundaries
         run: node scripts/check-core-section-coupling.mjs
+      - name: Enforce generic core specialization boundary
+        run: node scripts/check-core-specialization-boundary.mjs
       - name: Build Next benchmark
         run: npm run build
       - name: Build Cloudflare target

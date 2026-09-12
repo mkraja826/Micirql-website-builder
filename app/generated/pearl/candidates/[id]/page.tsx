@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
-import { generatePearlDentalCandidates } from "../../../../../src/benchmarks/pearl";
+import { createPearlDentalBrief, generatePearlDentalCandidates } from "../../../../../src/benchmarks/pearl";
+import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/benchmarks/pearl-media";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
-import { capability, planDentalCapabilities } from "../../../../../src/core/capabilities/planner";
+import { capability, planCapabilities } from "../../../../../src/core/capabilities/planner";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
-import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/core/media/pearl";
 import { ConversionCleanNavbar } from "../../../../../src/sections/navbar/conversion-clean";
 import { QuietLuxuryNavbar } from "../../../../../src/sections/navbar/quiet-luxury";
 import { EditorialSplitHero } from "../../../../../src/sections/hero/editorial-split";
@@ -67,8 +67,14 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   const style = candidate.cssVariables as CSSProperties;
   const sections = candidate.selectedSections;
   const brand = "Pearl Dental";
+  const brief = createPearlDentalBrief();
   const narrative = createArtDirectedNarrative(candidate.direction);
-  const capabilityPlan = planDentalCapabilities(candidate.direction);
+  const capabilityPlan = planCapabilities({
+    direction: candidate.direction,
+    requestedCapabilities: brief.website.capabilities.value,
+    primaryGoal: brief.positioning.primaryGoal.value,
+    knownFacts: brief.truth.knownFacts,
+  });
   const primaryCapability = capability(capabilityPlan, capabilityPlan.primary)!;
   const contactCapability = capability(capabilityPlan, "contact")!;
 

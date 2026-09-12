@@ -2,11 +2,28 @@ import type { InterpretedBrief } from "../brief/schema";
 import type { IndustryKnowledge } from "../industry/knowledge";
 import type { ArtDirection } from "../art-direction/schema";
 import type { AiJsonProvider } from "../../providers/ai/schema";
-import type { ContentPlan, ModelContentPlan } from "./schema";
+import type { ContentPlan, ModelContentPlan, SectionContent } from "./schema";
 import { validateContentTruth } from "./safety";
 
 function businessLabel(brief: InterpretedBrief) {
   return brief.business.name?.value ?? "This business";
+}
+
+function titleCase(value: string) {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function sentenceCase(value: string) {
+  const clean = value.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  return clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : clean;
+}
+
+function actionLabel(knowledge: IndustryKnowledge) {
+  return knowledge.conversionActions.find(Boolean) ?? "get in touch";
 }
 
 function fallbackVoice(direction?: ArtDirection) {
@@ -29,48 +46,151 @@ function fallbackVoice(direction?: ArtDirection) {
   return voices[direction.visualStyle] ?? { hero: "with clear editorial structure", cta: "Take the next step with clarity", tone: "clear, premium and grounded" };
 }
 
-function safeFallback(brief: InterpretedBrief, knowledge: IndustryKnowledge, artDirection?: ArtDirection): ContentPlan {
+function sectionFallback(input: {
+  sectionType: string;
+  brief: InterpretedBrief;
+  knowledge: IndustryKnowledge;
+  artDirection?: ArtDirection;
+}): SectionContent {
+  const { sectionType, brief, knowledge, artDirection } = input;
   const name = businessLabel(brief);
   const industryName = knowledge.subIndustry?.name ?? knowledge.industry.name;
   const voice = fallbackVoice(artDirection);
+  const primaryAction = actionLabel(knowledge);
+  const priority = knowledge.contentPriorities[0] ?? "the business offer";
+  const secondaryPriority = knowledge.contentPriorities[1] ?? "the decision context";
+  const tertiaryPriority = knowledge.contentPriorities[2] ?? "the next step";
+
+  const base: SectionContent = {
+    sectionType,
+    headline: titleCase(sectionType),
+    claims: [],
+  };
+
+  switch (sectionType) {
+    case "navbar":
+      return { ...base, headline: name };
+    case "hero":
+      return {
+        ...base,
+        eyebrow: sentenceCase(industryName),
+        headline: `${name}, ${voice.hero}.`,
+        body: `A ${voice.tone} introduction focused on ${priority}, ${secondaryPriority} and ${tertiaryPriority}, without making unverified business claims.`,
+        primaryCta: { label: titleCase(primaryAction), action: primaryAction },
+        secondaryCta: { label: "Explore the offer", action: "explore" },
+        imageIntent: knowledge.imageryGuidance[0],
+      };
+    case "services":
+      return {
+        ...base,
+        eyebrow: "Offer",
+        headline: `Understand ${priority} clearly.`,
+        body: `Present the most relevant ${industryName.toLowerCase()} options in a way that supports comparison without inventing prices, outcomes or credentials.`,
+        items: knowledge.contentPriorities.slice(0, 3).map((item) => ({
+          title: titleCase(item),
+          body: `Explain ${item.toLowerCase()} using only verified business facts and safe industry context.`,
+        })),
+      };
+    case "about":
+      return {
+        ...base,
+        eyebrow: "About",
+        headline: `Context that helps visitors understand ${name}.`,
+        body: `Use grounded information about the business, its offer and its approach. Unknown team, credential, history and proof details remain omitted until verified.`,
+      };
+    case "process":
+      return {
+        ...base,
+        eyebrow: "Process",
+        headline: "A clearer path from interest to action.",
+        body: `Help visitors understand the decision sequence before they ${primaryAction.toLowerCase()}, without implying an unverified operational process.`,
+      };
+    case "gallery":
+      return {
+        ...base,
+        eyebrow: "Visual story",
+        headline: `See the context around ${priority}.`,
+        body: `Use relevant, non-fabricated imagery to support the visitor's understanding of ${industryName.toLowerCase()}.`,
+        imageIntent: knowledge.imageryGuidance[0],
+      };
+    case "faq":
+      return {
+        ...base,
+        eyebrow: "Questions",
+        headline: "Useful context before the next step.",
+        body: "Answer only what can be supported by the brief or safe industry context; leave business-specific unknowns for verification.",
+      };
+    case "cta":
+      return {
+        ...base,
+        eyebrow: "Next step",
+        headline: `${voice.cta}.`,
+        body: `Continue with a relevant action once the visitor has enough context to decide what they need.`,
+        primaryCta: { label: titleCase(primaryAction), action: primaryAction },
+        secondaryCta: { label: "Review the offer", action: "explore" },
+      };
+    case "contact":
+      return {
+        ...base,
+        eyebrow: "Contact",
+        headline: `Continue with ${name}.`,
+        body: `Start with a simple enquiry. Verified contact details and submission infrastructure should be connected before publication.`,
+        primaryCta: { label: titleCase(primaryAction), action: primaryAction },
+      };
+    case "footer":
+      return {
+        ...base,
+        headline: `${name} · ${sentenceCase(industryName)}`,
+        body: `Clear information and a grounded route to ${primaryAction.toLowerCase()}.`,
+      };
+    default:
+      return {
+        ...base,
+        body: `Present ${sentenceCase(sectionType).toLowerCase()} using verified business facts and safe ${industryName.toLowerCase()} context.`,
+      };
+  }
+}
+
+function safeFallback(brief: InterpretedBrief, knowledge: IndustryKnowledge, artDirection?: ArtDirection): ContentPlan {
+  const name = businessLabel(brief);
+  const industryName = knowledge.subIndustry?.name ?? knowledge.industry.name;
   const pages = brief.website.recommendedPages.value.length
     ? brief.website.recommendedPages.value
     : knowledge.recommendedPages;
   const sectionTypes = brief.website.requiredSectionTypes.value.length
     ? brief.website.requiredSectionTypes.value
     : knowledge.requiredSectionTypes;
+  const primaryAction = actionLabel(knowledge);
 
   return {
     version: "1.0",
     pages: pages.map((slug) => ({
       slug,
-      title: slug === "home" ? name : `${slug.replace(/-/g, " ")} · ${name}`,
+      title: slug === "home" ? name : `${titleCase(slug)} · ${name}`,
       purpose: knowledge.contentPriorities[0] ?? `Explain ${industryName} clearly and help visitors take the next step.`,
-      sections: sectionTypes.map((sectionType) => ({
-        sectionType,
-        headline:
-          sectionType === "hero"
-            ? `${name}, ${voice.hero}.`
-            : sectionType === "cta"
-              ? `${voice.cta}.`
-              : sectionType === "contact"
-                ? "Start a conversation."
-                : sectionType.replace(/-/g, " "),
-        body:
-          sectionType === "hero"
-            ? `A ${voice.tone} introduction shaped for ${industryName.toLowerCase()} visitors without making unverified business claims.`
-            : undefined,
-        primaryCta: sectionType === "hero" || sectionType === "cta"
-          ? { label: "Get in touch", action: "contact" }
-          : undefined,
-        imageIntent: sectionType === "hero" ? knowledge.imageryGuidance[0] : undefined,
-        claims: [],
-      })),
+      sections: sectionTypes.map((sectionType) => sectionFallback({ sectionType, brief, knowledge, artDirection })),
     })),
     seo: {
       title: brief.business.location?.value ? `${name} · ${brief.business.location.value}` : name,
-      description: `Learn about ${name} and explore relevant ${industryName.toLowerCase()} information and ways to get in touch.`,
+      description: `Learn about ${name}, understand relevant ${industryName.toLowerCase()} information and ${primaryAction.toLowerCase()} when you are ready.`,
     },
+    faq: [
+      {
+        question: `What should I understand before I ${primaryAction.toLowerCase()}?`,
+        answer: `Review the offer, the relevant decision context and any verified business-specific information before taking the next step.`,
+        claims: [],
+      },
+      {
+        question: "Which details should be verified before publication?",
+        answer: `Business-specific facts such as team details, credentials, prices, testimonials, contact information and outcomes should be supplied and verified before they appear on the site.`,
+        claims: [],
+      },
+      {
+        question: `How should ${industryName.toLowerCase()} information be presented?`,
+        answer: `Use clear industry context to explain categories and decisions, but do not present general industry knowledge as a fact about this specific business.`,
+        claims: [],
+      },
+    ],
     imageIntents: knowledge.imageryGuidance,
     warnings: [
       "Deterministic safe fallback used; business-specific claims were intentionally omitted.",

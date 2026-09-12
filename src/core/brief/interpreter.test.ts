@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { interpretMinimalBrief } from "./interpreter";
 
 const cases = [
-  ["Pearl Dental Hyderabad", "dental", "general-dentistry", "clinic"],
+  ["Harbor Dental Hyderabad", "dental", "general-dentistry", "clinic"],
   ["Luxury resort Goa", "hospitality", "luxury-hotel", "hotel"],
   ["Raja Constructions", "construction", "general-contractor", "contractor"],
   ["Italian restaurant Hyderabad", "food-beverage", "casual-dining", "restaurant"],
@@ -20,7 +20,7 @@ describe("interpretMinimalBrief", () => {
   });
 
   it("does not invent verified business facts", () => {
-    const result = interpretMinimalBrief("Pearl Dental Hyderabad");
+    const result = interpretMinimalBrief("Harbor Dental Hyderabad");
     expect(result.truth.knownFacts).toEqual({ location: "Hyderabad" });
     expect(result.truth.unknownFacts).toContain("team");
     expect(result.truth.unknownFacts).toContain("pricing");

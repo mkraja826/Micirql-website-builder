@@ -27,6 +27,7 @@ function score(metrics, target, fixture) {
   if (metrics.h1Count !== 1) { value -= 15; failures.push(`expected exactly one h1, found ${metrics.h1Count}`); }
   if (metrics.sectionCount < 5) { value -= 20; failures.push(`only ${metrics.sectionCount} major sections detected`); }
   if (metrics.forbiddenMatches.length) { value -= 30; failures.push(`cross-industry leakage: ${metrics.forbiddenMatches.join(', ')}`); }
+  if (metrics.renderedFixture !== fixture) { value -= 40; failures.push(`cross-fixture render contamination: expected ${fixture}, found ${metrics.renderedFixture || 'missing'}`); }
   if (!metrics.primaryCapability) { value -= 30; failures.push('missing canonical primary capability metadata'); }
   else if (!expectedPrimaryCapabilities[fixture]?.has(metrics.primaryCapability)) { value -= 30; failures.push(`unexpected primary capability ${metrics.primaryCapability}`); }
   if (metrics.primaryCapabilityStatus !== 'preview') { value -= 30; failures.push(`expected unconfigured primary workflow to remain preview, found ${metrics.primaryCapabilityStatus || 'missing'}`); }
@@ -67,6 +68,7 @@ for (const fixture of fixtures) {
           h1Count:document.querySelectorAll('h1').length,
           sectionCount:document.querySelectorAll('main section').length,
           forbiddenMatches:forbidden.filter((term)=>bodyText.toLowerCase().includes(term.toLowerCase())),
+          renderedFixture:main?.getAttribute('data-benchmark-fixture') ?? '',
           primaryCapability:main?.getAttribute('data-primary-capability') ?? '',
           primaryCapabilityStatus:main?.getAttribute('data-primary-capability-status') ?? '',
         };

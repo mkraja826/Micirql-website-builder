@@ -124,7 +124,7 @@ for (const fixture of fixtures) {
           primaryCapability:main?.getAttribute('data-primary-capability') ?? '',
           primaryCapabilityStatus:main?.getAttribute('data-primary-capability-status') ?? '',
           mediaSource:main?.getAttribute('data-media-source') ?? '',
-          providerMediaCount:Number(main?.getAttribute('data-provider-media-count') ?? -1),
+          providerMediaCount:Number(main?.getAttribute('data-media-provider-count') ?? -1),
         };
       }, forbiddenText);
       if (status < 200 || status >= 400) metrics.forbiddenMatches.push(`HTTP ${status}`);

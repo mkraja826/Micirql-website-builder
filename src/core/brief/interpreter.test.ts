@@ -7,6 +7,7 @@ const cases = [
   ["Raja Constructions", "construction", "general-contractor", "contractor"],
   ["Italian restaurant Hyderabad", "food-beverage", "casual-dining", "restaurant"],
   ["AI startup", "ai-data", "ai-products", "startup"],
+  ["Northfield Legal law firm, Mumbai", "professional-services", "law-firm", "law-firm"],
 ] as const;
 
 describe("interpretMinimalBrief", () => {
@@ -17,6 +18,13 @@ describe("interpretMinimalBrief", () => {
     expect(result.business.businessType?.value).toBe(businessType);
     expect(result.website.requiredSectionTypes.value).toContain("hero");
     expect(result.truth.prohibitedClaims.length).toBeGreaterThan(0);
+  });
+
+  it("does not match short industry tokens inside unrelated words", () => {
+    const result = interpretMinimalBrief("Northfield Legal law firm, Mumbai");
+    expect(result.business.industry.value).toBe("professional-services");
+    expect(result.website.capabilities.value).toEqual(["lead_capture", "contact"]);
+    expect(result.website.capabilities.value).not.toContain("demo_request");
   });
 
   it("does not invent verified business facts", () => {

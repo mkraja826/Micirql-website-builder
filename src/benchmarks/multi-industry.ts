@@ -77,11 +77,15 @@ function knowledgeForFixture(fixture: MultiIndustryBenchmarkFixture): IndustryKn
   };
 }
 
+export function generateMultiIndustryBenchmarkFixture(fixtureId: string, count = 4) {
+  const fixture = MULTI_INDUSTRY_BENCHMARKS.find((item) => item.id === fixtureId);
+  if (!fixture) return undefined;
+  const brief = interpretMinimalBrief(fixture.brief);
+  const knowledge = knowledgeForFixture(fixture);
+  const candidates = generateCandidatePlans({ brief, knowledge, count });
+  return { fixture, brief, knowledge, candidates };
+}
+
 export function generateMultiIndustryBenchmarkMatrix(countPerFixture = 4) {
-  return MULTI_INDUSTRY_BENCHMARKS.map((fixture) => {
-    const brief = interpretMinimalBrief(fixture.brief);
-    const knowledge = knowledgeForFixture(fixture);
-    const candidates = generateCandidatePlans({ brief, knowledge, count: countPerFixture });
-    return { fixture, brief, knowledge, candidates };
-  });
+  return MULTI_INDUSTRY_BENCHMARKS.map((fixture) => generateMultiIndustryBenchmarkFixture(fixture.id, countPerFixture)).filter(Boolean);
 }

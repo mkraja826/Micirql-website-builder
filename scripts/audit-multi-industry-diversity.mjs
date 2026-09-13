@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const BASE_URL = process.env.MICIRQL_BENCHMARK_URL ?? 'http://127.0.0.1:3000';
-const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data','salon','gym','manufacturing','automotive-service','architecture-studio','ngo'];
+const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data','salon','gym','manufacturing','automotive-service','architecture-studio','ngo','ecommerce','consultancy','travel-agency','home-services','events'];
 const candidateIds = Array.from({ length:4 }, (_,index)=>`candidate-${String(index+1).padStart(2,'0')}`);
 const majorTypes = new Set(['hero','services','about','cta']);
 fs.mkdirSync('artifacts/multi-industry-diversity-audit',{recursive:true});

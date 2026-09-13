@@ -1,0 +1,10 @@
+{
+  "candidate-04": { "perceptualScore": 90, "desktopScore": 94, "mobileScore": 86, "desktopCautionCount": 1, "mobileCautionCount": 2 },
+  "candidate-07": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-08": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-10": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-11": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-13": { "perceptualScore": 84, "desktopScore": 84, "mobileScore": 84, "desktopCautionCount": 2, "mobileCautionCount": 2 },
+  "candidate-15": { "perceptualScore": 80, "desktopScore": 76, "mobileScore": 84, "desktopCautionCount": 3, "mobileCautionCount": 2 },
+  "candidate-17": { "perceptualScore": 96, "desktopScore": 100, "mobileScore": 92, "desktopCautionCount": 0, "mobileCautionCount": 1 }
+}

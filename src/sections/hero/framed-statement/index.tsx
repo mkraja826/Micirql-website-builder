@@ -12,7 +12,7 @@ export function FramedStatementHero({ eyebrow, headline, body, primaryCta, secon
           <p style={{ margin: 0, maxWidth: 620, color: "var(--theme-text-muted)", fontSize: 18, lineHeight: 1.7 }}>{body}</p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "flex-start" }}><a href={primaryCta.href} style={{ padding: "14px 18px", background: "var(--theme-accent)", color: "var(--theme-accent-contrast)", textDecoration: "none" }}>{primaryCta.label}</a>{secondaryCta ? <a href={secondaryCta.href} style={{ padding: "14px 18px", border: "1px solid var(--theme-border)", color: "var(--theme-text)", textDecoration: "none" }}>{secondaryCta.label}</a> : null}</div>
         </div>
-        {media ? <div style={{ aspectRatio: "16 / 7", minHeight: 220, overflow: "hidden", border: "1px solid var(--theme-border)" }}><img src={media.src} alt={media.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition, display: "block" }} /></div> : null}
+        {media ? <div style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", aspectRatio: "16 / 7", minHeight: 220, overflow: "hidden", border: "1px solid var(--theme-border)" }}><img src={media.src} alt={media.alt} style={{ width: "100%", maxWidth: "100%", height: "100%", objectFit: "cover", objectPosition, display: "block" }} /></div> : null}
       </div>
     </section>
   );

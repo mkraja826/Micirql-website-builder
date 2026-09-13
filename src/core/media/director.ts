@@ -1,5 +1,6 @@
 import type { AiJsonProvider } from "../../providers/ai/schema";
 import type { MediaCandidate, MediaProvider, MediaSearchIntent } from "../../providers/media/schema";
+import type { MediaIntent } from "./planner";
 
 export type SectionMediaContext = {
   industry: string;
@@ -57,6 +58,22 @@ export async function resolveSectionMedia(
   };
 
   return { intent, candidates: await providers.media.search(intent) };
+}
+
+export async function resolvePlannedMedia(
+  plan: MediaIntent,
+  context: { industry: string; excludedProviderIds?: string[] },
+  media: MediaProvider,
+): Promise<ResolvedSectionMedia> {
+  const intent: MediaSearchIntent = {
+    query: cleanQuery([plan.subject, plan.visualGoal].filter(Boolean).join(" ")),
+    sectionFamily: plan.role,
+    industry: context.industry,
+    desiredAspect: plan.desiredAspect,
+    preferredTags: plan.preferredTags,
+    excludedProviderIds: context.excludedProviderIds,
+  };
+  return { intent, candidates: await media.search(intent) };
 }
 
 function cleanQuery(value: unknown) {

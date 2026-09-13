@@ -23,6 +23,10 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Enforce generic core section boundaries
+        run: node scripts/check-core-section-coupling.mjs
+      - name: Enforce generic core specialization boundary
+        run: node scripts/check-core-specialization-boundary.mjs
       - name: Build Next benchmark
         run: npm run build
       - name: Build Cloudflare target
@@ -42,10 +46,24 @@ jobs:
           exit 1
       - name: Capture visual baselines
         run: node scripts/capture-benchmark.mjs
+      - name: Audit universal section archetype usage
+        run: node scripts/audit-section-archetype-usage.mjs
       - name: Audit rendered candidates
         run: node scripts/audit-rendered-candidates.mjs
+      - name: Audit rendered multi-industry candidates
+        run: node scripts/audit-multi-industry-rendered.mjs
+      - name: Audit final five rendered industries
+        run: node scripts/audit-final-five-rendered.mjs
+      - name: Audit multi-industry content plans
+        run: node scripts/audit-multi-industry-content.mjs
+      - name: Audit multi-industry candidate diversity
+        run: node scripts/audit-multi-industry-diversity.mjs
       - name: Score perceptual quality
         run: node scripts/score-perceptual-candidates.mjs
+      - name: Enforce accepted repair quality
+        run: node scripts/check-repair-acceptance.mjs
+      - name: Plan bounded targeted repairs
+        run: node scripts/plan-targeted-repairs.mjs
       - name: Compose final candidate ranking
         run: node scripts/compose-final-ranking.mjs
       - name: Upload Pearl benchmark screenshots
@@ -73,16 +91,58 @@ jobs:
         with:
           name: pearl-rendered-candidate-screenshots
           path: artifacts/pearl-rendered-candidates/*.png
+      - name: Upload rendered multi-industry screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-rendered-screenshots
+          path: artifacts/multi-industry-rendered/*.png
+      - name: Upload section archetype usage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: section-archetype-usage
+          path: artifacts/section-archetype-usage/report.json
       - name: Upload rendered candidate audit
         uses: actions/upload-artifact@v4
         with:
           name: pearl-rendered-candidate-audit
           path: artifacts/pearl-render-audit/report.json
+      - name: Upload multi-industry rendered audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-rendered-audit
+          path: artifacts/multi-industry-render-audit/report.json
+      - name: Upload final five rendered audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-five-render-audit
+          path: artifacts/final-five-render-audit/report.json
+      - name: Upload multi-industry content audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-content-audit
+          path: artifacts/multi-industry-content-audit/report.json
+      - name: Upload multi-industry diversity audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-industry-diversity-audit
+          path: artifacts/multi-industry-diversity-audit/report.json
       - name: Upload perceptual candidate ranking
         uses: actions/upload-artifact@v4
         with:
           name: pearl-perceptual-candidate-ranking
           path: artifacts/pearl-perceptual-ranking/report.json
+      - name: Upload targeted repair plans
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: targeted-repair-plans
+          path: artifacts/targeted-repair-plans/report.json
       - name: Upload final candidate ranking
         uses: actions/upload-artifact@v4
         with:

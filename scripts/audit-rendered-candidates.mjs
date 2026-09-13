@@ -70,10 +70,45 @@ for (const candidateId of candidateIds) {
         return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0 && rect.width > 0 && rect.height > 0;
       });
 
-      const elementsOutsideViewport = visible.filter((element) => {
+      const isSafelyClippedByAncestor = (element) => {
+        let ancestor = element.parentElement;
+        while (ancestor && ancestor !== body) {
+          const style = getComputedStyle(ancestor);
+          const clipsHorizontally = style.overflowX === 'hidden' || style.overflowX === 'clip' || style.overflow === 'hidden' || style.overflow === 'clip';
+          if (clipsHorizontally) {
+            const rect = ancestor.getBoundingClientRect();
+            if (rect.left >= -1 && rect.right <= window.innerWidth + 1) return true;
+          }
+          ancestor = ancestor.parentElement;
+        }
+        return false;
+      };
+
+      const outsideViewportElements = visible.filter((element) => {
         const rect = element.getBoundingClientRect();
-        return rect.left < -1 || rect.right > window.innerWidth + 1;
-      }).length;
+        const extendsOutside = rect.left < -1 || rect.right > window.innerWidth + 1;
+        return extendsOutside && !isSafelyClippedByAncestor(element);
+      });
+      const outsideViewportDiagnostics = outsideViewportElements.slice(0, 5).map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        const owner = element.closest('[data-section-tone]');
+        const parent = element.parentElement;
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id || null,
+          className: typeof element.className === 'string' ? element.className : null,
+          sectionTone: owner?.getAttribute('data-section-tone') ?? null,
+          ownerClassName: owner && typeof owner.className === 'string' ? owner.className : null,
+          parentTag: parent?.tagName.toLowerCase() ?? null,
+          parentClassName: parent && typeof parent.className === 'string' ? parent.className : null,
+          left: Number(rect.left.toFixed(2)),
+          right: Number(rect.right.toFixed(2)),
+          width: Number(rect.width.toFixed(2)),
+          position: style.position,
+          transform: style.transform,
+        };
+      });
       const textElements = visible.filter((element) => element.childElementCount === 0 && (element.textContent ?? '').trim().length > 0);
       const tinyTextCount = textElements.filter((element) => parseFloat(getComputedStyle(element).fontSize) < 11).length;
       const interactive = visible.filter((element) => ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) || element.getAttribute('role') === 'button');
@@ -96,7 +131,8 @@ for (const candidateId of candidateIds) {
 
       return {
         horizontalOverflow: Math.max(0, root.scrollWidth - window.innerWidth, body.scrollWidth - window.innerWidth),
-        elementsOutsideViewport,
+        elementsOutsideViewport: outsideViewportElements.length,
+        outsideViewportDiagnostics,
         tinyTextCount,
         smallTapTargetCount,
         overlapPairs,

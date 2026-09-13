@@ -32,7 +32,7 @@ function scoreMetrics(metrics) {
   if (metrics.narrowTextBlocksRatio >= 0.55) strengths.push('Readable text measure');
   else { score -= 8; cautions.push('Too much wide body copy'); }
 
-  if (metrics.heroDominance >= 0.18 && metrics.heroDominance <= 0.55) strengths.push('Balanced hero dominance');
+  if (metrics.heroDominance >= 0.55 && metrics.heroDominance <= 1.35) strengths.push('Balanced hero dominance');
   else { score -= 8; cautions.push('Hero scale feels disproportionate'); }
 
   if (metrics.imageCount > 0) strengths.push('Uses visual media');
@@ -92,7 +92,6 @@ for (const candidateId of candidateIds) {
       const backgrounds = new Set(sections.map((el) => getComputedStyle(el).backgroundColor).filter((value) => value && value !== 'rgba(0, 0, 0, 0)'));
       const narrowTextBlocks = bodyText.filter((el) => el.getBoundingClientRect().width <= Math.min(760, window.innerWidth * 0.82)).length;
       const hero = sections[0]?.getBoundingClientRect();
-      const bodyHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
       const aspects = new Set(images.map((img) => {
         const rect = img.getBoundingClientRect();
         if (!rect.height) return 'unknown';
@@ -108,7 +107,7 @@ for (const candidateId of candidateIds) {
         sectionSpacingCv: gapMean > 0 ? gapStd / gapMean : 0,
         distinctBackgrounds: backgrounds.size,
         narrowTextBlocksRatio: bodyText.length ? narrowTextBlocks / bodyText.length : 1,
-        heroDominance: hero && bodyHeight ? hero.height / bodyHeight : 0,
+        heroDominance: hero && window.innerHeight ? hero.height / window.innerHeight : 0,
         imageCount: images.length,
         imageAspectVariety: aspects.size,
         fontFamilyCount: fonts.size,

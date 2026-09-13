@@ -1,9 +1,9 @@
-import { interpretMinimalBrief } from "../brief/interpreter";
-import { createArtDirections } from "../art-direction/director";
-import { directContent } from "../content/director";
-import { compileThemeTokens, themeTokensToCssVariables } from "../theme/compiler";
-import type { IndustryKnowledge } from "../industry/knowledge";
-import { generateCandidatePlans } from "./candidates";
+import { interpretMinimalBrief } from "../core/brief/interpreter";
+import { createArtDirections } from "../core/art-direction/director";
+import { directContent } from "../core/content/director";
+import { compileThemeTokens, themeTokensToCssVariables } from "../core/theme/compiler";
+import type { IndustryKnowledge } from "../core/industry/knowledge";
+import { generateCandidatePlans } from "../core/generation/candidates";
 
 export const PEARL_DENTAL_KNOWLEDGE: IndustryKnowledge = {
   industry: { slug: "dental", name: "Dental" },

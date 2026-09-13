@@ -11,6 +11,18 @@ const INDUSTRY_RULES = [
   { industry: "ai-data", subIndustry: "ai-products", businessType: "startup", terms: ["ai", "artificial intelligence", "automation", "machine learning"] },
   { industry: "education", subIndustry: "school", businessType: "school", terms: ["school", "academy", "college", "university", "education"] },
   { industry: "recruitment-hr", subIndustry: "recruitment-agency", businessType: "agency", terms: ["recruitment", "staffing", "jobs", "talent", "hr"] },
+  { industry: "professional-services", subIndustry: "law-firm", businessType: "law-firm", terms: ["law firm", "lawyer", "lawyers", "legal", "attorney", "advocate"] },
+  { industry: "beauty-wellness", subIndustry: "salon", businessType: "salon", terms: ["salon", "beauty studio", "hair studio", "spa"] },
+  { industry: "fitness", subIndustry: "gym", businessType: "gym", terms: ["gym", "fitness studio", "fitness centre", "fitness center"] },
+  { industry: "manufacturing", subIndustry: "industrial-manufacturing", businessType: "manufacturer", terms: ["manufacturing", "manufacturer", "factory", "industrial products"] },
+  { industry: "automotive-services", subIndustry: "auto-service", businessType: "service-center", terms: ["auto service", "automotive service", "car service", "garage", "service center", "service centre"] },
+  { industry: "architecture-design", subIndustry: "architecture-studio", businessType: "studio", terms: ["architecture studio", "architects", "architectural studio", "architecture firm"] },
+  { industry: "nonprofit", subIndustry: "ngo", businessType: "ngo", terms: ["ngo", "nonprofit", "non-profit", "charity", "foundation"] },
+  { industry: "ecommerce", subIndustry: "online-store", businessType: "store", terms: ["ecommerce", "e-commerce", "online store", "online shop"] },
+  { industry: "consulting", subIndustry: "business-consulting", businessType: "consultancy", terms: ["consultancy", "consulting firm", "business consulting", "consultant"] },
+  { industry: "travel", subIndustry: "travel-agency", businessType: "agency", terms: ["travel agency", "tour operator", "travel company", "tours"] },
+  { industry: "home-services", subIndustry: "home-maintenance", businessType: "service-business", terms: ["home services", "home maintenance", "plumbing service", "electrical service", "cleaning service"] },
+  { industry: "events", subIndustry: "wedding-events", businessType: "event-studio", terms: ["event planner", "wedding planner", "events company", "event studio"] },
 ] as const;
 
 const CITY_TERMS = [
@@ -27,9 +39,22 @@ function inferLocation(raw: string): Fact | undefined {
   return city ? fact(city.replace(/\b\w/g, (c) => c.toUpperCase()), "known", "user") : undefined;
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsTerm(text: string, term: string) {
+  const pattern = term
+    .trim()
+    .split(/\s+/)
+    .map(escapeRegex)
+    .join("\\s+");
+  return new RegExp(`(^|[^a-z0-9])${pattern}([^a-z0-9]|$)`, "i").test(text);
+}
+
 function inferClassification(raw: string) {
   const lower = raw.toLowerCase();
-  return INDUSTRY_RULES.find((rule) => rule.terms.some((term) => lower.includes(term)));
+  return INDUSTRY_RULES.find((rule) => rule.terms.some((term) => containsTerm(lower, term)));
 }
 
 function inferBusinessName(raw: string, classification?: (typeof INDUSTRY_RULES)[number]): Fact | undefined {
@@ -60,6 +85,18 @@ const INDUSTRY_ENRICHMENT: Record<string, Partial<typeof GENERIC> & { primaryGoa
   "ai-data": { primaryGoal: "demo or signup", capabilities: ["demo_request", "lead_capture", "contact"], conversionActions: ["request demo", "try product", "contact"], suitableStyles: ["technical editorial", "product-led", "research-inspired"], avoidStyles: ["generic glowing AI orb"], imagery: ["product UI", "data visualization", "real use cases"] },
   education: { primaryGoal: "admissions", capabilities: ["admission_enquiry", "contact", "lead_capture"], conversionActions: ["apply", "enquire", "explore programs"], suitableStyles: ["institutional modern", "warm academic", "student-led"], avoidStyles: ["overly corporate"], imagery: ["students", "campus", "learning"] },
   "recruitment-hr": { primaryGoal: "applications and employer leads", capabilities: ["job_application", "employer_enquiry", "contact"], conversionActions: ["find jobs", "apply", "hire talent"], suitableStyles: ["professional editorial", "people-led", "modern corporate"], avoidStyles: ["generic stock-office overload"], imagery: ["people", "workplaces", "roles"] },
+  "professional-services": { primaryGoal: "qualified enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["enquire", "contact"], suitableStyles: ["authoritative editorial", "restrained premium", "trust-led"], avoidStyles: ["salesy claims", "generic corporate stock"], imagery: ["professional context", "office", "documents", "city"] },
+  "beauty-wellness": { primaryGoal: "appointments", capabilities: ["appointment", "contact", "location"], conversionActions: ["book appointment", "explore services", "contact"], suitableStyles: ["editorial beauty", "warm premium", "image-led"], avoidStyles: ["clinical styling", "generic ecommerce"], imagery: ["salon interior", "styling", "beauty services", "client experience"] },
+  fitness: { primaryGoal: "membership enquiries", capabilities: ["lead_capture", "contact", "location"], conversionActions: ["join", "enquire", "visit"], suitableStyles: ["energetic editorial", "bold modern", "community-led"], avoidStyles: ["generic bodybuilding clichés"], imagery: ["training", "people exercising", "equipment", "community"] },
+  manufacturing: { primaryGoal: "qualified enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["request quote", "explore capabilities", "contact"], suitableStyles: ["industrial premium", "precision-led", "technical editorial"], avoidStyles: ["consumer lifestyle styling"], imagery: ["factory", "production", "materials", "industrial detail"] },
+  "automotive-services": { primaryGoal: "service bookings", capabilities: ["appointment", "contact", "location"], conversionActions: ["book service", "enquire", "visit"], suitableStyles: ["technical modern", "trust-led", "service-focused"], avoidStyles: ["racing aesthetics", "unsupported performance claims"], imagery: ["vehicle service", "workshop", "technician", "inspection"] },
+  "architecture-design": { primaryGoal: "project enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["start a project", "view work", "contact"], suitableStyles: ["editorial minimal", "gallery-led", "architectural"], avoidStyles: ["generic corporate templates"], imagery: ["architecture", "spaces", "materials", "drawings"] },
+  nonprofit: { primaryGoal: "support and enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["support", "learn more", "contact"], suitableStyles: ["human narrative", "editorial documentary", "clear modern"], avoidStyles: ["guilt-heavy messaging", "unverified impact claims"], imagery: ["people", "community", "program context", "field work"] },
+  ecommerce: { primaryGoal: "product discovery and enquiries", capabilities: ["product_enquiry", "contact"], conversionActions: ["shop products", "explore collection", "contact"], suitableStyles: ["commerce editorial", "product-led", "visual minimal"], avoidStyles: ["generic marketplace clutter", "fake scarcity"], imagery: ["products", "collection", "product detail", "lifestyle context"] },
+  consulting: { primaryGoal: "qualified consultations", capabilities: ["lead_capture", "contact"], conversionActions: ["request consultation", "explore expertise", "contact"], suitableStyles: ["authoritative editorial", "strategy-led", "restrained modern"], avoidStyles: ["generic stock meetings", "unsupported success claims"], imagery: ["professional context", "workshops", "strategy", "client collaboration"] },
+  travel: { primaryGoal: "trip enquiries", capabilities: ["booking_enquiry", "contact"], conversionActions: ["plan a trip", "explore tours", "enquire"], suitableStyles: ["destination-led", "cinematic", "editorial travel"], avoidStyles: ["generic brochure styling", "unverified availability"], imagery: ["destinations", "journeys", "travel experience", "itinerary context"] },
+  "home-services": { primaryGoal: "service enquiries", capabilities: ["appointment", "contact", "location"], conversionActions: ["request service", "explore services", "contact"], suitableStyles: ["trust-led", "clear local", "service-focused"], avoidStyles: ["generic corporate stock", "unverified emergency claims"], imagery: ["service work", "technician", "home context", "tools"] },
+  events: { primaryGoal: "event enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["plan an event", "view work", "enquire"], suitableStyles: ["editorial celebration", "gallery-led", "premium expressive"], avoidStyles: ["template wedding clichés", "invented venues or clients"], imagery: ["events", "details", "spaces", "celebration context"] },
 };
 
 export function interpretMinimalBrief(rawBrief: string): InterpretedBrief {

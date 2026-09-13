@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { generatePearlDentalBenchmark } from "../../../src/core/generation/pearl";
+import { generatePearlDentalBenchmark } from "../../../src/benchmarks/pearl";
 import { ConversionCleanNavbar } from "../../../src/sections/navbar/conversion-clean";
 import { EditorialSplitHero } from "../../../src/sections/hero/editorial-split";
 import { EditorialServiceIndex } from "../../../src/sections/services/editorial-index";

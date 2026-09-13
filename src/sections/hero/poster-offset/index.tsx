@@ -1,7 +1,8 @@
 type Link = { label: string; href: string };
-type Media = { src: string; alt: string; focalPoint?: string };
+type Media = { src: string; alt: string; focalPoint?: { x: number; y: number } };
 
 export function PosterOffsetHero({ eyebrow, headline, body, primaryCta, secondaryCta, media }: { eyebrow?: string; headline: string; body: string; primaryCta: Link; secondaryCta?: Link; media?: Media }) {
+  const mediaPosition = media?.focalPoint ? `${media.focalPoint.x * 100}% ${media.focalPoint.y * 100}%` : "center";
   return (
     <section style={{ padding: "clamp(56px, 9vw, 132px) 24px", background: "var(--theme-text)", color: "var(--theme-bg)", overflow: "hidden" }}>
       <div style={{ width: "min(var(--theme-max-width), 100%)", margin: "0 auto" }}>
@@ -20,7 +21,7 @@ export function PosterOffsetHero({ eyebrow, headline, body, primaryCta, secondar
         </div>
         {media ? (
           <div style={{ marginTop: "clamp(36px, 6vw, 84px)", aspectRatio: "16 / 7", minHeight: 220, overflow: "hidden", border: "1px solid color-mix(in srgb, currentColor 22%, transparent)" }}>
-            <img src={media.src} alt={media.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: media.focalPoint ?? "center", display: "block" }} />
+            <img src={media.src} alt={media.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: mediaPosition, display: "block" }} />
           </div>
         ) : null}
       </div>

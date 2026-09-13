@@ -107,12 +107,10 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     mobileOverflow("mobile: Visible element exceeds viewport width"),
     mobileTapTarget("mobile: One interactive element is smaller than 40px in both dimensions"),
   ]),
-  "candidate-16": plan("candidate-16", mediaPresencePair(), true),
   "candidate-17": plan("candidate-17", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
   ]),
-  "candidate-20": plan("candidate-20", mediaPresencePair(), true),
 };
 
 export function getPearlRepairPlan(candidateId: string) {

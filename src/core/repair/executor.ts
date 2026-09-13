@@ -5,7 +5,7 @@ export function repairPlanToScopedCss(plan: CandidateRepairPlan, scope: string) 
   for (const instruction of plan.instructions) {
     const target = instruction.target;
     if (instruction.boundedAction === "normalize-heading-scale") {
-      const rule = `${scope} h1{font-size:clamp(2.75rem,5vw,4.75rem)!important;}`;
+      const rule = `${scope} h1,${scope} h2,${scope} h3{font-size:min(var(--repair-heading-size,4.75rem),4.75rem)!important;} ${scope} h1{--repair-heading-size:clamp(2.75rem,5vw,4.75rem);} ${scope} h2{--repair-heading-size:clamp(2.25rem,4vw,4rem);} ${scope} h3{--repair-heading-size:clamp(1.75rem,3vw,3rem);}`;
       rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
     }
     if (instruction.boundedAction === "constrain-readable-width") {

@@ -70,9 +70,24 @@ for (const candidateId of candidateIds) {
         return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0 && rect.width > 0 && rect.height > 0;
       });
 
+      const isSafelyClippedByAncestor = (element) => {
+        let ancestor = element.parentElement;
+        while (ancestor && ancestor !== body) {
+          const style = getComputedStyle(ancestor);
+          const clipsHorizontally = style.overflowX === 'hidden' || style.overflowX === 'clip' || style.overflow === 'hidden' || style.overflow === 'clip';
+          if (clipsHorizontally) {
+            const rect = ancestor.getBoundingClientRect();
+            if (rect.left >= -1 && rect.right <= window.innerWidth + 1) return true;
+          }
+          ancestor = ancestor.parentElement;
+        }
+        return false;
+      };
+
       const outsideViewportElements = visible.filter((element) => {
         const rect = element.getBoundingClientRect();
-        return rect.left < -1 || rect.right > window.innerWidth + 1;
+        const extendsOutside = rect.left < -1 || rect.right > window.innerWidth + 1;
+        return extendsOutside && !isSafelyClippedByAncestor(element);
       });
       const outsideViewportDiagnostics = outsideViewportElements.slice(0, 5).map((element) => {
         const rect = element.getBoundingClientRect();

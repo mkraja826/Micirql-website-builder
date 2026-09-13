@@ -92,10 +92,16 @@ for (const candidateId of candidateIds) {
       const outsideViewportDiagnostics = outsideViewportElements.slice(0, 5).map((element) => {
         const rect = element.getBoundingClientRect();
         const style = getComputedStyle(element);
+        const owner = element.closest('[data-section-tone]');
+        const parent = element.parentElement;
         return {
           tag: element.tagName.toLowerCase(),
           id: element.id || null,
           className: typeof element.className === 'string' ? element.className : null,
+          sectionTone: owner?.getAttribute('data-section-tone') ?? null,
+          ownerClassName: owner && typeof owner.className === 'string' ? owner.className : null,
+          parentTag: parent?.tagName.toLowerCase() ?? null,
+          parentClassName: parent && typeof parent.className === 'string' ? parent.className : null,
           left: Number(rect.left.toFixed(2)),
           right: Number(rect.right.toFixed(2)),
           width: Number(rect.width.toFixed(2)),

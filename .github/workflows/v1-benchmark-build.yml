@@ -60,6 +60,8 @@ jobs:
         run: node scripts/audit-multi-industry-diversity.mjs
       - name: Score perceptual quality
         run: node scripts/score-perceptual-candidates.mjs
+      - name: Enforce accepted repair quality
+        run: node scripts/check-repair-acceptance.mjs
       - name: Plan bounded targeted repairs
         run: node scripts/plan-targeted-repairs.mjs
       - name: Compose final candidate ranking

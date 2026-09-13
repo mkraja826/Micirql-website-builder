@@ -22,6 +22,10 @@ export function repairPlanToScopedCss(plan: CandidateRepairPlan, scope: string) 
       const rule = `${scope}{overflow-x:clip;} ${scope} *{max-width:100%;}`;
       rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
     }
+    if (instruction.boundedAction === "increase-interactive-hit-area") {
+      const rule = `${scope} a,${scope} button,${scope} input,${scope} select,${scope} textarea,${scope} [role="button"]{min-height:40px;}`;
+      rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
+    }
   }
   return rules.join("\n");
 }

@@ -60,6 +60,8 @@ jobs:
         run: node scripts/audit-publishable-drafts.mjs
       - name: Audit persistent site materialization
         run: node scripts/audit-materialized-sites.mjs
+      - name: Audit certified winner materialization
+        run: node scripts/audit-certified-winner-materialization.mjs
       - name: Audit multi-industry candidate diversity
         run: node scripts/audit-multi-industry-diversity.mjs
       - name: Score perceptual quality
@@ -142,6 +144,12 @@ jobs:
         with:
           name: materialized-site-audit
           path: artifacts/materialized-site-audit/report.json
+      - name: Upload certified winner materialization audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: certified-winner-materialization-audit
+          path: artifacts/certified-winner-materialization-audit/report.json
       - name: Upload multi-industry diversity audit
         if: always()
         uses: actions/upload-artifact@v4

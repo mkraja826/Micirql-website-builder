@@ -34,6 +34,14 @@ const heroProportion = (reason: string): RepairInstruction => ({
   boundedAction: "normalize-hero-height",
 });
 
+const desktopHeroProportion = (reason: string): RepairInstruction => ({
+  kind: "hero-proportion",
+  target: "desktop",
+  reason,
+  source: "perceptual-audit",
+  boundedAction: "normalize-hero-height",
+});
+
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
@@ -62,6 +70,7 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-15": plan("candidate-15", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
+    desktopHeroProportion("desktop: Hero scale feels disproportionate"),
   ]),
   "candidate-17": plan("candidate-17", [
     headingScale("desktop: Weak or extreme heading scale"),

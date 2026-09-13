@@ -1,11 +1,11 @@
 import type { CandidateRepairPlan, RepairInstruction } from "../core/repair/schema";
 
-function plan(candidateId: string, instructions: RepairInstruction[]): CandidateRepairPlan {
+function plan(candidateId: string, instructions: RepairInstruction[], requiresRegeneration = false): CandidateRepairPlan {
   return {
     version: "1.0",
     candidateId,
     instructions,
-    requiresRegeneration: false,
+    requiresRegeneration,
     allowsArbitraryCodeRewrite: false,
   };
 }
@@ -58,6 +58,14 @@ const mobileTapTarget = (reason: string): RepairInstruction => ({
   boundedAction: "increase-interactive-hit-area",
 });
 
+const mediaPresence = (target: "desktop" | "mobile", reason: string): RepairInstruction => ({
+  kind: "media-presence",
+  target,
+  reason,
+  source: "perceptual-audit",
+  boundedAction: "request-planned-media",
+});
+
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
@@ -83,6 +91,11 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
   ]),
+  "candidate-14": plan("candidate-14", [
+    headingScale("desktop: Weak or extreme heading scale"),
+    mediaPresence("desktop", "desktop: No rendered imagery detected"),
+    mediaPresence("mobile", "mobile: No rendered imagery detected"),
+  ], true),
   "candidate-15": plan("candidate-15", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),

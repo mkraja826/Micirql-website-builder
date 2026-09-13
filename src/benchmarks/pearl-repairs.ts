@@ -26,6 +26,14 @@ const mobileTextMeasure = (reason: string): RepairInstruction => ({
   boundedAction: "constrain-readable-width",
 });
 
+const heroProportion = (reason: string): RepairInstruction => ({
+  kind: "hero-proportion",
+  target: "both",
+  reason,
+  source: "perceptual-audit",
+  boundedAction: "normalize-hero-height",
+});
+
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
@@ -34,6 +42,7 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-07": plan("candidate-07", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
+    heroProportion("desktop/mobile: Hero scale feels disproportionate"),
   ]),
   "candidate-08": plan("candidate-08", [
     headingScale("desktop: Weak or extreme heading scale"),

@@ -58,6 +58,8 @@ jobs:
         run: node scripts/audit-multi-industry-content.mjs
       - name: Audit publishable draft contracts
         run: node scripts/audit-publishable-drafts.mjs
+      - name: Audit persistent site materialization
+        run: node scripts/audit-materialized-sites.mjs
       - name: Audit multi-industry candidate diversity
         run: node scripts/audit-multi-industry-diversity.mjs
       - name: Score perceptual quality
@@ -134,6 +136,12 @@ jobs:
         with:
           name: publishable-draft-audit
           path: artifacts/publishable-draft-audit/report.json
+      - name: Upload materialized site audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: materialized-site-audit
+          path: artifacts/materialized-site-audit/report.json
       - name: Upload multi-industry diversity audit
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,10 +1,16 @@
 {
+  "candidate-03": { "perceptualScore": 66, "desktopScore": 60, "mobileScore": 70, "desktopCautionCount": 5, "mobileCautionCount": 4 },
   "candidate-04": { "perceptualScore": 90, "desktopScore": 94, "mobileScore": 86, "desktopCautionCount": 1, "mobileCautionCount": 2 },
   "candidate-07": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
   "candidate-08": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-09": { "perceptualScore": 82, "desktopScore": 76, "mobileScore": 86, "desktopCautionCount": 3, "mobileCautionCount": 2 },
   "candidate-10": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
   "candidate-11": { "perceptualScore": 100, "desktopScore": 100, "mobileScore": 100, "desktopCautionCount": 0, "mobileCautionCount": 0 },
+  "candidate-12": { "perceptualScore": 86, "desktopScore": 76, "mobileScore": 94, "desktopCautionCount": 3, "mobileCautionCount": 1 },
   "candidate-13": { "perceptualScore": 84, "desktopScore": 84, "mobileScore": 84, "desktopCautionCount": 2, "mobileCautionCount": 2 },
   "candidate-15": { "perceptualScore": 80, "desktopScore": 76, "mobileScore": 84, "desktopCautionCount": 3, "mobileCautionCount": 2 },
-  "candidate-17": { "perceptualScore": 96, "desktopScore": 100, "mobileScore": 92, "desktopCautionCount": 0, "mobileCautionCount": 1 }
+  "candidate-16": { "perceptualScore": 79, "desktopScore": 78, "mobileScore": 80, "desktopCautionCount": 3, "mobileCautionCount": 3 },
+  "candidate-17": { "perceptualScore": 96, "desktopScore": 100, "mobileScore": 92, "desktopCautionCount": 0, "mobileCautionCount": 1 },
+  "candidate-18": { "perceptualScore": 76, "desktopScore": 70, "mobileScore": 80, "desktopCautionCount": 4, "mobileCautionCount": 3 },
+  "candidate-20": { "perceptualScore": 85, "desktopScore": 84, "mobileScore": 86, "desktopCautionCount": 2, "mobileCautionCount": 2 }
 }

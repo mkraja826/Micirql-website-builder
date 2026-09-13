@@ -14,8 +14,9 @@ export function repairPlanToScopedCss(plan: CandidateRepairPlan, scope: string) 
       rules.push(target === "mobile" ? `@media(max-width:767px){${mobileRule}}` : target === "desktop" ? `@media(min-width:768px){${desktopRule}}` : `${desktopRule}@media(max-width:767px){${mobileRule}}`);
     }
     if (instruction.boundedAction === "normalize-hero-height") {
-      const rule = `${scope} [data-section-tone="hero"]{min-height:auto!important;} ${scope} [data-section-tone="hero"]>div{min-height:auto!important;}`;
-      rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
+      const desktopRule = `${scope} [data-section-tone="hero"] section{min-height:clamp(56rem,88vh,72rem)!important;}`;
+      const mobileRule = `${scope} [data-section-tone="hero"] section{min-height:clamp(44rem,92vh,56rem)!important;}`;
+      rules.push(target === "mobile" ? `@media(max-width:767px){${mobileRule}}` : target === "desktop" ? `@media(min-width:768px){${desktopRule}}` : `${desktopRule}@media(max-width:767px){${mobileRule}}`);
     }
     if (instruction.boundedAction === "contain-horizontal-layout") {
       const rule = `${scope}{overflow-x:clip;} ${scope} *{max-width:100%;}`;

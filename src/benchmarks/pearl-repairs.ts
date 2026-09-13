@@ -50,6 +50,14 @@ const mobileOverflow = (reason: string): RepairInstruction => ({
   boundedAction: "contain-horizontal-layout",
 });
 
+const mobileTapTarget = (reason: string): RepairInstruction => ({
+  kind: "tap-target",
+  target: "mobile",
+  reason,
+  source: "rendered-audit",
+  boundedAction: "increase-interactive-hit-area",
+});
+
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
@@ -80,6 +88,7 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     mobileTextMeasure("mobile: Too much wide body copy"),
     desktopHeroProportion("desktop: Hero scale feels disproportionate"),
     mobileOverflow("mobile: Visible element exceeds viewport width"),
+    mobileTapTarget("mobile: One interactive element is smaller than 40px in both dimensions"),
   ]),
   "candidate-17": plan("candidate-17", [
     headingScale("desktop: Weak or extreme heading scale"),

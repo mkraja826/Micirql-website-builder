@@ -70,10 +70,24 @@ for (const candidateId of candidateIds) {
         return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0 && rect.width > 0 && rect.height > 0;
       });
 
-      const elementsOutsideViewport = visible.filter((element) => {
+      const outsideViewportElements = visible.filter((element) => {
         const rect = element.getBoundingClientRect();
         return rect.left < -1 || rect.right > window.innerWidth + 1;
-      }).length;
+      });
+      const outsideViewportDiagnostics = outsideViewportElements.slice(0, 5).map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id || null,
+          className: typeof element.className === 'string' ? element.className : null,
+          left: Number(rect.left.toFixed(2)),
+          right: Number(rect.right.toFixed(2)),
+          width: Number(rect.width.toFixed(2)),
+          position: style.position,
+          transform: style.transform,
+        };
+      });
       const textElements = visible.filter((element) => element.childElementCount === 0 && (element.textContent ?? '').trim().length > 0);
       const tinyTextCount = textElements.filter((element) => parseFloat(getComputedStyle(element).fontSize) < 11).length;
       const interactive = visible.filter((element) => ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) || element.getAttribute('role') === 'button');
@@ -96,7 +110,8 @@ for (const candidateId of candidateIds) {
 
       return {
         horizontalOverflow: Math.max(0, root.scrollWidth - window.innerWidth, body.scrollWidth - window.innerWidth),
-        elementsOutsideViewport,
+        elementsOutsideViewport: outsideViewportElements.length,
+        outsideViewportDiagnostics,
         tinyTextCount,
         smallTapTargetCount,
         overlapPairs,

@@ -2,10 +2,10 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const BASE_URL = process.env.MICIRQL_BENCHMARK_URL ?? 'http://127.0.0.1:3000';
-const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data','salon','gym','manufacturing','automotive-service','architecture-studio','ngo'];
+const fixtures = ['luxury-hotel','restaurant','saas','construction','law-firm','real-estate','school','recruitment','ai-data','salon','gym','manufacturing','automotive-service','architecture-studio','ngo','ecommerce','consultancy','travel-agency','home-services','events'];
 const candidateIds = Array.from({ length: 4 }, (_, index) => `candidate-${String(index + 1).padStart(2, '0')}`);
 const expectedIndustry = {
-  'luxury-hotel':'hospitality', restaurant:'food-beverage', saas:'technology', construction:'construction', 'law-firm':'professional-services', 'real-estate':'real-estate', school:'education', recruitment:'recruitment-hr', 'ai-data':'ai-data', salon:'beauty-wellness', gym:'fitness', manufacturing:'manufacturing', 'automotive-service':'automotive-services', 'architecture-studio':'architecture-design', ngo:'nonprofit',
+  'luxury-hotel':'hospitality', restaurant:'food-beverage', saas:'technology', construction:'construction', 'law-firm':'professional-services', 'real-estate':'real-estate', school:'education', recruitment:'recruitment-hr', 'ai-data':'ai-data', salon:'beauty-wellness', gym:'fitness', manufacturing:'manufacturing', 'automotive-service':'automotive-services', 'architecture-studio':'architecture-design', ngo:'nonprofit', ecommerce:'ecommerce', consultancy:'consulting', 'travel-agency':'travel', 'home-services':'home-services', events:'events',
 };
 const forbiddenText = ['Pearl Dental','patient-friendly','the clinic','5-star','award-winning','guaranteed results','years of experience'];
 const requiredSections = ['navbar','hero','services','about','cta','contact','footer'];

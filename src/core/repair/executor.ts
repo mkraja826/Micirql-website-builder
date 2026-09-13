@@ -9,8 +9,9 @@ export function repairPlanToScopedCss(plan: CandidateRepairPlan, scope: string) 
       rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
     }
     if (instruction.boundedAction === "constrain-readable-width") {
-      const rule = `${scope} p,${scope} li{max-width:min(100%,42rem);}`;
-      rules.push(target === "mobile" ? `@media(max-width:767px){${rule}}` : target === "desktop" ? `@media(min-width:768px){${rule}}` : rule);
+      const desktopRule = `${scope} p,${scope} li{max-width:min(100%,42rem);}`;
+      const mobileRule = `${scope} p,${scope} li{width:min(100%,82vw);max-width:82vw;}`;
+      rules.push(target === "mobile" ? `@media(max-width:767px){${mobileRule}}` : target === "desktop" ? `@media(min-width:768px){${desktopRule}}` : `${desktopRule}@media(max-width:767px){${mobileRule}}`);
     }
     if (instruction.boundedAction === "normalize-hero-height") {
       const rule = `${scope} [data-section-tone="hero"]{min-height:auto!important;} ${scope} [data-section-tone="hero"]>div{min-height:auto!important;}`;

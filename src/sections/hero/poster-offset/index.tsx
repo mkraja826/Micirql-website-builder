@@ -1,20 +1,28 @@
 type Link = { label: string; href: string };
+type Media = { src: string; alt: string; focalPoint?: string };
 
-export function PosterOffsetHero({ eyebrow, headline, body, primaryCta, secondaryCta }: { eyebrow?: string; headline: string; body: string; primaryCta: Link; secondaryCta?: Link }) {
+export function PosterOffsetHero({ eyebrow, headline, body, primaryCta, secondaryCta, media }: { eyebrow?: string; headline: string; body: string; primaryCta: Link; secondaryCta?: Link; media?: Media }) {
   return (
     <section style={{ padding: "clamp(56px, 9vw, 132px) 24px", background: "var(--theme-text)", color: "var(--theme-bg)", overflow: "hidden" }}>
-      <div style={{ width: "min(var(--theme-max-width), 100%)", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "clamp(36px, 8vw, 120px)", alignItems: "end" }}>
-        <div>
-          {eyebrow ? <p style={{ margin: "0 0 28px", textTransform: "uppercase", letterSpacing: ".24em", fontSize: 11, opacity: .7 }}>{eyebrow}</p> : null}
-          <h1 style={{ margin: 0, fontFamily: "var(--theme-display-font)", fontSize: "clamp(52px, 12vw, 176px)", lineHeight: .8, letterSpacing: "-.065em", fontWeight: 700, maxWidth: 980 }}>{headline}</h1>
-        </div>
-        <div style={{ borderTop: "1px solid currentColor", paddingTop: 22 }}>
-          <p style={{ margin: "0 0 28px", fontSize: 17, lineHeight: 1.65, opacity: .76 }}>{body}</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a href={primaryCta.href} style={{ padding: "14px 18px", background: "var(--theme-accent)", color: "var(--theme-accent-contrast)", textDecoration: "none", fontWeight: 700 }}>{primaryCta.label}</a>
-            {secondaryCta ? <a href={secondaryCta.href} style={{ padding: "14px 18px", border: "1px solid currentColor", color: "inherit", textDecoration: "none" }}>{secondaryCta.label}</a> : null}
+      <div style={{ width: "min(var(--theme-max-width), 100%)", margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "clamp(36px, 8vw, 120px)", alignItems: "end" }}>
+          <div>
+            {eyebrow ? <p style={{ margin: "0 0 28px", textTransform: "uppercase", letterSpacing: ".24em", fontSize: 11, opacity: .7 }}>{eyebrow}</p> : null}
+            <h1 style={{ margin: 0, fontFamily: "var(--theme-display-font)", fontSize: "clamp(52px, 12vw, 176px)", lineHeight: .8, letterSpacing: "-.065em", fontWeight: 700, maxWidth: 980 }}>{headline}</h1>
+          </div>
+          <div style={{ borderTop: "1px solid currentColor", paddingTop: 22 }}>
+            <p style={{ margin: "0 0 28px", fontSize: 17, lineHeight: 1.65, opacity: .76 }}>{body}</p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a href={primaryCta.href} style={{ padding: "14px 18px", background: "var(--theme-accent)", color: "var(--theme-accent-contrast)", textDecoration: "none", fontWeight: 700 }}>{primaryCta.label}</a>
+              {secondaryCta ? <a href={secondaryCta.href} style={{ padding: "14px 18px", border: "1px solid currentColor", color: "inherit", textDecoration: "none" }}>{secondaryCta.label}</a> : null}
+            </div>
           </div>
         </div>
+        {media ? (
+          <div style={{ marginTop: "clamp(36px, 6vw, 84px)", aspectRatio: "16 / 7", minHeight: 220, overflow: "hidden", border: "1px solid color-mix(in srgb, currentColor 22%, transparent)" }}>
+            <img src={media.src} alt={media.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: media.focalPoint ?? "center", display: "block" }} />
+          </div>
+        ) : null}
       </div>
     </section>
   );

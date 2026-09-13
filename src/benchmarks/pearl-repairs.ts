@@ -72,7 +72,6 @@ const mediaPresencePair = () => [
 ];
 
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
-  "candidate-03": plan("candidate-03", mediaPresencePair(), true),
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
     mobileTextMeasure("mobile readable text measure ratio 0.47 is below certified target 0.55"),
@@ -85,7 +84,6 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-08": plan("candidate-08", [
     headingScale("desktop: Weak or extreme heading scale"),
   ]),
-  "candidate-09": plan("candidate-09", mediaPresencePair(), true),
   "candidate-10": plan("candidate-10", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
@@ -94,7 +92,6 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
   ]),
-  "candidate-12": plan("candidate-12", mediaPresencePair(), true),
   "candidate-13": plan("candidate-13", [
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
@@ -115,7 +112,6 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
   ]),
-  "candidate-18": plan("candidate-18", mediaPresencePair(), true),
   "candidate-20": plan("candidate-20", mediaPresencePair(), true),
 };
 

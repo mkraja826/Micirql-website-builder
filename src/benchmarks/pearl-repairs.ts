@@ -42,6 +42,14 @@ const desktopHeroProportion = (reason: string): RepairInstruction => ({
   boundedAction: "normalize-hero-height",
 });
 
+const mobileOverflow = (reason: string): RepairInstruction => ({
+  kind: "viewport-overflow",
+  target: "mobile",
+  reason,
+  source: "rendered-audit",
+  boundedAction: "contain-horizontal-layout",
+});
+
 const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
   "candidate-04": plan("candidate-04", [
     headingScale("desktop heading scale ratio 6.12 exceeds certified ceiling 4.8"),
@@ -71,6 +79,7 @@ const PEARL_REPAIR_PLANS: Record<string, CandidateRepairPlan> = {
     headingScale("desktop: Weak or extreme heading scale"),
     mobileTextMeasure("mobile: Too much wide body copy"),
     desktopHeroProportion("desktop: Hero scale feels disproportionate"),
+    mobileOverflow("mobile: Visible element exceeds viewport width"),
   ]),
   "candidate-17": plan("candidate-17", [
     headingScale("desktop: Weak or extreme heading scale"),

@@ -18,6 +18,11 @@ const INDUSTRY_RULES = [
   { industry: "automotive-services", subIndustry: "auto-service", businessType: "service-center", terms: ["auto service", "automotive service", "car service", "garage", "service center", "service centre"] },
   { industry: "architecture-design", subIndustry: "architecture-studio", businessType: "studio", terms: ["architecture studio", "architects", "architectural studio", "architecture firm"] },
   { industry: "nonprofit", subIndustry: "ngo", businessType: "ngo", terms: ["ngo", "nonprofit", "non-profit", "charity", "foundation"] },
+  { industry: "ecommerce", subIndustry: "online-store", businessType: "store", terms: ["ecommerce", "e-commerce", "online store", "online shop"] },
+  { industry: "consulting", subIndustry: "business-consulting", businessType: "consultancy", terms: ["consultancy", "consulting firm", "business consulting", "consultant"] },
+  { industry: "travel", subIndustry: "travel-agency", businessType: "agency", terms: ["travel agency", "tour operator", "travel company", "tours"] },
+  { industry: "home-services", subIndustry: "home-maintenance", businessType: "service-business", terms: ["home services", "home maintenance", "plumbing service", "electrical service", "cleaning service"] },
+  { industry: "events", subIndustry: "wedding-events", businessType: "event-studio", terms: ["event planner", "wedding planner", "events company", "event studio"] },
 ] as const;
 
 const CITY_TERMS = [
@@ -87,6 +92,11 @@ const INDUSTRY_ENRICHMENT: Record<string, Partial<typeof GENERIC> & { primaryGoa
   "automotive-services": { primaryGoal: "service bookings", capabilities: ["appointment", "contact", "location"], conversionActions: ["book service", "enquire", "visit"], suitableStyles: ["technical modern", "trust-led", "service-focused"], avoidStyles: ["racing aesthetics", "unsupported performance claims"], imagery: ["vehicle service", "workshop", "technician", "inspection"] },
   "architecture-design": { primaryGoal: "project enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["start a project", "view work", "contact"], suitableStyles: ["editorial minimal", "gallery-led", "architectural"], avoidStyles: ["generic corporate templates"], imagery: ["architecture", "spaces", "materials", "drawings"] },
   nonprofit: { primaryGoal: "support and enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["support", "learn more", "contact"], suitableStyles: ["human narrative", "editorial documentary", "clear modern"], avoidStyles: ["guilt-heavy messaging", "unverified impact claims"], imagery: ["people", "community", "program context", "field work"] },
+  ecommerce: { primaryGoal: "product discovery and enquiries", capabilities: ["product_enquiry", "contact"], conversionActions: ["shop products", "explore collection", "contact"], suitableStyles: ["commerce editorial", "product-led", "visual minimal"], avoidStyles: ["generic marketplace clutter", "fake scarcity"], imagery: ["products", "collection", "product detail", "lifestyle context"] },
+  consulting: { primaryGoal: "qualified consultations", capabilities: ["lead_capture", "contact"], conversionActions: ["request consultation", "explore expertise", "contact"], suitableStyles: ["authoritative editorial", "strategy-led", "restrained modern"], avoidStyles: ["generic stock meetings", "unsupported success claims"], imagery: ["professional context", "workshops", "strategy", "client collaboration"] },
+  travel: { primaryGoal: "trip enquiries", capabilities: ["booking_enquiry", "contact"], conversionActions: ["plan a trip", "explore tours", "enquire"], suitableStyles: ["destination-led", "cinematic", "editorial travel"], avoidStyles: ["generic brochure styling", "unverified availability"], imagery: ["destinations", "journeys", "travel experience", "itinerary context"] },
+  "home-services": { primaryGoal: "service enquiries", capabilities: ["appointment", "contact", "location"], conversionActions: ["request service", "explore services", "contact"], suitableStyles: ["trust-led", "clear local", "service-focused"], avoidStyles: ["generic corporate stock", "unverified emergency claims"], imagery: ["service work", "technician", "home context", "tools"] },
+  events: { primaryGoal: "event enquiries", capabilities: ["lead_capture", "contact"], conversionActions: ["plan an event", "view work", "enquire"], suitableStyles: ["editorial celebration", "gallery-led", "premium expressive"], avoidStyles: ["template wedding clichés", "invented venues or clients"], imagery: ["events", "details", "spaces", "celebration context"] },
 };
 
 export function interpretMinimalBrief(rawBrief: string): InterpretedBrief {

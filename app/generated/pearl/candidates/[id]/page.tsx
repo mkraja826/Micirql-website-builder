@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
 import { createPearlDentalBrief, generatePearlDentalCandidates } from "../../../../../src/benchmarks/pearl";
 import { resolvePearlAboutMedia, resolvePearlHeroMedia, resolvePearlServiceMedia } from "../../../../../src/benchmarks/pearl-media";
+import { getPearlRepairPlan } from "../../../../../src/benchmarks/pearl-repairs";
 import { createArtDirectedNarrative } from "../../../../../src/core/content/art-directed-narrative";
 import { capability, planCapabilitiesFromBrief } from "../../../../../src/core/capabilities/planner";
 import { getSectionColorStyle, type ChoreographedSectionType } from "../../../../../src/core/theme/section-choreography";
@@ -66,6 +67,8 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
   if (!candidate) notFound();
   const style = candidate.cssVariables as CSSProperties;
   const sections = candidate.selectedSections;
+  const repairPlan = getPearlRepairPlan(id);
+  const usePlannedHeroMedia = Boolean(repairPlan?.requiresRegeneration && repairPlan.instructions.some((instruction) => instruction.boundedAction === "request-planned-media"));
   const brand = "Pearl Dental";
   const brief = createPearlDentalBrief();
   const narrative = createArtDirectedNarrative(candidate.direction);
@@ -91,7 +94,7 @@ export default async function PearlCandidatePage({ params }: { params: Promise<{
 
   const heroProps = { eyebrow: narrative.hero.eyebrow, headline: narrative.hero.headline, body: narrative.hero.body, primaryCta: primaryAction };
   const secondaryHeroCta = { label: narrative.hero.secondary, href: "#care" };
-  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} visualLabel={candidate.direction.label} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent="Pearl" /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryHeroCta} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryHeroCta} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryHeroCta} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote={narrative.about.headline} media={heroMedia} />;
+  const hero = sections.hero === "hero-cinematic-fullscreen" ? <CinematicFullscreenHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} visualLabel={candidate.direction.label} /> : sections.hero === "hero-typography-led" ? <TypographyLedHero {...heroProps} accent="Pearl" /> : sections.hero === "hero-conversion-split" ? <ConversionSplitHero {...heroProps} secondaryCta={secondaryHeroCta} media={heroMedia} proof={["Hyderabad", "Clear next steps", "Patient-friendly information"]} /> : sections.hero === "hero-framed-statement" ? <FramedStatementHero {...heroProps} secondaryCta={secondaryHeroCta} /> : sections.hero === "hero-poster-offset" ? <PosterOffsetHero {...heroProps} secondaryCta={secondaryHeroCta} media={usePlannedHeroMedia ? heroMedia : undefined} /> : <EditorialSplitHero brand={brand} {...heroProps} secondaryCta={secondaryHeroCta} trustItems={[{label:"Hyderabad"},{label:"Clear next steps"},{label:"Patient-friendly information"}]} visualNote={narrative.about.headline} media={heroMedia} />;
 
   const services = sections.services === "services-visual-stories" ? <VisualStoryServices eyebrow="Care" headline={narrative.services.headline} stories={careItems.map((item, index) => ({ ...item, media: serviceMedia[index], link: primaryAction }))} /> : sections.services === "services-banded-list" ? <BandedServiceList eyebrow="Care" headline={narrative.services.headline} items={careItems} /> : sections.services === "services-rail" ? <RailServices eyebrow="Care" headline={narrative.services.headline} items={careItems} /> : sections.services === "services-featured-offer" ? <FeaturedOfferServices eyebrow="Care" headline={narrative.services.headline} intro={narrative.services.intro} items={careItems} /> : <EditorialServiceIndex eyebrow="Care" headline={narrative.services.headline} intro={narrative.services.intro} items={careItems} />;
 

@@ -20,12 +20,29 @@ export type PublishableDraftPage = {
   contentSectionTypes: string[];
 };
 
+export type PublishableMediaAsset = {
+  pageSlug: string;
+  sectionType: string;
+  role: string;
+  index: number;
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  focalPoint?: { x: number; y: number };
+  provider?: string;
+  providerId?: string;
+  sourcePageUrl?: string;
+  attribution?: string;
+};
+
 export type PublishableDraft = {
   version: "1.0";
   candidateId: string;
   readiness: DraftReadiness;
   pages: PublishableDraftPage[];
   content: ContentPlan;
+  media: PublishableMediaAsset[];
   selectedSections: SiteCandidatePlan["selectedSections"];
   theme: SiteCandidatePlan["theme"];
   cssVariables: SiteCandidatePlan["cssVariables"];

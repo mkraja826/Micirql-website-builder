@@ -30,6 +30,7 @@ export default async function MaterializedSiteProbe({
   const materialized = materializeSiteDraft({ sourceKey: fixtureId, draft });
   const serialized = serializeMaterializedSite(materialized);
   const hydrated = hydrateMaterializedSite(serialized);
+  const contentSectionCount = hydrated.snapshot.content.pages.reduce((total, page) => total + page.sections.length, 0);
 
   return (
     <main
@@ -42,19 +43,26 @@ export default async function MaterializedSiteProbe({
       data-site-source-key={hydrated.source.sourceKey}
       data-site-source-candidate={hydrated.source.candidateId}
       data-site-page-count={hydrated.snapshot.pages.length}
+      data-site-content-page-count={hydrated.snapshot.content.pages.length}
+      data-site-content-section-count={contentSectionCount}
+      data-site-seo-title={hydrated.snapshot.content.seo.title}
       data-site-capability-count={hydrated.snapshot.capabilities.length}
     >
       <h1>{entry.fixture.label} materialized site draft</h1>
-      {hydrated.snapshot.pages.map((page) => (
-        <section
-          key={page.slug}
-          data-site-page={page.slug}
-          data-site-section-count={page.sectionOrder.length}
-        >
-          <h2>{page.title}</h2>
-          <p>{page.sectionOrder.join(" → ")}</p>
-        </section>
-      ))}
+      {hydrated.snapshot.pages.map((page) => {
+        const contentPage = hydrated.snapshot.content.pages.find((item) => item.slug === page.slug);
+        return (
+          <section
+            key={page.slug}
+            data-site-page={page.slug}
+            data-site-section-count={page.sectionOrder.length}
+            data-site-content-section-count={contentPage?.sections.length ?? 0}
+          >
+            <h2>{page.title}</h2>
+            <p>{page.sectionOrder.join(" → ")}</p>
+          </section>
+        );
+      })}
     </main>
   );
 }

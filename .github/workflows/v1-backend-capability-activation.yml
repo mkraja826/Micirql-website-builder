@@ -1,0 +1,27 @@
+name: V1 Backend Capability Activation
+
+on:
+  push:
+    branches:
+      - "v1/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit backend capability activation
+        run: node scripts/audit-backend-capability-activation.mjs
+      - name: Upload backend capability activation audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-capability-activation-audit
+          path: artifacts/backend-capability-activation-audit/report.json

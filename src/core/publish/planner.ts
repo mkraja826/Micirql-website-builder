@@ -13,6 +13,10 @@ function unique(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function deepClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 export function composePublishableDraft({
   candidate,
   content,
@@ -67,6 +71,7 @@ export function composePublishableDraft({
     candidateId: candidate.id,
     readiness: blockers.length ? "blocked" : "ready",
     pages,
+    content: deepClone(content),
     selectedSections: { ...candidate.selectedSections },
     theme: candidate.theme,
     cssVariables: { ...candidate.cssVariables },

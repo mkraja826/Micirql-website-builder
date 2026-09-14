@@ -1,0 +1,29 @@
+name: V1 Editor Mutation Guardrails
+
+on:
+  push:
+    branches:
+      - 'v1/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit editor mutation guardrails
+        run: node scripts/audit-editor-mutation-guardrails.mjs
+      - name: Upload editor mutation guardrail audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-mutation-guardrails-audit
+          path: artifacts/editor-mutation-guardrails-audit/report.json

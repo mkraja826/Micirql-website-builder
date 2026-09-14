@@ -1,12 +1,15 @@
 import type {
   DurableSiteRecord,
   LoadDurableSiteInput,
+  LoadPublishedSiteInput,
   PersistCertifiedSiteInput,
+  PublishedDurableSiteRecord,
 } from "./schema";
 
 export interface SitePersistenceRepository {
   saveCertifiedSite(input: PersistCertifiedSiteInput): Promise<DurableSiteRecord>;
   loadLatest(input: LoadDurableSiteInput): Promise<DurableSiteRecord | null>;
+  loadPublished(input: LoadPublishedSiteInput): Promise<PublishedDurableSiteRecord | null>;
 }
 
 export function assertPersistableCertifiedSite(input: PersistCertifiedSiteInput): void {

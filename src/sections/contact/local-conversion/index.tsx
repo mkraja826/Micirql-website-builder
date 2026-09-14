@@ -1,3 +1,5 @@
-export function LocalConversionContact({ eyebrow, headline, body, status, submitLabel, note }: { eyebrow:string; headline:string; body:string; status:string; submitLabel:string; note:string }) {
-  return <section className="contact shell" id="contact"><div className="contactIntro"><p className="eyebrow">{eyebrow}</p><h2>{headline}</h2><p>{body}</p><span className="contactStatus">{status}</span></div><form><label>Name<input name="name" placeholder="Your name"/></label><label>Phone<input name="phone" inputMode="tel" placeholder="Your phone number"/></label><label>What can we help with?<textarea name="message" rows={4} placeholder="Tell us briefly"/></label><button className="button" type="button">{submitLabel}</button><small>{note}</small></form></section>;
+import { RequestFormRuntime, type GeneratedRequestAction } from "../request-form-runtime";
+
+export function LocalConversionContact({ eyebrow, headline, body, status, submitLabel, note, action }: { eyebrow:string; headline:string; body:string; status:string; submitLabel:string; note:string; action?: GeneratedRequestAction }) {
+  return <section className="contact shell" id="contact"><div className="contactIntro"><p className="eyebrow">{eyebrow}</p><h2>{headline}</h2><p>{body}</p><span className="contactStatus">{status}</span></div><RequestFormRuntime action={action} submitLabel={submitLabel} note={note} contactMode="phone" messageLabel="What can we help with?" messagePlaceholder="Tell us briefly" /></section>;
 }

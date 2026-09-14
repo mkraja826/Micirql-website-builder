@@ -8,8 +8,6 @@ import { resolvePublicSiteAction, type PublicSiteAction } from "../../core/capab
 export type GeneratedRequestAction = {
   siteId: string;
   capabilityKey: RequestCapabilityId;
-  actionId?: string;
-  actionVersion?: string;
 };
 
 type RequestFormRuntimeProps = {
@@ -50,23 +48,15 @@ export function RequestFormRuntime({
   useEffect(() => {
     let cancelled = false;
 
-    if (!action || !client) {
-      setResolvedAction(null);
-      return;
-    }
+    setResolvedAction(null);
+    setMessage("");
 
-    if (action.actionId && action.actionVersion) {
-      setResolvedAction({
-        siteId: action.siteId,
-        capabilityKey: action.capabilityKey,
-        actionId: action.actionId,
-        actionVersion: action.actionVersion,
-      });
-      return;
+    if (!action || !client) {
+      setState("idle");
+      return () => { cancelled = true; };
     }
 
     setState("resolving");
-    setMessage("");
     resolvePublicSiteAction(client, action.siteId, action.capabilityKey)
       .then((resolved) => {
         if (cancelled) return;

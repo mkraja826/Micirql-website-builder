@@ -1,7 +1,7 @@
 import type { CertifiedMaterializedSite } from "../certification/schema";
 import type { MaterializedSiteSnapshot } from "../materialization/schema";
 
-export type DurableSiteStatus = "draft";
+export type DurableSiteStatus = "draft" | "published";
 
 export type DurableSiteRecord = {
   dbSiteId: string;
@@ -9,12 +9,19 @@ export type DurableSiteRecord = {
   materializedSiteId: string;
   name: string;
   status: DurableSiteStatus;
+  publishedVersionId: string | null;
+  versionId: string;
   source: MaterializedSiteSnapshot["source"];
   revision: MaterializedSiteSnapshot["revision"];
   fingerprint: MaterializedSiteSnapshot["fingerprint"];
   snapshot: MaterializedSiteSnapshot;
   winner: CertifiedMaterializedSite["winner"];
   createdBy: string;
+};
+
+export type PublishedDurableSiteRecord = DurableSiteRecord & {
+  status: "published";
+  publishedVersionId: string;
 };
 
 export type PersistCertifiedSiteInput = {
@@ -27,4 +34,8 @@ export type PersistCertifiedSiteInput = {
 export type LoadDurableSiteInput = {
   workspaceId: string;
   materializedSiteId: string;
+};
+
+export type LoadPublishedSiteInput = {
+  siteId: string;
 };

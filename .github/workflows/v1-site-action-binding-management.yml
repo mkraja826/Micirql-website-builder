@@ -1,0 +1,25 @@
+name: V1 Site Action Binding Management
+
+on:
+  push:
+    branches:
+      - v1/site-action-binding-management
+  pull_request:
+    paths:
+      - "src/core/capabilities/binding-management.ts"
+      - "supabase/migrations/20260914080000_add_site_action_binding_management.sql"
+      - "scripts/audit-site-action-binding-management.mjs"
+      - ".github/workflows/v1-site-action-binding-management.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit site action binding management
+        run: node scripts/audit-site-action-binding-management.mjs

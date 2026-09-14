@@ -25,12 +25,14 @@ as $$
   join public.sites s
     on s.id = b.site_id
   where b.site_id = p_site_id
-    and b.capability_key = p_capability_key
+    and b.capability_key = trim(p_capability_key)
     and b.status = 'active'
     and b.verified_by = 'system'
     and coalesce(length(trim(b.verification_evidence_id)), 0) > 0
     and r.status = 'active'
-    and p_capability_key = any(r.capability_keys)
+    and r.handler_kind = 'lead_request'
+    and r.contract->>'semantics' = 'request_only'
+    and b.capability_key = any(r.capability_keys)
     and s.status = 'published'
     and s.published_version_id is not null
     and exists (

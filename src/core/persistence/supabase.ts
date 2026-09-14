@@ -6,14 +6,17 @@ import { assertPersistableCertifiedSite, type SitePersistenceRepository } from "
 import type {
   DurableSiteRecord,
   LoadDurableSiteInput,
+  LoadPublishedSiteInput,
   PersistCertifiedSiteInput,
+  PublishedDurableSiteRecord,
 } from "./schema";
 
 type DurableSiteRow = {
   id: string;
   workspace_id: string;
   name: string;
-  status: "draft";
+  status: "draft" | "published";
+  published_version_id: string | null;
   materialized_site_id: string;
   source_key: string;
   candidate_id: string;
@@ -21,13 +24,58 @@ type DurableSiteRow = {
 };
 
 type DurableVersionRow = {
+  id: string;
+  site_id: string;
   version_number: number;
+  status: string;
   snapshot: MaterializedSiteSnapshot;
   snapshot_hash: string | null;
   materialized_fingerprint: string | null;
   certified_winner: CertifiedWinner | null;
   created_by: string;
 };
+
+function hydrateDurableRecord(site: DurableSiteRow, version: DurableVersionRow): DurableSiteRecord {
+  const snapshot = hydrateMaterializedSite(JSON.stringify(version.snapshot));
+  const winner = version.certified_winner;
+
+  if (version.site_id !== site.id) {
+    throw new Error("Persisted revision does not belong to durable site.");
+  }
+  if (!winner || winner.rank !== 1 || winner.candidateId !== snapshot.source.candidateId) {
+    throw new Error("Persisted certification evidence is missing or mismatched.");
+  }
+  if (version.version_number !== snapshot.revision) {
+    throw new Error("Persisted revision does not match materialized snapshot revision.");
+  }
+  if (version.snapshot_hash !== snapshot.fingerprint || version.materialized_fingerprint !== snapshot.fingerprint) {
+    throw new Error("Persisted snapshot fingerprint does not match durable metadata.");
+  }
+  if (
+    site.materialized_site_id !== snapshot.siteId
+    || site.source_key !== snapshot.source.sourceKey
+    || site.candidate_id !== snapshot.source.candidateId
+    || site.draft_version !== snapshot.source.draftVersion
+  ) {
+    throw new Error("Persisted site provenance does not match the materialized snapshot.");
+  }
+
+  return {
+    dbSiteId: site.id,
+    workspaceId: site.workspace_id,
+    materializedSiteId: site.materialized_site_id,
+    name: site.name,
+    status: site.status,
+    publishedVersionId: site.published_version_id,
+    versionId: version.id,
+    source: snapshot.source,
+    revision: snapshot.revision,
+    fingerprint: snapshot.fingerprint,
+    snapshot,
+    winner,
+    createdBy: version.created_by,
+  };
+}
 
 export class SupabaseSitePersistenceRepository implements SitePersistenceRepository {
   constructor(private readonly client: SupabaseClient) {}
@@ -70,7 +118,7 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
   async loadLatest(input: LoadDurableSiteInput): Promise<DurableSiteRecord | null> {
     const { data: siteData, error: siteError } = await this.client
       .from("sites")
-      .select("id, workspace_id, name, status, materialized_site_id, source_key, candidate_id, draft_version")
+      .select("id, workspace_id, name, status, published_version_id, materialized_site_id, source_key, candidate_id, draft_version")
       .eq("workspace_id", input.workspaceId)
       .eq("materialized_site_id", input.materializedSiteId)
       .maybeSingle();
@@ -83,7 +131,7 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
     const site = siteData as DurableSiteRow;
     const { data: versionData, error: versionError } = await this.client
       .from("site_versions")
-      .select("version_number, snapshot, snapshot_hash, materialized_fingerprint, certified_winner, created_by")
+      .select("id, site_id, version_number, status, snapshot, snapshot_hash, materialized_fingerprint, certified_winner, created_by")
       .eq("site_id", site.id)
       .order("version_number", { ascending: false })
       .limit(1)
@@ -96,40 +144,46 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
       throw new Error("Durable site exists without a persisted revision.");
     }
 
-    const version = versionData as DurableVersionRow;
-    const snapshot = hydrateMaterializedSite(JSON.stringify(version.snapshot));
-    const winner = version.certified_winner;
+    return hydrateDurableRecord(site, versionData as DurableVersionRow);
+  }
 
-    if (!winner || winner.rank !== 1 || winner.candidateId !== snapshot.source.candidateId) {
-      throw new Error("Persisted certification evidence is missing or mismatched.");
+  async loadPublished(input: LoadPublishedSiteInput): Promise<PublishedDurableSiteRecord | null> {
+    if (!input.siteId.trim()) return null;
+
+    const { data: siteData, error: siteError } = await this.client
+      .from("sites")
+      .select("id, workspace_id, name, status, published_version_id, materialized_site_id, source_key, candidate_id, draft_version")
+      .eq("id", input.siteId)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (siteError) {
+      throw new Error(`Failed to load published site: ${siteError.message}`);
     }
-    if (version.version_number !== snapshot.revision) {
-      throw new Error("Persisted revision does not match materialized snapshot revision.");
+    if (!siteData) return null;
+
+    const site = siteData as DurableSiteRow;
+    if (site.status !== "published" || !site.published_version_id) return null;
+
+    const { data: versionData, error: versionError } = await this.client
+      .from("site_versions")
+      .select("id, site_id, version_number, status, snapshot, snapshot_hash, materialized_fingerprint, certified_winner, created_by")
+      .eq("id", site.published_version_id)
+      .eq("site_id", site.id)
+      .maybeSingle();
+
+    if (versionError) {
+      throw new Error(`Failed to load published site revision: ${versionError.message}`);
     }
-    if (version.snapshot_hash !== snapshot.fingerprint || version.materialized_fingerprint !== snapshot.fingerprint) {
-      throw new Error("Persisted snapshot fingerprint does not match durable metadata.");
-    }
-    if (
-      site.materialized_site_id !== snapshot.siteId
-      || site.source_key !== snapshot.source.sourceKey
-      || site.candidate_id !== snapshot.source.candidateId
-      || site.draft_version !== snapshot.source.draftVersion
-    ) {
-      throw new Error("Persisted site provenance does not match the materialized snapshot.");
+    if (!versionData) {
+      throw new Error("Published site points to a missing or mismatched revision.");
     }
 
-    return {
-      dbSiteId: site.id,
-      workspaceId: site.workspace_id,
-      materializedSiteId: site.materialized_site_id,
-      name: site.name,
-      status: site.status,
-      source: snapshot.source,
-      revision: snapshot.revision,
-      fingerprint: snapshot.fingerprint,
-      snapshot,
-      winner,
-      createdBy: version.created_by,
-    };
+    const record = hydrateDurableRecord(site, versionData as DurableVersionRow);
+    if (record.versionId !== site.published_version_id) {
+      throw new Error("Published site revision identity mismatch.");
+    }
+
+    return record as PublishedDurableSiteRecord;
   }
 }

@@ -42,6 +42,8 @@ export default async function MaterializedSiteProbe({
       data-site-source-key={hydrated.source.sourceKey}
       data-site-source-candidate={hydrated.source.candidateId}
       data-site-page-count={hydrated.snapshot.pages.length}
+      data-site-content-page-count={hydrated.snapshot.content.pages.length}
+      data-site-content-version={hydrated.snapshot.content.version}
       data-site-capability-count={hydrated.snapshot.capabilities.length}
     >
       <h1>{entry.fixture.label} materialized site draft</h1>

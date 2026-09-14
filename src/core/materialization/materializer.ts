@@ -26,6 +26,17 @@ function siteIdFor(sourceKey: string, candidateId: string): string {
   return `site-${fingerprint({ sourceKey, candidateId }).slice(3)}`;
 }
 
+function hasRenderableContent(site: MaterializedSiteSnapshot): boolean {
+  const content = site.snapshot?.content;
+  return Boolean(
+    content &&
+    content.version === "1.0" &&
+    Array.isArray(content.pages) &&
+    content.pages.length > 0 &&
+    content.pages.every((page) => page.slug.trim() && page.title.trim() && Array.isArray(page.sections) && page.sections.length > 0),
+  );
+}
+
 export function materializeSiteDraft({
   sourceKey,
   draft,
@@ -39,6 +50,7 @@ export function materializeSiteDraft({
 
   const persistedSnapshot = {
     pages: deepClone(draft.pages),
+    content: deepClone(draft.content),
     selectedSections: deepClone(draft.selectedSections),
     theme: deepClone(draft.theme),
     cssVariables: deepClone(draft.cssVariables),
@@ -70,6 +82,9 @@ export function hydrateMaterializedSite(serialized: string): MaterializedSiteSna
   const parsed = JSON.parse(serialized) as MaterializedSiteSnapshot;
   if (parsed.version !== "1.0" || parsed.revision !== 1 || parsed.status !== "draft") {
     throw new Error("Unsupported materialized site snapshot.");
+  }
+  if (!hasRenderableContent(parsed)) {
+    throw new Error("Materialized site snapshot is missing renderable content.");
   }
   const expectedFingerprint = fingerprint(parsed.snapshot);
   if (parsed.fingerprint !== expectedFingerprint) {

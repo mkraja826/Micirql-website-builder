@@ -25,6 +25,7 @@ export type PublishableDraft = {
   candidateId: string;
   readiness: DraftReadiness;
   pages: PublishableDraftPage[];
+  content: ContentPlan;
   selectedSections: SiteCandidatePlan["selectedSections"];
   theme: SiteCandidatePlan["theme"];
   cssVariables: SiteCandidatePlan["cssVariables"];

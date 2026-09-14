@@ -1,0 +1,29 @@
+name: V1 Editor Persistence Audit
+
+on:
+  push:
+    branches:
+      - 'v1/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit editor persistence safeguards
+        run: node scripts/audit-editor-persistence.mjs
+      - name: Upload editor persistence audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-persistence-audit
+          path: artifacts/editor-persistence-audit/report.json

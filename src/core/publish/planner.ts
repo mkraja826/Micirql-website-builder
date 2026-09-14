@@ -1,7 +1,7 @@
 import type { CandidateCapabilityPlan } from "../capabilities/planner";
 import type { ContentPlan } from "../content/schema";
 import type { SiteCandidatePlan } from "../generation/candidates";
-import type { DraftCapabilityState, PublishableDraft } from "./schema";
+import type { DraftCapabilityState, PublishableDraft, PublishableMediaAsset } from "./schema";
 
 function capabilityState(status: "available" | "preview" | "needs_configuration"): DraftCapabilityState {
   if (status === "available") return "active";
@@ -17,10 +17,12 @@ export function composePublishableDraft({
   candidate,
   content,
   capabilityPlan,
+  media = [],
 }: {
   candidate: SiteCandidatePlan;
   content: ContentPlan;
   capabilityPlan: CandidateCapabilityPlan;
+  media?: PublishableMediaAsset[];
 }): PublishableDraft {
   const blockers: string[] = [];
   const warnings = [...content.warnings];
@@ -62,12 +64,17 @@ export function composePublishableDraft({
     warnings.push(`Disabled until configured or verified: ${disabledCapabilities.map((item) => item.id).join(", ")}.`);
   }
 
+  const normalizedMedia = media
+    .filter((asset) => asset.src.trim() && asset.alt.trim() && asset.pageSlug.trim() && asset.sectionType.trim() && asset.role.trim())
+    .map((asset) => ({ ...asset, pageSlug: asset.pageSlug.trim(), sectionType: asset.sectionType.trim(), role: asset.role.trim(), src: asset.src.trim(), alt: asset.alt.trim() }));
+
   return {
     version: "1.0",
     candidateId: candidate.id,
     readiness: blockers.length ? "blocked" : "ready",
     pages,
     content,
+    media: normalizedMedia,
     selectedSections: { ...candidate.selectedSections },
     theme: candidate.theme,
     cssVariables: { ...candidate.cssVariables },

@@ -1,4 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hydrateMaterializedSite } from "../materialization/materializer";
+import type { MaterializedSiteSnapshot } from "../materialization/schema";
+import { assertEditorMutationAllowed } from "./guardrails";
 import { assertEditorDraftIdentity, type EditorDraftRepository } from "./repository";
 import type {
   EditorDraftRecord,
@@ -20,6 +23,7 @@ type BaselineVersionRow = {
   version_number: number;
   snapshot_hash: string | null;
   materialized_fingerprint: string | null;
+  snapshot: MaterializedSiteSnapshot;
 };
 
 type WorkspaceDraftRow = {
@@ -29,6 +33,12 @@ type WorkspaceDraftRow = {
   snapshot: EditorDraftSnapshot;
   updated_by: string;
   updated_at: string;
+};
+
+type LoadedBaseline = {
+  site: SiteBaselineRow;
+  fingerprint: string;
+  materialized: MaterializedSiteSnapshot;
 };
 
 export class SupabaseEditorDraftRepository implements EditorDraftRepository {
@@ -74,6 +84,9 @@ export class SupabaseEditorDraftRepository implements EditorDraftRepository {
       throw new Error("Editor draft revision conflict.");
     }
 
+    const previousSnapshot = current?.snapshot ?? this.editorSnapshotFromBaseline(baseline);
+    assertEditorMutationAllowed(previousSnapshot, input.snapshot);
+
     const { data, error } = await this.client.rpc("save_workspace_draft", {
       p_workspace_id: input.workspaceId,
       p_site_id: input.dbSiteId,
@@ -91,10 +104,7 @@ export class SupabaseEditorDraftRepository implements EditorDraftRepository {
     return saved;
   }
 
-  private async loadBaseline(input: LoadEditorDraftInput): Promise<{
-    site: SiteBaselineRow;
-    fingerprint: string;
-  }> {
+  private async loadBaseline(input: LoadEditorDraftInput): Promise<LoadedBaseline> {
     const { data: siteData, error: siteError } = await this.client
       .from("sites")
       .select("id, workspace_id, materialized_site_id, source_key, candidate_id, draft_version")
@@ -108,7 +118,7 @@ export class SupabaseEditorDraftRepository implements EditorDraftRepository {
     const site = siteData as SiteBaselineRow;
     const { data: versionData, error: versionError } = await this.client
       .from("site_versions")
-      .select("version_number, snapshot_hash, materialized_fingerprint")
+      .select("version_number, snapshot_hash, materialized_fingerprint, snapshot")
       .eq("site_id", input.dbSiteId)
       .eq("version_number", 1)
       .maybeSingle();
@@ -122,13 +132,37 @@ export class SupabaseEditorDraftRepository implements EditorDraftRepository {
       throw new Error("Certified editor baseline fingerprint is missing or inconsistent.");
     }
 
-    return { site, fingerprint };
+    const materialized = hydrateMaterializedSite(JSON.stringify(version.snapshot));
+    if (
+      materialized.fingerprint !== fingerprint
+      || materialized.siteId !== site.materialized_site_id
+      || materialized.source.sourceKey !== site.source_key
+      || materialized.source.candidateId !== site.candidate_id
+      || materialized.source.draftVersion !== site.draft_version
+    ) {
+      throw new Error("Certified editor baseline does not match durable site provenance.");
+    }
+
+    return { site, fingerprint, materialized };
   }
 
-  private assertBaseline(
-    snapshot: EditorDraftSnapshot,
-    baseline: { site: SiteBaselineRow; fingerprint: string },
-  ): void {
+  private editorSnapshotFromBaseline(baseline: LoadedBaseline): EditorDraftSnapshot {
+    return {
+      version: "1.0",
+      dbSiteId: baseline.site.id,
+      workspaceId: baseline.site.workspace_id,
+      baseline: {
+        materializedSiteId: baseline.site.materialized_site_id,
+        fingerprint: baseline.fingerprint,
+        sourceKey: baseline.site.source_key,
+        candidateId: baseline.site.candidate_id,
+        draftVersion: baseline.materialized.source.draftVersion,
+      },
+      content: baseline.materialized.snapshot,
+    };
+  }
+
+  private assertBaseline(snapshot: EditorDraftSnapshot, baseline: LoadedBaseline): void {
     assertEditorDraftIdentity(snapshot, {
       workspaceId: baseline.site.workspace_id,
       dbSiteId: baseline.site.id,

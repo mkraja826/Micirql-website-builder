@@ -16,6 +16,7 @@ export type MaterializedSiteSnapshot = {
   snapshot: {
     pages: PublishableDraft["pages"];
     content: PublishableDraft["content"];
+    media: PublishableDraft["media"];
     selectedSections: PublishableDraft["selectedSections"];
     theme: PublishableDraft["theme"];
     cssVariables: PublishableDraft["cssVariables"];

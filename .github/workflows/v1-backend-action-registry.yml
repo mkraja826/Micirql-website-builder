@@ -1,0 +1,27 @@
+name: V1 Backend Action Registry
+
+on:
+  push:
+    branches:
+      - "v1/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit backend action registry
+        run: node scripts/audit-backend-action-registry.mjs
+      - name: Upload backend action registry audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-action-registry-audit
+          path: artifacts/backend-action-registry-audit/report.json

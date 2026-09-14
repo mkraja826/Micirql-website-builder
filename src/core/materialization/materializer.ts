@@ -37,6 +37,18 @@ function hasRenderableContent(site: MaterializedSiteSnapshot): boolean {
   );
 }
 
+function hasPersistedMediaManifest(site: MaterializedSiteSnapshot): boolean {
+  return Array.isArray(site.snapshot?.media) && site.snapshot.media.every((asset) => (
+    asset.pageSlug.trim() &&
+    asset.sectionType.trim() &&
+    asset.role.trim() &&
+    asset.src.trim() &&
+    asset.alt.trim() &&
+    Number.isInteger(asset.index) &&
+    asset.index >= 0
+  ));
+}
+
 export function materializeSiteDraft({
   sourceKey,
   draft,
@@ -51,6 +63,7 @@ export function materializeSiteDraft({
   const persistedSnapshot = {
     pages: deepClone(draft.pages),
     content: deepClone(draft.content),
+    media: deepClone(draft.media),
     selectedSections: deepClone(draft.selectedSections),
     theme: deepClone(draft.theme),
     cssVariables: deepClone(draft.cssVariables),
@@ -85,6 +98,9 @@ export function hydrateMaterializedSite(serialized: string): MaterializedSiteSna
   }
   if (!hasRenderableContent(parsed)) {
     throw new Error("Materialized site snapshot is missing renderable content.");
+  }
+  if (!hasPersistedMediaManifest(parsed)) {
+    throw new Error("Materialized site snapshot is missing a valid persisted media manifest.");
   }
   const expectedFingerprint = fingerprint(parsed.snapshot);
   if (parsed.fingerprint !== expectedFingerprint) {

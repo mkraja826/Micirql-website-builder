@@ -7,7 +7,9 @@ on:
   pull_request:
     paths:
       - "src/core/persistence/**"
+      - "docs/production/published-site-renderer-boundary.md"
       - "scripts/audit-published-site-version-boundary.mjs"
+      - "scripts/audit-published-site-renderer-boundary-doc.mjs"
       - ".github/workflows/v1-published-site-version-boundary.yml"
 
 jobs:
@@ -20,3 +22,5 @@ jobs:
           node-version: 22
       - name: Audit published site version boundary
         run: node scripts/audit-published-site-version-boundary.mjs
+      - name: Audit published renderer authority documentation
+        run: node scripts/audit-published-site-renderer-boundary-doc.mjs

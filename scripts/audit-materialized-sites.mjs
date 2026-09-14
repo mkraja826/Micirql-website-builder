@@ -24,6 +24,8 @@ async function inspect(page, fixture, candidateId) {
       sourceKey: main?.getAttribute('data-site-source-key') ?? '',
       sourceCandidate: main?.getAttribute('data-site-source-candidate') ?? '',
       pageCount: Number(main?.getAttribute('data-site-page-count') ?? 0),
+      contentPageCount: Number(main?.getAttribute('data-site-content-page-count') ?? 0),
+      contentVersion: main?.getAttribute('data-site-content-version') ?? '',
       capabilityCount: Number(main?.getAttribute('data-site-capability-count') ?? 0),
       pages: [...document.querySelectorAll('[data-site-page]')].map((node) => ({
         slug: node.getAttribute('data-site-page') ?? '',
@@ -51,9 +53,12 @@ for (const fixture of fixtures) {
     if (first.sourceKey !== fixture) failures.push(`source key mismatch: ${first.sourceKey || 'missing'}`);
     if (first.sourceCandidate !== candidateId) failures.push(`source candidate mismatch: ${first.sourceCandidate || 'missing'}`);
     if (first.pageCount < 1 || first.pages.some((item) => !item.slug || item.sectionCount < 1)) failures.push('invalid persisted page snapshot');
+    if (first.contentVersion !== '1.0') failures.push(`unexpected persisted content version ${first.contentVersion || 'missing'}`);
+    if (first.contentPageCount !== first.pageCount) failures.push(`persisted content/page mismatch: ${first.contentPageCount}/${first.pageCount}`);
     if (first.capabilityCount < 1) failures.push('missing persisted capability state');
     if (first.siteId !== second.siteId) failures.push('site id changed across reload');
     if (first.fingerprint !== second.fingerprint) failures.push('snapshot fingerprint changed across reload');
+    if (first.contentPageCount !== second.contentPageCount || first.contentVersion !== second.contentVersion) failures.push('persisted content changed across reload');
     if (JSON.stringify(first.pages) !== JSON.stringify(second.pages)) failures.push('page snapshot changed across reload');
 
     report.candidates.push({ fixture, candidateId, first, second, failures });
@@ -68,6 +73,7 @@ report.summary = {
   candidateCount: report.candidates.length,
   fixtureCount: fixtures.length,
   stableReloads: report.candidates.filter((candidate) => candidate.first.siteId === candidate.second.siteId && candidate.first.fingerprint === candidate.second.fingerprint).length,
+  contentPayloadsPersisted: report.candidates.filter((candidate) => candidate.first.contentVersion === '1.0' && candidate.first.contentPageCount === candidate.first.pageCount).length,
   uniqueSiteIds: uniqueSiteIds.size,
   candidatesWithFailures: failed.map((candidate) => `${candidate.fixture}/${candidate.candidateId}`),
 };

@@ -1,0 +1,23 @@
+name: V1 Generated Request Forms
+
+on:
+  push:
+    branches:
+      - v1/generated-form-submission
+  pull_request:
+    paths:
+      - "src/sections/contact/**"
+      - "src/core/capabilities/**"
+      - "scripts/audit-generated-request-forms.mjs"
+      - ".github/workflows/v1-generated-request-forms.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit generated request forms
+        run: node scripts/audit-generated-request-forms.mjs

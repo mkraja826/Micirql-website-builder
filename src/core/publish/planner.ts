@@ -67,6 +67,7 @@ export function composePublishableDraft({
     candidateId: candidate.id,
     readiness: blockers.length ? "blocked" : "ready",
     pages,
+    content,
     selectedSections: { ...candidate.selectedSections },
     theme: candidate.theme,
     cssVariables: { ...candidate.cssVariables },

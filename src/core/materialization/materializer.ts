@@ -39,6 +39,7 @@ export function materializeSiteDraft({
 
   const persistedSnapshot = {
     pages: deepClone(draft.pages),
+    content: deepClone(draft.content),
     selectedSections: deepClone(draft.selectedSections),
     theme: deepClone(draft.theme),
     cssVariables: deepClone(draft.cssVariables),
@@ -70,6 +71,9 @@ export function hydrateMaterializedSite(serialized: string): MaterializedSiteSna
   const parsed = JSON.parse(serialized) as MaterializedSiteSnapshot;
   if (parsed.version !== "1.0" || parsed.revision !== 1 || parsed.status !== "draft") {
     throw new Error("Unsupported materialized site snapshot.");
+  }
+  if (!parsed.snapshot?.content || parsed.snapshot.content.version !== "1.0" || !Array.isArray(parsed.snapshot.content.pages)) {
+    throw new Error("Materialized site snapshot is missing its certified content payload.");
   }
   const expectedFingerprint = fingerprint(parsed.snapshot);
   if (parsed.fingerprint !== expectedFingerprint) {

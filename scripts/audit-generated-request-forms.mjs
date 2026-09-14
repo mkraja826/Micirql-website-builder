@@ -9,6 +9,7 @@ const migration = fs.readFileSync("supabase/migrations/20260914090000_add_public
 const checks = [
   [runtime.includes('submitRegisteredSiteAction'), "runtime must call the registered site action submitter"],
   [runtime.includes('resolvePublicSiteAction'), "runtime must resolve published verified action identity"],
+  [!runtime.includes('action.actionId && action.actionVersion'), "runtime must not bypass public binding resolution with supplied action identity"],
   [runtime.includes('consent: true'), "runtime must send explicit consent"],
   [runtime.includes('type="checkbox"'), "runtime must collect consent"],
   [runtime.includes('disabled={!active'), "runtime must fail closed without an active binding/config"],
@@ -21,7 +22,9 @@ const checks = [
   [migration.includes("b.status = 'active'"), "public resolver must require an active binding"],
   [migration.includes("b.verified_by = 'system'"), "public resolver must require system verification"],
   [migration.includes("r.status = 'active'"), "public resolver must require an active registry action"],
-  [migration.includes('p_capability_key = any(r.capability_keys)'), "public resolver must verify capability coverage"],
+  [migration.includes("r.handler_kind = 'lead_request'"), "public resolver must restrict to the supported request handler"],
+  [migration.includes("r.contract->>'semantics' = 'request_only'"), "public resolver must require request-only registry semantics"],
+  [migration.includes('b.capability_key = any(r.capability_keys)'), "public resolver must verify capability coverage"],
   [migration.includes('grant execute on function public.resolve_public_site_action(uuid, text) to anon, authenticated'), "public resolver must expose only the narrow RPC to public visitors"],
   [editorial.includes('RequestFormRuntime'), "editorial inquiry must use the request runtime"],
   [local.includes('RequestFormRuntime'), "local conversion must use the request runtime"],

@@ -1,0 +1,23 @@
+name: V1 Published Media Manifest
+
+on:
+  push:
+    branches:
+      - v1/canonical-published-renderer
+  pull_request:
+    paths:
+      - "src/core/publish/**"
+      - "src/core/materialization/**"
+      - "scripts/audit-published-media-manifest.mjs"
+      - ".github/workflows/v1-published-media-manifest.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit published media manifest
+        run: node scripts/audit-published-media-manifest.mjs

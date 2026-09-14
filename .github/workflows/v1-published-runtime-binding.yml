@@ -1,0 +1,24 @@
+name: V1 Published Runtime Binding
+
+on:
+  push:
+    branches:
+      - v1/published-runtime-binding
+  pull_request:
+    paths:
+      - "src/core/publish/**"
+      - "src/sections/contact/**"
+      - "app/generated/**"
+      - "scripts/audit-published-runtime-binding.mjs"
+      - ".github/workflows/v1-published-runtime-binding.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit published runtime binding
+        run: node scripts/audit-published-runtime-binding.mjs

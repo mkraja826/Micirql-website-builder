@@ -8,7 +8,9 @@ import type {
   LoadDurableSiteInput,
   LoadPublishedSiteInput,
   PersistCertifiedSiteInput,
+  PublicationTransition,
   PublishedDurableSiteRecord,
+  SetPublishedSiteVersionInput,
 } from "./schema";
 
 type DurableSiteRow = {
@@ -33,6 +35,12 @@ type DurableVersionRow = {
   materialized_fingerprint: string | null;
   certified_winner: CertifiedWinner | null;
   created_by: string;
+};
+
+type PublicationTransitionRow = {
+  site_id: string;
+  published_version_id: string;
+  previous_published_version_id: string | null;
 };
 
 function hydrateDurableRecord(site: DurableSiteRow, version: DurableVersionRow): DurableSiteRecord {
@@ -185,5 +193,32 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
     }
 
     return record as PublishedDurableSiteRecord;
+  }
+
+  async setPublishedVersion(input: SetPublishedSiteVersionInput): Promise<PublicationTransition> {
+    if (!input.siteId.trim() || !input.versionId.trim() || !input.actorId.trim()) {
+      throw new Error("Publication transition requires site, version, and actor identities.");
+    }
+
+    const { data, error } = await this.client.rpc("set_published_site_version", {
+      p_site_id: input.siteId,
+      p_version_id: input.versionId,
+      p_actor_id: input.actorId,
+    });
+
+    if (error) {
+      throw new Error(`Failed to switch published site version: ${error.message}`);
+    }
+
+    const row = (Array.isArray(data) ? data[0] : data) as PublicationTransitionRow | null;
+    if (!row || row.site_id !== input.siteId || row.published_version_id !== input.versionId) {
+      throw new Error("Publication transition returned an unexpected site or version identity.");
+    }
+
+    return {
+      siteId: row.site_id,
+      publishedVersionId: row.published_version_id,
+      previousPublishedVersionId: row.previous_published_version_id,
+    };
   }
 }

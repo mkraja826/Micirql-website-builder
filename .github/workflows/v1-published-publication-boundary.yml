@@ -1,0 +1,35 @@
+name: V1 Published Publication Boundary
+
+on:
+  push:
+    branches:
+      - "v1/**"
+    paths:
+      - "supabase/migrations/20260915060000_add_atomic_publication_transition.sql"
+      - "scripts/audit-published-publication-boundary.mjs"
+      - ".github/workflows/v1-published-publication-boundary.yml"
+  pull_request:
+    paths:
+      - "supabase/migrations/20260915060000_add_atomic_publication_transition.sql"
+      - "scripts/audit-published-publication-boundary.mjs"
+      - ".github/workflows/v1-published-publication-boundary.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit atomic publication boundary
+        run: node scripts/audit-published-publication-boundary.mjs

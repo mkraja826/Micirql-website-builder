@@ -9,6 +9,8 @@ on:
       - "app/published/**"
       - "scripts/audit-published-functional-certification.mjs"
       - "scripts/published-browser-probe.mjs"
+      - "scripts/run-published-browser-matrix.mjs"
+      - "scripts/run-published-publication-certification.mjs"
       - "package.json"
       - ".github/workflows/v1-published-functional-certification.yml"
   workflow_dispatch:

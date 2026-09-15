@@ -11,6 +11,18 @@ export type PublishedCertificationRepositoryFactory = (
   testCase: PublishedFunctionalCertificationCase,
 ) => SitePersistenceRepository;
 
+export type PublishedBrowserCertificationEvidence = {
+  navigation: boolean;
+  deepLinks: boolean;
+  responsive: boolean;
+  generationIndependence: boolean;
+};
+
+export type PublishedBrowserEvidenceProvider = (
+  testCase: PublishedFunctionalCertificationCase,
+  expectedVersionId: string,
+) => Promise<PublishedBrowserCertificationEvidence>;
+
 async function certifiesActiveVersion(
   repository: SitePersistenceRepository,
   testCase: PublishedFunctionalCertificationCase,
@@ -36,6 +48,7 @@ export async function certifyPublishedRuntimeCase(
   repository: SitePersistenceRepository,
   testCase: PublishedFunctionalCertificationCase,
   actorId: string,
+  browserEvidenceProvider: PublishedBrowserEvidenceProvider,
 ): Promise<PublishedFunctionalCertificationResult> {
   const initial = await repository.setPublishedVersion({
     siteId: testCase.siteId,
@@ -46,6 +59,8 @@ export async function certifyPublishedRuntimeCase(
   const v1 =
     initial.publishedVersionId === testCase.versionOneId &&
     (await certifiesActiveVersion(repository, testCase, testCase.versionOneId));
+
+  const v1Browser = await browserEvidenceProvider(testCase, testCase.versionOneId);
 
   const forward = await repository.setPublishedVersion({
     siteId: testCase.siteId,
@@ -58,6 +73,8 @@ export async function certifyPublishedRuntimeCase(
     forward.previousPublishedVersionId === testCase.versionOneId &&
     (await certifiesActiveVersion(repository, testCase, testCase.versionTwoId));
 
+  const v2Browser = await browserEvidenceProvider(testCase, testCase.versionTwoId);
+
   const rollback = await repository.setPublishedVersion({
     siteId: testCase.siteId,
     versionId: testCase.versionOneId,
@@ -69,6 +86,8 @@ export async function certifyPublishedRuntimeCase(
     rollback.previousPublishedVersionId === testCase.versionTwoId &&
     (await certifiesActiveVersion(repository, testCase, testCase.versionOneId));
 
+  const rollbackBrowser = await browserEvidenceProvider(testCase, testCase.versionOneId);
+
   const capabilitySite = await repository.loadPublished({ siteId: testCase.siteId });
   const activeCapabilities = new Set(
     capabilitySite?.snapshot.snapshot.capabilities
@@ -77,15 +96,16 @@ export async function certifyPublishedRuntimeCase(
   );
   const capabilities = testCase.expectedCapabilityKeys.every((key) => activeCapabilities.has(key));
 
+  const browserEvidence = [v1Browser, v2Browser, rollbackBrowser];
   const checks = {
     publicRuntime: v1 && v2 && rolledBack,
-    navigation: testCase.pageSlugs.length > 0,
-    deepLinks: testCase.pageSlugs.every((slug) => slug.trim().length > 0),
-    responsive: true,
+    navigation: browserEvidence.every((evidence) => evidence.navigation),
+    deepLinks: browserEvidence.every((evidence) => evidence.deepLinks),
+    responsive: browserEvidence.every((evidence) => evidence.responsive),
     capabilities,
     publicationIdentity: v1 && v2 && rolledBack,
     rollbackDeterminism: v1 && v2 && rolledBack,
-    generationIndependence: true,
+    generationIndependence: browserEvidence.every((evidence) => evidence.generationIndependence),
   };
 
   const result: PublishedFunctionalCertificationResult = {
@@ -103,13 +123,21 @@ export async function certifyPublishedRuntimePortfolio(
   cases: readonly PublishedFunctionalCertificationCase[],
   actorId: string,
   repositoryFactory: PublishedCertificationRepositoryFactory,
+  browserEvidenceProvider: PublishedBrowserEvidenceProvider,
 ): Promise<readonly PublishedFunctionalCertificationResult[]> {
   assertPublishedCertificationPortfolio(cases);
   if (!actorId.trim()) throw new Error("Published certification requires an authenticated actor identity.");
 
   const results: PublishedFunctionalCertificationResult[] = [];
   for (const testCase of cases) {
-    results.push(await certifyPublishedRuntimeCase(repositoryFactory(testCase), testCase, actorId));
+    results.push(
+      await certifyPublishedRuntimeCase(
+        repositoryFactory(testCase),
+        testCase,
+        actorId,
+        browserEvidenceProvider,
+      ),
+    );
   }
   return results;
 }

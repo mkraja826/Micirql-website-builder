@@ -2,6 +2,7 @@ import type { RankedCandidate } from "../ranking/schema";
 
 export type RenderedRankingSignal = {
   candidateId: string;
+  evidenceState: "post-repair";
   renderedScore: number;
   hardFailures: string[];
 };
@@ -63,6 +64,7 @@ export function composeFinalCertificationRanking<T extends { id: string }>(input
     const candidateId = ranked.candidate.id;
     const renderedSignal = rendered.get(candidateId)!;
     const perceptualSignal = perceptual.get(candidateId)!;
+    if (renderedSignal.evidenceState !== "post-repair") throw new Error(`Candidate ${candidateId} rendered evidence is not post-repair and cannot enter final certification ranking.`);
     if (!Number.isFinite(ranked.score.total) || !Number.isFinite(renderedSignal.renderedScore) || !Number.isFinite(perceptualSignal.perceptualScore)) {
       throw new Error(`Final ranking contains a non-finite score for ${candidateId}.`);
     }

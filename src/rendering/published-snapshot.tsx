@@ -48,7 +48,7 @@ function displayName(snapshot:MaterializedSiteSnapshot,pageTitle:string){const h
 function primaryAction(snapshot:MaterializedSiteSnapshot){const capability=snapshot.snapshot.capabilities.find((item)=>item.id===snapshot.snapshot.primaryCapability)??snapshot.snapshot.capabilities.find((item)=>item.state==="active")??snapshot.snapshot.capabilities[0];return capability?{label:capability.label,href:capability.href??"#contact",capabilityKey:capability.id}:{label:"Contact",href:"#contact",capabilityKey:"contact"};}
 
 export function renderPublishedSnapshot({snapshot,runtime,pageSlug}:PublishedSnapshotRendererInput):ReactNode|null{
- if(runtime.status!=="published"||runtime.renderedVersionId!==runtime.publishedVersionId)return null;
+ if (runtime.status !== "published" || runtime.renderedVersionId !== runtime.publishedVersionId) return null;
  const persistedPage = snapshot.snapshot.pages.find((page) => page.slug === pageSlug);
  const contentPage = snapshot.snapshot.content.pages.find((page) => page.slug === pageSlug);
  if (!persistedPage || !contentPage) return null;

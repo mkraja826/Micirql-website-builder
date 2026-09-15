@@ -1,0 +1,33 @@
+name: V1 Published Snapshot Renderer
+
+on:
+  push:
+    branches:
+      - v1/published-snapshot-renderer
+  pull_request:
+    paths:
+      - "src/core/publish/renderer.tsx"
+      - "src/rendering/**"
+      - "package.json"
+      - "src/core/publish/runtime.ts"
+      - "src/core/materialization/**"
+      - "src/sections/**"
+      - "scripts/audit-published-snapshot-renderer.mjs"
+      - "scripts/test-published-snapshot-renderer.mjs"
+      - ".github/workflows/v1-published-snapshot-renderer.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - name: Audit persisted-only renderer boundary
+        run: node scripts/audit-published-snapshot-renderer.mjs
+      - name: Test persisted rendering behavior
+        run: node scripts/test-published-snapshot-renderer.mjs
+      - name: Build Next application
+        run: npm run build

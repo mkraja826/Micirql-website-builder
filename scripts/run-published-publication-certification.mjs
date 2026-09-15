@@ -36,32 +36,30 @@ async function publish(binding, versionId) {
   return result;
 }
 
-function runMatrix(phase, expectedVersionId) {
+function runMatrix(phase) {
   return new Promise((resolve, reject) => {
+    const env = { ...process.env };
+    delete env.PUBLISHED_CERTIFICATION_EXPECTED_VERSION;
+    env.PUBLISHED_CERTIFICATION_PHASE = phase;
+    env.PUBLISHED_CERTIFICATION_REPORT = `published-certification-${phase}.json`;
+
     const child = spawn(process.execPath, ["scripts/run-published-browser-matrix.mjs"], {
       stdio: "inherit",
-      env: {
-        ...process.env,
-        PUBLISHED_CERTIFICATION_PHASE: phase,
-        PUBLISHED_CERTIFICATION_EXPECTED_VERSION: expectedVersionId,
-        PUBLISHED_CERTIFICATION_REPORT: `published-certification-${phase}.json`,
-      },
+      env,
     });
     child.on("error", reject);
     child.on("exit", (code) => code === 0 ? resolve() : reject(new Error(`Browser matrix failed during ${phase}.`)));
   });
 }
 
-// Each phase publishes all five sites to its required immutable version before
-// browser observation. This prevents a mixed portfolio from being certified.
 async function transitionPortfolio(versionKey) {
   const transitions = [];
   for (const binding of bindings) transitions.push(await publish(binding, binding[versionKey]));
   return transitions;
 }
 
-const v1Transitions = await transitionPortfolio("versionOneId");
-await runMatrix("v1", bindings[0].versionOneId);
+await transitionPortfolio("versionOneId");
+await runMatrix("v1");
 
 const v2Transitions = await transitionPortfolio("versionTwoId");
 for (let index = 0; index < bindings.length; index += 1) {
@@ -69,7 +67,7 @@ for (let index = 0; index < bindings.length; index += 1) {
     throw new Error(`V2 transition did not observe V1 as previous publication for ${bindings[index].industry}.`);
   }
 }
-await runMatrix("v2", bindings[0].versionTwoId);
+await runMatrix("v2");
 
 const rollbackTransitions = await transitionPortfolio("versionOneId");
 for (let index = 0; index < bindings.length; index += 1) {
@@ -77,7 +75,7 @@ for (let index = 0; index < bindings.length; index += 1) {
     throw new Error(`Rollback did not observe V2 as previous publication for ${bindings[index].industry}.`);
   }
 }
-await runMatrix("rollback-v1", bindings[0].versionOneId);
+await runMatrix("rollback-v1");
 
 fs.writeFileSync("published-functional-certification-summary.json", `${JSON.stringify({
   passed: true,

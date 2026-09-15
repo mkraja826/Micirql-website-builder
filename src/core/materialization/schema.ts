@@ -20,6 +20,7 @@ export type MaterializedSiteSnapshot = {
     selectedSections: PublishableDraft["selectedSections"];
     theme: PublishableDraft["theme"];
     cssVariables: PublishableDraft["cssVariables"];
+    certifiedRepairCss?: PublishableDraft["certifiedRepairCss"];
     primaryCapability: PublishableDraft["primaryCapability"];
     capabilities: PublishableDraft["capabilities"];
     warnings: string[];

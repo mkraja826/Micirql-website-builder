@@ -67,6 +67,7 @@ export function materializeSiteDraft({
     selectedSections: deepClone(draft.selectedSections),
     theme: deepClone(draft.theme),
     cssVariables: deepClone(draft.cssVariables),
+    ...(draft.certifiedRepairCss ? { certifiedRepairCss: draft.certifiedRepairCss } : {}),
     primaryCapability: deepClone(draft.primaryCapability),
     capabilities: deepClone(draft.capabilities),
     warnings: [...draft.warnings],

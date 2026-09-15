@@ -12,9 +12,8 @@ fs.writeFileSync(
   `export { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } from '../../src/benchmarks/pearl.ts';\nexport { rankCandidates } from '../../src/core/ranking/candidates.ts';\n`,
 );
 execFileSync(
-  process.execPath,
+  './node_modules/esbuild/bin/esbuild',
   [
-    './node_modules/esbuild/bin/esbuild',
     runnerPath,
     '--bundle',
     '--platform=node',

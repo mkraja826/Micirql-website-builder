@@ -39,6 +39,12 @@ function validateBindings(bindings) {
   return byIndustry;
 }
 
+function expectedVersionForPhase(binding, phase) {
+  if (phase === "v1" || phase === "rollback-v1") return binding.versionOneId;
+  if (phase === "v2") return binding.versionTwoId;
+  throw new Error(`Unsupported publication certification phase: ${phase}.`);
+}
+
 function assertObservation(industry, phase, expectedVersionId, observation) {
   for (const page of observation.pages) {
     if (page.status < 200 || page.status >= 400) throw new Error(`${industry} ${phase}: ${page.url} returned ${page.status}.`);
@@ -69,18 +75,21 @@ async function certifyPhase(baseUrl, industry, binding, phase, expectedVersionId
 const baseUrl = process.env.PUBLISHED_CERTIFICATION_BASE_URL;
 if (!baseUrl) throw new Error("Set PUBLISHED_CERTIFICATION_BASE_URL to the deployed certification runtime.");
 
+const phase = process.env.PUBLISHED_CERTIFICATION_PHASE;
+if (!phase) throw new Error("Set PUBLISHED_CERTIFICATION_PHASE to v1, v2, or rollback-v1.");
+if (process.env.PUBLISHED_CERTIFICATION_EXPECTED_VERSION) {
+  throw new Error("Global PUBLISHED_CERTIFICATION_EXPECTED_VERSION is forbidden; versions must resolve per industry binding.");
+}
+
 const bindings = validateBindings(readBindings(process.env.PUBLISHED_CERTIFICATION_BINDINGS));
 const report = [];
 
 for (const industry of REQUIRED_INDUSTRIES) {
   const binding = bindings.get(industry);
-  // Publication transitions are deliberately external to this browser process.
-  // The orchestrator must publish each requested version before invoking a phase.
-  const phase = process.env.PUBLISHED_CERTIFICATION_PHASE ?? "active";
-  const expectedVersionId = process.env.PUBLISHED_CERTIFICATION_EXPECTED_VERSION || binding.versionOneId;
+  const expectedVersionId = expectedVersionForPhase(binding, phase);
   report.push({ industry, ...(await certifyPhase(baseUrl, industry, binding, phase, expectedVersionId)) });
 }
 
 const output = process.env.PUBLISHED_CERTIFICATION_REPORT ?? "published-functional-certification-report.json";
 fs.writeFileSync(output, `${JSON.stringify({ baseUrl, generatedAt: new Date().toISOString(), report }, null, 2)}\n`);
-console.log(`Published browser matrix passed for ${report.length} industries × ${VIEWPORTS.length} viewports. Report: ${output}`);
+console.log(`Published browser matrix passed for ${report.length} industries × ${VIEWPORTS.length} viewports during ${phase}. Report: ${output}`);

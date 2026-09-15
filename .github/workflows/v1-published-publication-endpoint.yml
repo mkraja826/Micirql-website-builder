@@ -1,0 +1,33 @@
+name: V1 Published Publication Endpoint
+
+on:
+  pull_request:
+    paths:
+      - "app/api/sites/**/publish/**"
+      - "src/core/persistence/**"
+      - "supabase/migrations/**"
+      - "scripts/audit-published-publication-endpoint.mjs"
+      - ".github/workflows/v1-published-publication-endpoint.yml"
+  workflow_dispatch:
+
+jobs:
+  publication-endpoint-boundary:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit authenticated publication endpoint
+        run: node scripts/audit-published-publication-endpoint.mjs
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build

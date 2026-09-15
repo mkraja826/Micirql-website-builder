@@ -41,6 +41,11 @@ jobs:
         run: node scripts/audit-real-certification-post-repair.mjs
       - name: Compose cross-industry final certification ranking
         run: node scripts/compose-real-certification-ranking.mjs
+      - name: Materialize accepted repaired winners
+        run: |
+          mkdir -p .tmp/real-certification-materializer
+          ./node_modules/esbuild/bin/esbuild scripts/materialize-real-certification-winners.ts --bundle --platform=node --format=esm --target=node22 --outfile=.tmp/real-certification-materializer/run.mjs
+          node .tmp/real-certification-materializer/run.mjs
       - name: Upload real certification evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,3 +57,4 @@ jobs:
             artifacts/real-certification-repair-plans/report.json
             artifacts/real-certification-post-repair-audit/report.json
             artifacts/real-certification-final-ranking/report.json
+            artifacts/real-certification-materialized-winners/report.json

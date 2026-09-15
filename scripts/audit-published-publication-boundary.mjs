@@ -34,12 +34,21 @@ for (const [label, pattern] of requiredSql) {
 
 const forbiddenSql = [
   ["historical version deletion", /delete\s+from\s+public\.site_versions/i],
-  ["snapshot mutation", /update\s+public\.site_versions[\s\S]*set[\s\S]*snapshot\s*=/i],
-  ["version reassignment", /update\s+public\.site_versions[\s\S]*set[\s\S]*site_id\s*=/i],
   ["generation dependency", /generate|candidate_competition|art_director|media_provider/i],
 ];
 for (const [label, pattern] of forbiddenSql) {
   if (pattern.test(sql)) throw new Error(`Publication boundary violates invariant: ${label}`);
+}
+
+const siteVersionUpdates = [...sql.matchAll(/update\s+public\.site_versions\s+set\s+([\s\S]*?)\s+where\b/gi)];
+for (const match of siteVersionUpdates) {
+  const setClause = match[1] ?? "";
+  if (/\bsnapshot\s*=/i.test(setClause)) {
+    throw new Error("Publication boundary violates invariant: snapshot mutation");
+  }
+  if (/\bsite_id\s*=/i.test(setClause)) {
+    throw new Error("Publication boundary violates invariant: version reassignment");
+  }
 }
 
 const requiredTs = [

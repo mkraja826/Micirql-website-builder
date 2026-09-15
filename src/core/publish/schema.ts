@@ -46,6 +46,8 @@ export type PublishableDraft = {
   selectedSections: SiteCandidatePlan["selectedSections"];
   theme: SiteCandidatePlan["theme"];
   cssVariables: SiteCandidatePlan["cssVariables"];
+  /** Deterministic CSS emitted only by the bounded repair executor after post-repair acceptance. */
+  certifiedRepairCss?: string;
   primaryCapability: CandidateCapabilityPlan["primary"];
   capabilities: PublishableDraftCapability[];
   blockers: string[];

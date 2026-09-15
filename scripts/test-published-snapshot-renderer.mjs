@@ -35,6 +35,16 @@ const snapshot = { snapshot: {
 } };
 const original = JSON.stringify(snapshot);
 const fetchBefore = globalThis.fetch;
+const findMain = (node) => {
+  if (!node) return undefined;
+  if (node.type === 'main') return node;
+  const children = node.props?.children;
+  for (const child of Array.isArray(children) ? children : [children]) {
+    const found = findMain(child);
+    if (found) return found;
+  }
+  return undefined;
+};
 globalThis.fetch = () => { throw new Error('Rendering performed a network lookup'); };
 try {
   const render = (value = snapshot, pageSlug = 'home') => renderPublishedSnapshot({ snapshot: value, runtime, pageSlug });
@@ -55,11 +65,15 @@ try {
   assert.equal(buildPublishedRequestAction({ ...runtime, capabilities: [{ id: 'contact', state: 'disabled_preview' }] }, 'contact'), undefined);
   assert.equal(buildPublishedRequestAction(runtime, 'unknown'), undefined);
   assert.deepEqual(buildPublishedRequestAction(runtime, 'contact'), { siteId: 'site-db', capabilityKey: 'contact' });
-  // Inspect contact props before React executes the client form, including snapshot denial.
-  const contact = render().props.children[2].props.children;
+  // Locate the persisted main independently of the renderer's fragment/style wrapper.
+  const main = findMain(render());
+  assert.ok(main, 'Published renderer did not expose its persisted main');
+  const contact = main.props.children[2].props.children;
   assert.equal(contact.props.action, undefined);
   const active = JSON.parse(original); active.snapshot.capabilities[0].state = 'active';
-  assert.deepEqual(render(active).props.children[2].props.children.props.action, { siteId: 'site-db', capabilityKey: 'contact' });
+  const activeMain = findMain(render(active));
+  assert.ok(activeMain, 'Active published renderer did not expose its persisted main');
+  assert.deepEqual(activeMain.props.children[2].props.children.props.action, { siteId: 'site-db', capabilityKey: 'contact' });
 } finally { globalThis.fetch = fetchBefore; }
 console.log('Published snapshot rendering behavior passed.');
 

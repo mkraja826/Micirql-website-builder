@@ -11,31 +11,26 @@ for (const path of [routePath, repositoryPath, migrationPath]) {
 const route = fs.readFileSync(routePath, "utf8");
 const repository = fs.readFileSync(repositoryPath, "utf8");
 const migration = fs.readFileSync(migrationPath, "utf8");
+const normalizedMigration = migration.toLowerCase();
 
 for (const required of [
-  'authorization',
-  'Bearer ',
-  'client.auth.getUser(token)',
-  'userData.user.id',
-  'SupabaseSitePersistenceRepository',
-  'repository.setPublishedVersion',
-  'versionId',
+  "authorization",
+  "Bearer ",
+  "client.auth.getUser(token)",
+  "userData.user.id",
+  "SupabaseSitePersistenceRepository",
+  "repository.setPublishedVersion",
+  "versionId",
 ]) {
   if (!route.includes(required)) throw new Error(`Publication endpoint lost required authenticated boundary: ${required}`);
 }
 
-for (const forbidden of [
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'service_role',
-  'actorId:',
-  'p_actor_id:',
-]) {
-  if (route.includes(forbidden) && forbidden !== 'actorId:') {
+for (const forbidden of ["SUPABASE_SERVICE_ROLE_KEY", "service_role", "p_actor_id:"]) {
+  if (route.includes(forbidden)) {
     throw new Error(`Publication endpoint must not use privileged publication bypass: ${forbidden}`);
   }
 }
 
-// actorId is allowed only when it is derived from the verified Supabase user.
 if (!/actorId:\s*userData\.user\.id/.test(route)) {
   throw new Error("Publication actor identity must come only from the verified Supabase user.");
 }
@@ -46,8 +41,10 @@ if (/body[^\n]{0,120}actorId|actorId[^\n]{0,120}body/.test(route)) {
 if (!repository.includes('this.client.rpc("set_published_site_version"')) {
   throw new Error("Publication repository must use the atomic set_published_site_version RPC.");
 }
-for (const required of ["auth.uid()", "p_actor_id", "previous_published_version_id", "FOR UPDATE"]) {
-  if (!migration.includes(required)) throw new Error(`Atomic publication migration lost authorization/transition invariant: ${required}`);
+for (const required of ["auth.uid()", "p_actor_id", "previous_published_version_id", "for update"]) {
+  if (!normalizedMigration.includes(required.toLowerCase())) {
+    throw new Error(`Atomic publication migration lost authorization/transition invariant: ${required}`);
+  }
 }
 
 console.log("Authenticated publication endpoint boundary passed.");

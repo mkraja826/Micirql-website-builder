@@ -33,7 +33,7 @@ export function buildPublishedRequestAction(
   runtime: PublishedSiteRuntime | null | undefined,
   capabilityKey: string,
 ): PublishedRequestAction | undefined {
-  if (!runtime) return undefined;
+  if (!runtime || runtime.status !== "published") return undefined;
   if (!runtime.dbSiteId.trim()) return undefined;
   if (!runtime.publishedVersionId.trim()) return undefined;
   if (runtime.renderedVersionId !== runtime.publishedVersionId) return undefined;

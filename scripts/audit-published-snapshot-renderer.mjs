@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const file = "src/core/publish/renderer.tsx";
+const file = "src/rendering/published-snapshot.tsx";
 const source = fs.readFileSync(file, "utf8");
 const required = [
   'snapshot.snapshot.content.pages.find',

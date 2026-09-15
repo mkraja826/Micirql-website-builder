@@ -6,6 +6,7 @@ on:
       - v1/published-runtime-integration
   pull_request:
     paths:
+      - "app/published/**"
       - "src/core/publish/**"
       - "src/core/persistence/**"
       - "src/rendering/published-snapshot.tsx"
@@ -23,8 +24,11 @@ jobs:
       - name: Audit canonical published public runtime
         run: node scripts/audit-published-public-runtime.mjs
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-package-lock --no-audit --no-fund
       - name: Typecheck canonical runtime
         run: npx tsc --noEmit
       - name: Build application
+        env:
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ci-build-placeholder
         run: npm run build

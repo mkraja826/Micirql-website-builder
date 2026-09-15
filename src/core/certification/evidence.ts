@@ -9,6 +9,7 @@ export type RenderedCertificationResult = {
 
 export type RepairAcceptanceResult = {
   candidateId: string;
+  evidenceState: "post-repair";
   accepted: boolean;
 };
 
@@ -65,6 +66,9 @@ export function buildRealCertificationEvidence<T extends { id: string }>(
       const repairResult = acceptance.get(candidateId)!;
       if (repairPlan.candidateId !== candidateId || repairPlan.requiresRegeneration || repairPlan.allowsArbitraryCodeRewrite !== false) {
         throw new Error(`Repair plan is not bounded and deterministic for ${candidateId}.`);
+      }
+      if (repairResult.evidenceState !== "post-repair") {
+        throw new Error(`Repair acceptance is not post-repair evidence for ${candidateId}.`);
       }
 
       return {

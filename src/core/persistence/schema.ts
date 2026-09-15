@@ -39,3 +39,15 @@ export type LoadDurableSiteInput = {
 export type LoadPublishedSiteInput = {
   siteId: string;
 };
+
+export type SetPublishedSiteVersionInput = {
+  siteId: string;
+  versionId: string;
+  actorId: string;
+};
+
+export type PublicationTransition = {
+  siteId: string;
+  publishedVersionId: string;
+  previousPublishedVersionId: string | null;
+};

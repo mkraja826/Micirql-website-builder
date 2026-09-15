@@ -1,6 +1,30 @@
 import fs from 'node:fs';
-import { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } from '../src/benchmarks/pearl.ts';
-import { rankCandidates } from '../src/core/ranking/candidates.ts';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+
+const generatedDir = '.tmp/canonical-ranking-runtime';
+fs.rmSync(generatedDir, { recursive: true, force: true });
+execFileSync(
+  process.execPath,
+  [
+    './node_modules/typescript/bin/tsc',
+    '--outDir', generatedDir,
+    '--rootDir', '.',
+    '--module', 'NodeNext',
+    '--moduleResolution', 'NodeNext',
+    '--target', 'ES2022',
+    '--skipLibCheck',
+    '--noEmitOnError', 'false',
+    'src/benchmarks/pearl.ts',
+    'src/core/ranking/candidates.ts',
+  ],
+  { stdio: 'inherit' },
+);
+
+const pearl = await import(pathToFileURL(`${generatedDir}/src/benchmarks/pearl.js`).href);
+const ranking = await import(pathToFileURL(`${generatedDir}/src/core/ranking/candidates.js`).href);
+const { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } = pearl;
+const { rankCandidates } = ranking;
 
 const rendered = JSON.parse(fs.readFileSync('artifacts/pearl-render-audit/report.json', 'utf8'));
 const perceptual = JSON.parse(fs.readFileSync('artifacts/pearl-perceptual-ranking/report.json', 'utf8'));

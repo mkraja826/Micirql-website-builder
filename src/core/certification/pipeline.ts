@@ -1,7 +1,12 @@
 import type { RankedCandidate } from "../ranking/schema";
 import type { CandidateRepairPlan } from "../repair/schema";
 import { buildRealCertificationEvidence, type RepairAcceptanceResult } from "./evidence";
-import { composeFinalCertificationRanking, type PerceptualRankingSignal, type RenderedRankingSignal } from "./final-ranking";
+import {
+  composeFinalCertificationRanking,
+  type FinalRankedCandidate,
+  type PerceptualRankingSignal,
+  type RenderedRankingSignal,
+} from "./final-ranking";
 import type { CandidateCertificationEvidence } from "./schema";
 
 export type RealCertificationPipelineInput<T extends { id: string }> = {
@@ -13,7 +18,7 @@ export type RealCertificationPipelineInput<T extends { id: string }> = {
 };
 
 export type RealCertificationPipelineResult<T extends { id: string }> = {
-  finalRanking: RankedCandidate<T>[];
+  finalRanking: FinalRankedCandidate<T>[];
   evidence: CandidateCertificationEvidence[];
 };
 

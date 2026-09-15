@@ -2,20 +2,7 @@ import { interpretMinimalBrief } from "../core/brief/interpreter";
 import { generateCandidatePlans } from "../core/generation/candidates";
 import { GENERIC_KNOWLEDGE_FALLBACK, type IndustryKnowledge } from "../core/industry/knowledge";
 
-export type MultiIndustryBenchmarkFixture = {
-  id: string;
-  label: string;
-  brief: string;
-  traits: string[];
-  conversionActions: string[];
-  imagery: string[];
-  copy: {
-    offer: string;
-    services: string[];
-    principles: string[];
-    faq: string[];
-  };
-};
+export type MultiIndustryBenchmarkFixture = { id:string; label:string; brief:string; traits:string[]; conversionActions:string[]; imagery:string[]; copy:{ offer:string; services:string[]; principles:string[]; faq:string[] } };
 
 export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
   { id:"luxury-hotel", label:"Luxury hotel", brief:"Aster House luxury hotel, Jaipur", traits:["cinematic","refined","destination-led","warm"], conversionActions:["check stay","book","enquire"], imagery:["property","rooms","destination","guest experience"], copy:{ offer:"A considered stay shaped around place, comfort and a clear booking path.", services:["Rooms and stays","Guest experience","Destination context"], principles:["Lead with the stay","Keep details verifiable","Make booking simple"], faq:["What can I explore before booking?","How should availability be confirmed?","Where do verified stay details come from?"] } },
@@ -40,39 +27,7 @@ export const MULTI_INDUSTRY_BENCHMARKS: MultiIndustryBenchmarkFixture[] = [
   { id:"events", label:"Events and weddings", brief:"Saffron Story wedding planner event studio, Jaipur", traits:["editorial celebration","gallery-led","premium","expressive"], conversionActions:["plan an event","view work","enquire"], imagery:["events","details","spaces","celebration context"], copy:{ offer:"A gallery-led event presentation focused on style, planning context and thoughtful enquiries without invented client proof.", services:["Event planning","Creative direction","Planning enquiry"], principles:["Let real work lead","Do not invent venues or clients","Keep planning enquiries clear"], faq:["What work can I explore?","How should portfolio credits be verified?","How do I start an event enquiry?"] } },
 ];
 
-function knowledgeForFixture(fixture: MultiIndustryBenchmarkFixture): IndustryKnowledge {
-  const brief = interpretMinimalBrief(fixture.brief);
-  const industry = brief.business.industry.value;
-  const subIndustry = brief.business.subIndustry?.value;
-  return {
-    industry: { slug: industry, name: industry },
-    subIndustry: subIndustry ? { slug: subIndustry, name: subIndustry } : undefined,
-    ...GENERIC_KNOWLEDGE_FALLBACK,
-    audience: brief.positioning.audience.value,
-    recommendedPages: brief.website.recommendedPages.value,
-    requiredSectionTypes: brief.website.requiredSectionTypes.value,
-    optionalSectionTypes: brief.website.optionalSectionTypes.value,
-    conversionActions: fixture.conversionActions,
-    visualVocabulary: { traits: fixture.traits, avoid: brief.artDirectionHints.avoidStyles },
-    imageryGuidance: fixture.imagery,
-    contentPriorities: ["business offer", "decision context", "clear next step"],
-    backendCapabilities: brief.website.capabilities.value,
-  };
-}
-
-export function generateMultiIndustryBenchmarkFixture(fixtureId: string, count = 4) {
-  const fixture = MULTI_INDUSTRY_BENCHMARKS.find((item) => item.id === fixtureId);
-  if (!fixture) return undefined;
-  const generationBrief = interpretMinimalBrief(fixture.brief);
-  const knowledge = knowledgeForFixture(fixture);
-  const candidates = generateCandidatePlans({ brief: generationBrief, knowledge, count });
-  const brief = interpretMinimalBrief(fixture.brief);
-  return { fixture, brief, knowledge, candidates };
-}
-
-export function generateMultiIndustryBenchmarkMatrix(countPerFixture = 4) {
-  return MULTI_INDUSTRY_BENCHMARKS.flatMap((fixture) => {
-    const entry = generateMultiIndustryBenchmarkFixture(fixture.id, countPerFixture);
-    return entry ? [entry] : [];
-  });
-}
+function fixtureWithBrief(fixture:MultiIndustryBenchmarkFixture,briefOverride?:string):MultiIndustryBenchmarkFixture{return briefOverride?.trim()?{...fixture,brief:briefOverride.trim()}:fixture;}
+function knowledgeForFixture(fixture:MultiIndustryBenchmarkFixture):IndustryKnowledge{const brief=interpretMinimalBrief(fixture.brief);const industry=brief.business.industry.value;const subIndustry=brief.business.subIndustry?.value;return{industry:{slug:industry,name:industry},subIndustry:subIndustry?{slug:subIndustry,name:subIndustry}:undefined,...GENERIC_KNOWLEDGE_FALLBACK,audience:brief.positioning.audience.value,recommendedPages:brief.website.recommendedPages.value,requiredSectionTypes:brief.website.requiredSectionTypes.value,optionalSectionTypes:brief.website.optionalSectionTypes.value,conversionActions:fixture.conversionActions,visualVocabulary:{traits:fixture.traits,avoid:brief.artDirectionHints.avoidStyles},imageryGuidance:fixture.imagery,contentPriorities:["business offer","decision context","clear next step"],backendCapabilities:brief.website.capabilities.value};}
+export function generateMultiIndustryBenchmarkFixture(fixtureId:string,count=4,briefOverride?:string){const base=MULTI_INDUSTRY_BENCHMARKS.find((item)=>item.id===fixtureId);if(!base)return undefined;const fixture=fixtureWithBrief(base,briefOverride);const generationBrief=interpretMinimalBrief(fixture.brief);const knowledge=knowledgeForFixture(fixture);const candidates=generateCandidatePlans({brief:generationBrief,knowledge,count});return{fixture,brief:generationBrief,knowledge,candidates};}
+export function generateMultiIndustryBenchmarkMatrix(countPerFixture=4){return MULTI_INDUSTRY_BENCHMARKS.flatMap((fixture)=>{const entry=generateMultiIndustryBenchmarkFixture(fixture.id,countPerFixture);return entry?[entry]:[];});}

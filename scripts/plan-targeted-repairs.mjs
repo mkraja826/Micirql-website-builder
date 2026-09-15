@@ -3,13 +3,16 @@ import fs from 'node:fs';
 const rendered = JSON.parse(fs.readFileSync('artifacts/pearl-render-audit/report.json','utf8'));
 const perceptual = JSON.parse(fs.readFileSync('artifacts/pearl-perceptual-ranking/report.json','utf8'));
 const perceptualById = new Map(perceptual.candidates.map((candidate)=>[candidate.id,candidate]));
+
+// Only classify cautions that the deterministic repair executor can actually
+// apply and that the post-repair browser audit can verify. Media presence and
+// media-variety remain perceptual ranking cautions; they must not be relabelled
+// as completed repairs or silently promoted to regeneration requests here.
 const supported = [
   ['tap-target', /tap target|small interactive/i, 'increase-interactive-hit-area'],
   ['text-measure', /wide body copy|text measure/i, 'constrain-readable-width'],
   ['heading-scale', /heading scale/i, 'normalize-heading-scale'],
   ['hero-proportion', /hero scale|hero proportion/i, 'normalize-hero-height'],
-  ['media-presence', /no rendered imagery|missing imagery/i, 'request-planned-media'],
-  ['media-variety', /image treatment|image aspect/i, 'vary-planned-media-aspect'],
   ['viewport-overflow', /viewport|horizontal overflow|outside mobile/i, 'contain-horizontal-layout'],
 ];
 function classify(reason, source, target='both') {
@@ -27,7 +30,7 @@ const candidates=rendered.candidates.map((candidate)=>{
     const item=classify(caution,'perceptual-audit',target); if(item) instructions.push(item);
   }
   const unique=Array.from(new Map(instructions.map((item)=>[`${item.kind}:${item.target}:${item.boundedAction}`,item])).values());
-  return {candidateId:candidate.id,version:'1.0',instructions:unique,requiresRegeneration:unique.some((item)=>item.kind.startsWith('media-')),allowsArbitraryCodeRewrite:false};
+  return {candidateId:candidate.id,version:'1.0',instructions:unique,requiresRegeneration:false,allowsArbitraryCodeRewrite:false};
 });
 const report={generatedAt:new Date().toISOString(),candidates,summary:{candidateCount:candidates.length,candidatesNeedingRepair:candidates.filter((c)=>c.instructions.length).length,totalInstructions:candidates.reduce((sum,c)=>sum+c.instructions.length,0),unsupportedArbitraryRewrites:candidates.filter((c)=>c.allowsArbitraryCodeRewrite!==false).length}};
 fs.mkdirSync('artifacts/targeted-repair-plans',{recursive:true});

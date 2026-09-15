@@ -5,8 +5,11 @@ on:
     paths:
       - "src/core/publish/**"
       - "src/core/persistence/**"
+      - "src/rendering/published-snapshot.tsx"
       - "app/published/**"
       - "scripts/audit-published-functional-certification.mjs"
+      - "scripts/published-browser-probe.mjs"
+      - "package.json"
       - ".github/workflows/v1-published-functional-certification.yml"
   workflow_dispatch:
 
@@ -25,6 +28,19 @@ jobs:
         run: node scripts/audit-published-functional-certification.mjs
       - name: Install dependencies
         run: npm install --no-package-lock --no-audit --no-fund
+      - name: Install certification browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify Chromium certification probe
+        run: |
+          node --input-type=module <<'EOF'
+          import { chromium } from "@playwright/test";
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+          await page.setContent('<main data-published-version-id="ci-smoke">MiCirql published certification</main>');
+          const version = await page.locator('main').getAttribute('data-published-version-id');
+          await browser.close();
+          if (version !== 'ci-smoke') throw new Error('Chromium certification probe failed.');
+          EOF
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Build

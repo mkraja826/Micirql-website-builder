@@ -1,34 +1,47 @@
 import fs from 'node:fs';
+import { createPearlDentalBrief, generatePearlDentalCandidates, PEARL_DENTAL_KNOWLEDGE } from '../src/benchmarks/pearl.ts';
+import { rankCandidates } from '../src/core/ranking/candidates.ts';
 
 const rendered = JSON.parse(fs.readFileSync('artifacts/pearl-render-audit/report.json', 'utf8'));
 const perceptual = JSON.parse(fs.readFileSync('artifacts/pearl-perceptual-ranking/report.json', 'utf8'));
 
-const PLAN_SCORES = {
-  'candidate-01': 89.9, 'candidate-02': 78.3, 'candidate-03': 79.7, 'candidate-04': 85.9,
-  'candidate-05': 85.5, 'candidate-06': 83.9, 'candidate-07': 80.9, 'candidate-08': 77.1,
-  'candidate-09': 75.3, 'candidate-10': 78.9, 'candidate-11': 80.3, 'candidate-12': 77.7,
-  'candidate-13': 79.9, 'candidate-14': 84.5, 'candidate-15': 83.9, 'candidate-16': 84.6,
-  'candidate-17': 81.3, 'candidate-18': 81.3, 'candidate-19': 83.3, 'candidate-20': 80.3,
-};
+const canonicalRanking = rankCandidates(
+  generatePearlDentalCandidates(20),
+  createPearlDentalBrief(),
+  PEARL_DENTAL_KNOWLEDGE,
+);
 
 const renderedById = new Map(rendered.candidates.map((candidate) => [candidate.id, candidate]));
 const perceptualById = new Map(perceptual.candidates.map((candidate) => [candidate.id, candidate]));
+const canonicalIds = new Set(canonicalRanking.map(({ candidate }) => candidate.id));
+
+if (canonicalIds.size !== canonicalRanking.length) throw new Error('Canonical ranking contains duplicate candidate IDs');
+if (renderedById.size !== canonicalRanking.length || perceptualById.size !== canonicalRanking.length) {
+  throw new Error('Final ranking evidence must exactly cover the canonical candidate set');
+}
+for (const id of renderedById.keys()) if (!canonicalIds.has(id)) throw new Error(`Rendered evidence contains unknown candidate ${id}`);
+for (const id of perceptualById.keys()) if (!canonicalIds.has(id)) throw new Error(`Perceptual evidence contains unknown candidate ${id}`);
 
 const weights = { plan: 0.30, rendered: 0.25, perceptual: 0.45 };
-const candidates = Object.entries(PLAN_SCORES).map(([id, planScore]) => {
+const candidates = canonicalRanking.map(({ candidate, score, strengths: planStrengths, cautions: planCautions }) => {
+  const id = candidate.id;
   const renderedCandidate = renderedById.get(id);
   const perceptualCandidate = perceptualById.get(id);
   if (!renderedCandidate || !perceptualCandidate) throw new Error(`Missing ranking signal for ${id}`);
+
+  const planScore = score.total;
   const renderedScore = renderedCandidate.renderedScore;
   const perceptualScore = perceptualCandidate.perceptualScore;
+  if (![planScore, renderedScore, perceptualScore].every(Number.isFinite)) throw new Error(`Non-finite ranking signal for ${id}`);
+
   const finalScore = Number((planScore * weights.plan + renderedScore * weights.rendered + perceptualScore * weights.perceptual).toFixed(2));
   return {
     id,
     finalScore,
     signals: { planScore, renderedScore, perceptualScore },
     hardFailures: renderedCandidate.failures,
-    strengths: perceptualCandidate.strengths.slice(0, 4),
-    cautions: [...renderedCandidate.targets.desktop.cautions, ...renderedCandidate.targets.mobile.cautions, ...perceptualCandidate.cautions].slice(0, 6),
+    strengths: [...planStrengths, ...perceptualCandidate.strengths].slice(0, 4),
+    cautions: [...planCautions, ...renderedCandidate.targets.desktop.cautions, ...renderedCandidate.targets.mobile.cautions, ...perceptualCandidate.cautions].slice(0, 6),
   };
 }).sort((a, b) => b.finalScore - a.finalScore || a.id.localeCompare(b.id));
 
@@ -37,7 +50,7 @@ const report = {
   generatedAt: new Date().toISOString(),
   methodology: {
     weights,
-    note: 'Plan fit protects business intent; rendered health protects functional layout quality; perceptual quality receives the largest weight because Phase 11 exists to surface the strongest rendered design. Hard rendered failures remain disqualifying regardless of score.',
+    note: 'Plan fit comes directly from the canonical MiCirql candidate ranker; rendered health protects functional layout quality; perceptual quality receives the largest weight. Hard rendered failures remain disqualifying regardless of score.',
   },
   candidates,
   summary: {

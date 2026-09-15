@@ -1,0 +1,55 @@
+name: V1 Real Certification Portfolio
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v1-real-certification-portfolio-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start benchmark server
+        run: |
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/micirql-certification.log 2>&1 &
+          echo $! > /tmp/micirql-certification.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3000/generated/benchmarks/restaurant/candidate-01 >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/micirql-certification.log
+          exit 1
+      - name: Initial cross-industry rendered audit
+        run: node scripts/audit-real-certification-rendered.mjs
+      - name: Plan bounded cross-industry repairs
+        run: node scripts/plan-real-certification-repairs.mjs
+      - name: Verify post-repair cross-industry evidence
+        run: node scripts/audit-real-certification-post-repair.mjs
+      - name: Compose cross-industry final certification ranking
+        run: node scripts/compose-real-certification-ranking.mjs
+      - name: Upload real certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-certification-portfolio-evidence
+          if-no-files-found: error
+          path: |
+            artifacts/real-certification-render-audit/report.json
+            artifacts/real-certification-repair-plans/report.json
+            artifacts/real-certification-post-repair-audit/report.json
+            artifacts/real-certification-final-ranking/report.json

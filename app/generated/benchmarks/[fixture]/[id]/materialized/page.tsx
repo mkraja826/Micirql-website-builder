@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { generateMultiIndustryBenchmarkFixture } from "../../../../../../src/benchmarks/multi-industry";
+import { resolveMultiIndustryBenchmarkMedia } from "../../../../../../src/benchmarks/multi-industry-media";
 import { planCapabilitiesFromBrief } from "../../../../../../src/core/capabilities/planner";
 import { directContent } from "../../../../../../src/core/content/director";
+import type { MediaRole } from "../../../../../../src/core/media/planner";
 import { materializeSiteDraft, serializeMaterializedSite, hydrateMaterializedSite } from "../../../../../../src/core/materialization/materializer";
+import { toPublishableMediaAssets } from "../../../../../../src/core/publish/media";
 import { composePublishableDraft } from "../../../../../../src/core/publish/planner";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +29,25 @@ export default async function MaterializedSiteProbe({
     artDirection: candidate.direction,
   });
   const capabilityPlan = planCapabilitiesFromBrief(entry.brief, candidate.direction);
-  const draft = composePublishableDraft({ candidate, content, capabilityPlan });
+
+  const selectedSections = candidate.selectedSections;
+  const requestedMediaRoles = [
+    selectedSections.hero === "hero-editorial-split" || selectedSections.hero === "hero-cinematic-fullscreen" ? "hero" : null,
+    selectedSections.services === "services-visual-stories" ? "services" : null,
+    selectedSections.about === "about-editorial-story" ? "about" : null,
+    selectedSections.gallery ? "gallery" : null,
+  ].filter((role): role is MediaRole => Boolean(role));
+
+  const resolvedMedia = requestedMediaRoles.length
+    ? await resolveMultiIndustryBenchmarkMedia({
+        brief: entry.brief,
+        knowledge: entry.knowledge,
+        direction: candidate.direction,
+        roles: requestedMediaRoles,
+      })
+    : {};
+  const media = toPublishableMediaAssets({ pageSlug: content.pages[0]?.slug ?? "home", resolved: resolvedMedia });
+  const draft = composePublishableDraft({ candidate, content, capabilityPlan, media });
   const materialized = materializeSiteDraft({ sourceKey: fixtureId, draft });
   const serialized = serializeMaterializedSite(materialized);
   const hydrated = hydrateMaterializedSite(serialized);
@@ -47,6 +68,7 @@ export default async function MaterializedSiteProbe({
       data-site-content-section-count={contentSectionCount}
       data-site-seo-title={hydrated.snapshot.content.seo.title}
       data-site-capability-count={hydrated.snapshot.capabilities.length}
+      data-site-media-count={hydrated.snapshot.media.length}
     >
       <h1>{entry.fixture.label} materialized site draft</h1>
       {hydrated.snapshot.pages.map((page) => {

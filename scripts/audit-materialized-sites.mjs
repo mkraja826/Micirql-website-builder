@@ -28,6 +28,7 @@ async function inspect(page, fixture, candidateId) {
       contentSectionCount: Number(main?.getAttribute('data-site-content-section-count') ?? 0),
       seoTitle: main?.getAttribute('data-site-seo-title') ?? '',
       capabilityCount: Number(main?.getAttribute('data-site-capability-count') ?? 0),
+      mediaCount: Number(main?.getAttribute('data-site-media-count') ?? -1),
       pages: [...document.querySelectorAll('[data-site-page]')].map((node) => ({
         slug: node.getAttribute('data-site-page') ?? '',
         sectionCount: Number(node.getAttribute('data-site-section-count') ?? 0),
@@ -59,9 +60,11 @@ for (const fixture of fixtures) {
     if (first.contentSectionCount < 1 || first.pages.some((item) => item.contentSectionCount < 1)) failures.push('missing persisted renderable section content');
     if (!first.seoTitle.trim()) failures.push('missing persisted SEO title');
     if (first.capabilityCount < 1) failures.push('missing persisted capability state');
+    if (!Number.isInteger(first.mediaCount) || first.mediaCount < 0) failures.push('invalid persisted media manifest count');
     if (first.siteId !== second.siteId) failures.push('site id changed across reload');
     if (first.fingerprint !== second.fingerprint) failures.push('snapshot fingerprint changed across reload');
     if (first.contentPageCount !== second.contentPageCount || first.contentSectionCount !== second.contentSectionCount || first.seoTitle !== second.seoTitle) failures.push('content snapshot changed across reload');
+    if (first.mediaCount !== second.mediaCount) failures.push('media snapshot changed across reload');
     if (JSON.stringify(first.pages) !== JSON.stringify(second.pages)) failures.push('page snapshot changed across reload');
 
     report.candidates.push({ fixture, candidateId, first, second, failures });
@@ -77,6 +80,8 @@ report.summary = {
   fixtureCount: fixtures.length,
   stableReloads: report.candidates.filter((candidate) => candidate.first.siteId === candidate.second.siteId && candidate.first.fingerprint === candidate.second.fingerprint).length,
   renderableContentSnapshots: report.candidates.filter((candidate) => candidate.first.contentPageCount === candidate.first.pageCount && candidate.first.contentSectionCount > 0 && candidate.first.seoTitle).length,
+  stableMediaSnapshots: report.candidates.filter((candidate) => candidate.first.mediaCount === candidate.second.mediaCount && candidate.first.mediaCount >= 0).length,
+  candidatesWithPersistedMedia: report.candidates.filter((candidate) => candidate.first.mediaCount > 0).length,
   uniqueSiteIds: uniqueSiteIds.size,
   candidatesWithFailures: failed.map((candidate) => `${candidate.fixture}/${candidate.candidateId}`),
 };

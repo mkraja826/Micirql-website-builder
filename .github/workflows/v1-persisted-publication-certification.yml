@@ -2,6 +2,11 @@ name: V1 Persisted Publication Certification
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - v1/persisted-publication-certification
+    paths:
+      - .github/workflows/v1-persisted-publication-certification.yml
 
 permissions:
   contents: read
@@ -21,6 +26,7 @@ jobs:
       MICIRQL_CERTIFICATION_ACCESS_TOKEN: ${{ secrets.MICIRQL_CERTIFICATION_ACCESS_TOKEN }}
       MICIRQL_CERTIFICATION_WORKSPACE_ID: ${{ secrets.MICIRQL_CERTIFICATION_WORKSPACE_ID }}
       MICIRQL_CERTIFICATION_ACTOR_ID: ${{ secrets.MICIRQL_CERTIFICATION_ACTOR_ID }}
+      MICIRQL_ENABLE_REVISION_CERTIFICATION_ROUTE: "1"
     steps:
       - name: Checkout exact requested head
         uses: actions/checkout@v4

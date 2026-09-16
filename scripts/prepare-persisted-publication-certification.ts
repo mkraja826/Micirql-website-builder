@@ -47,8 +47,8 @@ const v2Site = materializeSiteRevision({ previous: v1Site, draft: draftV2 });
 assert(v2Site.siteId === v1Site.siteId && v2Site.revision === 2, "Controlled V2 did not preserve site identity/revision sequence.");
 assert(v2Site.fingerprint !== v1Site.fingerprint, "Controlled V2 did not produce an independent fingerprint.");
 
-const v1: CertifiedMaterializedSite = { site: v1Site, winner: fixture.winner };
-const v2: CertifiedMaterializedSite = { site: v2Site, winner: fixture.winner };
+const v1: CertifiedMaterializedSite = { version: "1.0", site: v1Site, winner: fixture.winner };
+const v2: CertifiedMaterializedSite = { version: "1.0", site: v2Site, winner: fixture.winner };
 const output = { name: `MiCirql persistence certification — ${fixture.fixture}`, fixture: fixture.fixture, sourceEvidenceState: "post-repair", mutation: { layer: "content", field: editableKey, deterministic: true }, v1, v2 };
 fs.mkdirSync("artifacts/persisted-publication-certification", { recursive: true });
 fs.writeFileSync("artifacts/persisted-publication-certification/input.json", JSON.stringify(output, null, 2));

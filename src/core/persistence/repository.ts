@@ -39,4 +39,8 @@ export function assertPersistableCertifiedSite(input: PersistCertifiedSiteInput)
   if (winner.candidateId !== site.source.candidateId) {
     throw new Error("Certified winner does not match materialized site provenance.");
   }
+
+  if (!certified.certifiedFingerprint || certified.certifiedFingerprint !== site.fingerprint) {
+    throw new Error("Certification does not cover this exact materialized site snapshot.");
+  }
 }

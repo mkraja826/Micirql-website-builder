@@ -16,16 +16,28 @@ const draftV1: PublishableDraft = {
     pages: [{
       slug: "home",
       title: "Lifecycle Fixture",
-      seo: { title: "Lifecycle Fixture", description: "Immutable revision lifecycle fixture." },
-      sections: [{ type: "hero", eyebrow: "Certified", heading: "Version one", body: "Original persisted content." }],
+      purpose: "Certify immutable materialized revision behavior.",
+      sections: [{ sectionType: "hero", eyebrow: "Certified", headline: "Version one", body: "Original persisted content.", claims: [] }],
     }],
-  } as PublishableDraft["content"],
+    seo: { title: "Lifecycle Fixture", description: "Immutable revision lifecycle fixture." },
+    imageIntents: [],
+    warnings: [],
+  },
   media: [],
-  selectedSections: [{ pageSlug: "home", sectionType: "hero", archetypeId: "hero-lifecycle" }] as PublishableDraft["selectedSections"],
-  theme: { typographySystem: "precision-grid" } as PublishableDraft["theme"],
-  cssVariables: { "--background": "#ffffff", "--foreground": "#111111" } as PublishableDraft["cssVariables"],
-  primaryCapability: { id: "lead", label: "Contact", kind: "lead" } as PublishableDraft["primaryCapability"],
-  capabilities: [{ id: "lead", label: "Contact", state: "active", href: "#contact", reason: "Certified fixture" }],
+  selectedSections: { hero: "hero-lifecycle" },
+  theme: {
+    version: "1.0",
+    typography: { displayFamily: "Arial, Helvetica, sans-serif", bodyFamily: "Arial, Helvetica, sans-serif", displayWeight: 700, bodyWeight: 400, headingTracking: "-0.04em", bodyTracking: "0em", headingScale: "balanced" },
+    color: { background: "#ffffff", surface: "#f7f7f7", surfaceStrong: "#eeeeee", text: "#111111", textMuted: "#666666", accent: "#2455a6", accentContrast: "#ffffff", border: "#dddddd" },
+    spacing: { base: 8, sectionY: 80, contentGap: 24, compactGap: 12, maxWidth: 1200 },
+    shape: { radius: "subtle", borderWeight: 1 },
+    surface: { treatment: "quiet", shadow: "subtle" },
+    density: "medium",
+    motion: { intensity: "subtle", durationMs: 200, easing: "ease-out" },
+  },
+  cssVariables: { "--background": "#ffffff", "--foreground": "#111111" },
+  primaryCapability: "contact",
+  capabilities: [{ id: "contact", label: "Contact", state: "active", href: "#contact", reason: "Certified fixture" }],
   blockers: [],
   warnings: [],
   source: { contentVersion: "1.0" },
@@ -36,11 +48,7 @@ const serializedV1Before = serializeMaterializedSite(v1);
 const fingerprintV1 = v1.fingerprint;
 
 const draftV2 = structuredClone(draftV1);
-draftV2.content.pages[0]!.sections[0] = {
-  ...draftV2.content.pages[0]!.sections[0],
-  heading: "Version two",
-  body: "Edited persisted content.",
-};
+draftV2.content.pages[0]!.sections[0] = { ...draftV2.content.pages[0]!.sections[0], headline: "Version two", body: "Edited persisted content." };
 
 const v2 = materializeSiteRevision({ previous: v1, draft: draftV2 });
 const hydratedV1 = hydrateMaterializedSite(serializedV1Before);
@@ -54,8 +62,6 @@ assert(hydratedV1.fingerprint === fingerprintV1, "Hydrated V1 fingerprint change
 assert(serializeMaterializedSite(v1) === serializedV1Before, "V1 mutated while deriving V2.");
 assert(hydratedV2.fingerprint === v2.fingerprint, "V2 did not survive serialization/hydration exactly.");
 
-// Model the publication pointer only. Persistence/publication RPC behavior is certified separately
-// against Supabase; this proves rollback selects the exact immutable V1 snapshot rather than regenerating it.
 let published = hydratedV1;
 assert(published.fingerprint === fingerprintV1, "Initial V1 publication mismatch.");
 published = hydratedV2;
@@ -71,13 +77,7 @@ const report = {
   v1: { revision: v1.revision, fingerprint: v1.fingerprint },
   v2: { revision: v2.revision, fingerprint: v2.fingerprint },
   rollback: { revision: published.revision, fingerprint: published.fingerprint, exactSerializedRestore: true },
-  assertions: {
-    sameSiteIdentity: true,
-    independentV2Fingerprint: true,
-    immutableV1: true,
-    exactHydration: true,
-    exactRollback: true,
-  },
+  assertions: { sameSiteIdentity: true, independentV2Fingerprint: true, immutableV1: true, exactHydration: true, exactRollback: true },
 };
 fs.mkdirSync("artifacts/materialized-revision-lifecycle", { recursive: true });
 fs.writeFileSync("artifacts/materialized-revision-lifecycle/report.json", JSON.stringify(report, null, 2));

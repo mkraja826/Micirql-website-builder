@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/core/materialization/**'
       - 'scripts/audit-materialized-revisions.mjs'
+      - 'scripts/certify-materialized-revision-lifecycle.ts'
       - '.github/workflows/v1-materialized-revisions.yml'
   workflow_dispatch:
 
@@ -22,13 +23,21 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
       - name: Audit immutable materialized revisions
         run: node scripts/audit-materialized-revisions.mjs
+
+      - name: Execute V1 to V2 to V1 lifecycle
+        run: npx tsx scripts/certify-materialized-revision-lifecycle.ts
 
       - name: Upload revision evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: materialized-revision-audit-${{ github.event.pull_request.head.sha || github.sha }}
-          path: artifacts/materialized-revision-audit/report.json
+          path: |
+            artifacts/materialized-revision-audit/report.json
+            artifacts/materialized-revision-lifecycle/report.json
           if-no-files-found: error

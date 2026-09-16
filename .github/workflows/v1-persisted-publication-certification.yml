@@ -69,8 +69,14 @@ jobs:
           ./node_modules/esbuild/bin/esbuild scripts/materialize-real-certification-winners.ts --bundle --platform=node --format=esm --target=node22 --outfile=.tmp/real-certification-materializer/run.mjs
           node .tmp/real-certification-materializer/run.mjs
 
-      - name: Prepare immutable V1 and controlled V2
+      - name: Prepare immutable V1 and pending V2
         run: npx tsx scripts/prepare-persisted-publication-certification.ts
+
+      - name: Audit exact pending V2 through canonical renderer
+        run: node scripts/audit-exact-materialized-revision.mjs
+
+      - name: Bind V2 certification to exact audited fingerprint
+        run: npx tsx scripts/certify-exact-materialized-revision.ts
 
       - name: Certify authenticated Supabase V1 to V2 to rollback lifecycle
         run: npx tsx scripts/certify-supabase-publication-lifecycle.ts
@@ -87,5 +93,7 @@ jobs:
             artifacts/real-certification-post-repair-audit/report.json
             artifacts/real-certification-final-ranking/report.json
             artifacts/real-certification-materialized-winners/report.json
+            artifacts/persisted-publication-certification/prepared.json
+            artifacts/persisted-publication-certification/revision-evidence.json
             artifacts/persisted-publication-certification/input.json
             artifacts/persisted-publication-certification/report.json

@@ -1,0 +1,34 @@
+name: V1 Materialized Revisions
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/materialization/**'
+      - 'scripts/audit-materialized-revisions.mjs'
+      - '.github/workflows/v1-materialized-revisions.yml'
+  workflow_dispatch:
+
+jobs:
+  materialized-revision-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit immutable materialized revisions
+        run: node scripts/audit-materialized-revisions.mjs
+
+      - name: Upload revision evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: materialized-revision-audit-${{ github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/materialized-revision-audit/report.json
+          if-no-files-found: error

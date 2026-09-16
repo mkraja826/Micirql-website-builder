@@ -4,7 +4,10 @@ on:
   pull_request:
     paths:
       - 'src/core/materialization/**'
+      - 'src/core/persistence/**'
+      - 'supabase/migrations/**'
       - 'scripts/audit-materialized-revisions.mjs'
+      - 'scripts/audit-persisted-revision-rpc.mjs'
       - 'scripts/certify-materialized-revision-lifecycle.ts'
       - '.github/workflows/v1-materialized-revisions.yml'
   workflow_dispatch:
@@ -29,6 +32,9 @@ jobs:
       - name: Audit immutable materialized revisions
         run: node scripts/audit-materialized-revisions.mjs
 
+      - name: Audit immutable persistence RPC
+        run: node scripts/audit-persisted-revision-rpc.mjs
+
       - name: Execute V1 to V2 to V1 lifecycle
         run: npx tsx scripts/certify-materialized-revision-lifecycle.ts
 
@@ -39,5 +45,6 @@ jobs:
           name: materialized-revision-audit-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             artifacts/materialized-revision-audit/report.json
+            artifacts/persisted-revision-rpc-audit/report.json
             artifacts/materialized-revision-lifecycle/report.json
           if-no-files-found: error

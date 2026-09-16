@@ -5,7 +5,7 @@ export type MaterializedSiteStatus = "draft";
 export type MaterializedSiteSnapshot = {
   version: "1.0";
   siteId: string;
-  revision: 1;
+  revision: number;
   status: MaterializedSiteStatus;
   fingerprint: string;
   source: {

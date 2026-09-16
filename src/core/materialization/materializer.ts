@@ -49,18 +49,8 @@ function hasPersistedMediaManifest(site: MaterializedSiteSnapshot): boolean {
   ));
 }
 
-export function materializeSiteDraft({
-  sourceKey,
-  draft,
-}: {
-  sourceKey: string;
-  draft: PublishableDraft;
-}): MaterializedSiteSnapshot {
-  if (draft.readiness !== "ready") {
-    throw new Error(`Cannot materialize blocked draft ${draft.candidateId}.`);
-  }
-
-  const persistedSnapshot = {
+function persistedSnapshotFor(draft: PublishableDraft): MaterializedSiteSnapshot["snapshot"] {
+  return {
     pages: deepClone(draft.pages),
     content: deepClone(draft.content),
     media: deepClone(draft.media),
@@ -72,16 +62,53 @@ export function materializeSiteDraft({
     capabilities: deepClone(draft.capabilities),
     warnings: [...draft.warnings],
   };
+}
 
+export function materializeSiteDraft({
+  sourceKey,
+  draft,
+}: {
+  sourceKey: string;
+  draft: PublishableDraft;
+}): MaterializedSiteSnapshot {
+  if (draft.readiness !== "ready") {
+    throw new Error(`Cannot materialize blocked draft ${draft.candidateId}.`);
+  }
+
+  const persistedSnapshot = persistedSnapshotFor(draft);
   return {
     version: "1.0",
     siteId: siteIdFor(sourceKey, draft.candidateId),
     revision: 1,
     status: "draft",
     fingerprint: fingerprint(persistedSnapshot),
+    source: { sourceKey, candidateId: draft.candidateId, draftVersion: draft.version },
+    snapshot: persistedSnapshot,
+  };
+}
+
+export function materializeSiteRevision({
+  previous,
+  draft,
+}: {
+  previous: MaterializedSiteSnapshot;
+  draft: PublishableDraft;
+}): MaterializedSiteSnapshot {
+  hydrateMaterializedSite(serializeMaterializedSite(previous));
+  if (draft.readiness !== "ready") throw new Error(`Cannot materialize blocked draft ${draft.candidateId}.`);
+  if (draft.candidateId !== previous.source.candidateId) throw new Error("A site revision cannot change certified candidate identity.");
+  if (!Number.isSafeInteger(previous.revision) || previous.revision < 1) throw new Error("Previous materialized revision is invalid.");
+
+  const persistedSnapshot = persistedSnapshotFor(draft);
+  return {
+    version: "1.0",
+    siteId: previous.siteId,
+    revision: previous.revision + 1,
+    status: "draft",
+    fingerprint: fingerprint(persistedSnapshot),
     source: {
-      sourceKey,
-      candidateId: draft.candidateId,
+      sourceKey: previous.source.sourceKey,
+      candidateId: previous.source.candidateId,
       draftVersion: draft.version,
     },
     snapshot: persistedSnapshot,
@@ -94,18 +121,12 @@ export function serializeMaterializedSite(site: MaterializedSiteSnapshot): strin
 
 export function hydrateMaterializedSite(serialized: string): MaterializedSiteSnapshot {
   const parsed = JSON.parse(serialized) as MaterializedSiteSnapshot;
-  if (parsed.version !== "1.0" || parsed.revision !== 1 || parsed.status !== "draft") {
+  if (parsed.version !== "1.0" || !Number.isSafeInteger(parsed.revision) || parsed.revision < 1 || parsed.status !== "draft") {
     throw new Error("Unsupported materialized site snapshot.");
   }
-  if (!hasRenderableContent(parsed)) {
-    throw new Error("Materialized site snapshot is missing renderable content.");
-  }
-  if (!hasPersistedMediaManifest(parsed)) {
-    throw new Error("Materialized site snapshot is missing a valid persisted media manifest.");
-  }
+  if (!hasRenderableContent(parsed)) throw new Error("Materialized site snapshot is missing renderable content.");
+  if (!hasPersistedMediaManifest(parsed)) throw new Error("Materialized site snapshot is missing a valid persisted media manifest.");
   const expectedFingerprint = fingerprint(parsed.snapshot);
-  if (parsed.fingerprint !== expectedFingerprint) {
-    throw new Error("Materialized site snapshot fingerprint mismatch.");
-  }
+  if (parsed.fingerprint !== expectedFingerprint) throw new Error("Materialized site snapshot fingerprint mismatch.");
   return deepClone(parsed);
 }

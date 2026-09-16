@@ -22,5 +22,7 @@ export type CertifiedWinner = {
 export type CertifiedMaterializedSite = {
   version: "1.0";
   winner: CertifiedWinner;
+  /** Exact immutable materialized snapshot fingerprint covered by this certification. */
+  certifiedFingerprint: MaterializedSiteSnapshot["fingerprint"];
   site: MaterializedSiteSnapshot;
 };

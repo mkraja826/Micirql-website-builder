@@ -15,10 +15,12 @@ assert(fixture.winner.rank === 1 && fixture.winner.certification.hardFailureCoun
 
 const v1Site = hydrateMaterializedSite(JSON.stringify(fixture.site));
 assert(v1Site.revision === 1, "Source certified winner must be immutable V1.");
+const v1: CertifiedMaterializedSite = { version: "1.0", site: v1Site, winner: fixture.winner, certifiedFingerprint: v1Site.fingerprint };
 
-// V2 is a controlled content-layer edit of the already certified winner. It deliberately
-// does not invent new certification evidence: the persisted V2 reuses the same certified
-// layout/capability/media contract and changes only a deterministic existing text field.
+// Prepare the deterministic V2 snapshot, but never label it certified here. Any mutation,
+// including a content-only edit, changes the immutable fingerprint and invalidates V1 evidence.
+// A separate exact-snapshot revision certification stage must render/audit V2 and return a
+// certification envelope whose certifiedFingerprint equals v2Site.fingerprint.
 const draftV2: PublishableDraft = {
   version: v1Site.source.draftVersion,
   candidateId: v1Site.source.candidateId,
@@ -47,9 +49,7 @@ const v2Site = materializeSiteRevision({ previous: v1Site, draft: draftV2 });
 assert(v2Site.siteId === v1Site.siteId && v2Site.revision === 2, "Controlled V2 did not preserve site identity/revision sequence.");
 assert(v2Site.fingerprint !== v1Site.fingerprint, "Controlled V2 did not produce an independent fingerprint.");
 
-const v1: CertifiedMaterializedSite = { version: "1.0", site: v1Site, winner: fixture.winner };
-const v2: CertifiedMaterializedSite = { version: "1.0", site: v2Site, winner: fixture.winner };
-const output = { name: `MiCirql persistence certification — ${fixture.fixture}`, fixture: fixture.fixture, sourceEvidenceState: "post-repair", mutation: { layer: "content", field: editableKey, deterministic: true }, v1, v2 };
+const output = { name: `MiCirql persistence certification — ${fixture.fixture}`, fixture: fixture.fixture, sourceEvidenceState: "post-repair", mutation: { layer: "content", field: editableKey, deterministic: true }, v1, pendingV2: v2Site, requiredNextStage: "exact-snapshot-revision-certification" };
 fs.mkdirSync("artifacts/persisted-publication-certification", { recursive: true });
-fs.writeFileSync("artifacts/persisted-publication-certification/input.json", JSON.stringify(output, null, 2));
-console.log(JSON.stringify({ fixture: fixture.fixture, siteId: v1Site.siteId, v1: v1Site.fingerprint, v2: v2Site.fingerprint, mutationField: editableKey }, null, 2));
+fs.writeFileSync("artifacts/persisted-publication-certification/prepared.json", JSON.stringify(output, null, 2));
+console.log(JSON.stringify({ fixture: fixture.fixture, siteId: v1Site.siteId, v1: v1Site.fingerprint, pendingV2: v2Site.fingerprint, mutationField: editableKey, persistenceInputReady: false }, null, 2));

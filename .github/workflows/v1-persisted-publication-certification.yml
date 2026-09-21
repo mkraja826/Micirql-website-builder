@@ -21,9 +21,8 @@ jobs:
     timeout-minutes: 60
     environment: production-certification
     env:
-      SUPABASE_URL: ${{ secrets.MICIRQL_SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.MICIRQL_SUPABASE_ANON_KEY }}
-      MICIRQL_CERTIFICATION_ACCESS_TOKEN: ${{ secrets.MICIRQL_CERTIFICATION_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       MICIRQL_CERTIFICATION_WORKSPACE_ID: ${{ secrets.MICIRQL_CERTIFICATION_WORKSPACE_ID }}
       MICIRQL_CERTIFICATION_ACTOR_ID: ${{ secrets.MICIRQL_CERTIFICATION_ACTOR_ID }}
       MICIRQL_ENABLE_REVISION_CERTIFICATION_ROUTE: "1"
@@ -37,6 +36,33 @@ jobs:
         with:
           node-version: 22
 
+      - name: Obtain fresh certification access token
+        shell: bash
+        env:
+          MICIRQL_CERTIFICATION_EMAIL: ${{ secrets.MICIRQL_CERTIFICATION_EMAIL }}
+          MICIRQL_CERTIFICATION_PASSWORD: ${{ secrets.MICIRQL_CERTIFICATION_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in MICIRQL_CERTIFICATION_EMAIL MICIRQL_CERTIFICATION_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing required certification auth secret: $name"
+              exit 1
+            fi
+          done
+          request_body="$(node -e 'process.stdout.write(JSON.stringify({email: process.env.MICIRQL_CERTIFICATION_EMAIL, password: process.env.MICIRQL_CERTIFICATION_PASSWORD}))')"
+          response="$(curl --fail --silent --show-error \
+            --request POST \
+            --url "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "${request_body}")"
+          token="$(printf '%s' "${response}" | node -e 'let input=""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => { try { const token = JSON.parse(input).access_token; if (!token) process.exit(1); process.stdout.write(token); } catch { process.exit(1); } })')"
+          if [ -z "${token}" ]; then
+            echo "::error::Supabase certification login did not return an access token"
+            exit 1
+          fi
+          echo "::add-mask::${token}"
+          printf 'MICIRQL_CERTIFICATION_ACCESS_TOKEN=%s\n' "${token}" >> "${GITHUB_ENV}"
       - name: Require protected certification credentials
         shell: bash
         run: |

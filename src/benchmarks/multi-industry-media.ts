@@ -8,12 +8,29 @@ import type { MediaCandidate } from "../providers/media/schema";
 
 export type ResolvedBenchmarkMedia = Partial<Record<MediaRole, MediaCandidate[]>>;
 
-export async function resolveMultiIndustryBenchmarkMedia(input: {
+type BenchmarkMediaInput = {
   brief: InterpretedBrief;
   knowledge: IndustryKnowledge;
   direction: ArtDirection;
   roles?: MediaRole[];
-}): Promise<ResolvedBenchmarkMedia> {
+};
+
+const benchmarkMediaCache = new Map<string, Promise<ResolvedBenchmarkMedia>>();
+
+export function resolveMultiIndustryBenchmarkMedia(input: BenchmarkMediaInput): Promise<ResolvedBenchmarkMedia> {
+  const cacheKey = JSON.stringify({ brief: input.brief, knowledge: input.knowledge, direction: input.direction, roles: input.roles ?? [] });
+  const cached = benchmarkMediaCache.get(cacheKey);
+  if (cached) return cached;
+
+  const pending = resolveMultiIndustryBenchmarkMediaUncached(input);
+  benchmarkMediaCache.set(cacheKey, pending);
+  return pending.catch((error) => {
+    benchmarkMediaCache.delete(cacheKey);
+    throw error;
+  });
+}
+
+async function resolveMultiIndustryBenchmarkMediaUncached(input: BenchmarkMediaInput): Promise<ResolvedBenchmarkMedia> {
   if (!process.env.PEXELS_API_KEY?.trim()) return {};
 
   const plan = planMedia(input);

@@ -3,6 +3,8 @@ import { deflateRawSync } from "node:zlib";
 import { chromium } from "playwright";
 
 
+
+
 const preparedPath = process.env.MICIRQL_PREPARED_REVISION_PATH?.trim() || "artifacts/persisted-publication-certification/prepared.json";
 const baseUrl = (process.env.MICIRQL_CERTIFICATION_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const prepared = JSON.parse(fs.readFileSync(preparedPath, "utf8"));
@@ -33,6 +35,7 @@ try {
   if (overflow) failures.push("horizontal-overflow");
   functional = rendered && failures.length === 0;
 } finally { await browser.close(); }
+const evidence = { version: "1.0", fingerprint: site.fingerprint, candidateId: site.source.candidateId, evidenceState: "post-repair", rendered, functional, hardFailures: failures, repairAccepted: failures.length === 0, finalScore: failures.length === 0 ? 100 : 0 };
+fs.mkdirSync("artifacts/persisted-publication-certification", { recursive: true });
+fs.writeFileSync("artifacts/persisted-publication-certification/revision-evidence.json", JSON.stringify(evidence, null, 2));
 if (!functional) throw new Error("Exact pending V2 revision audit failed: " + failures.join("; "));
-console.log(JSON.stringify({ revision: site.revision, fingerprint: site.fingerprint, rendered, functional, transport: "deflate-raw-base64url" }, null, 2));
-

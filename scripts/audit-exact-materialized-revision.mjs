@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { deflateRawSync } from "node:zlib";
 import { chromium } from "playwright";
 
+
 const preparedPath = process.env.MICIRQL_PREPARED_REVISION_PATH?.trim() || "artifacts/persisted-publication-certification/prepared.json";
 const baseUrl = (process.env.MICIRQL_CERTIFICATION_BASE_URL || "http://127.0.0.1:3000").replace(/\/$/, "");
 const prepared = JSON.parse(fs.readFileSync(preparedPath, "utf8"));
@@ -20,7 +21,7 @@ try {
   page.on("response", (response) => { if (response.status() >= 400) failures.push("http:" + response.status() + ":" + response.url()); });
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
   if (!response || !response.ok()) failures.push("navigation:" + (response?.status() ?? "no-response"));
-  const root = page.locator("main[data-repair-scope="candidate"]");
+  const root = page.locator('main[data-repair-scope="candidate"]');
   rendered = await root.count() === 1;
   if (!rendered) failures.push("published-render-root-missing");
   const fingerprintLocator = page.locator("[data-revision-certification-fingerprint]");
@@ -34,3 +35,4 @@ try {
 } finally { await browser.close(); }
 if (!functional) throw new Error("Exact pending V2 revision audit failed: " + failures.join("; "));
 console.log(JSON.stringify({ revision: site.revision, fingerprint: site.fingerprint, rendered, functional, transport: "deflate-raw-base64url" }, null, 2));
+

@@ -3,6 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { SupabaseSitePersistenceRepository } from "../src/core/persistence/supabase";
 import type { CertifiedMaterializedSite } from "../src/core/certification/schema";
 
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+  if (value && typeof value === "object") {
+    return "{" + Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => JSON.stringify(key) + ":" + stableJson(entry))
+      .join(",") + "}";
+  }
+  return JSON.stringify(value);
+}
 function required(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Missing required certification environment variable: ${name}`);
@@ -61,7 +71,7 @@ assert(rollback.previousPublishedVersionId === persistedV2.versionId, "Rollback 
 published = await repository.loadPublished({ siteId: persistedV1.dbSiteId });
 assert(published?.versionId === persistedV1.versionId, "Rollback did not restore the exact V1 version id.");
 assert(published?.fingerprint === input.v1.site.fingerprint, "Rollback did not restore the exact V1 fingerprint.");
-assert(JSON.stringify(published.snapshot) === JSON.stringify(input.v1.site), "Rollback did not restore the exact certified V1 snapshot.");
+assert(stableJson(published.snapshot) === stableJson(input.v1.site), "Rollback did not restore the exact certified V1 snapshot.");
 
 const { data: history, error: historyError } = await client
   .from("site_versions")

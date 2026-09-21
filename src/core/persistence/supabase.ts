@@ -92,7 +92,7 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
     assertPersistableCertifiedSite(input);
 
     const { site, winner } = input.certified;
-    const { error } = await this.client.rpc("persist_certified_site", {
+    const { data, error } = await this.client.rpc("persist_certified_site", {
       p_workspace_id: input.workspaceId,
       p_materialized_site_id: site.siteId,
       p_name: input.name.trim(),
@@ -111,9 +111,15 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
       throw new Error(`Failed to persist certified site: ${error.message}`);
     }
 
-    const persisted = await this.loadLatest({
+    const row = (Array.isArray(data) ? data[0] : data) as { db_site_id?: string; version_id?: string } | null;
+    if (!row?.db_site_id || !row.version_id) {
+      throw new Error("Certified site write returned no durable revision identity.");
+    }
+
+    const persisted = await this.loadVersion({
       workspaceId: input.workspaceId,
       materializedSiteId: site.siteId,
+      versionId: row.version_id,
     });
 
     if (!persisted) {
@@ -121,6 +127,39 @@ export class SupabaseSitePersistenceRepository implements SitePersistenceReposit
     }
 
     return persisted;
+  }
+
+  private async loadVersion(input: {
+    workspaceId: string;
+    materializedSiteId: string;
+    versionId: string;
+  }): Promise<DurableSiteRecord | null> {
+    const { data: siteData, error: siteError } = await this.client
+      .from("sites")
+      .select("id, workspace_id, name, status, published_version_id, materialized_site_id, source_key, candidate_id, draft_version")
+      .eq("workspace_id", input.workspaceId)
+      .eq("materialized_site_id", input.materializedSiteId)
+      .maybeSingle();
+
+    if (siteError) {
+      throw new Error("Failed to load durable site: " + siteError.message);
+    }
+    if (!siteData) return null;
+
+    const site = siteData as DurableSiteRow;
+    const { data: versionData, error: versionError } = await this.client
+      .from("site_versions")
+      .select("id, site_id, version_number, status, snapshot, snapshot_hash, materialized_fingerprint, certified_winner, created_by")
+      .eq("id", input.versionId)
+      .eq("site_id", site.id)
+      .maybeSingle();
+
+    if (versionError) {
+      throw new Error("Failed to load durable site revision: " + versionError.message);
+    }
+    if (!versionData) return null;
+
+    return hydrateDurableRecord(site, versionData as DurableVersionRow);
   }
 
   async loadLatest(input: LoadDurableSiteInput): Promise<DurableSiteRecord | null> {

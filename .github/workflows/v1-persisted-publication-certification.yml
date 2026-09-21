@@ -126,4 +126,25 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
  
+      - name: Certify authenticated Supabase V1 to V2 to rollback lifecycle
+        run: npx tsx scripts/certify-supabase-publication-lifecycle.ts
+
+
+      - name: Upload persisted publication evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persisted-publication-certification-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            artifacts/real-certification-render-audit/report.json
+            artifacts/real-certification-repair-plans/report.json
+            artifacts/real-certification-post-repair-audit/report.json
+            artifacts/real-certification-final-ranking/report.json
+            artifacts/real-certification-materialized-winners/report.json
+            artifacts/persisted-publication-certification/prepared.json
+            artifacts/persisted-publication-certification/revision-evidence.json
+            artifacts/persisted-publication-certification/input.json
+            artifacts/persisted-publication-certification/report.json
+
 # Trigger compressed snapshot certification

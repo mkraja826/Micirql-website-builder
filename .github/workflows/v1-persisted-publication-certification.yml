@@ -378,3 +378,4 @@ jobs:
 # Trigger certification after status constraint fix
 # Trigger PPC for the rollback comparison fix
 # Trigger protected certification for the benchmark timeout fix
+# Trigger protected certification for deterministic media caching

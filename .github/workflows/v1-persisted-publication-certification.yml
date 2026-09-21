@@ -379,3 +379,5 @@ jobs:
 # Trigger PPC for the rollback comparison fix
 # Trigger protected certification for the benchmark timeout fix
 # Trigger protected certification for deterministic media caching
+
+# Trigger protected certification for repair gate tolerance

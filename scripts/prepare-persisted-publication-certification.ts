@@ -38,13 +38,19 @@ const draftV2: PublishableDraft = {
   warnings: [...v1Site.snapshot.warnings],
   source: { contentVersion: v1Site.snapshot.content.version },
 };
-const firstPage = draftV2.content.pages[0];
-assert(firstPage?.sections?.length, "Certified winner has no editable content section.");
-const firstSection = firstPage.sections[0] as Record<string, unknown>;
-const editableKey = ["heading", "body", "title", "eyebrow"].find((key) => typeof firstSection[key] === "string" && String(firstSection[key]).trim());
-assert(editableKey, "Certified winner has no deterministic text field for V2 lifecycle edit.");
-firstSection[editableKey] = `${String(firstSection[editableKey])} · revision 2`;
-
+const editableKeys = ["heading", "body", "title", "eyebrow"];
+const editableSection = draftV2.content.pages
+  .flatMap((page) => page.sections ?? [])
+  .map((section) => section as Record<string, unknown>)
+  .find((section) => editableKeys.some((key) => typeof section[key] === "string" && String(section[key]).trim()));
+if (!editableSection) {
+  throw new Error("Certified winner has no deterministic text field for V2 lifecycle edit.");
+}
+const editableKey = editableKeys.find((key) => typeof editableSection[key] === "string" && String(editableSection[key]).trim());
+if (!editableKey) {
+  throw new Error("Certified winner has no deterministic text field for V2 lifecycle edit.");
+}
+editableSection[editableKey] = `${String(editableSection[editableKey])} · revision 2`;
 const v2Site = materializeSiteRevision({ previous: v1Site, draft: draftV2 });
 assert(v2Site.siteId === v1Site.siteId && v2Site.revision === 2, "Controlled V2 did not preserve site identity/revision sequence.");
 assert(v2Site.fingerprint !== v1Site.fingerprint, "Controlled V2 did not produce an independent fingerprint.");

@@ -3,6 +3,8 @@
 name: V1 Persisted Publication Certification
 
 
+
+
 on:
   workflow_dispatch:
   push:
@@ -12,13 +14,19 @@ on:
       - .github/workflows/v1-persisted-publication-certification.yml
 
 
+
+
 permissions:
   contents: read
+
+
 
 
 concurrency:
   group: v1-persisted-publication-certification
   cancel-in-progress: false
+
+
 
 
 jobs:
@@ -39,9 +47,13 @@ jobs:
           ref: ${{ github.sha }}
 
 
+
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+
 
 
       - name: Obtain fresh certification access token
@@ -86,6 +98,8 @@ jobs:
       - run: npm run build
 
 
+
+
       - name: Start certification server
         run: |
           npm run start -- -H 127.0.0.1 -p 3000 > /tmp/micirql-persisted-certification.log 2>&1 &
@@ -110,16 +124,24 @@ jobs:
         run: npx tsx scripts/prepare-persisted-publication-certification.ts
 
 
+
+
       - name: Audit exact pending V2 through canonical renderer
         run: node scripts/audit-exact-materialized-revision.mjs
+
+
 
 
       - name: Bind V2 certification to exact audited fingerprint
         run: npx tsx scripts/certify-exact-materialized-revision.ts
 
 
+
+
       - name: Certify authenticated Supabase V1 to V2 to rollback lifecycle
         run: npx tsx scripts/certify-supabase-publication-lifecycle.ts
+
+
 
 
       - name: Upload persisted publication evidence
@@ -138,5 +160,6 @@ jobs:
             artifacts/persisted-publication-certification/revision-evidence.json
             artifacts/persisted-publication-certification/input.json
             artifacts/persisted-publication-certification/report.json
-
 # Trigger compressed snapshot certification
+ 
+# Trigger exact revision evidence fix rerun

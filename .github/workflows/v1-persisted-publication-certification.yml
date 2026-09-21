@@ -230,7 +230,8 @@ jobs:
           MICIRQL_CERTIFICATION_EMAIL: ${{ secrets.MICIRQL_CERTIFICATION_EMAIL }}
           MICIRQL_CERTIFICATION_PASSWORD: ${{ secrets.MICIRQL_CERTIFICATION_PASSWORD }}
         run: |
-          set -euo pipefail
+
+# Trigger protected certification on the repaired persistence implementation          set -euo pipefail
           for name in MICIRQL_CERTIFICATION_EMAIL MICIRQL_CERTIFICATION_PASSWORD; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Missing required certification auth secret: $name"

@@ -376,3 +376,4 @@ jobs:
             artifacts/persisted-publication-certification/input.json
             artifacts/persisted-publication-certification/report.json
 # Trigger certification after status constraint fix
+# Trigger PPC for the rollback comparison fix

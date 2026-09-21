@@ -5,6 +5,10 @@ name: V1 Persisted Publication Certification
 
 
 
+
+
+
+
 on:
   workflow_dispatch:
   push:
@@ -16,8 +20,16 @@ on:
 
 
 
+
+
+
+
 permissions:
   contents: read
+
+
+
+
 
 
 
@@ -25,6 +37,10 @@ permissions:
 concurrency:
   group: v1-persisted-publication-certification
   cancel-in-progress: false
+
+
+
+
 
 
 
@@ -49,9 +65,17 @@ jobs:
 
 
 
+
+
+
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+
+
+
 
 
 
@@ -100,6 +124,10 @@ jobs:
 
 
 
+
+
+
+
       - name: Start certification server
         run: |
           npm run start -- -H 127.0.0.1 -p 3000 > /tmp/micirql-persisted-certification.log 2>&1 &
@@ -126,8 +154,16 @@ jobs:
 
 
 
+
+
+
+
       - name: Audit exact pending V2 through canonical renderer
         run: node scripts/audit-exact-materialized-revision.mjs
+
+
+
+
 
 
 
@@ -138,8 +174,16 @@ jobs:
 
 
 
+
+
+
+
       - name: Certify authenticated Supabase V1 to V2 to rollback lifecycle
         run: npx tsx scripts/certify-supabase-publication-lifecycle.ts
+
+
+
+
 
 
 
@@ -161,3 +205,5 @@ jobs:
             artifacts/persisted-publication-certification/input.json
             artifacts/persisted-publication-certification/report.json
 # Trigger compressed snapshot certification
+
+# Trigger certification after applying publication RPC

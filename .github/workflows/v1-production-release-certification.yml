@@ -1,0 +1,32 @@
+name: V1 Production Release Certification
+
+on:
+  pull_request:
+    paths:
+      - "docs/production/v1-release-certification.md"
+      - "scripts/audit-v1-release-certification.mjs"
+      - ".github/workflows/v1-production-release-certification.yml"
+  workflow_dispatch:
+
+jobs:
+  policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit release gate policy
+        run: node scripts/audit-v1-release-certification.mjs
+
+  certify-evidence:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Certify release evidence package
+        run: node scripts/audit-v1-release-certification.mjs --evidence

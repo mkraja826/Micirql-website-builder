@@ -1,0 +1,30 @@
+name: V1 Production Observability
+
+on:
+  pull_request:
+    paths:
+      - "app/api/sites/**/publish/**"
+      - "app/published/**"
+      - "src/core/observability/**"
+      - "scripts/audit-production-observability.mjs"
+      - "docs/production/observability.md"
+      - "wrangler.jsonc"
+      - ".github/workflows/v1-production-observability.yml"
+  workflow_dispatch:
+
+jobs:
+  production-observability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit privacy-safe operational events
+        run: node scripts/audit-production-observability.mjs
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build

@@ -51,13 +51,13 @@ if (/body[^\n]{0,120}actorId|actorId[^\n]{0,120}body/.test(route)) {
   throw new Error("Publication endpoint must never accept actorId from the request body.");
 }
 
-if (!/if \(isDefinitivePublicationRejection\(error\)\)[\s\S]*?status: 403/.test(route)) {
+if (!/if \(isDefinitivePublicationRejection\(error\)\)[\s\S]*?statusCode: 403[\s\S]*?return reply\(requestId,[\s\S]*?, 403\)/.test(route)) {
   throw new Error("Definitive authorization or publication rejections must return 403.");
 }
-if (!/outcome: "unknown"[\s\S]*?recoveryUrl:[\s\S]*?status: 503/.test(route)) {
+if (!/record\(eventContext, "uncertain"[\s\S]*?failureCode: "publication_outcome_unknown"[\s\S]*?outcome: "unknown"[\s\S]*?recoveryUrl:[\s\S]*?\}, 503\)/.test(route)) {
   throw new Error("Uncertain publication outcomes must return a reconciliation URL and 503.");
 }
-if (!/matchesRequestedVersion:\s*published\.versionId === requestedVersionId/.test(route)) {
+if (!/const matchesRequestedVersion = published\.versionId === requestedVersionId/.test(route) || !route.includes("matchesRequestedVersion,")) {
   throw new Error("Publication reconciliation must compare the active persisted version to the requested version.");
 }
 

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const migrationPath = "supabase/migrations/20260922120000_revoke_public_execution_from_trigger_functions.sql";
+const migrationPath = "supabase/migrations/20260922113129_revoke_public_execution_from_trigger_functions.sql";
 const reviewPath = "docs/production/supabase-security-review.md";
 const migration = fs.readFileSync(migrationPath, "utf8").toLowerCase();
 const review = fs.readFileSync(reviewPath, "utf8");

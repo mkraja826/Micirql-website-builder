@@ -1,0 +1,26 @@
+name: V1 Public Request Abuse Controls
+
+on:
+  pull_request:
+    paths:
+      - "src/sections/contact/request-form-runtime.tsx"
+      - "supabase/migrations/**"
+      - "scripts/audit-public-request-abuse-controls.mjs"
+      - ".github/workflows/v1-public-request-abuse-controls.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/sections/contact/request-form-runtime.tsx"
+      - "supabase/migrations/**"
+      - "scripts/audit-public-request-abuse-controls.mjs"
+      - ".github/workflows/v1-public-request-abuse-controls.yml"
+
+jobs:
+  public-request-abuse-controls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/audit-public-request-abuse-controls.mjs

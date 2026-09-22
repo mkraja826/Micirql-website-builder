@@ -110,14 +110,14 @@ export async function POST(request: Request) {
   }
 
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRoleKey) {
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey) {
     record(requestId, startedAt, "failure", 503, "service_unavailable", siteId);
     return reply(requestId, { error: "Request service unavailable." }, 503);
   }
 
   try {
-    const client = createClient(url, serviceRoleKey, {
+    const client = createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
     const { data, error } = await client.rpc("submit_site_action", {

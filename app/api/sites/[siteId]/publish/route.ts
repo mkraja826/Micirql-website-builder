@@ -31,7 +31,7 @@ async function authorize(request: Request) {
   try {
     const { data, error } = await client.auth.getUser(token);
     if (error || !data.user) {
-      const status = error && typeof error.status === "number" && error.status >= 500 ? 503 : 401;
+      const status = error && typeof error.status === "number" && error.status >= 400 && error.status < 500 ? 401 : 503;
       return {
         response: NextResponse.json(
           { error: status === 503 ? "Authentication service unavailable" : "Unauthorized" },

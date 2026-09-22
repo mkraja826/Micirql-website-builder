@@ -85,6 +85,7 @@ export function RequestFormRuntime({
     const phone = String(form.get("phone") ?? "").trim();
     const enquiry = String(form.get("message") ?? "").trim();
     const consent = form.get("consent") === "on";
+    const website = String(form.get("_website") ?? "");
 
     if (!name || (!email && !phone) || !consent) {
       setState("error");
@@ -105,7 +106,7 @@ export function RequestFormRuntime({
         email: email || undefined,
         phone: phone || undefined,
         message: enquiry || undefined,
-        fields: { capabilityKey: resolvedAction.capabilityKey },
+        fields: { capabilityKey: resolvedAction.capabilityKey, _website: website },
         consent: true,
         sourcePage: typeof window !== "undefined" ? window.location.pathname : undefined,
       });
@@ -120,11 +121,12 @@ export function RequestFormRuntime({
 
   return (
     <form onSubmit={onSubmit} style={{ display: "grid", gap: "1rem" }} data-request-capability={action?.capabilityKey ?? "preview"}>
-      <label>Name<input name="name" placeholder="Your name" required /></label>
+      <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}><label>Leave this field empty<input name="_website" type="text" tabIndex={-1} autoComplete="off" /></label></div>
+      <label>Name<input name="name" placeholder="Your name" required maxLength={120} /></label>
       {contactMode === "email"
-        ? <label>Email<input name="email" type="email" placeholder="you@example.com" required /></label>
-        : <label>Phone<input name="phone" inputMode="tel" placeholder="Your phone number" required /></label>}
-      <label>{messageLabel}<textarea name="message" rows={contactMode === "email" ? 5 : 4} placeholder={messagePlaceholder} /></label>
+        ? <label>Email<input name="email" type="email" placeholder="you@example.com" required maxLength={254} /></label>
+        : <label>Phone<input name="phone" inputMode="tel" placeholder="Your phone number" required maxLength={32} /></label>}
+      <label>{messageLabel}<textarea name="message" rows={contactMode === "email" ? 5 : 4} placeholder={messagePlaceholder} maxLength={4000} /></label>
       <label style={{ display: "flex", gap: ".6rem", alignItems: "flex-start" }}>
         <input name="consent" type="checkbox" required />
         <span>I agree that the business may use these details to respond to this request.</span>

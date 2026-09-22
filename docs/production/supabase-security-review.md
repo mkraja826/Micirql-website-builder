@@ -19,9 +19,7 @@ Migration `20260922130000_revoke_client_grants_from_certified_layout_contracts.s
 
 A live review found `public.workspace_has_members(uuid)` executable by every authenticated user. It returns whether an arbitrary workspace has any members, and is needed only by the `workspace_members_insert_admin` RLS policy for first-owner bootstrap; no application RPC caller was found.
 
-The Supabase Data API settings page showed exactly two exposed schemas, `public` and `extensions`. The proposed migration moves the SECURITY DEFINER helper to `private`, keeps `private` outside the exposed schema list, updates the first-owner policy to call the private helper, and drops the public RPC. Authenticated execution remains granted on the private helper because the policy needs it. This removes the direct PostgREST oracle while preserving initial-owner creation and normal admin membership inserts.
-
-After applying the migration, verify that `private` is still absent from Data API exposed schemas, `public.workspace_has_members(uuid)` no longer exists, and the first-owner and workspace-admin membership paths still work.
+The Supabase Data API settings page showed exactly two exposed schemas, `public` and `extensions`. The migration merged in PR #213 moves the SECURITY DEFINER helper to `private`, keeps `private` outside the exposed schema list, updates the first-owner policy to call the private helper, and drops the public RPC. Authenticated execution remains granted on the private helper because the policy needs it. This removes the direct PostgREST oracle while preserving initial-owner creation and normal admin membership inserts. It is applied and recorded in Supabase as version `20260922151129` (the migration filename timestamp is `20260922140000`).
 
 ## Public SECURITY DEFINER RPC review
 
@@ -42,10 +40,18 @@ Live inspection found `public.has_workspace_role(uuid, text[])` checks only the 
 
 A live review found a tenant boundary issue in `public.finalize_asset_upload(...)`: authenticated workspace editors can create upload intents, and the intent’s `asset_id` is not constrained by a foreign key to `assets`. The finalizer upserted by asset ID and updated metadata on conflict without verifying the existing row’s workspace. An intent could therefore target a known asset ID belonging to another workspace, including a global asset. Migration `20260922160000_guard_asset_upload_workspace_conflicts.sql` adds an atomic workspace match to the conflict update and raises an error when the ID is owned by a different workspace. It preserves same-workspace retries. The migration is applied and recorded in Supabase as version `20260922153846` (the recorded version is earlier than the filename timestamp). Post-migration catalog checks confirm the atomic guard and conflict error are present; authenticated execution remains enabled, and anon execution is denied.
 
+## Editor draft write boundary
+
+A live review found that the editor’s TypeScript mutation guardrails were not enforced by Postgres. `save_workspace_draft` checked identity, membership, site ownership, and revision only, while authenticated users also had direct INSERT/UPDATE/DELETE grants on `workspace_drafts`. The publish RPC then published the stored snapshot. A caller could bypass the app and RPC guardrails by writing directly through the Data API or submit a changed baseline, activated capability, removed warning, or invalid render structure.
+
+PR #216 proposes revoking client INSERT/UPDATE/DELETE on `workspace_drafts` while retaining reads and trusted service access; routing saves and publishes through a private SECURITY DEFINER validator; and validating durable site/version-1 provenance, immutable capability fields, warning preservation, and `validate_site_snapshot` before persistence or publishing. This remains proposed until exact-head checks pass, the PR is merged, and the migration is applied and verified. The `publish_site_version(uuid)` overload is executable by authenticated users and is guarded in this change. Its five-argument overload is already restricted to `service_role`.
+
 ## Remaining release-review items
 
 - The advisor reports 20 authenticated-callable `SECURITY DEFINER` functions after the workspace helper was moved from the exposed `public` schema. Review remaining findings by caller and privilege; the warning alone does not establish a vulnerability.
 - Leaked-password protection is disabled. It is unavailable on this project’s current Free plan; Supabase documents it for Pro and above. It still needs to be enabled and verified after an authorized plan upgrade.
 - Five tables have RLS enabled with no policies: `certified_layout_contracts`, `full_stack_publish_certifications`, `site_function_idempotency`, `site_function_rate_limits`, and `site_leads`. The live grant review found no direct `anon` or `authenticated` SELECT/INSERT grants on the latter four.
+
+`plan_site_blueprint(...)` still trusts caller-supplied section payload after checking broad section-family constraints; `certified_layout_contracts` currently has no persisted section content to compare against. Establish an authoritative stored layout contract before treating this path as certified.
 
 These findings remain release-review items. Do not blanket-revoke functions that the application needs. These reviews do not certify the Supabase project as secure. Re-run the Supabase security advisor after migrations and attach its sanitized result to the V1 release evidence.

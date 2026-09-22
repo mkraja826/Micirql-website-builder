@@ -23,11 +23,11 @@ begin
 
   select s.workspace_id, s.published_version_id
     into v_workspace_id, v_previous_version_id
-  from public.sites s
+  from public.sites as s
   where s.id = p_site_id
     and exists (
       select 1
-      from public.workspace_members wm
+      from public.workspace_members as wm
       where wm.workspace_id = s.workspace_id
         and wm.user_id = auth.uid()
     )
@@ -39,7 +39,7 @@ begin
 
   select sv.status
     into v_version_status
-  from public.site_versions sv
+  from public.site_versions as sv
   where sv.id = p_version_id
     and sv.site_id = p_site_id;
 
@@ -51,17 +51,17 @@ begin
     raise exception 'publication version is not publishable';
   end if;
 
-  update public.site_versions
+  update public.site_versions as sv
   set status = 'published'
-  where id = p_version_id
-    and site_id = p_site_id;
+  where sv.id = p_version_id
+    and sv.site_id = p_site_id;
 
-  update public.sites
+  update public.sites as s
   set status = 'published',
       published_version_id = p_version_id,
       updated_at = now()
-  where id = p_site_id
-    and workspace_id = v_workspace_id;
+  where s.id = p_site_id
+    and s.workspace_id = v_workspace_id;
 
   return query
   select p_site_id, p_version_id, v_previous_version_id;

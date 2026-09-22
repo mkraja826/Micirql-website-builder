@@ -27,11 +27,20 @@ export function assertPersistableCertifiedSite(input: PersistCertifiedSiteInput)
     throw new Error("Only a fully certified rank-1 winner can be persisted.");
   }
 
-  if (site.status !== "draft" || site.revision !== 1 || site.version !== "1.0") {
+  if (
+    site.status !== "draft" ||
+    !Number.isSafeInteger(site.revision) ||
+    site.revision < 1 ||
+    site.version !== "1.0"
+  ) {
     throw new Error("Unsupported materialized site state for durable persistence.");
   }
 
   if (winner.candidateId !== site.source.candidateId) {
     throw new Error("Certified winner does not match materialized site provenance.");
+  }
+
+  if (!certified.certifiedFingerprint || certified.certifiedFingerprint !== site.fingerprint) {
+    throw new Error("Certification does not cover this exact materialized site snapshot.");
   }
 }

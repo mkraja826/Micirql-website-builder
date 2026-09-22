@@ -34,9 +34,17 @@ The security advisor reports four `SECURITY DEFINER` functions executable by `an
 
 The last two grants remain under caller-inventory review; do not revoke them until external runtime consumers have been checked.
 
+## Authenticated SECURITY DEFINER RPC review
+
+Live inspection found `public.has_workspace_role(uuid, text[])` checks only the caller’s own `auth.uid()` membership and requested roles. It is used by many RLS policies and `set_site_action_binding`; it is not an immediate cross-tenant data exposure. The authenticated grant remains because those policy checks require it.
+
+`public.check_ai_budget(uuid, uuid, uuid, bigint)` checks the caller’s workspace role before reading usage and budget values, and scopes both queries to the requested workspace. No direct application RPC caller was found in the repository index. No change was warranted from this review.
+
+A live review found a tenant boundary issue in `public.finalize_asset_upload(...)`: authenticated workspace editors can create upload intents, and the intent’s `asset_id` is not constrained by a foreign key to `assets`. The finalizer upserted by asset ID and updated metadata on conflict without verifying the existing row’s workspace. An intent could therefore target a known asset ID belonging to another workspace, including a global asset. Migration `20260922160000_guard_asset_upload_workspace_conflicts.sql` adds an atomic workspace match to the conflict update and raises an error when the ID is owned by a different workspace. It preserves same-workspace retries. This migration is proposed; it has not been applied to production.
+
 ## Remaining release-review items
 
-- The advisor reports 21 authenticated-callable `SECURITY DEFINER` functions before the workspace helper is moved from the exposed `public` schema. After applying that migration, refresh the advisor and review any remaining findings by caller and privilege; the warning alone does not establish a vulnerability.
+- The advisor reports 20 authenticated-callable `SECURITY DEFINER` functions after the workspace helper was moved from the exposed `public` schema. Review remaining findings by caller and privilege; the warning alone does not establish a vulnerability.
 - Leaked-password protection is disabled. It is unavailable on this project’s current Free plan; Supabase documents it for Pro and above. It still needs to be enabled and verified after an authorized plan upgrade.
 - Five tables have RLS enabled with no policies: `certified_layout_contracts`, `full_stack_publish_certifications`, `site_function_idempotency`, `site_function_rate_limits`, and `site_leads`. The live grant review found no direct `anon` or `authenticated` SELECT/INSERT grants on the latter four.
 

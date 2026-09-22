@@ -1,7 +1,8 @@
 export type OperationalOperation =
   | "publication.publish"
   | "publication.reconcile"
-  | "published_site.render";
+  | "published_site.render"
+  | "site_action.submit";
 
 export type OperationalOutcome = "success" | "rejected" | "failure" | "uncertain" | "not_found";
 
@@ -15,7 +16,9 @@ export type OperationalFailureCode =
   | "reconciliation_failed"
   | "published_revision_absent"
   | "published_site_not_found"
-  | "published_site_load_failed";
+  | "published_site_load_failed"
+  | "request_rate_limited"
+  | "request_submission_failed";
 
 export type OperationalEvent = {
   requestId: string;

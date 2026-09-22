@@ -13,7 +13,8 @@ A valid UUID `x-request-id` is preserved for API correlation. Cloudflare `cf-ray
 - `publication.publish`: verified publication success, definitive rejection, authentication failure, invalid request, and uncertain outcome.
 - `publication.reconcile`: active revision confirmation, missing publication, tenant access rejection, and reconciliation failure.
 - `published_site.render`: public snapshot render success, missing site, and load/render failure.
+- `site_action.submit`: privacy-safe public request acceptance, validation rejection, rate-limit response, and service failure.
 
 Filter Worker logs by `operation`, `outcome`, or `failureCode` to review failure rates and latency. Use `requestId` to follow one request and `siteId` / `versionId` to identify the affected publication without exposing visitor or business contact data. Alert on repeated `published_site.render` failures and on `publication.publish` events with outcome `uncertain`.
 
-This first observability slice covers the live publication and public-render boundaries. Generation, editing, enquiry delivery, and custom-domain routing are instrumented as those operational paths are introduced.
+This first observability slice covers publication, public rendering, and request submission boundaries. Generation, editing, enquiry delivery, and custom-domain routing are instrumented as those operational paths are introduced.

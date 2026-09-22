@@ -55,12 +55,12 @@ begin
     raise exception 'certified editor baseline does not match durable site provenance';
   end if;
 
-  if jsonb_typeof(p_snapshot) <> 'object'
+  if jsonb_typeof(p_snapshot) is distinct from 'object'
      or p_snapshot->>'version' is distinct from '1.0'
      or p_snapshot->>'workspaceId' is distinct from p_workspace_id::text
      or p_snapshot->>'dbSiteId' is distinct from p_site_id::text
-     or jsonb_typeof(p_snapshot->'baseline') <> 'object'
-     or jsonb_typeof(p_snapshot->'content') <> 'object' then
+     or jsonb_typeof(p_snapshot->'baseline') is distinct from 'object'
+     or jsonb_typeof(p_snapshot->'content') is distinct from 'object' then
     raise exception 'invalid editor draft snapshot';
   end if;
 
@@ -78,14 +78,16 @@ begin
     else p_previous_snapshot->'content'
   end;
 
-  if jsonb_typeof(v_previous_content) <> 'object'
+  if jsonb_typeof(v_previous_content) is distinct from 'object'
+     or v_content->'primaryCapability' is distinct from v_baseline.snapshot->'snapshot'->'primaryCapability'
+     or v_content->'capabilities' is distinct from v_baseline.snapshot->'snapshot'->'capabilities'
      or v_content->'primaryCapability' is distinct from v_previous_content->'primaryCapability'
      or v_content->'capabilities' is distinct from v_previous_content->'capabilities' then
     raise exception 'editor mutations cannot change or activate functional capabilities';
   end if;
 
-  if jsonb_typeof(v_content->'warnings') <> 'array'
-     or jsonb_typeof(v_previous_content->'warnings') <> 'array'
+  if jsonb_typeof(v_content->'warnings') is distinct from 'array'
+     or jsonb_typeof(v_previous_content->'warnings') is distinct from 'array'
      or exists (
        select 1
        from jsonb_array_elements(v_previous_content->'warnings') as old_warning(value)

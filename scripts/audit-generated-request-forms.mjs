@@ -10,7 +10,7 @@ const migration = fs.readFileSync("supabase/migrations/20260914090000_add_public
 const checks = [
   [runtime.includes('fetch("/api/public/site-actions"'), "runtime must submit through the server API boundary"],
   [submissionRoute.includes('client.rpc("submit_site_action"'), "server API must call the registered site action RPC"],
-  [submissionRoute.includes('status, 429') && submissionRoute.includes('"retry-after"'), "server API must translate rate limits to HTTP 429 with retry guidance"],
+  [submissionRoute.includes('"rejected", 429') && submissionRoute.includes('"retry-after"'), "server API must translate rate limits to HTTP 429 with retry guidance"],
   [submissionRoute.includes("SUPABASE_ANON_KEY") && !submissionRoute.includes("SUPABASE_SERVICE_ROLE_KEY"), "public request API must use publishable database credentials only"],
   [runtime.includes('resolvePublicSiteAction'), "runtime must resolve published verified action identity"],
   [!runtime.includes('action.actionId && action.actionVersion'), "runtime must not bypass public binding resolution with supplied action identity"],

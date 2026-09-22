@@ -71,6 +71,22 @@ export async function GET(
   }
 
   try {
+    const { data: memberships, error: membershipError } = await auth.client
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", auth.userId);
+    if (membershipError) throw membershipError;
+
+    const { data: site, error: siteError } = await auth.client
+      .from("sites")
+      .select("workspace_id")
+      .eq("id", siteId)
+      .maybeSingle();
+    if (siteError) throw siteError;
+    if (!site || !memberships?.some((membership) => membership.workspace_id === site.workspace_id)) {
+      return NextResponse.json({ error: "Site not found" }, { status: 404 });
+    }
+
     const repository = new SupabaseSitePersistenceRepository(auth.client);
     const published = await repository.loadPublished({ siteId });
     if (!published) {

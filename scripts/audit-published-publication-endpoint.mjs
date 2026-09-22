@@ -17,12 +17,25 @@ for (const required of [
   "authorization",
   "Bearer ",
   "client.auth.getUser(token)",
-  "userData.user.id",
+  "userId: data.user.id",
   "SupabaseSitePersistenceRepository",
   "repository.setPublishedVersion",
   "versionId",
 ]) {
   if (!route.includes(required)) throw new Error(`Publication endpoint lost required authenticated boundary: ${required}`);
+}
+
+for (const required of [
+  "export async function GET(",
+  'from("workspace_members")',
+  'from("sites")',
+  'repository.loadPublished({ siteId })',
+  "matchesRequestedVersion",
+  "isDefinitivePublicationRejection(error)",
+  'outcome: "unknown"',
+  "recoveryUrl",
+]) {
+  if (!route.includes(required)) throw new Error(`Publication recovery boundary missing: ${required}`);
 }
 
 for (const forbidden of ["SUPABASE_SERVICE_ROLE_KEY", "service_role", "p_actor_id:"]) {
@@ -31,11 +44,21 @@ for (const forbidden of ["SUPABASE_SERVICE_ROLE_KEY", "service_role", "p_actor_i
   }
 }
 
-if (!/actorId:\s*userData\.user\.id/.test(route)) {
+if (!/actorId:\s*auth\.userId/.test(route)) {
   throw new Error("Publication actor identity must come only from the verified Supabase user.");
 }
 if (/body[^\n]{0,120}actorId|actorId[^\n]{0,120}body/.test(route)) {
   throw new Error("Publication endpoint must never accept actorId from the request body.");
+}
+
+if (!/if \(isDefinitivePublicationRejection\(error\)\)[\s\S]*?status: 403/.test(route)) {
+  throw new Error("Definitive authorization or publication rejections must return 403.");
+}
+if (!/outcome: "unknown"[\s\S]*?recoveryUrl:[\s\S]*?status: 503/.test(route)) {
+  throw new Error("Uncertain publication outcomes must return a reconciliation URL and 503.");
+}
+if (!/matchesRequestedVersion:\s*published\.versionId === requestedVersionId/.test(route)) {
+  throw new Error("Publication reconciliation must compare the active persisted version to the requested version.");
 }
 
 if (!repository.includes('this.client.rpc("set_published_site_version"')) {
@@ -47,4 +70,4 @@ for (const required of ["auth.uid()", "p_actor_id", "previous_published_version_
   }
 }
 
-console.log("Authenticated publication endpoint boundary passed.");
+console.log("Authenticated publication endpoint and recovery boundary passed.");

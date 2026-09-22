@@ -1,0 +1,32 @@
+name: V1 Limited Business Pilot
+
+on:
+  pull_request:
+    paths:
+      - "docs/production/limited-business-pilot.md"
+      - "scripts/audit-limited-business-pilot.mjs"
+      - ".github/workflows/v1-limited-business-pilot.yml"
+  workflow_dispatch:
+
+jobs:
+  pilot-policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit pilot readiness policy
+        run: node scripts/audit-limited-business-pilot.mjs
+
+  pilot-evidence:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Certify anonymized pilot evidence
+        run: node scripts/audit-limited-business-pilot.mjs --evidence docs/production/pilot/evidence.json

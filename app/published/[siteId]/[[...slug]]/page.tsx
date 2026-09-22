@@ -21,7 +21,7 @@ export default async function PublishedSitePage({ params }: PublishedSitePagePro
   const startedAt = Date.now();
   const pageSlug = slug?.join("/") || "home";
 
-  let rendered;
+  let rendered: Awaited<ReturnType<typeof renderPublicSite>>;
   try {
     const repository = createPublishedSiteRepository();
     rendered = await renderPublicSite(repository, { siteId, pageSlug });

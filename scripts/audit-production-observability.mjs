@@ -32,7 +32,7 @@ for (const required of [
   'headers: { "x-request-id": requestId }',
   'operation: "publication.publish"',
   'operation: "publication.reconcile"',
-  'outcome: "uncertain"',
+  'record(eventContext, "uncertain"',
   "failureCode: \"publication_outcome_unknown\"",
 ]) {
   if (!publish.includes(required)) throw new Error(`Publication observability missing: ${required}`);

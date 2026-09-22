@@ -121,7 +121,8 @@ export function RequestFormRuntime({
 
   return (
     <form onSubmit={onSubmit} style={{ display: "grid", gap: "1rem" }} data-request-capability={action?.capabilityKey ?? "preview"}>
-      <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}><label>Leave this field empty<input name="_website" type="text" tabIndex={-1} autoComplete="off" /></label></div>\n      <label>Name<input name="name" placeholder="Your name" required maxLength={120} /></label>
+      <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}><label>Leave this field empty<input name="_website" type="text" tabIndex={-1} autoComplete="off" /></label></div>
+      <label>Name<input name="name" placeholder="Your name" required maxLength={120} /></label>
       {contactMode === "email"
         ? <label>Email<input name="email" type="email" placeholder="you@example.com" required maxLength={254} /></label>
         : <label>Phone<input name="phone" inputMode="tel" placeholder="Your phone number" required maxLength={32} /></label>}

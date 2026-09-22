@@ -8,6 +8,8 @@ on:
     paths:
       - "src/sections/contact/**"
       - "src/core/capabilities/**"
+      - "app/api/public/site-actions/**"
+      - "src/core/observability/operational-events.ts"
       - "scripts/audit-generated-request-forms.mjs"
       - ".github/workflows/v1-generated-request-forms.yml"
 

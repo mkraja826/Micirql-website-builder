@@ -11,7 +11,7 @@ const form = fs.readFileSync(formPath, "utf8");
 const checks = [
   [migration.includes("security definer") && migration.includes("set search_path = public, pg_temp"), "submission RPC must keep a fixed search path"],
   [migration.includes("pg_advisory_xact_lock(hashtextextended(v_idempotency_key, 0))"), "idempotency lookup and insert must be serialized per request"],
-  [migration.includes("length(p_name) > 120") && migration.includes("length(p_email) > 254") && migration.includes("length(p_phone) > 32"), "contact inputs must have server-side limits"],
+  [/length\\(p_name\\)\\s*>\\s*120/.test(migration) && /length\\(p_email\\)\\s*>\\s*254/.test(migration) && /length\\(p_phone\\)\\s*>\\s*32/.test(migration), "contact inputs must have server-side limits"],
   [migration.includes("length(p_message), 0) > 4000") && migration.includes("octet_length(coalesce(p_fields"), "message and JSON payload must be bounded server-side"],
   [migration.includes("jsonb_object_keys(coalesce(p_fields") && migration.includes("length(p_source_page) > 512"), "field count and source page must be bounded"],
   [migration.includes("100,\n    3600") && migration.includes("rate limit exceeded"), "existing per-site/action hourly rate limit must remain enforced"],

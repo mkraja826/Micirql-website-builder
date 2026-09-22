@@ -1,0 +1,27 @@
+name: V1 Supabase Trigger Execution Boundary
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "docs/production/supabase-security-review.md"
+      - "scripts/audit-supabase-trigger-execution.mjs"
+      - ".github/workflows/v1-supabase-trigger-execution.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "docs/production/supabase-security-review.md"
+      - "scripts/audit-supabase-trigger-execution.mjs"
+      - ".github/workflows/v1-supabase-trigger-execution.yml"
+
+jobs:
+  trigger-execution-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit client execution grants on trigger functions
+        run: node scripts/audit-supabase-trigger-execution.mjs

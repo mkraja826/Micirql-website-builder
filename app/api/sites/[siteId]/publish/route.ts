@@ -166,7 +166,6 @@ export async function GET(
     record(eventContext, "success", {
       statusCode: 200,
       versionId: published.versionId,
-      previousVersionId: published.publishedVersionId,
     });
     return reply(requestId, {
       state: matchesRequestedVersion ? "requested_version_published" : "different_version_published",

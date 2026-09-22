@@ -17,7 +17,7 @@ const checks = [
   [migration.includes("100,\n    3600") && migration.includes("rate limit exceeded"), "existing per-site/action hourly rate limit must remain enforced"],
   [migration.includes("p_fields->>'_website'") && migration.includes("coalesce(p_fields, '{}'::jsonb) - '_website'"), "honeypot submissions must not create or persist a lead"],
   [migration.includes("revoke all on function public.submit_site_action") && migration.includes("to anon, authenticated"), "public RPC grants must remain explicit"],
-  [form.includes('name="_website"') && form.includes('form.get("_website")') && form.includes("_website: website"), "the generated form must submit its hidden bot-trap field"],
+  [form.includes('name="_website"') && form.includes('form.get("_website")') && form.includes("_website: website") && !form.includes("\\n      <label>Name"), "the generated form must submit its hidden bot-trap field without escaped markup text"],
   [form.includes("maxLength={120}") && form.includes("maxLength={254}") && form.includes("maxLength={32}") && form.includes("maxLength={4000}"), "browser fields must match server-side limits"],
 ];
 for (const [passed, reason] of checks) if (!passed) throw new Error(reason);

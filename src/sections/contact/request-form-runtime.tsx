@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { submitRegisteredSiteAction, type RequestCapabilityId } from "../../core/capabilities/action-registry";
+import type { RequestCapabilityId } from "../../core/capabilities/action-registry";
 import { resolvePublicSiteAction, type PublicSiteAction } from "../../core/capabilities/public-action";
 
 export type GeneratedRequestAction = {
@@ -97,25 +97,39 @@ export function RequestFormRuntime({
     setMessage("");
 
     try {
-      await submitRegisteredSiteAction(client, {
-        siteId: resolvedAction.siteId,
-        actionId: resolvedAction.actionId,
-        actionVersion: resolvedAction.actionVersion,
-        requestId: requestId(),
-        name,
-        email: email || undefined,
-        phone: phone || undefined,
-        message: enquiry || undefined,
-        fields: { capabilityKey: resolvedAction.capabilityKey, _website: website },
-        consent: true,
-        sourcePage: typeof window !== "undefined" ? window.location.pathname : undefined,
+      const response = await fetch("/api/public/site-actions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          siteId: resolvedAction.siteId,
+          actionId: resolvedAction.actionId,
+          actionVersion: resolvedAction.actionVersion,
+          requestId: requestId(),
+          name,
+          email: email || undefined,
+          phone: phone || undefined,
+          message: enquiry || undefined,
+          fields: { capabilityKey: resolvedAction.capabilityKey, _website: website },
+          consent: true,
+          sourcePage: typeof window !== "undefined" ? window.location.pathname : undefined,
+        }),
       });
+      if (response.status === 429) throw new Error("RATE_LIMITED");
+      if (!response.ok) throw new Error("SUBMISSION_FAILED");
+      const receipt: unknown = await response.json();
+      if (
+        typeof receipt !== "object" || receipt === null
+        || !("accepted" in receipt) || receipt.accepted !== true
+        || !("semantics" in receipt) || receipt.semantics !== "request_only"
+      ) throw new Error("SUBMISSION_FAILED");
       event.currentTarget.reset();
       setState("sent");
       setMessage("Request sent. The business can review your enquiry and follow up using the contact details you provided.");
-    } catch {
+    } catch (error) {
       setState("error");
-      setMessage("We could not send your request right now. Please try again later or use another verified contact method.");
+      setMessage(error instanceof Error && error.message === "RATE_LIMITED"
+        ? "Too many requests were sent. Please wait before trying again."
+        : "We could not send your request right now. Please try again later or use another verified contact method.");
     }
   }
 

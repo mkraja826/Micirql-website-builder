@@ -40,4 +40,4 @@ The last two grants remain under caller-inventory review; do not revoke them unt
 - Leaked-password protection is disabled. It is unavailable on this project’s current Free plan; Supabase documents it for Pro and above. It still needs to be enabled and verified after an authorized plan upgrade.
 - Five tables have RLS enabled with no policies: `certified_layout_contracts`, `full_stack_publish_certifications`, `site_function_idempotency`, `site_function_rate_limits`, and `site_leads`. The live grant review found no direct `anon` or `authenticated` SELECT/INSERT grants on the latter four.
 
-These reviews do not certify the Supabase project as secure. Re-run the Supabase security advisor after migrations and attach its sanitized result to the V1 release evidence.
+These findings remain release-review items. Do not blanket-revoke functions that the application needs. These reviews do not certify the Supabase project as secure. Re-run the Supabase security advisor after migrations and attach its sanitized result to the V1 release evidence.

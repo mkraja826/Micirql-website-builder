@@ -11,17 +11,16 @@ function bearerToken(request: Request): string | null {
   return token || null;
 }
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ siteId: string }> },
-) {
+async function authorize(request: Request) {
   const token = bearerToken(request);
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) {
+    return { response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) } as const;
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
   if (!supabaseUrl || !anonKey) {
-    return NextResponse.json({ error: "Publication service unavailable" }, { status: 503 });
+    return { response: NextResponse.json({ error: "Publication service unavailable" }, { status: 503 }) } as const;
   }
 
   const client = createClient(supabaseUrl, anonKey, {
@@ -29,8 +28,77 @@ export async function POST(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: userData, error: userError } = await client.auth.getUser(token);
-  if (userError || !userData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const { data, error } = await client.auth.getUser(token);
+    if (error || !data.user) {
+      const status = error && typeof error.status === "number" && error.status >= 500 ? 503 : 401;
+      return {
+        response: NextResponse.json(
+          { error: status === 503 ? "Authentication service unavailable" : "Unauthorized" },
+          { status },
+        ),
+      } as const;
+    }
+    return { client, userId: data.user.id } as const;
+  } catch {
+    return {
+      response: NextResponse.json({ error: "Authentication service unavailable" }, { status: 503 }),
+    } as const;
+  }
+}
+
+function isDefinitivePublicationRejection(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  return [
+    "authenticated actor mismatch",
+    "site not found or actor is not a workspace member",
+    "publication version does not belong to site",
+    "publication version is not publishable",
+  ].some((reason) => message.includes(reason));
+}
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ siteId: string }> },
+) {
+  const auth = await authorize(request);
+  if ("response" in auth) return auth.response;
+
+  const { siteId } = await context.params;
+  const requestedVersionId = new URL(request.url).searchParams.get("versionId")?.trim() ?? "";
+  if (!siteId.trim() || !requestedVersionId) {
+    return NextResponse.json({ error: "siteId and versionId are required" }, { status: 400 });
+  }
+
+  try {
+    const repository = new SupabaseSitePersistenceRepository(auth.client);
+    const published = await repository.loadPublished({ siteId });
+    if (!published) {
+      return NextResponse.json({
+        state: "not_published",
+        requestedVersionId,
+        publishedVersionId: null,
+        matchesRequestedVersion: false,
+      });
+    }
+
+    return NextResponse.json({
+      state: published.versionId === requestedVersionId ? "requested_version_published" : "different_version_published",
+      requestedVersionId,
+      publishedVersionId: published.versionId,
+      matchesRequestedVersion: published.versionId === requestedVersionId,
+    });
+  } catch {
+    return NextResponse.json({ error: "Unable to reconcile publication state" }, { status: 503 });
+  }
+}
+
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ siteId: string }> },
+) {
+  const auth = await authorize(request);
+  if ("response" in auth) return auth.response;
 
   let body: unknown;
   try {
@@ -48,15 +116,24 @@ export async function POST(
   }
 
   try {
-    const repository = new SupabaseSitePersistenceRepository(client);
+    const repository = new SupabaseSitePersistenceRepository(auth.client);
     const transition = await repository.setPublishedVersion({
       siteId,
       versionId,
-      actorId: userData.user.id,
+      actorId: auth.userId,
     });
     return NextResponse.json(transition, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Publication transition failed";
-    return NextResponse.json({ error: message }, { status: 403 });
+    if (isDefinitivePublicationRejection(error)) {
+      return NextResponse.json({ error: "Publication was rejected for this site or version." }, { status: 403 });
+    }
+
+    const recoveryUrl = new URL(request.url);
+    recoveryUrl.search = new URLSearchParams({ versionId }).toString();
+    return NextResponse.json({
+      error: "Publication outcome is uncertain. Reconcile the active revision before retrying.",
+      outcome: "unknown",
+      recoveryUrl: recoveryUrl.toString(),
+    }, { status: 503 });
   }
 }

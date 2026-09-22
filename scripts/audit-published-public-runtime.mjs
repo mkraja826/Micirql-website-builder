@@ -17,7 +17,7 @@ const checks = [
   [serverRepository.includes('requiredServerEnv("SUPABASE_SERVICE_ROLE_KEY")'), "server repository must require a non-public service-role credential"],
   [route.includes("createPublishedSiteRepository()"), "published route must use the server-only persistence adapter"],
   [route.includes("renderPublicSite(repository, { siteId, pageSlug })"), "published route must enter the canonical public runtime boundary"],
-  [route.includes("if (!rendered || rendered.node == null) notFound()"), "published route must fail closed for missing site/page/render"],
+  [/if \(!rendered \|\| rendered\.node == null\) \{[\s\S]*outcome: "not_found"[\s\S]*notFound\(\);[\s\S]*\}/.test(route), "published route must log and fail closed for missing site/page/render"],
 ];
 
 const forbidden = [

@@ -46,6 +46,10 @@ A live review found that the editor’s TypeScript mutation guardrails were not 
 
 PR #216 proposes revoking client INSERT/UPDATE/DELETE on `workspace_drafts` while retaining reads and trusted service access; routing saves and publishes through a private SECURITY DEFINER validator; and validating durable site/version-1 provenance, immutable capability fields, warning preservation, and `validate_site_snapshot` before persistence or publishing. PR #216 passed all exact-head checks, was merged, and its migration was applied as version `20260922173224`. Verification shows authenticated users retain SELECT-only access to `workspace_drafts`; direct INSERT/UPDATE/DELETE are denied while `service_role` retains writes. The `publish_site_version(uuid)` overload is guarded in the migration, and its five-argument overload is restricted to `service_role`.
 
+## Site-build plan binding
+
+A live review found that `run_site_build(uuid, uuid)` checked only that the plan and target site shared a workspace. It did not require the plan's `site_id` to equal the requested site, so a workspace editor could run one site's plan against another site and overwrite that site's draft. PR #220 adds a private SECURITY DEFINER trigger guard on `site_build_jobs` inserts and plan/site updates. Existing production plans are all site-bound. The migration is applied and recorded in Supabase as version `20260922194436`; the helper has no anon or authenticated EXECUTE grant, and the trigger is active.
+
 ## Remaining release-review items
 
 - The advisor reports 20 authenticated-callable `SECURITY DEFINER` functions after the workspace helper was moved from the exposed `public` schema. Review remaining findings by caller and privilege; the warning alone does not establish a vulnerability.

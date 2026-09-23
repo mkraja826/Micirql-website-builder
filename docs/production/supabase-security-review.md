@@ -32,13 +32,17 @@ The security advisor reports four `SECURITY DEFINER` functions executable by `an
 
 The last two grants remain under caller-inventory review; do not revoke them until external runtime consumers have been checked.
 
+## Management RPC anonymous grants
+
+A live routine-grant review found `public.persist_certified_site(...)` and `public.set_published_site_version(...)` executable by `anon`. Both functions already reject anonymous callers because they require `auth.uid()` and an actor-id match, and neither is a public-runtime endpoint. PR #224 removes `PUBLIC` and `anon` EXECUTE from both signatures while leaving the authenticated grant and their existing ownership/membership checks unchanged. Apply the migration only after PR #224 merges, then verify the grants by exact signature.
+
 ## Authenticated SECURITY DEFINER RPC review
 
 Live inspection found `public.has_workspace_role(uuid, text[])` checks only the caller’s own `auth.uid()` membership and requested roles. It is used by many RLS policies and `set_site_action_binding`; it is not an immediate cross-tenant data exposure. The authenticated grant remains because those policy checks require it.
 
 `public.check_ai_budget(uuid, uuid, uuid, bigint)` checks the caller’s workspace role before reading usage and budget values, and scopes both queries to the requested workspace. No direct application RPC caller was found in the repository index. No change was warranted from this review.
 
-A live review found a tenant boundary issue in `public.finalize_asset_upload(...)`: authenticated workspace editors can create upload intents, and the intent’s `asset_id` is not constrained by a foreign key to `assets`. The finalizer upserted by asset ID and updated metadata on conflict without verifying the existing row’s workspace. An intent could therefore target a known asset ID belonging to another workspace, including a global asset. Migration `20260922160000_guard_asset_upload_workspace_conflicts.sql` adds an atomic workspace match to the conflict update and raises an error when the ID is owned by a different workspace. It preserves same-workspace retries. The migration is applied and recorded in Supabase as version `20260922153846` (the recorded version is earlier than the filename timestamp). Post-migration catalog checks confirm the atomic guard and conflict error are present; authenticated execution remains enabled, and anon execution is denied.
+A live review found a tenant boundary issue in `public.finalize_asset_upload(...)`: authenticated workspace editors can create upload intents, and the intent’s `asset_id` is not constrained by a foreign key to `assets`. The finalizer upserted by asset ID and updated metadata on conflict without verifying the existing row’s workspace. An intent could therefore target a known asset ID belonging to another workspace, including a global asset. Migration `20260922160000_guard_asset_upload_workspace_conflicts.sql` adds an atomic workspace match to the conflict update and raises an error when the ID is owned by a different workspace. It preserves same-workspace retries. The migration is applied and recorded in Supabase as version `20260922153846` (the recorded version is earlier than the filename timestamp). Post-migration catalog checks confirm the atomic guard and conflict error are present, and anonymous execution is denied.
 
 ## Editor draft write boundary
 
@@ -48,7 +52,7 @@ PR #216 proposes revoking client INSERT/UPDATE/DELETE on `workspace_drafts` whil
 
 ## Site-build plan binding
 
-A live review found that `run_site_build(uuid, uuid)` checked only that the plan and target site shared a workspace. It did not require the plan's `site_id` to equal the requested site, so a workspace editor could run one site's plan against another site and overwrite that site's draft. PR #220 adds a private SECURITY DEFINER trigger guard on `site_build_jobs` inserts and plan/site updates. Existing production plans are all site-bound. The migration is applied and recorded in Supabase as version `20260922194436`; the helper has no anon or authenticated EXECUTE grant, and the trigger is active.
+A live review found that `run_site_build(uuid, uuid)` checked only that the plan and target site shared a workspace. It did not require the plan’s `site_id` to equal the requested site, so a workspace editor could run one site’s plan against another site and overwrite that site’s draft. PR #220 adds a private SECURITY DEFINER trigger guard on `site_build_jobs` inserts and plan/site updates. Existing production plans are all site-bound. The migration is applied and recorded in Supabase as version `20260922194436`; the helper has no anon or authenticated EXECUTE grant, and the trigger is active.
 
 ## AI usage context binding
 

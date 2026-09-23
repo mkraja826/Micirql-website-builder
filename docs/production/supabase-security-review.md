@@ -50,6 +50,10 @@ PR #216 proposes revoking client INSERT/UPDATE/DELETE on `workspace_drafts` whil
 
 A live review found that `run_site_build(uuid, uuid)` checked only that the plan and target site shared a workspace. It did not require the plan's `site_id` to equal the requested site, so a workspace editor could run one site's plan against another site and overwrite that site's draft. PR #220 adds a private SECURITY DEFINER trigger guard on `site_build_jobs` inserts and plan/site updates. Existing production plans are all site-bound. The migration is applied and recorded in Supabase as version `20260922194436`; the helper has no anon or authenticated EXECUTE grant, and the trigger is active.
 
+## AI usage context binding
+
+A live review found that `record_ai_usage(...)` checked workspace membership but did not bind optional `site_id` or `build_id` values to that workspace. Production contains 52 historical usage rows referencing deleted sites; these rows were preserved. PR #222 adds a private SECURITY DEFINER trigger for new and updated usage events, requiring an existing site to belong to the event workspace and a build to belong to the workspace and matching site when supplied. The migration is applied and verified; the helper has no API execution grants.
+
 ## Remaining release-review items
 
 - The advisor reports 20 authenticated-callable `SECURITY DEFINER` functions after the workspace helper was moved from the exposed `public` schema. Review remaining findings by caller and privilege; the warning alone does not establish a vulnerability.

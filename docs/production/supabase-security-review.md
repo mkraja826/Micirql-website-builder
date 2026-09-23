@@ -34,7 +34,7 @@ The last two grants remain under caller-inventory review; do not revoke them unt
 
 ## Management RPC anonymous grants
 
-A live routine-grant review found `public.persist_certified_site(...)` and `public.set_published_site_version(...)` executable by `anon`. Both functions already reject anonymous callers because they require `auth.uid()` and an actor-id match, and neither is a public-runtime endpoint. PR #224 removes `PUBLIC` and `anon` EXECUTE from both signatures while leaving the authenticated grant and their existing ownership/membership checks unchanged. Apply the migration only after PR #224 merges, then verify the grants by exact signature.
+A live routine-grant review found `public.persist_certified_site(...)` and `public.set_published_site_version(...)` executable by `anon`. Both functions already reject anonymous callers because they require `auth.uid()` and an actor-id match, and neither is a public-runtime endpoint. PR #224 removed `PUBLIC` and `anon` EXECUTE from both signatures while leaving the authenticated grant and their existing ownership/membership checks unchanged. The migration is applied and recorded in Supabase history as version `20260923125813`; exact-signature verification shows `anon` denied and `authenticated` retained for both functions. The refreshed advisor still reports only the four intentional public-runtime anonymous SECURITY DEFINER functions.
 
 ## Authenticated SECURITY DEFINER RPC review
 

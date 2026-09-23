@@ -91,3 +91,7 @@ The five policy-free tables remain fail-closed and have no direct client grants 
 ## Workspace owner membership hardening
 
 A live RLS review found that workspace admins could update or delete another owner’s membership row. PR #236 narrows the `workspace_members` update and delete policies: owner rows can be changed only by an owner, while admins retain management of non-owner memberships; the existing self-owner deletion protection remains. Live verification confirms the policy predicates are installed, authenticated table access remains policy-controlled, and no membership or published-site rows were changed.
+
+## Workspace owner insertion hardening
+
+PR #238 closed the remaining membership escalation path: the insert policy previously allowed an authenticated workspace admin to create a new `owner` membership. The policy now permits owner-role inserts only for an existing owner or the first-owner bootstrap path; admins can still add non-owner roles. Live verification confirms the policy predicate is installed, authenticated insert access remains policy-controlled, and no membership, published-site, or AI-usage rows were modified.

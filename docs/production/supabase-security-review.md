@@ -81,3 +81,9 @@ These findings remain release-review items. Do not blanket-revoke functions that
 A follow-up review found that the legacy five-argument `publish_site_version(text, uuid, jsonb, text, text)` overload was still executable by authenticated clients. Unlike the guarded `publish_site_version(uuid)` editor path, it is SECURITY DEFINER and accepts a caller-supplied snapshot without workspace-role validation. Repository search found no application caller for this legacy signature.
 
 PR #233 revoked `PUBLIC`, `anon`, and `authenticated` execution from the five-argument overload and retained only `service_role` execution. Live verification confirms `authenticated=false`, `anon=false`, and `service_role=true` for the legacy signature; the guarded one-argument overload remains executable by authenticated users. No published versions or production rows were changed.
+
+## Fresh advisor baseline after PR #233
+
+The Supabase security advisor was rerun after the legacy publish-overload hardening. It reports five RLS-enabled tables with no policies, four intentional anonymous SECURITY DEFINER public-runtime functions, 21 authenticated-callable SECURITY DEFINER functions under the reviewed application boundary, and leaked-password protection unavailable on the current Free plan. The legacy five-argument publish overload is not among the authenticated findings after the ACL change.
+
+The five policy-free tables remain fail-closed and have no direct client grants where reviewed; the four anonymous functions are required by the public published-site and request-form runtime. The authenticated findings remain individually reviewed rather than blanket-revoked because several are active editor, renderer, validation, or RLS-helper RPCs. Re-run this baseline after future database changes and after any authorized plan upgrade.

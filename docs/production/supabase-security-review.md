@@ -87,3 +87,7 @@ PR #233 revoked `PUBLIC`, `anon`, and `authenticated` execution from the five-ar
 The Supabase security advisor was rerun after the legacy publish-overload hardening. It reports five RLS-enabled tables with no policies, four intentional anonymous SECURITY DEFINER public-runtime functions, 21 authenticated-callable SECURITY DEFINER functions under the reviewed application boundary, and leaked-password protection unavailable on the current Free plan. The legacy five-argument publish overload is not among the authenticated findings after the ACL change.
 
 The five policy-free tables remain fail-closed and have no direct client grants where reviewed; the four anonymous functions are required by the public published-site and request-form runtime. The authenticated findings remain individually reviewed rather than blanket-revoked because several are active editor, renderer, validation, or RLS-helper RPCs. Re-run this baseline after future database changes and after any authorized plan upgrade.
+
+## Workspace owner membership hardening
+
+A live RLS review found that workspace admins could update or delete another owner’s membership row. PR #236 narrows the `workspace_members` update and delete policies: owner rows can be changed only by an owner, while admins retain management of non-owner memberships; the existing self-owner deletion protection remains. Live verification confirms the policy predicates are installed, authenticated table access remains policy-controlled, and no membership or published-site rows were changed.

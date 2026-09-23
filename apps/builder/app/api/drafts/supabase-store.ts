@@ -91,7 +91,7 @@ export async function saveSupabaseDraft(
 ): Promise<DraftRecord> {
   const cfg = config();
   if (!cfg) throw new Error("Supabase draft store is not configured.");
-  const response = await fetch(`${cfg.url}/rest/v1/rpc/save_workspace_draft`, {
+  const response = await fetch(`${cfg.url}/rest/v1/rpc/save_builder_site_draft`, {
     method: "POST",
     headers: supabaseHeaders(request),
     body: JSON.stringify({

@@ -75,3 +75,9 @@ A live review found that `record_ai_usage(...)` checked workspace membership but
 `plan_site_blueprint(...)` still trusts caller-supplied section payload after checking broad section-family constraints; `certified_layout_contracts` currently has no persisted section content to compare against. Establish an authoritative stored layout contract before treating this path as certified.
 
 These findings remain release-review items. Do not blanket-revoke functions that the application needs. These reviews do not certify the Supabase project as secure. Re-run the Supabase security advisor after migrations and attach its sanitized result to the V1 release evidence.
+
+## Legacy publish overload hardening
+
+A follow-up review found that the legacy five-argument `publish_site_version(text, uuid, jsonb, text, text)` overload was still executable by authenticated clients. Unlike the guarded `publish_site_version(uuid)` editor path, it is SECURITY DEFINER and accepts a caller-supplied snapshot without workspace-role validation. Repository search found no application caller for this legacy signature.
+
+PR #233 revoked `PUBLIC`, `anon`, and `authenticated` execution from the five-argument overload and retained only `service_role` execution. Live verification confirms `authenticated=false`, `anon=false`, and `service_role=true` for the legacy signature; the guarded one-argument overload remains executable by authenticated users. No published versions or production rows were changed.

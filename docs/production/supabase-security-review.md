@@ -95,3 +95,7 @@ A live RLS review found that workspace admins could update or delete another own
 ## Workspace owner insertion hardening
 
 PR #238 closed the remaining membership escalation path: the insert policy previously allowed an authenticated workspace admin to create a new `owner` membership. The policy now permits owner-role inserts only for an existing owner or the first-owner bootstrap path; admins can still add non-owner roles. Live verification confirms the policy predicate is installed, authenticated insert access remains policy-controlled, and no membership, published-site, or AI-usage rows were modified.
+
+## Membership insert hardening verification
+
+PR #238 completed the owner-membership boundary review. The live insert policy now permits `role = 'owner'` only for an existing owner or the first-owner bootstrap path; authenticated admins can add only non-owner memberships. Together with PR #236, owner rows cannot be demoted or deleted by admins. The verified changes are policy-only and preserve all existing membership and published-site data.

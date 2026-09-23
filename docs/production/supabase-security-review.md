@@ -36,6 +36,10 @@ The last two grants remain under caller-inventory review; do not revoke them unt
 
 A live routine-grant review found `public.persist_certified_site(...)` and `public.set_published_site_version(...)` executable by `anon`. Both functions already reject anonymous callers because they require `auth.uid()` and an actor-id match, and neither is a public-runtime endpoint. PR #224 removed `PUBLIC` and `anon` EXECUTE from both signatures while leaving the authenticated grant and their existing ownership/membership checks unchanged. The migration is applied and recorded in Supabase history as version `20260923125813`; exact-signature verification shows `anon` denied and `authenticated` retained for both functions. The refreshed advisor still reports only the four intentional public-runtime anonymous SECURITY DEFINER functions.
 
+## Certified site persistence workspace binding
+
+A live review found that `persist_certified_site(...)` authenticated `p_actor_id` but, as a SECURITY DEFINER function, did not independently bind `p_workspace_id` to the caller. PR #226 adds an explicit `workspace_members` check before any site or version write, preserving the existing certification, provenance, sequential-revision, and immutable-replay checks. The migration is applied and recorded in Supabase history as version `20260923133514`; live verification shows the membership guard in the function definition, `anon` execution denied, and `authenticated` execution retained.
+
 ## Authenticated SECURITY DEFINER RPC review
 
 Live inspection found `public.has_workspace_role(uuid, text[])` checks only the caller’s own `auth.uid()` membership and requested roles. It is used by many RLS policies and `set_site_action_binding`; it is not an immediate cross-tenant data exposure. The authenticated grant remains because those policy checks require it.

@@ -40,6 +40,10 @@ A live routine-grant review found `public.persist_certified_site(...)` and `publ
 
 A live review found that `persist_certified_site(...)` authenticated `p_actor_id` but, as a SECURITY DEFINER function, did not independently bind `p_workspace_id` to the caller. PR #226 adds an explicit `workspace_members` check before any site or version write, preserving the existing certification, provenance, sequential-revision, and immutable-replay checks. The migration is applied and recorded in Supabase history as version `20260923133514`; live verification shows the membership guard in the function definition, `anon` execution denied, and `authenticated` execution retained.
 
+## Certified site persistence role binding
+
+PR #228 corrected the remaining SECURITY DEFINER authorization gap: membership alone was broader than the existing site write policy. The persistence function now requires `owner`, `admin`, or `editor` membership before writing certified sites or revisions. The migration is applied and recorded in Supabase history as version `20260923141325`; live verification confirms the role predicate, `anon` denied, and `authenticated` retained.
+
 ## Authenticated SECURITY DEFINER RPC review
 
 Live inspection found `public.has_workspace_role(uuid, text[])` checks only the caller’s own `auth.uid()` membership and requested roles. It is used by many RLS policies and `set_site_action_binding`; it is not an immediate cross-tenant data exposure. The authenticated grant remains because those policy checks require it.

@@ -30,7 +30,7 @@ export function SectionControls({ page, themeFamily, selectedSectionId, onSelect
       <select defaultValue="" aria-label="Add section" onChange={(event) => {
         const family = event.target.value as SectionFamily;
         if (!family) return;
-        onAdd(newSection(family, themeFamily));
+        onAdd(newSection(family, themeFamily, page.sections));
         event.target.value = "";
       }}>
         <option value="">+ Add section</option>
@@ -46,8 +46,31 @@ export function SectionControls({ page, themeFamily, selectedSectionId, onSelect
   </div>;
 }
 
-function newSection(family: SectionFamily, theme: ThemeFamily): SiteSection {
-  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId: sectionDesignId(theme, family, 1), version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
+function newSection(family: SectionFamily, theme: ThemeFamily, existingSections: SiteSection[]): SiteSection {
+  const props = defaultProps(family);
+  const heading = stringValue(props.heading);
+  if (heading) {
+    const existingHeadings = new Set(existingSections
+      .map((section) => stringValue(section.props.heading) ?? stringValue(section.props.title))
+      .filter(Boolean)
+      .map((value) => value!.toLowerCase()));
+    if (existingHeadings.has(heading.toLowerCase())) {
+      const alternatives: Record<string, string[]> = {
+        "built with purpose": ["Our approach", "What guides us"],
+        "what we do": ["Our capabilities", "Explore our work"],
+        "why clients choose us": ["The difference we bring", "Why it matters"],
+        "a simple path forward": ["How it comes together", "What to expect"],
+        "trusted by the people we serve": ["Client perspective", "In their words"],
+        "selected work": ["A closer look", "Featured highlights"],
+        "the people behind the work": ["Meet the people", "Our team"],
+        "ready when you are": ["Take the next step", "Let’s begin"],
+        "let’s talk": ["Start a conversation", "Get in touch"],
+      };
+      const replacement = alternatives[heading.toLowerCase()]?.find((value) => !existingHeadings.has(value.toLowerCase()));
+      if (replacement) props.heading = replacement;
+    }
+  }
+  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId: sectionDesignId(theme, family, 1), version: "1.0.0" }, props, bindings: {}, hidden: false };
 }
 
 function defaultProps(family: SectionFamily): Record<string, unknown> {
@@ -65,6 +88,10 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
     case "navbar": return {};
     case "footer": return {};
   }
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function labelFor(section: SiteSection): string {

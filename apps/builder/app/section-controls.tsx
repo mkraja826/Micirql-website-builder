@@ -6,7 +6,7 @@ import type { ThemeFamily } from "@micirql/schema";
 
 const ADDABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
 
-export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
+export function SectionControls({ page, themeFamily, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
   themeFamily: ThemeFamily;
   selectedSectionId?: string;

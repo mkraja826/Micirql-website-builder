@@ -4,7 +4,11 @@ import type { IndustryDesignPreset } from "./industry-design-preset-data";
 
 export function applyIndustryPreset(site: Site, preset: IndustryDesignPreset): Site {
   const next = structuredClone(site);
+  const selectedColors = next.theme?.brand?.colors;
   next.theme = structuredClone(preset.theme);
+  if (selectedColors) {
+    next.theme.brand.colors = { ...next.theme.brand.colors, ...selectedColors };
+  }
   for (const page of next.pages) {
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(section.component.componentId);

@@ -155,7 +155,7 @@ function draftQualityWarnings(snapshot: any): string[] {
   if (placeholders) warnings.push(`${placeholders} section component${placeholders === 1 ? "" : "s"} still use preview placeholders.`);
   const headings = sections
     .map((section: any) => section?.props?.heading ?? section?.props?.title)
-    .filter((value: unknown): value is string => typeof value === "string" && value.trim())
+    .filter((value: unknown): value is string => typeof value === "string" && Boolean(value.trim()))
     .map((value: string) => value.trim().toLowerCase());
   const duplicates = [...new Set(headings.filter((heading: string, index: number) => headings.indexOf(heading) !== index))];
   if (duplicates.length) warnings.push(`Repeated headings detected: ${duplicates.slice(0, 3).join(", ")}.`);

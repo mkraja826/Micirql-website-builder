@@ -13,7 +13,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "pnpm --filter @micirql/preview dev",
+    command: "pnpm --filter @micirql/preview build && pnpm --filter @micirql/preview start",
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

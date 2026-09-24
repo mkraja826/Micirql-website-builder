@@ -58,3 +58,32 @@
     grid-template-columns: minmax(0, .9fr) minmax(22rem, 1.1fr);
   }
 }
+
+.mi-section__media--placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 18rem;
+  background:
+    radial-gradient(circle at 72% 28%, color-mix(in srgb, var(--mi-color-accent) 72%, transparent) 0 12%, transparent 13%),
+    linear-gradient(135deg, var(--mi-color-primary), var(--mi-color-secondary));
+}
+.mi-section__visual-mark {
+  width: min(62%, 16rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--mi-color-surface) 45%, transparent);
+  border-radius: 38% 62% 52% 48% / 42% 44% 56% 58%;
+  transform: rotate(-12deg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mi-color-surface) 24%, transparent), transparent 58%),
+    color-mix(in srgb, var(--mi-color-accent) 34%, transparent);
+  box-shadow: 0 30px 70px color-mix(in srgb, var(--mi-color-primary) 36%, transparent);
+}
+.mi-section__visual-mark span {
+  display: block;
+  width: 42%;
+  aspect-ratio: 1;
+  margin: 29% 0 0 29%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--mi-color-surface) 72%, transparent);
+  box-shadow: 0 0 0 1rem color-mix(in srgb, var(--mi-color-surface) 10%, transparent);
+}

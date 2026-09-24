@@ -52,16 +52,16 @@ function newSection(family: SectionFamily, theme: ThemeFamily): SiteSection {
 
 function defaultProps(family: SectionFamily): Record<string, unknown> {
   switch (family) {
-    case "hero": return { eyebrow: "Your business", heading: "A clear headline for your visitors", body: "Add the main message you want visitors to understand first.", ctaLabel: "Get in touch" };
-    case "about": return { heading: "About us", body: "Tell visitors what makes your business useful, credible and different." };
-    case "services": return { heading: "Services", body: "Introduce the services you want visitors to explore.", items: [] };
-    case "features": return { heading: "Why choose us", body: "Highlight the strengths that matter most to customers.", items: [] };
-    case "process": return { heading: "How it works", body: "Explain the next steps clearly.", items: [] };
-    case "testimonials": return { heading: "What customers say", body: "Add verified customer feedback here.", items: [] };
-    case "gallery": return { heading: "Gallery", body: "Showcase your work, space or products.", items: [] };
-    case "team": return { heading: "Meet the team", body: "Introduce the people behind the business.", items: [] };
-    case "cta": return { heading: "Ready to get started?", body: "Give visitors one clear next step.", ctaLabel: "Get started" };
-    case "contact": return { heading: "Contact us", body: "Make it easy for visitors to reach your team.", ctaLabel: "Contact us" };
+    case "hero": return { eyebrow: "A better way forward", heading: "Designed around what matters most", body: "Clear, confident communication that helps visitors take the next step.", ctaLabel: "Get started" };
+    case "about": return { heading: "Built with purpose", body: "Share the story, expertise and approach that make this business worth choosing." };
+    case "services": return { heading: "What we do", body: "Explore the services and solutions designed around your needs.", items: [] };
+    case "features": return { heading: "Why clients choose us", body: "Highlight the strengths and details that set this experience apart.", items: [] };
+    case "process": return { heading: "A simple path forward", body: "Show visitors what to expect, from the first conversation to the final result.", items: [] };
+    case "testimonials": return { heading: "Trusted by the people we serve", body: "Add verified feedback that helps future customers choose with confidence.", items: [] };
+    case "gallery": return { heading: "Selected work", body: "Show the spaces, products or projects that best represent your standard.", items: [] };
+    case "team": return { heading: "The people behind the work", body: "Introduce the experience and personalities that make this business distinctive.", items: [] };
+    case "cta": return { heading: "Ready when you are", body: "Give visitors one clear, low-friction next step.", ctaLabel: "Get started" };
+    case "contact": return { heading: "Let’s talk", body: "Make it easy for visitors to reach the right person.", ctaLabel: "Contact us" };
     case "navbar": return {};
     case "footer": return {};
   }

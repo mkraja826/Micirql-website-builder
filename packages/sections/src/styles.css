@@ -87,3 +87,11 @@
   background: color-mix(in srgb, var(--mi-color-surface) 72%, transparent);
   box-shadow: 0 0 0 1rem color-mix(in srgb, var(--mi-color-surface) 10%, transparent);
 }
+
+
+/* Ensure footer navigation remains comfortably tappable on mobile. */
+.mi-footer a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}

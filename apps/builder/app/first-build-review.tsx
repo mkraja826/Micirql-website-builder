@@ -15,12 +15,14 @@ export function FirstBuildReview({
   workspaceId,
   siteId,
   profile,
+  qualityWarnings,
   onComplete,
 }: {
   session: SupabaseSession;
   workspaceId: string;
   siteId: string;
   profile: OnboardingProfile;
+  qualityWarnings?: string[];
   onComplete(): void;
 }) {
   const [draft, setDraft] = useState<DraftRecord>();
@@ -76,6 +78,7 @@ export function FirstBuildReview({
       <span>MiCirql design review</span>
       <h1>Choose the direction that feels right.</h1>
       <p>All three use the same business content and functionality. Only the visual system and section presentation change. You can switch again later in the editor.</p>
+      {qualityWarnings?.length ? <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "#fff8e1", color: "#7a4b00", fontSize: 13 }}><strong>Content review recommended</strong><div>{qualityWarnings.join(" ")}</div></div> : null}
     </header>
     <section className={styles.grid}>
       {choices.map(({ preset, reasons, site }, index) => <article className={styles.card} key={preset.id}>

@@ -148,6 +148,20 @@ export async function POST(request: NextRequest) {
   } catch (error) { return errorResponse(error); }
 }
 
+function draftQualityWarnings(snapshot: any): string[] {
+  const warnings: string[] = [];
+  const sections = Array.isArray(snapshot?.pages) ? snapshot.pages.flatMap((page: any) => Array.isArray(page?.sections) ? page.sections : []) : [];
+  const placeholders = sections.filter((section: any) => String(section?.component?.componentId ?? "").includes("placeholder")).length;
+  if (placeholders) warnings.push(`${placeholders} section component${placeholders === 1 ? "" : "s"} still use preview placeholders.`);
+  const headings = sections
+    .map((section: any) => section?.props?.heading ?? section?.props?.title)
+    .filter((value: unknown): value is string => typeof value === "string" && value.trim())
+    .map((value: string) => value.trim().toLowerCase());
+  const duplicates = [...new Set(headings.filter((heading: string, index: number) => headings.indexOf(heading) !== index))];
+  if (duplicates.length) warnings.push(`Repeated headings detected: ${duplicates.slice(0, 3).join(", ")}.`);
+  return warnings;
+}
+
 function sectionFamilyFromComponentId(componentId: string): SectionFamily | undefined {
   const normalized = componentId.toLowerCase();
   const legacy = SECTION_FAMILIES.find((family) => normalized === `${family}.placeholder` || normalized.startsWith(`${family}.`));

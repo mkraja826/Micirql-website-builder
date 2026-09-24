@@ -12,6 +12,7 @@ import {
   type SectionFamily,
 } from "@micirql/sections";
 import { demoAssetById } from "../../demo-assets";
+import { nativeFunctionCatalog } from "@micirql/functions";
 
 const previewEntries = seedSectionRegistryEntries.map((entry) => ({
   ...entry,
@@ -23,7 +24,10 @@ const components: Record<string, ComponentType<Record<string, unknown>>> = Objec
 );
 
 const registry = createStaticRendererRegistry({ entries: previewEntries, components });
-const functions = createFunctionBindingResolver({ actionIds: [], gatewayBasePath: "/api/functions" });
+const functions = createFunctionBindingResolver({
+  actionIds: nativeFunctionCatalog.map((definition) => definition.id),
+  gatewayBasePath: "/api/functions",
+});
 
 export async function POST(request: Request) {
   try {

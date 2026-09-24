@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
     const topRecommendation = rankPresets(recommendationProfile)[0];
     let initialPreset: { id: string; name: string; reasons: string[] } | null = null;
     let presetWarning: string | null = null;
+    let qualityWarnings: string[] = [];
     if (topRecommendation) {
       try {
         const current = await getSupabaseDraft(request, workspaceId, siteId);
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
           }
         }
         await saveSupabaseDraft(request, { snapshot: nextSnapshot, expectedRevision: current.revision });
+        qualityWarnings = draftQualityWarnings(nextSnapshot);
         initialPreset = { id: preset.id, name: preset.name, reasons: topRecommendation.reasons };
       } catch (error) {
         presetWarning = error instanceof Error ? error.message : "Initial design preset could not be applied.";
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     if (!profileResponse.ok) throw await remoteError(profileResponse);
     const savedProfiles = await profileResponse.json() as unknown[];
 
-    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, planningSource: advice.source, planningWarning: advice.warning ?? null, content, contentWarning, images, imageWarning, initialPreset, presetWarning, profile: savedProfiles[0] ?? profile });
+    return NextResponse.json({ ok: true, planId: plan.plan_id, build, blueprint: plan.blueprint, planningSource: advice.source, planningWarning: advice.warning ?? null, content, contentWarning, images, imageWarning, initialPreset, presetWarning, qualityWarnings, profile: savedProfiles[0] ?? profile });
   } catch (error) { return errorResponse(error); }
 }
 

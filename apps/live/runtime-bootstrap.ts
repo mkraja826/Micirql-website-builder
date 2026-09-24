@@ -5,7 +5,7 @@ import {
   type PreparedPage,
   type RendererRegistry,
 } from "@micirql/renderer";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "react-dom/server.edge";
 import { configureLiveHostRuntime } from "./live-runtime";
 
 let configured = false;

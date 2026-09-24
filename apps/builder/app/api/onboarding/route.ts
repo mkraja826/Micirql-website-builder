@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const notes = optionalString(body.notes);
 
     const advice = await adviseOnboardingPlan({ businessName, industry, subindustry, location, services, goals, styleTags, requiredCapabilities, languages, notes });
-    const requestPayload = { workspace_id: workspaceId, site_id: siteId, industry: advice.industry, subindustry: advice.subindustry, style_tags: advice.styleTags, required_capabilities: advice.requiredCapabilities, goals: advice.goals };
+    const requestPayload = { workspace_id: workspaceId, site_id: siteId, business_name: businessName, industry: advice.industry, subindustry: advice.subindustry, location, services, notes, style_tags: advice.styleTags, required_capabilities: advice.requiredCapabilities, goals: advice.goals };
 
     const planResponse = await fetch(`${url}/functions/v1/plan-site`, { method: "POST", headers: commonHeaders, body: JSON.stringify(requestPayload) });
     if (!planResponse.ok) throw await remoteError(planResponse);

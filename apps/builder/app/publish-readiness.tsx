@@ -18,6 +18,7 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
   const primaryDomain = site.domains.find((domain) => domain.primary) ?? site.domains[0];
   const domainOk = !primaryDomain || (primaryDomain.status === "active" && primaryDomain.sslStatus === "active");
   const visual = visualQualityScore(site);
+  const consistency = contentConsistency(site);
 
   const checks: ReadinessCheck[] = [
     { id: "pages", label: "Required pages", ok: missingPages.length === 0, detail: missingPages.length ? `Missing: ${missingPages.map((p) => p.label).join(", ")}` : "All required pages are present.", blocking: true },
@@ -27,6 +28,7 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
     { id: "registry", label: "Registry approval", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? `${unapprovedComponents.length} preview/draft component${unapprovedComponents.length === 1 ? "" : "s"} still need promotion.` : "No preview placeholder components remain.", blocking: true },
     { id: "domain", label: "Domain & SSL", ok: domainOk, detail: !primaryDomain ? "MiCirql subdomain will be used until a custom domain is connected." : domainOk ? `${primaryDomain.hostname} is active with SSL.` : `${primaryDomain.hostname} is not fully active yet.`, blocking: Boolean(primaryDomain) },
     { id: "visual", label: "Visual quality", ok: visual.score >= 85, detail: `${visual.score}/100 · ${visual.detail}`, blocking: false },
+    { id: "consistency", label: "Content consistency", ok: consistency.ok, detail: consistency.detail, blocking: false },
     { id: "mobile", label: "Mobile-first structure", ok: true, detail: "Renderer uses the same responsive section system as production.", blocking: false },
     { id: "performance", label: "Performance protocol", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? "Final protocol/performance checks run after Registry promotion." : "Only publishable Registry components remain.", blocking: true },
   ];
@@ -87,6 +89,21 @@ export function visualQualityScore(site: Site): { score: number; detail: string 
     score: finalScore,
     detail: issues.length ? issues.slice(0, 2).join(" · ") : "Strong hierarchy, content density and conversion structure.",
   };
+}
+
+export function contentConsistency(site: Site): { ok: boolean; detail: string } {
+  const headings = site.pages.flatMap((page) => page.sections
+    .map((section) => stringValue(section.props.heading) ?? stringValue(section.props.title))
+    .filter(Boolean) as string[]);
+  const counts = new Map<string, number>();
+  for (const heading of headings) {
+    const key = heading.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const duplicates = [...counts.entries()].filter(([, count]) => count > 1).map(([heading]) => heading);
+  return duplicates.length
+    ? { ok: false, detail: `Repeated heading${duplicates.length === 1 ? "" : "s"}: ${duplicates.slice(0, 2).join(", ")}. Rename or remove duplicates.` }
+    : { ok: true, detail: "Section headings are distinct across the site." };
 }
 
 function stringValue(value: unknown): string | undefined {

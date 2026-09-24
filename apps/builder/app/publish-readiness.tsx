@@ -17,6 +17,7 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
   const unapprovedComponents = site.pages.flatMap((page) => page.sections).filter((section) => section.component.componentId.includes("placeholder"));
   const primaryDomain = site.domains.find((domain) => domain.primary) ?? site.domains[0];
   const domainOk = !primaryDomain || (primaryDomain.status === "active" && primaryDomain.sslStatus === "active");
+  const visual = visualQualityScore(site);
 
   const checks: ReadinessCheck[] = [
     { id: "pages", label: "Required pages", ok: missingPages.length === 0, detail: missingPages.length ? `Missing: ${missingPages.map((p) => p.label).join(", ")}` : "All required pages are present.", blocking: true },
@@ -25,6 +26,7 @@ export function publishReadiness(site: Site): { ready: boolean; checks: Readines
     { id: "assets", label: "Resolved images", ok: unresolvedAssets.length === 0, detail: unresolvedAssets.length ? `${unresolvedAssets.length} section${unresolvedAssets.length === 1 ? "" : "s"} still contain unresolved asset slots.` : "All visual slots are resolved.", blocking: true },
     { id: "registry", label: "Registry approval", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? `${unapprovedComponents.length} preview/draft component${unapprovedComponents.length === 1 ? "" : "s"} still need promotion.` : "No preview placeholder components remain.", blocking: true },
     { id: "domain", label: "Domain & SSL", ok: domainOk, detail: !primaryDomain ? "MiCirql subdomain will be used until a custom domain is connected." : domainOk ? `${primaryDomain.hostname} is active with SSL.` : `${primaryDomain.hostname} is not fully active yet.`, blocking: Boolean(primaryDomain) },
+    { id: "visual", label: "Visual quality", ok: visual.score >= 85, detail: `${visual.score}/100 · ${visual.detail}`, blocking: false },
     { id: "mobile", label: "Mobile-first structure", ok: true, detail: "Renderer uses the same responsive section system as production.", blocking: false },
     { id: "performance", label: "Performance protocol", ok: unapprovedComponents.length === 0, detail: unapprovedComponents.length ? "Final protocol/performance checks run after Registry promotion." : "Only publishable Registry components remain.", blocking: true },
   ];
@@ -37,6 +39,58 @@ export function PublishReadinessManager({ site }: { site: Site }) {
     <div className={`readiness-summary ${report.ready ? "is-ready" : "is-blocked"}`}><strong>{report.ready ? "Ready to publish" : "Not ready to publish"}</strong><span>{report.ready ? "All blocking checks passed." : "Fix the blocking items below first."}</span></div>
     <div className="readiness-list">{report.checks.map((check) => <div key={check.id} className={`readiness-row ${check.ok ? "is-ok" : "is-fail"}`}><span className="readiness-dot" aria-hidden="true"/><div><strong>{check.label}</strong><small>{check.detail}</small></div>{check.blocking ? <b>{check.ok ? "Pass" : "Block"}</b> : <b>Info</b>}</div>)}</div>
   </div>;
+}
+
+export function visualQualityScore(site: Site): { score: number; detail: string } {
+  const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
+  if (!home) return { score: 0, detail: "No homepage is available." };
+
+  const sections = home.sections.filter((section) => !section.hidden);
+  let score = 100;
+  const issues: string[] = [];
+  const text = sections.map((section) => Object.values(section.props).filter((value) => typeof value === "string").join(" ")).join(" ").toLowerCase();
+  const headings = sections
+    .map((section) => stringValue(section.props.heading) ?? stringValue(section.props.title))
+    .filter(Boolean) as string[];
+  const ctaSections = sections.filter((section) => {
+    const props = section.props;
+    return Boolean(stringValue(props.ctaLabel) || stringValue(props.primaryAction) || Object.keys(section.bindings).length);
+  });
+
+  if (sections.length < 4) {
+    score -= 15;
+    issues.push("add more content sections");
+  }
+  if (headings.length < Math.max(1, Math.ceil(sections.length * 0.7))) {
+    score -= 10;
+    issues.push("strengthen section headings");
+  }
+  if (!ctaSections.length) {
+    score -= 15;
+    issues.push("add a clear conversion action");
+  }
+  if (site.pages.length < 3) {
+    score -= 8;
+    issues.push("add supporting pages");
+  }
+  if (/generate leads|your business|a clear headline for your visitors|tell visitors what makes your business/.test(text)) {
+    score -= 12;
+    issues.push("replace generic starter copy");
+  }
+  if (new Set(headings.map((heading) => heading.toLowerCase())).size < headings.length) {
+    score -= 5;
+    issues.push("remove repeated headings");
+  }
+
+  const finalScore = Math.max(0, Math.min(100, score));
+  return {
+    score: finalScore,
+    detail: issues.length ? issues.slice(0, 2).join(" · ") : "Strong hierarchy, content density and conversion structure.",
+  };
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function containsUnresolvedAsset(value: unknown): boolean {

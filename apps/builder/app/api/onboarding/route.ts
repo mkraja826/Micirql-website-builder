@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const recommendationProfile = { industry, subindustry, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities };
+    const recommendationProfile = { industry, subindustry, services, goals, style_tags: styleTags, required_capabilities: requiredCapabilities, notes };
     const topRecommendation = rankPresets(recommendationProfile)[0];
     let initialPreset: { id: string; name: string; reasons: string[] } | null = null;
     let presetWarning: string | null = null;

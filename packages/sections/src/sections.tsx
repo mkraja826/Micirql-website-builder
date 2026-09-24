@@ -31,7 +31,7 @@ function Heading(props: UniversalSectionProps) {
 }
 
 function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
-  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}<Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
+  return <div className="mi-section__grid">{items.map((item, index) => <Card key={`${item.title}-${index}`} className="mi-section__card">{item.image ? <img src={item.image} alt="" loading="lazy" data-mi-image-field={`items.${index}.image`} /> : null}<span className="mi-section__card-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><Typography as="h3" variant="h3"><InlineField path={`items.${index}.title`}>{item.title}</InlineField></Typography>{item.description ? <Typography variant="body-sm"><InlineField path={`items.${index}.description`}>{item.description}</InlineField></Typography> : null}</Card>)}</div>;
 }
 
 function NavbarSection({ title, items = [], primaryAction }: UniversalSectionProps) {
@@ -39,7 +39,7 @@ function NavbarSection({ title, items = [], primaryAction }: UniversalSectionPro
 }
 
 function HeroSection(props: UniversalSectionProps) {
-  return <section className="mi-section mi-section--hero"><Container><div className="mi-section__layout"><div><Stack gap="md">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h1" variant="display"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}<Actions {...props} /></Stack></div>{props.image ? <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" data-mi-image-field="image" /></figure> : null}</div></Container></section>;
+  return <section className="mi-section mi-section--hero"><Container><div className="mi-section__layout"><div><Stack gap="md">{props.eyebrow ? <Typography variant="eyebrow"><InlineField path="eyebrow">{props.eyebrow}</InlineField></Typography> : null}<Typography as="h1" variant="display"><InlineField path="title">{props.title}</InlineField></Typography>{props.description ? <Typography variant="body"><InlineField path="description">{props.description}</InlineField></Typography> : null}<Actions {...props} /></Stack></div>{props.image ? <figure className="mi-section__media"><img src={props.image.src} alt={props.image.alt} loading="eager" data-mi-image-field="image" /></figure> : <div className="mi-section__media mi-section__media--placeholder" aria-hidden="true"><div className="mi-section__visual-mark"><span /></div></div>}</div></Container></section>;
 }
 
 function StandardSection(props: UniversalSectionProps) {

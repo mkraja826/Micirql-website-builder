@@ -7,6 +7,7 @@ export type OnboardingProfile = {
   style_tags?: string[] | null;
   required_capabilities?: string[] | null;
   services?: string[] | null;
+  notes?: string | null;
 };
 
 export type RankedPreset = { preset: IndustryDesignPreset; score: number; reasons: string[] };
@@ -18,7 +19,8 @@ export function rankPresets(profile: OnboardingProfile): RankedPreset[] {
   const styles = norms(profile.style_tags);
   const capabilities = norms(profile.required_capabilities);
   const services = norms(profile.services);
-  const text = [industry, subindustry, ...goals, ...styles, ...capabilities, ...services].join(" ");
+  const notes = norm(profile.notes);
+  const text = [industry, subindustry, notes, ...goals, ...styles, ...capabilities, ...services].join(" ");
 
   return INDUSTRY_DESIGN_PRESETS.map((preset) => {
     let score = 0;
@@ -32,6 +34,8 @@ export function rankPresets(profile: OnboardingProfile): RankedPreset[] {
     if ((industry.includes("construction") || text.includes("contractor") || text.includes("construction")) && id === "construction") { score += 90; reasons.push("matches construction"); }
     if ((industry.includes("professional") || industry.includes("corporate") || text.includes("consult")) && id === "corporate") { score += 70; reasons.push("professional-services fit"); }
     if (styles.some(v=>v.includes("premium") || v.includes("luxury")) && id === "premium-implant-clinic") { score += 24; reasons.push("premium visual direction"); }
+    if ((notes.includes("navy") && (notes.includes("teal") || notes.includes("aqua"))) && id === "dental-clinic") { score += 140; reasons.push("honors the explicit navy/teal direction"); }
+    if ((notes.includes("navy") && (notes.includes("teal") || notes.includes("aqua"))) && id === "premium-implant-clinic") { score -= 90; }
     if (styles.some(v=>v.includes("editorial")) && id === "real-estate") { score += 18; reasons.push("editorial visual direction"); }
     if (styles.some(v=>v.includes("modern") || v.includes("bold")) && id === "saas") { score += 10; reasons.push("modern visual direction"); }
     if (styles.some(v=>v.includes("minimal") || v.includes("professional")) && (id === "dental-clinic" || id === "corporate")) { score += 10; reasons.push("clean professional style"); }

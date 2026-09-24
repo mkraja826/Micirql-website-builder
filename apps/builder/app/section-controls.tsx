@@ -1,12 +1,14 @@
 "use client";
 
 import type { SitePage, SiteSection } from "@micirql/schema";
-import { SECTION_FAMILIES, type SectionFamily } from "@micirql/sections";
+import { SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
+import type { ThemeFamily } from "@micirql/schema";
 
 const ADDABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
 
 export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
+  themeFamily: ThemeFamily;
   selectedSectionId?: string;
   onSelect(sectionId: string): void;
   onAdd(section: SiteSection): void;
@@ -28,7 +30,7 @@ export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMo
       <select defaultValue="" aria-label="Add section" onChange={(event) => {
         const family = event.target.value as SectionFamily;
         if (!family) return;
-        onAdd(newSection(family));
+        onAdd(newSection(family, themeFamily));
         event.target.value = "";
       }}>
         <option value="">+ Add section</option>
@@ -44,8 +46,8 @@ export function SectionControls({ page, selectedSectionId, onSelect, onAdd, onMo
   </div>;
 }
 
-function newSection(family: SectionFamily): SiteSection {
-  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId: `${family}.placeholder`, version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
+function newSection(family: SectionFamily, theme: ThemeFamily): SiteSection {
+  return { id: `${family}-${crypto.randomUUID()}`, component: { componentId: sectionDesignId(theme, family, 1), version: "1.0.0" }, props: defaultProps(family), bindings: {}, hidden: false };
 }
 
 function defaultProps(family: SectionFamily): Record<string, unknown> {

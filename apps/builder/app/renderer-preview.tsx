@@ -42,10 +42,16 @@ export function RendererPreview({
   onReorderSection?(sectionId: string, toIndex: number): void;
 }) {
   const [preview, setPreview] = useState<PreviewPayload>();
-  const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
+  const [status, setStatus] = useState<"rendering" | "ready" | "error">(
+    "rendering",
+  );
   const [error, setError] = useState("");
   const [draggedSectionId, setDraggedSectionId] = useState<string>();
+  const [frame, setFrame] = useState({ scale: 1, height: 320 });
   const requestId = useRef(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const viewportWidth = previewViewportWidth(viewport);
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -57,10 +63,13 @@ export function RendererPreview({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ site, path }),
         });
-        const payload = await response.json() as PreviewPayload;
+        const payload = (await response.json()) as PreviewPayload;
         if (id !== requestId.current) return;
         if (!response.ok || !payload.ok || !Array.isArray(payload.sections)) {
-          throw new Error(payload.issues?.map((issue) => issue.message).join(" ") || `Preview failed (${response.status}).`);
+          throw new Error(
+            payload.issues?.map((issue) => issue.message).join(" ") ||
+              `Preview failed (${response.status}).`,
+          );
         }
         setPreview(payload);
         setError("");
@@ -74,7 +83,35 @@ export function RendererPreview({
     return () => window.clearTimeout(timer);
   }, [site, path]);
 
-  function handleSectionClick(event: MouseEvent<HTMLDivElement>, sectionId: string) {
+  useEffect(() => {
+    const stage = stageRef.current;
+    const previewFrame = frameRef.current;
+    if (!stage || !previewFrame) return;
+
+    const syncFrame = () => {
+      const scale = Math.min(1, stage.clientWidth / viewportWidth);
+      const height = Math.max(
+        240,
+        Math.ceil(previewFrame.scrollHeight * scale),
+      );
+      setFrame((current) =>
+        Math.abs(current.scale - scale) < 0.001 && current.height === height
+          ? current
+          : { scale, height },
+      );
+    };
+
+    const observer = new ResizeObserver(syncFrame);
+    observer.observe(stage);
+    observer.observe(previewFrame);
+    syncFrame();
+    return () => observer.disconnect();
+  }, [preview?.sections?.length, status, viewportWidth]);
+
+  function handleSectionClick(
+    event: MouseEvent<HTMLDivElement>,
+    sectionId: string,
+  ) {
     const target = event.target as HTMLElement;
     const inline = target.closest<HTMLElement>("[data-mi-prop-path]");
     const image = target.closest<HTMLElement>("[data-mi-image-field]");
@@ -99,54 +136,124 @@ export function RendererPreview({
 
   function handleDrop(event: DragEvent<HTMLDivElement>, targetIndex: number) {
     event.preventDefault();
-    const sectionId = draggedSectionId ?? event.dataTransfer.getData("text/mi-section-id");
+    const sectionId =
+      draggedSectionId ?? event.dataTransfer.getData("text/mi-section-id");
     if (sectionId && onReorderSection) onReorderSection(sectionId, targetIndex);
     setDraggedSectionId(undefined);
   }
 
   return (
-    <div className={`site-preview renderer-site-preview viewport-${viewport}`}>
-      {status === "rendering" ? <div className="renderer-preview-state">Rendering preview…</div> : null}
-      {status === "error" ? <div className="renderer-preview-state renderer-preview-error">{error}</div> : null}
-      {status === "ready" && preview?.sections ? (
-        <main
-          className="renderer-preview-document"
-          data-mi-site={preview.siteId}
-          data-mi-page={preview.pageId}
-          data-mi-theme={preview.theme}
-          style={(preview.themeStyle ?? {}) as CSSProperties}
-        >
-          {preview.sections.map((section, index) => {
-            const seed = seedSectionCatalog.find((candidate) => candidate.id === section.componentId);
-            if (!seed) return <div key={section.id} className="renderer-preview-state renderer-preview-error">Missing section renderer: {section.componentId}</div>;
-            const selected = section.id === selectedSectionId;
-            return (
-              <div
-                key={section.id}
-                data-mi-section-id={section.id}
-                data-mi-component-id={section.componentId}
-                data-mi-component-version={section.componentVersion}
-                className={`mi-editor-section${selected ? " mi-editor-selected" : ""}`}
-                draggable={Boolean(onReorderSection)}
-                onDragStart={(event) => {
-                  setDraggedSectionId(section.id);
-                  event.dataTransfer.effectAllowed = "move";
-                  event.dataTransfer.setData("text/mi-section-id", section.id);
-                }}
-                onDragEnd={() => setDraggedSectionId(undefined)}
-                onDragOver={(event) => { if (onReorderSection) event.preventDefault(); }}
-                onDrop={(event) => handleDrop(event, index)}
-                onClick={(event) => handleSectionClick(event, section.id)}
-              >
-                {selected ? <div className="mi-editor-canvas-toolbar"><span>Drag to move</span>{onRequestImageChange ? <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onRequestImageChange(section.id, "image"); }}>Replace image</button> : null}</div> : null}
-                <SeedSection family={seed.family} variant={seed.variant} props={section.props as Parameters<typeof SeedSection>[0]["props"]} />
-              </div>
-            );
-          })}
-        </main>
-      ) : null}
+    <div
+      ref={stageRef}
+      className={`renderer-preview-stage viewport-${viewport}`}
+      style={
+        {
+          "--mi-preview-scale": String(frame.scale),
+          "--mi-preview-height": `${frame.height}px`,
+        } as CSSProperties
+      }
+    >
+      <div
+        ref={frameRef}
+        className={`site-preview renderer-site-preview viewport-${viewport}`}
+        style={{
+          width: `${viewportWidth}px`,
+          transform: `scale(${frame.scale})`,
+        }}
+      >
+        {status === "rendering" ? (
+          <div className="renderer-preview-state">Rendering preview…</div>
+        ) : null}
+        {status === "error" ? (
+          <div className="renderer-preview-state renderer-preview-error">
+            {error}
+          </div>
+        ) : null}
+        {status === "ready" && preview?.sections ? (
+          <main
+            className="renderer-preview-document"
+            data-mi-site={preview.siteId}
+            data-mi-page={preview.pageId}
+            data-mi-theme={preview.theme}
+            style={(preview.themeStyle ?? {}) as CSSProperties}
+          >
+            {preview.sections.map((section, index) => {
+              const seed = seedSectionCatalog.find(
+                (candidate) => candidate.id === section.componentId,
+              );
+              if (!seed)
+                return (
+                  <div
+                    key={section.id}
+                    className="renderer-preview-state renderer-preview-error"
+                  >
+                    Missing section renderer: {section.componentId}
+                  </div>
+                );
+              const selected = section.id === selectedSectionId;
+              return (
+                <div
+                  key={section.id}
+                  data-mi-section-id={section.id}
+                  data-mi-component-id={section.componentId}
+                  data-mi-component-version={section.componentVersion}
+                  className={`mi-editor-section${selected ? " mi-editor-selected" : ""}`}
+                  draggable={Boolean(onReorderSection)}
+                  onDragStart={(event) => {
+                    setDraggedSectionId(section.id);
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData(
+                      "text/mi-section-id",
+                      section.id,
+                    );
+                  }}
+                  onDragEnd={() => setDraggedSectionId(undefined)}
+                  onDragOver={(event) => {
+                    if (onReorderSection) event.preventDefault();
+                  }}
+                  onDrop={(event) => handleDrop(event, index)}
+                  onClick={(event) => handleSectionClick(event, section.id)}
+                >
+                  {selected ? (
+                    <div className="mi-editor-canvas-toolbar">
+                      <span>Drag to move</span>
+                      {onRequestImageChange ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onRequestImageChange(section.id, "image");
+                          }}
+                        >
+                          Replace image
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <SeedSection
+                    family={seed.family}
+                    variant={seed.variant}
+                    props={
+                      section.props as Parameters<
+                        typeof SeedSection
+                      >[0]["props"]
+                    }
+                  />
+                </div>
+              );
+            })}
+          </main>
+        ) : null}
+      </div>
     </div>
   );
+}
+
+function previewViewportWidth(viewport: "mobile" | "tablet" | "desktop") {
+  if (viewport === "mobile") return 390;
+  if (viewport === "tablet") return 768;
+  return 1120;
 }
 
 function beginInlineEditing(
@@ -184,7 +291,11 @@ function beginInlineEditing(
       element.innerText = original;
       element.blur();
     }
-    if (event.key === "Enter" && !event.shiftKey && !propPath.includes("description")) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !propPath.includes("description")
+    ) {
       event.preventDefault();
       element.blur();
     }

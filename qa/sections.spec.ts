@@ -15,71 +15,155 @@ for (const entry of entries) {
   test.describe(entry.id, () => {
     for (const width of requiredWidths) {
       test(`${width}px protocol smoke`, async ({ page }, testInfo) => {
-        await page.setViewportSize({ width, height: width >= 1000 ? 900 : 844 });
-        const response = await page.goto(`/library/${entry.id}`, { waitUntil: "networkidle" });
+        await page.setViewportSize({
+          width,
+          height: width >= 1000 ? 900 : 844,
+        });
+        const response = await page.goto(`/library/${entry.id}`, {
+          waitUntil: "networkidle",
+        });
         const routePassed = Boolean(response?.ok());
         expect(routePassed).toBeTruthy();
 
         const root = page.locator(`[data-mi-preview-id="${entry.id}"]`);
         await expect(root).toBeVisible();
 
+        if (entry.family === "navbar") {
+          const menu = page.locator(".mi-nav-menu");
+          const toggle = menu.locator(".mi-nav-menu__toggle");
+          const links = menu.locator("ul");
+          if (width < 768) {
+            await expect(toggle).toBeVisible();
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            await expect(links).toBeHidden();
+            await toggle.click();
+            await expect(toggle).toHaveAttribute("aria-expanded", "true");
+            await expect(links).toBeVisible();
+          } else {
+            await expect(toggle).toBeHidden();
+            await expect(links).toBeVisible();
+          }
+        }
+
+        if (entry.family === "services" && entry.variant === 2) {
+          const columns = await page
+            .locator(".mi-section__grid")
+            .evaluate(
+              (grid) =>
+                getComputedStyle(grid)
+                  .gridTemplateColumns.split(" ")
+                  .filter(Boolean).length,
+            );
+          expect(
+            columns,
+            "service cards should not be cramped below the large-phone breakpoint",
+          ).toBe(width < 544 ? 1 : 2);
+        }
+
         const overflowPx = Math.max(
           0,
-          await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+          await page.evaluate(
+            () => document.documentElement.scrollWidth - window.innerWidth,
+          ),
         );
-        expect(overflowPx, "horizontal overflow must be zero").toBeLessThanOrEqual(1);
+        expect(
+          overflowPx,
+          "horizontal overflow must be zero",
+        ).toBeLessThanOrEqual(1);
 
-        const undersizedTargets = await page.locator("a, button, summary, input, select, textarea").evaluateAll((elements) =>
-          elements
-            .filter((element) => {
-              const rect = element.getBoundingClientRect();
-              const style = getComputedStyle(element);
-              return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
-            })
-            .filter((element) => {
-              const rect = element.getBoundingClientRect();
-              return rect.width < 44 || rect.height < 44;
-            })
-            .map((element) => ({ tag: element.tagName, text: element.textContent?.trim().slice(0, 40) ?? "" })),
-        );
-        expect(undersizedTargets, `touch targets under 44px: ${JSON.stringify(undersizedTargets)}`).toEqual([]);
+        const undersizedTargets = await page
+          .locator("a, button, summary, input, select, textarea")
+          .evaluateAll((elements) =>
+            elements
+              .filter((element) => {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return (
+                  style.display !== "none" &&
+                  style.visibility !== "hidden" &&
+                  rect.width > 0 &&
+                  rect.height > 0
+                );
+              })
+              .filter((element) => {
+                const rect = element.getBoundingClientRect();
+                return rect.width < 44 || rect.height < 44;
+              })
+              .map((element) => ({
+                tag: element.tagName,
+                text: element.textContent?.trim().slice(0, 40) ?? "",
+              })),
+          );
+        expect(
+          undersizedTargets,
+          `touch targets under 44px: ${JSON.stringify(undersizedTargets)}`,
+        ).toEqual([]);
 
         const imagesWithoutAlt = await page.locator("img:not([alt])").count();
         expect(imagesWithoutAlt, "all images require alt attributes").toBe(0);
 
-        const unlabeledControls = await page.locator("input:not([type=hidden]), select, textarea").evaluateAll((elements) =>
-          elements.filter((element) => {
-            const id = element.getAttribute("id");
-            const ariaLabel = element.getAttribute("aria-label");
-            const ariaLabelledBy = element.getAttribute("aria-labelledby");
-            const wrappedByLabel = Boolean(element.closest("label"));
-            const hasForLabel = Boolean(id && document.querySelector(`label[for="${CSS.escape(id)}"]`));
-            return !ariaLabel && !ariaLabelledBy && !wrappedByLabel && !hasForLabel;
-          }).length,
-        );
-        expect(unlabeledControls, "form controls require accessible labels").toBe(0);
+        const unlabeledControls = await page
+          .locator("input:not([type=hidden]), select, textarea")
+          .evaluateAll(
+            (elements) =>
+              elements.filter((element) => {
+                const id = element.getAttribute("id");
+                const ariaLabel = element.getAttribute("aria-label");
+                const ariaLabelledBy = element.getAttribute("aria-labelledby");
+                const wrappedByLabel = Boolean(element.closest("label"));
+                const hasForLabel = Boolean(
+                  id &&
+                  document.querySelector(`label[for="${CSS.escape(id)}"]`),
+                );
+                return (
+                  !ariaLabel &&
+                  !ariaLabelledBy &&
+                  !wrappedByLabel &&
+                  !hasForLabel
+                );
+              }).length,
+          );
+        expect(
+          unlabeledControls,
+          "form controls require accessible labels",
+        ).toBe(0);
 
-        const invalidActions = await page.locator("a, button").evaluateAll((elements) =>
-          elements.filter((element) => {
-            if (element instanceof HTMLAnchorElement) {
-              const href = element.getAttribute("href")?.trim();
-              return !href || href === "#" || href.toLowerCase().startsWith("javascript:");
-            }
-            return false;
-          }).length,
+        const invalidActions = await page.locator("a, button").evaluateAll(
+          (elements) =>
+            elements.filter((element) => {
+              if (element instanceof HTMLAnchorElement) {
+                const href = element.getAttribute("href")?.trim();
+                return (
+                  !href ||
+                  href === "#" ||
+                  href.toLowerCase().startsWith("javascript:")
+                );
+              }
+              return false;
+            }).length,
         );
-        expect(invalidActions, "interactive actions must have a valid destination").toBe(0);
+        expect(
+          invalidActions,
+          "interactive actions must have a valid destination",
+        ).toBe(0);
 
         const clientJsBytes = await page.evaluate(() =>
           performance
             .getEntriesByType("resource")
-            .filter((resource) => resource.name.includes("/_next/") && resource.name.includes(".js"))
+            .filter(
+              (resource) =>
+                resource.name.includes("/_next/") &&
+                resource.name.includes(".js"),
+            )
             .reduce((sum, resource) => {
               const timing = resource as PerformanceResourceTiming;
               return sum + (timing.transferSize || timing.encodedBodySize || 0);
             }, 0),
         );
-        expect(clientJsBytes, "client JavaScript must remain within MiCirql budget").toBeLessThanOrEqual(clientJsBudgetBytes);
+        expect(
+          clientJsBytes,
+          "client JavaScript must remain within MiCirql budget",
+        ).toBeLessThanOrEqual(clientJsBudgetBytes);
 
         const screenshotPath = testInfo.outputPath(`${entry.id}-${width}.png`);
         if (width === 390 || width === 1280) {
@@ -90,7 +174,11 @@ for (const entry of entries) {
           });
         }
 
-        const evidenceDirectory = path.join(process.cwd(), "test-results", "evidence-raw");
+        const evidenceDirectory = path.join(
+          process.cwd(),
+          "test-results",
+          "evidence-raw",
+        );
         await mkdir(evidenceDirectory, { recursive: true });
         await writeFile(
           path.join(evidenceDirectory, `${entry.id}-${width}.json`),
@@ -113,7 +201,8 @@ for (const entry of entries) {
               unlabeledControls,
               invalidActions,
               clientJsKb: Math.round((clientJsBytes / 1024) * 10) / 10,
-              accessibilityPassed: imagesWithoutAlt === 0 && unlabeledControls === 0,
+              accessibilityPassed:
+                imagesWithoutAlt === 0 && unlabeledControls === 0,
               functionalityPassed: routePassed && invalidActions === 0,
               performancePassed: clientJsBytes <= clientJsBudgetBytes,
             },

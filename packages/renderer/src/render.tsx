@@ -1,4 +1,4 @@
-import { Fragment, createElement } from "react";
+import { createElement } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { PreparedPage } from "./types";
 
@@ -11,15 +11,19 @@ export function renderPreparedPage(prepared: PreparedPage): ReactNode {
       data-mi-theme={prepared.site.theme.family}
       style={style}
     >
-      {prepared.sections.map(({ section, component, props }) => (
-        <Fragment key={section.id}>
+      {prepared.sections.map(({ section, component, props }, index) => (
+        <div
+          key={section.id}
+          id={`section-${index + 1}`}
+          data-mi-rendered-section={section.id}
+        >
           {createElement(component.Component, {
             ...props,
             "data-mi-section-id": section.id,
             "data-mi-component-id": component.registry.id,
             "data-mi-component-version": component.registry.version,
           })}
-        </Fragment>
+        </div>
       ))}
     </main>
   );

@@ -60,7 +60,8 @@ Set these production secrets in the Supabase project:
 AI_GATEWAY_PROVIDER_ORDER=nvidia,gemini,groq,cerebras,aimlapi
 
 NVIDIA_API_KEY=
-NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
+NVIDIA_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
+NVIDIA_MODELS=nvidia/nemotron-3.5-lightning-30b-a3b,deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5-3-flash,z-ai/glm-5-3,moonshotai/kimi-k3,nvidia/nemotron-3-ultra-550b-a55b
 NVIDIA_ENDPOINT=https://integrate.api.nvidia.com/v1/chat/completions
 
 GEMINI_API_KEY=

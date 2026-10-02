@@ -31,3 +31,20 @@ Every production site and library item must be:
 - `packages/*` — shared platform packages
 
 Phase 1 establishes the monorepo and package boundaries. Later phases add protocol enforcement, schemas, registry, themes, renderer, backend functions, AI selection, and publishing.
+
+
+## Text AI provider configuration
+
+MiCirql supports AIMLAPI for AI planning and content-advisor tasks through its OpenAI-compatible chat-completions endpoint.
+
+Configure these as private Worker/runtime variables; never commit them:
+
+- `MICIRQL_TEXT_PROVIDER=aimlapi`
+- `AIMLAPI_API_KEY`
+- `AIMLAPI_MODEL`
+- `AIMLAPI_ENDPOINT` (optional; defaults to `https://api.aimlapi.com/v1/chat/completions`)
+- `AIMLAPI_TEMPERATURE` (optional)
+- `AIMLAPI_MAX_OUTPUT_TOKENS` (optional)
+- `AIMLAPI_INPUT_USD_PER_MILLION` and `AIMLAPI_OUTPUT_USD_PER_MILLION` (optional usage-cost metadata)
+
+If AIMLAPI is selected but the key or model is missing, generation fails clearly instead of silently presenting deterministic fallback content as AI-generated.

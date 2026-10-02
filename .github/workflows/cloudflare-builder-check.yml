@@ -1,6 +1,15 @@
 name: Cloudflare Builder Check
 
 on:
+  push:
+    branches:
+      - deploy/cloudflare-builder
+    paths:
+      - 'apps/builder/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/cloudflare-builder-check.yml'
   pull_request:
     paths:
       - 'apps/builder/**'
@@ -24,5 +33,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @micirql/builder exec wrangler types --env-interface CloudflareEnv --include-runtime false --check cloudflare-env.d.ts
+      - run: pnpm --filter @micirql/builder typecheck
       - run: pnpm --filter @micirql/builder exec opennextjs-cloudflare build
+      - run: pnpm --filter @micirql/builder exec wrangler deploy --dry-run --keep-vars

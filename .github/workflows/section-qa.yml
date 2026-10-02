@@ -15,7 +15,7 @@ on:
       - "package.json"
       - ".github/workflows/section-qa.yml"
   push:
-    branches: [main]
+    branches: [main, deploy/cloudflare-builder]
     paths:
       - "packages/primitives/**"
       - "packages/components/**"
@@ -44,7 +44,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium

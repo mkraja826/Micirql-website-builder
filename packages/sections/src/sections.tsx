@@ -138,7 +138,7 @@ function NavbarSection({
           />
           {primaryAction ? (
             <a
-              className="mi-section__action mi-section__action--primary"
+              className="mi-navbar__cta mi-section__action mi-section__action--primary"
               href={primaryAction.href}
             >
               <InlineField path="primaryAction.label">

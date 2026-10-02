@@ -57,7 +57,11 @@ The builder uses one authenticated Supabase Edge Function, `ai-gateway`, for AI 
 Set these production secrets in the Supabase project:
 
 ```env
-AI_GATEWAY_PROVIDER_ORDER=gemini,groq,cerebras,aimlapi
+AI_GATEWAY_PROVIDER_ORDER=nvidia,gemini,groq,cerebras,aimlapi
+
+NVIDIA_API_KEY=
+NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
+NVIDIA_ENDPOINT=https://integrate.api.nvidia.com/v1/chat/completions
 
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash-lite

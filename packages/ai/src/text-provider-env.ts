@@ -2,7 +2,45 @@ import { createOpenAiCompatibleJsonPlannerModel, type OpenAiCompatibleTextProvid
 
 export type TextProviderEnvironment = Record<string, string | undefined>;
 
+const AIMLAPI_DEFAULT_ENDPOINT = "https://api.aimlapi.com/v1/chat/completions";
+
 export function textProviderConfigFromEnvironment(env: TextProviderEnvironment): OpenAiCompatibleTextProviderConfig | undefined {
+  const provider = clean(env.MICIRQL_TEXT_PROVIDER)?.toLowerCase();
+  const aimlApiKey = clean(env.AIMLAPI_API_KEY);
+  const aimlApiModel = clean(env.AIMLAPI_MODEL);
+  const aimlApiEndpoint = clean(env.AIMLAPI_ENDPOINT);
+  const aimlApiSelected = provider === "aimlapi" || Boolean(aimlApiKey || aimlApiModel || aimlApiEndpoint);
+
+  if (aimlApiSelected) {
+    if (!aimlApiKey) throw new Error("AIMLAPI_API_KEY is required when AIMLAPI is selected.");
+    if (!aimlApiModel) throw new Error("AIMLAPI_MODEL is required when AIMLAPI is selected.");
+
+    const temperature = optionalNumber(env.AIMLAPI_TEMPERATURE ?? env.MICIRQL_TEXT_MODEL_TEMPERATURE, "AIMLAPI_TEMPERATURE");
+    const maxOutputTokens = optionalInteger(
+      env.AIMLAPI_MAX_OUTPUT_TOKENS ?? env.MICIRQL_TEXT_MODEL_MAX_OUTPUT_TOKENS,
+      "AIMLAPI_MAX_OUTPUT_TOKENS",
+    );
+
+    return {
+      id: clean(env.AIMLAPI_PROFILE_ID) ?? "aimlapi-text",
+      endpoint: aimlApiEndpoint ?? AIMLAPI_DEFAULT_ENDPOINT,
+      apiKey: aimlApiKey,
+      model: aimlApiModel,
+      pricing: {
+        inputUsdPerMillionTokens: optionalPrice(
+          env.AIMLAPI_INPUT_USD_PER_MILLION ?? env.MICIRQL_TEXT_MODEL_INPUT_USD_PER_MILLION,
+          "AIMLAPI_INPUT_USD_PER_MILLION",
+        ),
+        outputUsdPerMillionTokens: optionalPrice(
+          env.AIMLAPI_OUTPUT_USD_PER_MILLION ?? env.MICIRQL_TEXT_MODEL_OUTPUT_USD_PER_MILLION,
+          "AIMLAPI_OUTPUT_USD_PER_MILLION",
+        ),
+      },
+      ...(temperature !== undefined ? { temperature } : {}),
+      ...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
+    };
+  }
+
   const endpoint = clean(env.MICIRQL_TEXT_MODEL_ENDPOINT);
   const apiKey = clean(env.MICIRQL_TEXT_MODEL_API_KEY);
   const model = clean(env.MICIRQL_TEXT_MODEL);
@@ -43,6 +81,11 @@ function requiredPrice(value: string | undefined, name: string): number {
   if (parsed === undefined) throw new Error(`${name} is required when text AI is configured.`);
   if (parsed < 0) throw new Error(`${name} must not be negative.`);
   return parsed;
+}
+
+function optionalPrice(value: string | undefined, name: string): number {
+  const parsed = optionalNumber(value, name);
+  return parsed ?? 0;
 }
 
 function optionalNumber(value: string | undefined, name: string): number | undefined {

@@ -21,6 +21,7 @@ export function NavigationMenu({
         className="mi-nav-menu__toggle"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-label="Toggle primary navigation"
         onClick={() => setOpen((value) => !value)}
       >
         <span>Menu</span>

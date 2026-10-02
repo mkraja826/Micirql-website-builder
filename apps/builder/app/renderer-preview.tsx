@@ -195,6 +195,8 @@ export function RendererPreview({
               return (
                 <div
                   key={section.id}
+                  id={`section-${index + 1}`}
+                  data-mi-rendered-section={section.id}
                   data-mi-section-id={section.id}
                   data-mi-component-id={section.componentId}
                   data-mi-component-version={section.componentVersion}

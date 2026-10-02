@@ -1,14 +1,16 @@
 "use client";
 
-import type { SitePage, SiteSection } from "@micirql/schema";
-import { SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
+import type { Site, SitePage, SiteSection } from "@micirql/schema";
+import { FAMILY_CODES, SECTION_FAMILIES, sectionDesignId, type SectionFamily } from "@micirql/sections";
 import type { ThemeFamily } from "@micirql/schema";
 
-const ADDABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar" && family !== "footer");
+const ADDABLE_FAMILIES = SECTION_FAMILIES.filter((family) => family !== "navbar");
 
-export function SectionControls({ page, themeFamily, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
+export function SectionControls({ page, themeFamily, siteName, navigation, selectedSectionId, onSelect, onAdd, onMove, onToggleHidden, onRemove }: {
   page: SitePage;
   themeFamily: ThemeFamily;
+  siteName: string;
+  navigation: Site["navigation"];
   selectedSectionId?: string;
   onSelect(sectionId: string): void;
   onAdd(section: SiteSection): void;
@@ -30,12 +32,35 @@ export function SectionControls({ page, themeFamily, selectedSectionId, onSelect
       <select defaultValue="" aria-label="Add section" onChange={(event) => {
         const family = event.target.value as SectionFamily;
         if (!family) return;
-        onAdd(newSection(family, themeFamily, page.sections));
+        const section = createDefaultSection(family, themeFamily, page.sections);
+        if (family === "navbar") {
+          section.props.title = siteName;
+          section.props.items = navigation.map((item) => ({ title: item.label, href: item.href }));
+        }
+        if (family === "footer") {
+          section.props.title = siteName;
+          section.props.footerLinks = navigation.map((item) => ({ label: item.label, href: item.href }));
+          section.props.copyright = `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`;
+        }
+        onAdd(section);
         event.target.value = "";
       }}>
         <option value="">+ Add section</option>
-        {ADDABLE_FAMILIES.map((family) => <option key={family} value={family}>{title(family)}</option>)}
+        {ADDABLE_FAMILIES.filter((family) => !page.sections.some((section) => componentMatches(section.component.componentId, family))).map((family) => <option key={family} value={family}>{title(family)}</option>)}
       </select>
+      {!page.sections.some((section) => componentMatches(section.component.componentId, "navbar")) ? <button type="button" onClick={() => {
+        const section = createDefaultSection("navbar", themeFamily, page.sections);
+        section.props.title = siteName;
+        section.props.items = navigation.map((item) => ({ title: item.label, href: item.href }));
+        onAdd(section);
+      }}>Add navigation</button> : null}
+      {!page.sections.some((section) => componentMatches(section.component.componentId, "footer")) ? <button type="button" onClick={() => {
+        const section = createDefaultSection("footer", themeFamily, page.sections);
+        section.props.title = siteName;
+        section.props.footerLinks = navigation.map((item) => ({ label: item.label, href: item.href }));
+        section.props.copyright = `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`;
+        onAdd(section);
+      }}>Add footer</button> : null}
     </div>
     {selected ? <div className="section-controls-row">
       <button type="button" disabled={selectedIndex <= 0} onClick={() => onMove(selected.id, selectedIndex - 1)}>Move up</button>
@@ -46,7 +71,7 @@ export function SectionControls({ page, themeFamily, selectedSectionId, onSelect
   </div>;
 }
 
-function newSection(family: SectionFamily, theme: ThemeFamily, existingSections: SiteSection[]): SiteSection {
+export function createDefaultSection(family: SectionFamily, theme: ThemeFamily, existingSections: SiteSection[]): SiteSection {
   const props = defaultProps(family);
   const heading = stringValue(props.heading);
   if (heading) {
@@ -86,7 +111,16 @@ function defaultProps(family: SectionFamily): Record<string, unknown> {
     case "cta": return { heading: "Ready when you are", body: "Give visitors one clear, low-friction next step.", ctaLabel: "Get started" };
     case "contact": return { heading: "Let’s talk", body: "Make it easy for visitors to reach the right person.", ctaLabel: "Contact us" };
     case "navbar": return {};
-    case "footer": return {};
+    case "footer": return {
+      title: "Your business",
+      description: "A short note about what you do and who you serve.",
+      footerLinks: [
+        { label: "Services", href: "#services" },
+        { label: "About", href: "#about" },
+        { label: "Contact", href: "#contact" },
+      ],
+      copyright: `© ${new Date().getFullYear()} Your business. All rights reserved.`,
+    };
   }
 }
 
@@ -96,5 +130,12 @@ function stringValue(value: unknown): string | undefined {
 
 function labelFor(section: SiteSection): string {
   return title(section.component.componentId.split(".")[0] || section.id);
+}
+function componentMatches(componentId: string, family: SectionFamily): boolean {
+  const value = componentId.toLowerCase();
+  return value === `${family}.placeholder`
+    || value.startsWith(`${family}.`)
+    || value.includes(`-${FAMILY_CODES[family].toLowerCase()}-`)
+    || value.includes(`-${family === "navbar" ? "nav" : family}-`);
 }
 function title(value: string): string { return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()); }

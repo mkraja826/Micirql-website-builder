@@ -582,3 +582,10 @@
     display: none;
   }
 }
+
+.inspector-hint{margin:0;color:#92929c;font-size:.68rem;line-height:1.5}
+.footer-editor__links{display:grid;gap:12px;min-width:0;padding:12px;border:1px solid #303038;border-radius:12px}
+.footer-editor__links legend{padding:0 6px;color:#c7bbff;font-size:.7rem}
+.footer-editor__link{display:grid;gap:10px;padding:10px;border:1px solid #28282f;border-radius:10px;background:#111115}
+.footer-editor__link button,.footer-editor__links>button{min-height:42px;border:1px solid #363640;border-radius:9px;background:#19191f;color:#ededf1;cursor:pointer}
+.footer-editor__link button.danger{color:#ffb0b0;border-color:#593838;background:#261718}

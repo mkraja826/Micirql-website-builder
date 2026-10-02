@@ -4,7 +4,8 @@ import { Container, Stack, Typography } from "@micirql/primitives";
 import type { SectionFamily, SectionVariant } from "./catalog";
 
 type Action = { label: string; href: string };
-type Item = { title: string; description?: string; image?: string };
+type Item = { title: string; description?: string; image?: string; href?: string };
+type FooterLink = { label: string; href: string };
 
 type ImageReference = {
   src: string;
@@ -21,6 +22,8 @@ export type UniversalSectionProps = {
   items?: Item[];
   image?: ImageReference;
   formAction?: string;
+  footerLinks?: FooterLink[];
+  copyright?: string;
 };
 
 function InlineField({
@@ -133,7 +136,7 @@ function NavbarSection({
           <NavigationMenu
             items={items.map((item, i) => ({
               label: item.title,
-              href: `#section-${i + 1}`,
+              href: item.href ?? `#section-${i + 1}`,
             }))}
           />
           {primaryAction ? (
@@ -299,11 +302,15 @@ function ContactSection(props: UniversalSectionProps) {
 }
 
 function FooterSection(props: UniversalSectionProps) {
+  const links = props.footerLinks ?? (props.items ?? []).map((item, index) => ({
+    label: item.title,
+    href: item.description ?? `#section-${index + 1}`,
+  }));
   return (
     <footer className="mi-section mi-section--footer">
       <Container>
         <div className="mi-footer">
-          <div>
+          <div className="mi-footer__brand">
             <strong>
               <InlineField path="title">{props.title}</InlineField>
             </strong>
@@ -315,17 +322,26 @@ function FooterSection(props: UniversalSectionProps) {
               </p>
             ) : null}
           </div>
-          <nav aria-label="Footer navigation">
-            {(props.items ?? []).map((item, index) => (
-              <a key={`${item.title}-${index}`} href={`#section-${index + 1}`}>
-                {item.title}
+          {links.length ? <nav aria-label="Footer links">
+            {links.map((item, index) => (
+              <a key={`${item.label}-${index}`} href={safeFooterHref(item.href)}>
+                <InlineField path={`footerLinks.${index}.label`}>{item.label}</InlineField>
               </a>
             ))}
-          </nav>
+          </nav> : null}
         </div>
+        {props.copyright ? <p className="mi-footer__copyright"><InlineField path="copyright">{props.copyright}</InlineField></p> : null}
       </Container>
     </footer>
   );
+}
+
+function safeFooterHref(value: string): string {
+  const href = value.trim();
+  if (/^(?:https:\/\/|mailto:|tel:)/i.test(href)) return href;
+  if (href.startsWith("/") && !href.startsWith("//")) return href;
+  if (/^#[\w-]+$/.test(href)) return href;
+  return "/";
 }
 
 const renderers: Record<

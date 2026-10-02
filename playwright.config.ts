@@ -9,6 +9,9 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:3001",
+    ...(process.env.MI_QA_CHROMIUM_EXECUTABLE_PATH
+      ? { launchOptions: { executablePath: process.env.MI_QA_CHROMIUM_EXECUTABLE_PATH } }
+      : {}),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

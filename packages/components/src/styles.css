@@ -199,6 +199,22 @@
   font-weight: 700;
   cursor: pointer;
 }
+.mi-nav-menu__toggle:focus-visible,
+.mi-nav-menu a:focus-visible {
+  outline: 3px solid var(--mi-color-primary);
+  outline-offset: 3px;
+}
+.mi-nav-menu__toggle.is-open .mi-nav-menu__icon {
+  background: transparent;
+}
+.mi-nav-menu__toggle.is-open .mi-nav-menu__icon::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+.mi-nav-menu__toggle.is-open .mi-nav-menu__icon::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
 .mi-nav-menu__icon,
 .mi-nav-menu__icon::before,
 .mi-nav-menu__icon::after {
@@ -208,6 +224,7 @@
   border-radius: 999px;
   background: currentColor;
   content: "";
+  transition: transform 0.16s ease, top 0.16s ease, background-color 0.16s ease;
 }
 .mi-nav-menu__icon {
   position: relative;

@@ -15,13 +15,22 @@ export function NavigationMenu({
   const menuId = useId();
 
   return (
-    <nav className="mi-nav-menu" aria-label={ariaLabel}>
+    <nav
+      className="mi-nav-menu"
+      aria-label={ariaLabel}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          setOpen(false);
+          event.currentTarget.querySelector<HTMLButtonElement>(".mi-nav-menu__toggle")?.focus();
+        }
+      }}
+    >
       <button
         type="button"
-        className="mi-nav-menu__toggle"
+        className={`mi-nav-menu__toggle${open ? " is-open" : ""}`}
         aria-expanded={open}
         aria-controls={menuId}
-        aria-label="Toggle primary navigation"
+        aria-label={`${open ? "Close" : "Open"} primary navigation`}
         onClick={() => setOpen((value) => !value)}
       >
         <span>Menu</span>

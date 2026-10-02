@@ -35,14 +35,28 @@ for (const entry of entries) {
           if (width < 1024) {
             await expect(toggle).toBeVisible();
             await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            await expect(toggle).toHaveAttribute("aria-label", "Open primary navigation");
             await expect(links).toBeHidden();
             await toggle.click();
             await expect(toggle).toHaveAttribute("aria-expanded", "true");
+            await expect(toggle).toHaveAttribute("aria-label", "Close primary navigation");
             await expect(links).toBeVisible();
+            await links.locator("a").first().focus();
+            await links.locator("a").first().press("Escape");
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            await expect(toggle).toHaveAttribute("aria-label", "Open primary navigation");
+            await expect(toggle).toBeFocused();
           } else {
             await expect(toggle).toBeHidden();
             await expect(links).toBeVisible();
           }
+        }
+
+        if (entry.family === "footer") {
+          const footer = root.locator(".mi-section--footer");
+          await expect(footer).toBeVisible();
+          await expect(footer.getByRole("navigation", { name: "Footer links" })).toBeVisible();
+          await expect(footer.locator("a").first()).toHaveAttribute("href", /^(?:\/|#|https:\/\/|mailto:|tel:)/);
         }
 
         if (entry.family === "services" && entry.variant === 2) {

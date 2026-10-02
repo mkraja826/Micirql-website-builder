@@ -92,7 +92,9 @@ export async function preparePage(args: {
         siteId: site.siteId,
         actionId: binding.actionId,
       });
-      if (bindingName === "submit") props.formAction = args.functions.endpointFor({ siteId: site.siteId, actionId: binding.actionId });
+      if (["submit", "lead", "appointment", "reservation", "quote", "propertyEnquiry", "demo", "booking", "enrollment"].includes(bindingName)) {
+        props.formAction = args.functions.endpointFor({ siteId: site.siteId, actionId: binding.actionId });
+      }
     }
 
     sections.push({ section, component: resolved, props });

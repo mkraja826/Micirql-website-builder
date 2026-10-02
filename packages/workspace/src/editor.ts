@@ -18,6 +18,7 @@ export type EditorState = {
 
 export type WorkspaceCommand =
   | { type: "content.set"; pageId: string; sectionId: string; propPath: string; value: string | number | boolean | null }
+  | { type: "content.collection.set"; pageId: string; sectionId: string; propPath: string; value: Array<Record<string, unknown>> }
   | { type: "asset.set"; pageId: string; sectionId: string; propPath: string; asset: { assetId: string; alt?: string; focalPoint?: { x: number; y: number } } }
   | { type: "theme.set"; theme: ThemeConfig }
   | { type: "design.preset.apply"; theme: ThemeConfig; components: Array<{ pageId: string; sectionId: string; componentId: string; version: string }> }
@@ -56,6 +57,11 @@ export function applyWorkspaceCommand(
 
   switch (command.type) {
     case "content.set": {
+      const section = findSection(next, command.pageId, command.sectionId);
+      setPath(section.props, command.propPath, command.value);
+      break;
+    }
+    case "content.collection.set": {
       const section = findSection(next, command.pageId, command.sectionId);
       setPath(section.props, command.propPath, command.value);
       break;
@@ -129,6 +135,7 @@ export function applyWorkspaceCommand(
       if (next.pages.some((page) => page.id === command.page.id || page.path === command.page.path)) throw new Error("Page id/path already exists.");
       next.pages.push(command.page);
       next.navigation.push({ label: command.navigationLabel ?? command.page.name, href: command.page.path });
+      syncNavbarItems(next);
       break;
     }
     case "page.remove": {
@@ -137,6 +144,7 @@ export function applyWorkspaceCommand(
       assertAllowed(policy.canRemovePage?.(next, page), "Page removal is not allowed.");
       next.pages = next.pages.filter((item) => item.id !== command.pageId);
       next.navigation = next.navigation.filter((item) => item.href !== page.path);
+      syncNavbarItems(next);
       break;
     }
     case "page.reorder": {
@@ -147,6 +155,7 @@ export function applyWorkspaceCommand(
       next.pages.splice(target, 0, page!);
       const order = new Map(next.pages.map((item, idx) => [item.path, idx]));
       next.navigation.sort((a, b) => (order.get(a.href) ?? 9999) - (order.get(b.href) ?? 9999));
+      syncNavbarItems(next);
       break;
     }
     case "page.path.set": {
@@ -157,6 +166,7 @@ export function applyWorkspaceCommand(
       page.path = command.path;
       page.seo.canonicalPath = command.path;
       next.navigation = next.navigation.map((item) => item.href === previous ? { ...item, href: command.path } : item);
+      syncNavbarItems(next);
       break;
     }
     case "page.seo.patch": {
@@ -176,6 +186,7 @@ export function applyWorkspaceCommand(
       break;
     case "navigation.set":
       next.navigation = command.items;
+      syncNavbarItems(next);
       break;
   }
 
@@ -187,6 +198,18 @@ export function applyWorkspaceCommand(
     dirty: true,
     lastCommand: command.type,
   };
+}
+
+function syncNavbarItems(site: Site): void {
+  const items = site.navigation.map((item) => ({ title: item.label, href: item.href }));
+  for (const page of site.pages) {
+    for (const section of page.sections) {
+      const componentId = section.component.componentId.toLowerCase();
+      if (componentId === "navbar.placeholder" || componentId.startsWith("navbar.") || componentId.includes("-nav-")) {
+        section.props.items = structuredClone(items);
+      }
+    }
+  }
 }
 
 export function setEditorSelection(state: EditorState, selected: EditorSelection): EditorState {
@@ -217,14 +240,20 @@ function findSection(site: Site, pageId: string, sectionId: string): SiteSection
 function setPath(target: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split(".").filter(Boolean);
   if (parts.length === 0 || parts.some((part) => ["__proto__", "prototype", "constructor"].includes(part))) throw new Error("Invalid editor prop path.");
-  let cursor = target;
+  let cursor: Record<string, unknown> | unknown[] = target;
   for (let index = 0; index < parts.length - 1; index += 1) {
     const key = parts[index]!;
-    const current = cursor[key];
-    if (!current || typeof current !== "object" || Array.isArray(current)) cursor[key] = {};
-    cursor = cursor[key] as Record<string, unknown>;
+    const current = Array.isArray(cursor) ? cursor[Number(key)] : cursor[key];
+    if (!current || typeof current !== "object") {
+      const nextIsIndex = /^\d+$/.test(parts[index + 1]!);
+      if (Array.isArray(cursor)) cursor[Number(key)] = nextIsIndex ? [] : {};
+      else cursor[key] = nextIsIndex ? [] : {};
+    }
+    cursor = (Array.isArray(cursor) ? cursor[Number(key)] : cursor[key]) as Record<string, unknown> | unknown[];
   }
-  cursor[parts[parts.length - 1]!] = value;
+  const finalKey = parts[parts.length - 1]!;
+  if (Array.isArray(cursor)) cursor[Number(finalKey)] = value;
+  else cursor[finalKey] = value;
 }
 
 function assertAllowed(result: boolean | string | undefined, fallback: string): void {

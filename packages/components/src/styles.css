@@ -532,3 +532,37 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* Generated-site navigation contract: mobile/tablet burger until the 1024px desktop cutoff. */
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  .mi-nav-menu__toggle {
+    display: inline-flex;
+  }
+  .mi-nav-menu > ul {
+    display: none;
+  }
+  .mi-nav-menu > ul.is-open {
+    display: grid;
+  }
+}
+@media (min-width: 64rem) {
+  .mi-nav-menu__toggle {
+    display: none;
+  }
+  .mi-nav-menu > ul,
+  .mi-nav-menu > ul.is-open {
+    position: static;
+    display: flex;
+    width: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    gap: var(--mi-space-sm);
+  }
+  .mi-nav-menu a {
+    padding: 0;
+  }
+}

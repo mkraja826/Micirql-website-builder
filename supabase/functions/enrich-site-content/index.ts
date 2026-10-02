@@ -396,6 +396,10 @@ function normalizeSectionProps(existing: Record<string, unknown>, generated: Rec
   }
   if (family === 'hero' && isPlaceholderCopy(merged.title, snapshotName)) merged.title = heroTitle(brief)
   if (family === 'hero' && isGenericCopy(merged.description)) merged.description = heroDescription(brief)
+  if (family === 'hero') {
+    const secondary = merged.secondaryAction && typeof merged.secondaryAction === 'object' && !Array.isArray(merged.secondaryAction) ? merged.secondaryAction as Record<string, unknown> : {}
+    merged.secondaryAction = { ...secondary, href: '#services', label: secondaryActionLabel(brief) }
+  }
   if (family === 'services' && Array.isArray(merged.items)) {
     merged.items = merged.items.map((item: any) => ({ ...item, description: isGenericCopy(item?.description) ? serviceDescription(String(item?.title ?? ''), brief) : item?.description }))
   }
@@ -428,6 +432,14 @@ function contactTitle(brief: Brief) {
 }
 function contactActionLabel(brief: Brief) {
   return /restaurant|hospitality|dining/i.test(`${brief.industry} ${brief.subindustry ?? ''}`) ? 'Reserve a table' : brief.goals.some((goal) => /book|appointment/i.test(goal)) ? 'Book an appointment' : 'Get in touch'
+}
+function secondaryActionLabel(brief: Brief) {
+  const context = `${brief.industry} ${brief.subindustry ?? ''}`
+  if (/restaurant|hospitality|dining/i.test(context)) return 'View the menu'
+  if (/real estate|property/i.test(context)) return 'Explore properties'
+  if (/construction|contractor/i.test(context)) return 'View projects'
+  if (/dental|clinic|dentist/i.test(context)) return 'Explore treatments'
+  return 'Explore services'
 }
 function serviceDescription(service: string, brief: Brief) {
   const cleaned = service.trim() || 'this service'

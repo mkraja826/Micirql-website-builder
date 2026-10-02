@@ -153,6 +153,7 @@ export function RendererPreview({
         } as CSSProperties
       }
     >
+      <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_PREVIEW_CSS }} />
       <div
         ref={frameRef}
         className={`site-preview renderer-site-preview viewport-${viewport}`}
@@ -249,6 +250,36 @@ export function RendererPreview({
     </div>
   );
 }
+
+const RESPONSIVE_PREVIEW_CSS = `
+.renderer-preview-stage .mi-section__layout,
+.renderer-preview-stage .mi-section__layout > *,
+.renderer-preview-stage .mi-container,
+.renderer-preview-stage .mi-section,
+.renderer-preview-stage .mi-section-variant {
+  min-width: 0;
+  max-width: 100%;
+}
+.renderer-preview-stage .mi-section__media,
+.renderer-preview-stage .mi-section__media img {
+  max-width: 100%;
+}
+.renderer-preview-stage.viewport-mobile .mi-section__layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.renderer-preview-stage.viewport-mobile .mi-section__layout > * {
+  width: 100%;
+}
+.renderer-preview-stage.viewport-mobile .mi-type--display {
+  max-width: 100%;
+  font-size: clamp(2.25rem, 7vw, 3.75rem);
+  line-height: 0.96;
+  overflow-wrap: anywhere;
+}
+.renderer-preview-stage.viewport-mobile .mi-hero__media {
+  min-height: 16rem;
+}
+`;
 
 function previewViewportWidth(viewport: "mobile" | "tablet" | "desktop") {
   if (viewport === "mobile") return 390;

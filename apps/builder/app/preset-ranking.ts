@@ -26,7 +26,7 @@ export function rankPresets(profile: OnboardingProfile): RankedPreset[] {
     let score = 0;
     const reasons: string[] = [];
     const id = preset.id;
-    if ((industry.includes("dental") || industry.includes("clinic") || text.includes("dent")) && (id === "dental-clinic" || id === "premium-implant-clinic")) { score += 80; reasons.push("matches dental/clinic"); }
+    if (/(^|[^a-z])(dental|dentistry|dentist|clinic)([^a-z]|$)/i.test(text) && (id === "dental-clinic" || id === "premium-implant-clinic")) { score += 80; reasons.push("matches dental/clinic"); }
     if ((subindustry.includes("implant") || services.some(v=>v.includes("implant"))) && id === "premium-implant-clinic") { score += 70; reasons.push("implant-focused"); }
     if ((industry.includes("restaurant") || industry.includes("hospitality") || text.includes("dining")) && id === "restaurant") { score += 90; reasons.push("matches hospitality"); }
     if ((industry.includes("real estate") || industry.includes("property") || text.includes("property")) && id === "real-estate") { score += 90; reasons.push("matches property business"); }

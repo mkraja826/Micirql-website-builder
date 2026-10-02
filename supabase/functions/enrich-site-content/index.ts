@@ -189,39 +189,43 @@ function fallbackContent(brief: Brief, snapshot: any): AiContent {
   const firstService = cleanServices[0] || brief.subindustry || brief.industry
   const sections = Array.isArray(snapshot?.pages?.[0]?.sections) ? snapshot.pages[0].sections : []
   const sectionContent = sections.map((section: any) => {
-    const component = String(section?.component?.componentId ?? '').toLowerCase()
-    if (component.startsWith('hero.')) {
+    const family = sectionFamily(section?.component?.componentId)
+    if (family === 'hero') {
       return { id: section.id, props: {
         eyebrow: brief.location || title(brief.industry),
-        heading: `${brief.businessName}: ${title(firstService)}${locationSuffix}`,
-        body: `Explore ${cleanServices.length ? cleanServices.join(', ') : brief.industry} with clear information and an easy way to get in touch.`,
-        ctaLabel: brief.goals.some((goal) => /book|appointment/i.test(goal)) ? 'Book an appointment' : 'Get in touch',
+        title: truncate(`${brief.businessName}: ${title(firstService)}${locationSuffix}`, 70),
+        description: `Explore ${cleanServices.length ? cleanServices.join(', ') : brief.industry} with clear information and an easy way to get in touch.`,
+        primaryAction: { href: '#contact', label: brief.goals.some((goal) => /book|appointment|reserve|reservation/i.test(goal)) ? 'Book an appointment' : 'Get in touch' },
       } }
     }
-    if (component.startsWith('services.')) {
+    if (family === 'services') {
       return { id: section.id, props: {
-        heading: 'Services',
-        body: `Focused ${brief.industry} services tailored to what visitors need to understand before contacting ${brief.businessName}.`,
-        items: cleanServices.slice(0, 8).map((service) => ({ title: title(service), description: `Learn about ${service} and contact ${brief.businessName} for details relevant to your needs.` })),
+        title: brief.industry.toLowerCase().includes('restaurant') ? 'A menu worth lingering over.' : 'Services',
+        description: `Explore ${brief.industry} services in a clear, easy-to-scan format before contacting the team.`,
+        items: cleanServices.slice(0, 8).map((service) => ({ title: title(service), description: serviceDescription(service, brief) })),
       } }
     }
-    if (component.startsWith('contact.')) {
+    if (family === 'contact') {
       return { id: section.id, props: {
-        heading: `Contact ${brief.businessName}`,
-        body: brief.location ? `Get in touch with our team in ${brief.location}.` : 'Get in touch with our team to discuss your requirements.',
-        ctaLabel: 'Contact us',
+        title: contactTitle(brief),
+        description: brief.location ? `Tell ${brief.businessName} what you are looking for and how the team can help in ${brief.location}.` : `Tell ${brief.businessName} what you are looking for and how the team can help.`,
+        primaryAction: { href: '#contact-form', label: contactActionLabel(brief) },
       } }
     }
-    if (component.startsWith('about.')) {
+    if (family === 'about') {
       return { id: section.id, props: {
-        heading: `About ${brief.businessName}`,
-        body: brief.notes || `${brief.businessName} helps people understand their options through clear information, thoughtful service, and an easy next step.`,
+        title: 'A clearer first conversation.',
+        description: brief.notes || `${brief.businessName} makes it easier to understand ${title(brief.industry).toLowerCase()} options before deciding on a next step.`,
+        items: [
+          { title: 'Useful context', description: 'Start with clear information about the services and questions that matter to you.' },
+          { title: 'Considered next steps', description: `Contact ${brief.businessName} for details relevant to your situation.` },
+        ],
       } }
     }
-    if (component.startsWith('features.')) {
+    if (family === 'features') {
       return { id: section.id, props: {
-        heading: 'Why choose us',
-        body: `A clear ${brief.industry} experience built around the needs and questions visitors bring to the first conversation.`,
+        title: 'Built around a better first impression.',
+        description: 'The essentials visitors need to understand the offer and take the next step.',
         items: [
           { title: 'Clear information', description: 'Understand the available options, process, and next steps.' },
           { title: 'Thoughtful guidance', description: 'Get practical direction based on your goals and requirements.' },
@@ -229,46 +233,47 @@ function fallbackContent(brief: Brief, snapshot: any): AiContent {
         ],
       } }
     }
-    if (component.startsWith('process.')) {
+    if (family === 'process') {
       return { id: section.id, props: {
-        heading: 'What to expect',
-        body: `A simple way to move from exploring ${brief.industry} services to choosing the right next step.`,
+        title: 'A simple path forward.',
+        description: 'A clear sequence makes the first enquiry feel straightforward.',
         items: [
-          { title: 'Start with your needs', description: 'Share what you are looking for and what matters most.' },
-          { title: 'Explore the options', description: `Review relevant services${cleanServices.length ? ` such as ${cleanServices.slice(0, 3).join(', ')}` : ''}.` },
-          { title: 'Plan the next step', description: `Contact ${brief.businessName} for details specific to your situation.` },
+          { title: 'Explore', description: `Review ${cleanServices.length ? cleanServices.slice(0, 3).join(', ') : brief.industry} and the information most relevant to you.` },
+          { title: 'Ask', description: 'Use the enquiry path to share what you need and any questions you have.' },
+          { title: 'Continue', description: `${brief.businessName} can confirm the appropriate next step.` },
         ],
       } }
     }
-    if (component.startsWith('testimonials.')) {
+    if (family === 'testimonials') {
       return { id: section.id, props: {
-        heading: 'Client perspective',
+        title: 'Client perspective',
+        description: 'Add verified feedback from real customers here. This section remains intentionally unclaimed until approved testimonials are provided.',
         body: 'Add verified feedback from real customers here. This section remains intentionally unclaimed until approved testimonials are provided.',
         items: [],
       } }
     }
-    if (component.startsWith('gallery.')) {
+    if (family === 'gallery') {
       return { id: section.id, props: {
-        heading: 'Featured highlights',
-        body: `Show the work, space, products, or moments that best represent ${brief.businessName}.`,
+        title: 'Featured highlights',
+        description: `Show the work, space, products, or moments that best represent ${brief.businessName}.`,
         items: [],
       } }
     }
-    if (component.startsWith('team.')) {
+    if (family === 'team') {
       return { id: section.id, props: {
-        heading: 'Meet the people',
-        body: `Introduce the people behind ${brief.businessName} using only approved names, roles, and biographies.`,
+        title: 'Meet the people',
+        description: `Introduce the people behind ${brief.businessName} using only approved names, roles, and biographies.`,
         items: [],
       } }
     }
-    if (component.startsWith('cta.')) {
+    if (family === 'cta') {
       return { id: section.id, props: {
-        heading: 'Ready to take the next step?',
-        body: `Contact ${brief.businessName} to ask questions and learn what happens next.`,
-        ctaLabel: brief.goals.some((goal) => /book|appointment/i.test(goal)) ? 'Book an appointment' : 'Get in touch',
+        title: 'Ready when you are.',
+        description: brief.goals.some((goal) => /book|appointment|reserve|reservation/i.test(goal)) ? `Request an appointment with ${brief.businessName} and take the next step with clarity.` : `Get in touch with ${brief.businessName} when you are ready to continue.`,
+        primaryAction: { href: '#contact', label: contactActionLabel(brief) },
       } }
     }
-    return { id: section.id, props: { heading: title(component.split('.')[0] || 'More information'), body: `Explore what ${brief.businessName} offers and contact the team for details.` } }
+    return { id: section.id, props: { title: title(family || 'More information'), description: `Explore what ${brief.businessName} offers and contact the team for details.` } }
   })
 
   const keyword = `${firstService}${brief.location ? ` ${brief.location}` : ''}`.trim()
@@ -293,8 +298,8 @@ function fallbackContent(brief: Brief, snapshot: any): AiContent {
     image_briefs: sections.map((section: any) => ({
       section_id: section.id,
       purpose: 'Website section visual',
-      prompt: `Professional ${brief.industry} website photography for ${brief.businessName}${brief.location ? ` in ${brief.location}` : ''}; suitable for a ${String(section?.component?.componentId ?? 'section').split('.')[0]} section; authentic, clean, no text embedded in image.`,
-      alt: `${brief.businessName} ${String(section?.component?.componentId ?? 'website').split('.')[0]} visual`,
+      prompt: `Professional ${brief.industry} website photography for ${brief.businessName}${brief.location ? ` in ${brief.location}` : ''}; suitable for a ${sectionFamily(section?.component?.componentId) || 'section'} section; authentic, clean, no text embedded in image.`,
+      alt: `${brief.businessName} ${sectionFamily(section?.component?.componentId) || 'website'} visual`,
     })),
   }
 }
@@ -330,11 +335,11 @@ function mergeContent(snapshot: any, content: AiContent, brief: Brief) {
     for (const section of page.sections ?? []) {
       const generated = byId.get(section.id)
       if (generated?.props && typeof generated.props === 'object' && !Array.isArray(generated.props)) {
-        section.props = { ...(section.props ?? {}), ...generated.props }
+        section.props = normalizeSectionProps(section.props ?? {}, generated.props, section.component?.componentId, brief, next.name)
       }
       const imageBrief = imageById.get(section.id)
       if (imageBrief) section.props = { ...(section.props ?? {}), imageBrief }
-      if (Array.isArray(content.faqs) && content.faqs.length && String(section.component?.componentId ?? '').toLowerCase().startsWith('services.')) {
+      if (Array.isArray(content.faqs) && content.faqs.length && sectionFamily(section.component?.componentId) === 'services') {
         section.props = { ...(section.props ?? {}), faqs: content.faqs.slice(0, 8) }
       }
     }
@@ -366,8 +371,8 @@ function ensureUniqueHeadings(sections: any[]) {
     const occurrence = counts.get(normalized) ?? 0
     counts.set(normalized, occurrence + 1)
     if (occurrence === 0) continue
-    const component = String(section?.component?.componentId ?? '').toLowerCase().split('.')[0]
-    const replacement = alternatives[component]?.find((candidate) => !counts.has(candidate.toLowerCase()))
+    const component = sectionFamily(section?.component?.componentId)
+    const replacement = component ? alternatives[component]?.find((candidate) => !counts.has(candidate.toLowerCase())) : undefined
     if (replacement) {
       props[key] = replacement
       counts.set(replacement.toLowerCase(), 1)
@@ -375,6 +380,67 @@ function ensureUniqueHeadings(sections: any[]) {
       props[key] = `${original} — ${occurrence + 1}`
     }
   }
+}
+
+function normalizeSectionProps(existing: Record<string, unknown>, generated: Record<string, unknown>, componentId: unknown, brief: Brief, snapshotName: string) {
+  const merged = { ...existing, ...generated }
+  const family = sectionFamily(componentId)
+  const heading = nonEmpty(generated.heading)
+  const body = nonEmpty(generated.body)
+  if (!nonEmpty(merged.title) && heading) merged.title = heading
+  if (!nonEmpty(merged.description) && body) merged.description = body
+  const ctaLabel = nonEmpty(generated.ctaLabel)
+  if (ctaLabel) {
+    const current = merged.primaryAction && typeof merged.primaryAction === 'object' && !Array.isArray(merged.primaryAction) ? merged.primaryAction as Record<string, unknown> : {}
+    merged.primaryAction = { ...current, href: nonEmpty(current.href) || '#contact', label: ctaLabel }
+  }
+  if (family === 'hero' && isPlaceholderCopy(merged.title, snapshotName)) merged.title = heroTitle(brief)
+  if (family === 'hero' && isGenericCopy(merged.description)) merged.description = heroDescription(brief)
+  if (family === 'services' && Array.isArray(merged.items)) {
+    merged.items = merged.items.map((item: any) => ({ ...item, description: isGenericCopy(item?.description) ? serviceDescription(String(item?.title ?? ''), brief) : item?.description }))
+  }
+  if (family === 'contact' && isPlaceholderCopy(merged.title, snapshotName)) merged.title = contactTitle(brief)
+  delete merged.heading
+  delete merged.body
+  delete merged.ctaLabel
+  return merged
+}
+
+function sectionFamily(value: unknown): string | null {
+  const component = String(value ?? '').trim()
+  const legacy = component.toLowerCase().split('.')[0]
+  if (['navbar', 'hero', 'about', 'services', 'features', 'process', 'testimonials', 'gallery', 'team', 'cta', 'contact', 'footer'].includes(legacy)) return legacy
+  const match = component.toUpperCase().match(/-(NAV|HERO|ABOUT|SERV|FEAT|PROC|TEST|GALL|TEAM|CTA|CONT|FOOT)-/)
+  const families: Record<string, string> = { NAV: 'navbar', HERO: 'hero', ABOUT: 'about', SERV: 'services', FEAT: 'features', PROC: 'process', TEST: 'testimonials', GALL: 'gallery', TEAM: 'team', CTA: 'cta', CONT: 'contact', FOOT: 'footer' }
+  return match ? families[match[1]] || null : null
+}
+
+function heroTitle(brief: Brief) {
+  const firstService = brief.services[0] || brief.subindustry || brief.industry || 'your next step'
+  return truncate(`${brief.businessName}: ${title(firstService)}${brief.location ? ` in ${brief.location}` : ''}`, 70)
+}
+function heroDescription(brief: Brief) {
+  const services = brief.services.length ? brief.services.join(', ') : brief.industry
+  return `Explore ${services} with clear information and an easy way to get in touch with ${brief.businessName}.`
+}
+function contactTitle(brief: Brief) {
+  return /restaurant|hospitality|dining/i.test(`${brief.industry} ${brief.subindustry ?? ''}`) ? 'Reserve your table.' : `Start a conversation with ${brief.businessName}.`
+}
+function contactActionLabel(brief: Brief) {
+  return /restaurant|hospitality|dining/i.test(`${brief.industry} ${brief.subindustry ?? ''}`) ? 'Reserve a table' : brief.goals.some((goal) => /book|appointment/i.test(goal)) ? 'Book an appointment' : 'Get in touch'
+}
+function serviceDescription(service: string, brief: Brief) {
+  const cleaned = service.trim() || 'this service'
+  if (/restaurant|hospitality|dining/i.test(`${brief.industry} ${brief.subindustry ?? ''}`)) return `Explore ${cleaned.toLowerCase()} and ask the team about the current offering.`
+  return `Learn about ${cleaned.toLowerCase()} and contact ${brief.businessName} for details relevant to your needs.`
+}
+function isPlaceholderCopy(value: unknown, snapshotName: string) {
+  const text = nonEmpty(value)
+  return !text || text.toLowerCase() === snapshotName.trim().toLowerCase() || /^(?:[a-z]{3,4})[ -](?:hero|serv|about|proc|test|cta|cont|feat|gall|team|nav|foot)\s*\d{3}$/i.test(text)
+}
+function isGenericCopy(value: unknown) {
+  const text = nonEmpty(value).toLowerCase()
+  return !text || text === 'build trust' || text.includes('review the information supplied by the business') || text.includes('explore what ') && text.includes('offers and contact the team for details')
 }
 
 function normalizeBrief(value: any): Brief {

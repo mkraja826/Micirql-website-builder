@@ -48,3 +48,29 @@ Configure these as private Worker/runtime variables; never commit them:
 - `AIMLAPI_INPUT_USD_PER_MILLION` and `AIMLAPI_OUTPUT_USD_PER_MILLION` (optional usage-cost metadata)
 
 If AIMLAPI is selected but the key or model is missing, generation fails clearly instead of silently presenting deterministic fallback content as AI-generated.
+
+
+## AI provider bucket
+
+The builder uses one authenticated Supabase Edge Function, `ai-gateway`, for AI planning and content generation. Provider credentials stay in Supabase Edge Function Secrets; the browser and builder never receive them. The gateway tries providers in the order configured by `AI_GATEWAY_PROVIDER_ORDER`, then returns the selected provider and usage metadata. Pexels remains the image source.
+
+Set these production secrets in the Supabase project:
+
+```env
+AI_GATEWAY_PROVIDER_ORDER=gemini,groq,cerebras,aimlapi
+
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash-lite
+
+GROQ_API_KEY=
+GROQ_MODEL=
+
+CEREBRAS_API_KEY=
+CEREBRAS_MODEL=
+
+AIMLAPI_API_KEY=
+AIMLAPI_MODEL=
+AIMLAPI_ENDPOINT=https://api.aimlapi.com/v1/chat/completions
+```
+
+Only add the providers you have keys for. The gateway skips unconfigured providers and falls back to the next configured provider. Do not commit secret values. The gateway only allows the `planning` and `content` tasks and requires an authenticated user JWT.

@@ -32,7 +32,7 @@ for (const entry of entries) {
           const menu = page.locator(".mi-nav-menu");
           const toggle = menu.locator(".mi-nav-menu__toggle");
           const links = menu.locator("ul");
-          if (width < 768) {
+          if (width < 1024) {
             await expect(toggle).toBeVisible();
             await expect(toggle).toHaveAttribute("aria-expanded", "false");
             await expect(links).toBeHidden();

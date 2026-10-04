@@ -22,6 +22,7 @@ export type WorkspaceCommand =
   | { type: "asset.set"; pageId: string; sectionId: string; propPath: string; asset: { assetId: string; alt?: string; focalPoint?: { x: number; y: number } } }
   | { type: "theme.set"; theme: ThemeConfig }
   | { type: "design.preset.apply"; theme: ThemeConfig; components: Array<{ pageId: string; sectionId: string; componentId: string; version: string }> }
+  | { type: "design.preset.apply"; site: Site }
   | { type: "brand.patch"; patch: Partial<ThemeConfig["brand"]> }
   | { type: "section.add"; pageId: string; section: SiteSection; toIndex?: number }
   | { type: "section.component.set"; pageId: string; sectionId: string; componentId: string; version: string }
@@ -53,7 +54,7 @@ export function applyWorkspaceCommand(
   command: WorkspaceCommand,
   policy: WorkspaceMutationPolicy = {},
 ): EditorState {
-  const next = clone(state.site);
+  let next = clone(state.site);
 
   switch (command.type) {
     case "content.set": {
@@ -79,6 +80,27 @@ export function applyWorkspaceCommand(
       next.theme = command.theme;
       break;
     case "design.preset.apply": {
+      if ("site" in command) {
+        const replacement = siteSchema.parse(command.site);
+        if (replacement.workspaceId !== state.site.workspaceId || replacement.siteId !== state.site.siteId) {
+          throw new Error("A design preset cannot replace another site.");
+        }
+        for (const page of replacement.pages) {
+          const currentPage = findPage(next, page.id);
+          for (const section of page.sections) {
+            const currentSection = findSection(next, page.id, section.id);
+            assertAllowed(policy.canUseComponent?.({
+              site: replacement,
+              page: currentPage,
+              section: currentSection,
+              componentId: section.component.componentId,
+              version: section.component.version,
+            }), "Component swap is not allowed.");
+          }
+        }
+        next = clone(replacement);
+        break;
+      }
       next.theme = command.theme;
       for (const component of command.components) {
         const page = findPage(next, component.pageId);

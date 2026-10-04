@@ -17,6 +17,8 @@ export type LiveRuntimeDependencies = {
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
   renderPage: (page: PreparedPage) => Promise<string> | string;
+  documentStyles?: string;
+  documentScript?: string;
   cache?: {
     get(key: string): Promise<Response | undefined>;
     put(key: string, response: Response, ttlSeconds: number): Promise<void>;
@@ -59,7 +61,13 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   }
 
   const content = await dependencies.renderPage(prepared.value);
-  const document = pageDocument(prepared.value.seo, content);
+  const document = pageDocument(
+    prepared.value.seo,
+    content,
+    published.versionId,
+    dependencies.documentStyles,
+    dependencies.documentScript,
+  );
   const response = htmlResponse(document, 200, {
     "cache-control": `public, max-age=0, s-maxage=${dependencies.cacheTtlSeconds ?? 300}, stale-while-revalidate=86400`,
     "cache-tag": `micirql-site:${site.siteId},micirql-version:${published.versionId}`,
@@ -70,9 +78,17 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   return response;
 }
 
-function pageDocument(seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] }, body: string) {
+function pageDocument(
+  seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] },
+  body: string,
+  versionId: string,
+  styles?: string,
+  script?: string,
+) {
   const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}</head><body>${body}</body></html>`;
+  const styleTag = styles ? `<style>${escapeStyleText(styles)}</style>` : "";
+  const scriptTag = script ? `<script>${escapeScriptText(script)}</script>` : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><meta name="micirql-version" content="${escapeAttr(versionId)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}${styleTag}</head><body>${body}${scriptTag}</body></html>`;
 }
 
 function robotsResponse(site: Site, origin: string) {
@@ -102,6 +118,8 @@ function escapeHtml(value: string) { return value.replace(/[&<>]/g, (char) => ({
 function escapeAttr(value: string) { return escapeHtml(value).replace(/"/g, "&quot;"); }
 function escapeXml(value: string) { return escapeAttr(value).replace(/'/g, "&apos;"); }
 function escapeScriptJson(value: string) { return value.replace(/</g, "\\u003c"); }
+function escapeStyleText(value: string) { return value.replace(/<\/style/gi, "<\\/style"); }
+function escapeScriptText(value: string) { return value.replace(/<\/script/gi, "<\\/script"); }
 
 export * from "./sql-store";
 export * from "./cloudflare";

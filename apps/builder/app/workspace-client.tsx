@@ -1,7 +1,7 @@
 "use client";
 import { useEffect,useMemo,useRef,useState } from "react";
 import { SCHEMA_VERSION,siteSchema,type Site } from "@micirql/schema";
-import { FAMILY_CODES,SECTION_FAMILIES,sectionDesignId,type SectionFamily,type SectionVariant } from "@micirql/sections";
+import { FAMILY_CODES,SECTION_FAMILIES,type SectionFamily } from "@micirql/sections";
 import { createEditorHistory,createEditorState,executeEditorCommand,markEditorSaved,redoEditor,setEditorSelection,setEditorViewport,undoEditor,type EditorHistory,type EditorViewport } from "@micirql/workspace";
 import { RendererPreview } from "./renderer-preview";
 import { SectionDesignSwitcher } from "./section-design-switcher";
@@ -14,6 +14,7 @@ import { PagesManager } from "./pages-manager";
 import { FunctionsManager } from "./functions-manager";
 import { PublishReadinessManager,publishReadiness } from "./publish-readiness";
 import { PublishController } from "./publish-controller";
+import { applyIndustryPreset } from "./apply-industry-preset";
 
 type Mode="content"|"images"|"design"|"pages"|"seo"|"functions"|"domain";
 type SaveState="loading"|"saved"|"unsaved"|"saving"|"conflict"|"error";
@@ -42,11 +43,10 @@ export default function WorkspaceClient(){
  :mode==="functions"&&activeSection?<FunctionsManager site={state.site} section={activeSection} onBind={(bindingKey,actionId)=>commit({type:"binding.set",pageId:activePage.id,sectionId:activeSection.id,bindingKey,actionId})} onRemove={bindingKey=>commit({type:"binding.remove",pageId:activePage.id,sectionId:activeSection.id,bindingKey})}/>
  :mode==="domain"?<PublishReadinessManager site={state.site}/>
  :mode==="seo"?<div className="inspector-form"><label>SEO title<input value={activePage.seo.title} onChange={e=>commit({type:"page.seo.patch",pageId:activePage.id,patch:{title:e.target.value}})}/></label><label>Description<textarea value={activePage.seo.description} onChange={e=>commit({type:"page.seo.patch",pageId:activePage.id,patch:{description:e.target.value}})}/></label></div>
- :mode==="design"?<div className="inspector-form"><IndustryDesignPresets onApply={preset=>{const components=state.site.pages.flatMap(page=>page.sections.flatMap(section=>{const family=sectionFamilyFromComponentId(section.component.componentId);if(!family)return[];const variant=preset.variants[family]??sectionVariantFromComponentId(section.component.componentId);return[{pageId:page.id,sectionId:section.id,componentId:sectionDesignId(preset.theme.family,family,variant),version:section.component.version}]}));commit({type:"design.preset.apply",theme:preset.theme,components})}}/><ThemeStudio theme={state.site.theme} onChange={theme=>commit({type:"theme.set",theme})}/>{activeSection&&activeSectionFamily?<SectionDesignSwitcher family={activeSectionFamily} theme={state.site.theme.family} currentComponentId={activeSection.component.componentId} onSelect={(componentId,version)=>commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId,version})}/>:null}</div>
+ :mode==="design"?<div className="inspector-form"><IndustryDesignPresets site={state.site} onApply={preset=>{const next=applyIndustryPreset(state.site,preset);if(next.generation)next.generation.selectedCandidateId=preset.id;commit({type:"design.preset.apply",site:next})}}/><ThemeStudio theme={state.site.theme} onChange={theme=>commit({type:"theme.set",theme})}/>{activeSection&&activeSectionFamily?<SectionDesignSwitcher family={activeSectionFamily} theme={state.site.theme.family} currentComponentId={activeSection.component.componentId} onSelect={(componentId,version)=>commit({type:"section.component.set",pageId:activePage.id,sectionId:activeSection.id,componentId,version})}/>:null}</div>
  :<div className="inspector-empty"><p>Select a section to configure this area.</p></div>}</aside>
  <nav className="mobile-editor-bar">{(["content","images","design","pages","seo","functions","domain"] as Mode[]).map(item=><button key={item} className={mode===item?"is-active":""} onClick={()=>setMode(item)}>{item}</button>)}</nav>
  </main>;
 }
 function sectionFamilyFromComponentId(componentId:string):SectionFamily|undefined{const n=componentId.toLowerCase();const legacy=SECTION_FAMILIES.find(f=>n===`${f}.placeholder`||n.startsWith(`${f}.`));if(legacy)return legacy;const u=componentId.toUpperCase();return SECTION_FAMILIES.find(f=>u.includes(`-${FAMILY_CODES[f]}-`))}
-function sectionVariantFromComponentId(componentId:string):SectionVariant{const match=componentId.match(/-(00[1-5])$/);const value=match?Number(match[1]):1;return value>=1&&value<=5?value as SectionVariant:1}
 function saveLabel(s:SaveState){return s==="loading"?"Loading…":s==="saving"?"Saving…":s==="unsaved"?"Unsaved":s==="conflict"?"Conflict":s==="error"?"Save error":"Saved"}

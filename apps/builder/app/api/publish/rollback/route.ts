@@ -1,18 +1,46 @@
+import { NextRequest } from "next/server";
 import { getPublishRuntime } from "../../../publish-runtime";
+import {
+  authorizeSavedSite,
+  PublishApiError,
+  publishErrorResponse,
+} from "../authorization";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { siteId?: string; targetVersionId?: string };
-    if (!body.siteId?.trim() || !body.targetVersionId?.trim()) {
-      return Response.json({ ok: false, issues: [{ code: "INVALID_ROLLBACK", message: "siteId and targetVersionId are required." }] }, { status: 400 });
+    const body = (await request.json()) as {
+      workspaceId?: unknown;
+      siteId?: unknown;
+      targetVersionId?: unknown;
+    };
+    const workspaceId = stringValue(body.workspaceId);
+    const siteId = stringValue(body.siteId);
+    const targetVersionId = stringValue(body.targetVersionId);
+    if (!workspaceId || !siteId || !targetVersionId) {
+      throw new PublishApiError(
+        400,
+        "INVALID_ROLLBACK",
+        "workspaceId, siteId and targetVersionId are required.",
+      );
     }
+
+    await authorizeSavedSite(request, { workspaceId, siteId });
+
     const runtime = getPublishRuntime();
     if (!runtime) {
-      return Response.json({ ok: false, issues: [{ code: "PUBLISH_RUNTIME_NOT_CONFIGURED", message: "Production publishing adapters are not configured yet." }] }, { status: 503 });
+      throw new PublishApiError(
+        503,
+        "PUBLISH_RUNTIME_NOT_CONFIGURED",
+        "Configure the production publisher with a server-only Supabase secret/service-role credential authorized to execute public.rollback_site_version(uuid, text). The authenticated browser role is intentionally not authorized for this RPC.",
+      );
     }
-    const result = await runtime.rollback({ siteId: body.siteId, targetVersionId: body.targetVersionId });
+    const result = await runtime.rollback({ siteId, targetVersionId });
     return Response.json(result, { status: result.ok ? 200 : 422 });
   } catch (error) {
-    return Response.json({ ok: false, issues: [{ code: "ROLLBACK_FAILED", message: error instanceof Error ? error.message : "Rollback failed." }] }, { status: 500 });
+    return publishErrorResponse(error, "ROLLBACK_FAILED", "Rollback failed.");
   }
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

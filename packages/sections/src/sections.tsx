@@ -95,7 +95,7 @@ function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
           {item.image ? (
             <img
               src={item.image}
-              alt=""
+              alt={item.title}
               loading="lazy"
               data-mi-image-field={`items.${index}.image`}
             />

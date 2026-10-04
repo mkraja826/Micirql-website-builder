@@ -3,18 +3,14 @@ import {
   createFunctionBindingResolver,
   renderPreparedPage,
   type PreparedPage,
-  type RendererRegistry,
 } from "@micirql/renderer";
+import { nativeFunctionCatalog } from "@micirql/functions";
 import { renderToStaticMarkup } from "react-dom/server.edge";
 import { configureLiveHostRuntime } from "./live-runtime";
+import { LIVE_SITE_SCRIPT, LIVE_SITE_STYLES } from "./live-site-assets";
+import { createLiveProductionRegistry } from "./production-registry";
 
 let configured = false;
-
-const emptyProductionRegistry: RendererRegistry = {
-  async resolve() {
-    return undefined;
-  },
-};
 
 export function ensureLiveRuntimeConfigured() {
   if (configured) return;
@@ -68,11 +64,15 @@ export function ensureLiveRuntimeConfigured() {
 
   configureLiveHostRuntime({
     store,
-    registry: emptyProductionRegistry,
-    functions: createFunctionBindingResolver({ actionIds: [] }),
+    registry: createLiveProductionRegistry(),
+    functions: createFunctionBindingResolver({
+      actionIds: nativeFunctionCatalog.map((definition) => definition.id),
+    }),
     renderPage(page: PreparedPage) {
       return renderToStaticMarkup(renderPreparedPage(page));
     },
+    documentStyles: LIVE_SITE_STYLES,
+    documentScript: LIVE_SITE_SCRIPT,
     cacheTtlSeconds: 300,
   });
 

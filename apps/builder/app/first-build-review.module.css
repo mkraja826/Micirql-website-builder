@@ -31,7 +31,7 @@
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
 }
 .card {
@@ -100,12 +100,68 @@
   background: #2a1519;
   color: #ffb6bd;
 }
-@media (max-width: 1100px) {
+.warning {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #665c2c;
+  border-radius: 10px;
+  background: #28230f;
+  color: #f4dc83;
+  font-size: 0.84rem;
+}
+.pagination {
+  max-width: 1400px;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.pagination > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.pagination button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #33333d;
+  border-radius: 9px;
+  background: #17171c;
+  color: #dedee4;
+  cursor: pointer;
+}
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pagination .activePage {
+  border-color: #8275ff;
+  background: #292343;
+  color: #fff;
+}
+.reviewRange {
+  max-width: 1400px;
+  margin: 14px auto 0;
+  color: #9b9ba6;
+  text-align: center;
+  font-size: 0.82rem;
+}
+@media (max-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 800px) {
   .grid {
     grid-template-columns: 1fr;
   }
   .card {
     grid-template-rows: auto 520px auto;
+  }
+  .pagination {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 640px) {

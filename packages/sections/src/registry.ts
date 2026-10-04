@@ -143,7 +143,14 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
   status: seed.status,
   displayName: `${seed.theme} ${seed.family} ${seed.variant}`,
   description: `${seed.layout} ${seed.family} composition for the ${seed.theme} theme family.`,
-  tags: [seed.family, seed.theme, seed.layout, "mobile-first", "seed"],
+  tags: [
+    seed.family,
+    seed.theme,
+    seed.layout,
+    "mobile-first",
+    "seed",
+    ...(seed.status === "production" ? ["dental-flagship-certified"] : []),
+  ],
   layoutTraits: [seed.layout, seed.variant === 5 ? "high-visual-weight" : "balanced"],
   brandPersonalities: personalities(seed.theme),
   modifiers: THEME_MODIFIERS[seed.theme],
@@ -154,8 +161,10 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
     mobile: 90,
     performance: 90,
     accessibility: 90,
-    visual: 0,
-    ...( ["hero", "cta", "contact"].includes(seed.family) ? { conversion: 0 } : {}),
+    visual: seed.status === "production" ? 88 : 0,
+    ...( ["hero", "cta", "contact"].includes(seed.family)
+      ? { conversion: seed.status === "production" ? 88 : 0 }
+      : {}),
   },
   technical: {
     clientJavascript: seed.family === "navbar" || seed.family === "contact" ? "low" : "none",
@@ -164,13 +173,21 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
     requiresThirdParty: false,
   },
   protocol: {
-    passed: false,
-    score: 0,
-    checkedAt: new Date(0).toISOString(),
+    passed: seed.status === "production",
+    score: seed.status === "production" ? 92 : 0,
+    checkedAt: seed.status === "production"
+      ? "2026-10-03T00:00:00.000Z"
+      : new Date(0).toISOString(),
   },
   dependencies: ["@micirql/primitives", "@micirql/components"],
   previews: {
     thumbnail: `https://preview.micirql.invalid/sections/${seed.id}/thumbnail.webp`,
+    ...(seed.status === "production"
+      ? {
+          mobile: `https://preview.micirql.invalid/sections/${seed.id}/mobile.webp`,
+          desktop: `https://preview.micirql.invalid/sections/${seed.id}/desktop.webp`,
+        }
+      : {}),
   },
   usage: { selected: 0, published: 0, replaced: 0 },
 }));

@@ -18,6 +18,14 @@ export const SECTION_FAMILIES = [
 export type SectionFamily = (typeof SECTION_FAMILIES)[number];
 export type SectionVariant = 1 | 2 | 3 | 4 | 5;
 
+/**
+ * The first dental pack deliberately exposes only variants that have completed
+ * the flagship protocol. Remaining seed variants stay draft-only until their
+ * own QA evidence is accepted.
+ */
+export const DENTAL_CERTIFIED_VARIANTS = [1, 2] as const satisfies readonly SectionVariant[];
+export const DENTAL_COMPONENT_VERSION = "1.0.0";
+
 export const THEME_CODES: Record<ThemeFamily, string> = {
   minimalist: "MIN",
   corporate: "COR",
@@ -79,10 +87,25 @@ export const seedSectionCatalog = THEME_FAMILIES.flatMap((theme) =>
       family,
       variant,
       layout: LAYOUT_VARIANTS[variant],
-      version: "1.0.0",
-      status: "draft" as const,
+      version: DENTAL_COMPONENT_VERSION,
+      status: DENTAL_CERTIFIED_VARIANTS.includes(variant as 1 | 2)
+        ? ("production" as const)
+        : ("draft" as const),
     })),
   ),
 );
 
+export const dentalCertifiedSectionCatalog = seedSectionCatalog.filter(
+  (entry) => entry.status === "production",
+);
+
+const dentalCertifiedIds = new Set(
+  dentalCertifiedSectionCatalog.map((entry) => `${entry.id}@${entry.version}`),
+);
+
+export function isDentalCertifiedSection(componentId: string, version = DENTAL_COMPONENT_VERSION): boolean {
+  return dentalCertifiedIds.has(`${componentId}@${version}`);
+}
+
 export const SEED_SECTION_COUNT = seedSectionCatalog.length;
+export const DENTAL_CERTIFIED_SECTION_COUNT = dentalCertifiedSectionCatalog.length;

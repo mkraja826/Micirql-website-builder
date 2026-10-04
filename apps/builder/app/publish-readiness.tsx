@@ -47,7 +47,7 @@ export function visualQualityScore(site: Site): { score: number; detail: string 
   const home = site.pages.find((page) => page.path === "/") ?? site.pages[0];
   if (!home) return { score: 0, detail: "No homepage is available." };
 
-  const sections = home.sections.filter((section) => !section.hidden);
+  const sections = home.sections.filter((section) => !section.hidden && !isSharedChrome(section.component.componentId));
   let score = 100;
   const issues: string[] = [];
   const text = sections.map((section) => Object.values(section.props).filter((value) => typeof value === "string").join(" ")).join(" ").toLowerCase();
@@ -93,6 +93,7 @@ export function visualQualityScore(site: Site): { score: number; detail: string 
 
 export function contentConsistency(site: Site): { ok: boolean; detail: string } {
   const headings = site.pages.flatMap((page) => page.sections
+    .filter((section) => !isSharedChrome(section.component.componentId))
     .map((section) => stringValue(section.props.heading) ?? stringValue(section.props.title))
     .filter(Boolean) as string[]);
   const counts = new Map<string, number>();
@@ -108,6 +109,16 @@ export function contentConsistency(site: Site): { ok: boolean; detail: string } 
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function isSharedChrome(componentId: string): boolean {
+  const id = componentId.toLowerCase();
+  return id === "navbar.placeholder"
+    || id.startsWith("navbar.")
+    || id.includes("-nav-")
+    || id === "footer.placeholder"
+    || id.startsWith("footer.")
+    || id.includes("-ftr-");
 }
 
 function containsUnresolvedAsset(value: unknown): boolean {

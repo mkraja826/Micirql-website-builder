@@ -8,6 +8,7 @@ import {
   themeFamilySchema,
   themeModifierSchema,
 } from "./core";
+import { generationMetadataSchema } from "./composition";
 
 export const brandTokensSchema = z.object({
   logoAssetId: z.string().optional(),
@@ -98,6 +99,7 @@ export const siteSchema = z.object({
   ),
   integrations: z.array(integrationReferenceSchema).default([]),
   domains: z.array(domainConnectionSchema).default([]),
+  generation: generationMetadataSchema.optional(),
 });
 
 export const siteVersionSchema = z.object({

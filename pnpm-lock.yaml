@@ -112,12 +112,18 @@ importers:
 
   apps/live:
     dependencies:
+      '@micirql/functions':
+        specifier: workspace:*
+        version: link:../../packages/functions
       '@micirql/live-runtime':
         specifier: workspace:*
         version: link:../../packages/live-runtime
       '@micirql/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer
+      '@micirql/sections':
+        specifier: workspace:*
+        version: link:../../packages/sections
       next:
         specifier: latest
         version: 16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

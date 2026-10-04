@@ -8,7 +8,7 @@ Connect the GitHub repository `mkraja826/Micirql-website-builder` to a Cloudflar
 
 Use these settings:
 
-- Production branch: `main`
+- Production branch: `deploy/cloudflare-builder`
 - Root directory: `/`
 - Install command: `pnpm install --no-frozen-lockfile`
 - Build command: leave empty
@@ -17,15 +17,16 @@ Use these settings:
 
 The Worker name in `apps/builder/wrangler.jsonc` is `micirql-website-builder`.
 
-## Required build variables
+## Required build variables and runtime bindings
 
 Configure these in Cloudflare Workers > Settings > Build > Variables and secrets:
 
 - `NEXT_PUBLIC_SUPABASE_URL` — URL for the `Micirql webbuilder` Supabase project.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — active publishable key for that project.
-- `MICIRQL_DRAFT_STORE=supabase`
+- `MICIRQL_DRAFT_STORE=supabase` — runtime binding; preserve it with `--keep-vars`.
+- `MICIRQL_SUPABASE_SECRET_KEY` — server-only Worker secret used solely for the existing publishing and rollback RPCs.
 
-Do not add a Supabase service-role key to the browser-facing builder. Authenticated requests use the signed-in user's JWT and Supabase RLS.
+The two `NEXT_PUBLIC_` values are intentionally embedded into the browser bundle and are also used by server routes. Never expose `MICIRQL_SUPABASE_SECRET_KEY` through a `NEXT_PUBLIC_` name or return it to the browser. Normal draft, onboarding, selection and export authorization still use the signed-in user's JWT and Supabase RLS; only the existing service-role-only publishing RPCs use the server secret.
 
 AI-provider variables can remain unset until providers are activated. The builder has deterministic fallbacks for the current onboarding path.
 

@@ -10,6 +10,8 @@ on:
       - "packages/themes/**"
       - "packages/registry/**"
       - "apps/preview/**"
+      - "apps/builder/app/dental-scaffold.ts"
+      - "apps/builder/app/industry-design-preset-data.ts"
       - "qa/**"
       - "playwright.config.ts"
       - "package.json"
@@ -23,6 +25,8 @@ on:
       - "packages/themes/**"
       - "packages/registry/**"
       - "apps/preview/**"
+      - "apps/builder/app/dental-scaffold.ts"
+      - "apps/builder/app/industry-design-preset-data.ts"
       - "qa/**"
       - "playwright.config.ts"
       - "package.json"
@@ -51,6 +55,9 @@ jobs:
 
       - name: Run representative section QA
         run: pnpm qa:sections
+
+      - name: Run certified dental composition QA
+        run: pnpm qa:dental:premium
 
       - name: Build registry QA evidence
         if: always()

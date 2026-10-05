@@ -33,49 +33,20 @@ Every production site and library item must be:
 Phase 1 establishes the monorepo and package boundaries. Later phases add protocol enforcement, schemas, registry, themes, renderer, backend functions, AI selection, and publishing.
 
 
-## Text AI provider configuration
-
-MiCirql supports AIMLAPI for AI planning and content-advisor tasks through its OpenAI-compatible chat-completions endpoint.
-
-Configure these as private Worker/runtime variables; never commit them:
-
-- `MICIRQL_TEXT_PROVIDER=aimlapi`
-- `AIMLAPI_API_KEY`
-- `AIMLAPI_MODEL`
-- `AIMLAPI_ENDPOINT` (optional; defaults to `https://api.aimlapi.com/v1/chat/completions`)
-- `AIMLAPI_TEMPERATURE` (optional)
-- `AIMLAPI_MAX_OUTPUT_TOKENS` (optional)
-- `AIMLAPI_INPUT_USD_PER_MILLION` and `AIMLAPI_OUTPUT_USD_PER_MILLION` (optional usage-cost metadata)
-
-If AIMLAPI is selected but the key or model is missing, generation fails clearly instead of silently presenting deterministic fallback content as AI-generated.
-
-
 ## AI provider bucket
 
-The builder uses one authenticated Supabase Edge Function, `ai-gateway`, for AI planning and content generation. Provider credentials stay in Supabase Edge Function Secrets; the browser and builder never receive them. The gateway tries providers in the order configured by `AI_GATEWAY_PROVIDER_ORDER`, then returns the selected provider and usage metadata. Pexels remains the image source.
+The builder uses one authenticated Supabase Edge Function, `ai-gateway`, for AI planning and content generation. NVIDIA credentials stay in Supabase Edge Function Secrets; the browser and builder never receive them. The gateway returns the selected NVIDIA model and usage metadata. Pexels remains the image source.
 
 Set these production secrets in the Supabase project:
 
 ```env
-AI_GATEWAY_PROVIDER_ORDER=nvidia,gemini,groq,cerebras,aimlapi
+AI_GATEWAY_PROVIDER_ORDER=nvidia
 
 NVIDIA_API_KEY=
 NVIDIA_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
 NVIDIA_MODELS=nvidia/nemotron-3.5-lightning-30b-a3b,deepseek-ai/deepseek-v4.1-flash,z-ai/glm-5-3-flash,z-ai/glm-5-3,moonshotai/kimi-k3,nvidia/nemotron-3-ultra-550b-a55b
 NVIDIA_ENDPOINT=https://integrate.api.nvidia.com/v1/chat/completions
 
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-3.5-flash-lite
-
-GROQ_API_KEY=
-GROQ_MODEL=
-
-CEREBRAS_API_KEY=
-CEREBRAS_MODEL=
-
-AIMLAPI_API_KEY=
-AIMLAPI_MODEL=
-AIMLAPI_ENDPOINT=https://api.aimlapi.com/v1/chat/completions
 ```
 
-Only add the providers you have keys for. The gateway skips unconfigured providers and falls back to the next configured provider. Do not commit secret values. The gateway only allows the `planning` and `content` tasks and requires an authenticated user JWT.
+Do not commit secret values. The gateway accepts only NVIDIA, allows only the `planning` and `content` tasks, and requires an authenticated user JWT. If multiple approved NVIDIA models are configured, it tries them in the listed order.

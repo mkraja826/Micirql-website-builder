@@ -38,6 +38,7 @@ import {
 } from "../apps/builder/app/industry-design-preset-data";
 import { resolveOnboardingStatus } from "../apps/builder/app/onboarding-status";
 import { rankPresets } from "../apps/builder/app/preset-ranking";
+import { parseProviderJson } from "../supabase/functions/ai-gateway/json";
 
 const requiredDentalFamilies = [
   "navbar",
@@ -76,8 +77,30 @@ test.describe("flagship dental Top-20 contracts", () => {
     expect(source).toContain("task: 'content'");
     expect(source).not.toContain("MICIRQL_TEXT_API_KEY");
     expect(source).not.toContain("MICIRQL_TEXT_BASE_URL");
-    expect(gateway).toContain("gemini-3.5-flash-lite");
-    expect(gateway).not.toContain("gemini-2.5-flash-lite");
+    expect(gateway).toContain("type Provider = 'nvidia'");
+    expect(gateway).toContain("enable_thinking: false");
+    expect(gateway).not.toContain("GEMINI_API_KEY");
+    expect(gateway).not.toContain("callGemini");
+  });
+
+  test("normalizes NVIDIA structured responses without accepting truncated JSON", () => {
+    expect(parseProviderJson('{"id":"home"}')).toEqual({ id: "home" });
+    expect(
+      parseProviderJson('```json\n{"id":"services"}\n```'),
+    ).toEqual({ id: "services" });
+    expect(
+      parseProviderJson(
+        '<think>Internal reasoning that must be ignored.</think>\n```json\n{"id":"contact"}\n```',
+      ),
+    ).toEqual({ id: "contact" });
+    expect(
+      parseProviderJson(
+        'Here is the requested result: {"id":"about","copy":"Keep {this} literal"}',
+      ),
+    ).toEqual({ id: "about", copy: "Keep {this} literal" });
+    expect(() => parseProviderJson('{"id":"truncated"')).toThrow(
+      "provider_returned_invalid_json",
+    );
   });
 
   test("returns exactly 20 certified clinic/dental compositions with unique identities", () => {

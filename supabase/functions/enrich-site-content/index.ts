@@ -110,31 +110,17 @@ Deno.serve(async (req: Request) => {
     let model = 'business-brief-v1'
     let metering: unknown = null
 
-    const apiKey = Deno.env.get('MICIRQL_TEXT_API_KEY')
-    const baseUrl = Deno.env.get('MICIRQL_TEXT_BASE_URL')
-    const configuredModel = Deno.env.get('MICIRQL_TEXT_MODEL')
-    const configuredProvider = Deno.env.get('MICIRQL_TEXT_PROVIDER') ?? 'openai-compatible'
     const deterministic = fallbackContent(brief, draft.snapshot)
 
-    if (apiKey && baseUrl && configuredModel) {
-      try {
-        const result = await generateWithModel({
-          apiKey,
-          baseUrl,
-          model: configuredModel,
-          brief,
-          snapshot: draft.snapshot,
-        })
-        generated = result.content
-        usage = result.usage
-        provider = configuredProvider
-        model = configuredModel
-        mode = 'model'
-      } catch (error) {
-        console.error('model content generation failed; using fallback', error)
-        generated = deterministic
-      }
-    } else {
+    try {
+      const result = await generateWithGateway({ authorization, supabaseUrl, anonKey, brief, snapshot: draft.snapshot, deterministic })
+      generated = result.content
+      usage = result.usage
+      provider = result.provider
+      model = result.model
+      mode = 'model'
+    } catch (error) {
+      console.error('gateway content generation failed; using fallback', error)
       generated = deterministic
     }
 
@@ -188,55 +174,106 @@ Deno.serve(async (req: Request) => {
   }
 })
 
-async function generateWithModel(args: { apiKey: string; baseUrl: string; model: string; brief: Brief; snapshot: any }) {
-  const endpoint = args.baseUrl.replace(/\/$/, '').endsWith('/chat/completions') ? args.baseUrl.replace(/\/$/, '') : `${args.baseUrl.replace(/\/$/, '')}/chat/completions`
-  const pages = sitePages(args.snapshot).map((page: any) => ({
-    id: page.id,
-    path: page.path,
-    name: page.name,
-    currentSeo: page.seo,
-    sections: siteSections(page).map((section: any) => ({
-      id: section.id,
-      componentId: section.component?.componentId,
-      currentProps: section.props,
-    })),
-  }))
+async function generateWithGateway(args: { authorization: string; supabaseUrl: string; anonKey: string; brief: Brief; snapshot: any; deterministic: AiContent }) {
+  const results = await Promise.all(sitePages(args.snapshot).map((page: any) => generatePageWithGateway(args, page)))
+  if (!results.length) throw new Error('gateway_content_pages_missing')
+  const providers = [...new Set(results.map((result) => result.provider))]
+  const models = [...new Set(results.map((result) => result.model))]
+  return {
+    content: {
+      site_name: args.brief.businessName,
+      seo_blueprint: args.deterministic.seo_blueprint,
+      pages: results.map((result) => result.page),
+    } satisfies AiContent,
+    provider: providers.length === 1 ? providers[0]! : `gateway:${providers.join('+')}`,
+    model: models.length === 1 ? models[0]! : models.join('+'),
+    usage: results.reduce(
+      (total, result) => ({ input_tokens: total.input_tokens + result.usage.input_tokens, output_tokens: total.output_tokens + result.usage.output_tokens }),
+      { input_tokens: 0, output_tokens: 0 },
+    ),
+  }
+}
 
-  const system = `You create concise, production-ready website content from a structured business brief. Return JSON only.
-Use every supplied page and every supplied section. Preserve each page ID and section ID exactly, keep sections under their original page, and never add, remove, or rename IDs. Write distinct, page-appropriate headings instead of repeating home-page copy.
+async function generatePageWithGateway(
+  args: { authorization: string; supabaseUrl: string; anonKey: string; brief: Brief; snapshot: any },
+  page: any,
+) {
+  const system = `You create concise, production-ready website content for one supplied page from a structured business brief. Return JSON only.
+Use every supplied section. Preserve the page ID and every section ID exactly and never add, remove, or rename IDs. Write distinct, page-appropriate headings instead of repeating home-page copy.
 Never invent awards, years of experience, prices, availability, medical success rates, clinician names, credentials, addresses, phone numbers, email addresses, reviews, testimonials, certifications, guarantees, or other factual claims not present in the brief or current props. For medical or clinic businesses, use informational, non-diagnostic language and describe appointments as requests until confirmed. Do not generate testimonial or team members.
 Only write content props, page SEO, FAQs, and image briefs. Do not output code, CSS, component IDs, layouts, bindings, navigation, brand tokens, assets, integration configuration, or generation metadata. Preserve action destinations and existing factual values. SEO titles must be <=70 characters and descriptions <=180 characters. Generate one useful image brief for every existing section but do not claim an image already exists.
-Output shape: {"site_name":"string","seo_blueprint":{"primary_goal":"string","target_locations":["string"],"priority_topics":["string"],"audiences":["string"],"languages":["string"],"local_seo":true,"service_pages":true,"location_pages":false,"blog":false},"pages":[{"id":"existing-page-id","seo":{"title":"string","description":"string","primary_keyword":"string"},"sections":[{"id":"existing-section-id","props":{}}],"faqs":[{"question":"string","answer":"string"}],"image_briefs":[{"section_id":"existing-section-id","purpose":"string","prompt":"string","alt":"string"}]}]}.`
-  const user = JSON.stringify({ brief: args.brief, pages })
+Keep copy compact enough to fit the supplied component slots. Output shape: {"id":"existing-page-id","seo":{"title":"string","description":"string","primary_keyword":"string"},"sections":[{"id":"existing-section-id","props":{}}],"faqs":[{"question":"string","answer":"string"}],"image_briefs":[{"section_id":"existing-section-id","purpose":"string","prompt":"string","alt":"string"}]}.`
+  const input = {
+    brief: args.brief,
+    page: {
+      id: page.id,
+      path: page.path,
+      name: page.name,
+      currentSeo: page.seo,
+      sections: siteSections(page).map((section: any) => ({
+        id: section.id,
+        componentId: section.component?.componentId,
+        currentProps: contentInputProps(section.props),
+      })),
+    },
+  }
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${args.supabaseUrl.replace(/\/$/, '')}/functions/v1/ai-gateway`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${args.apiKey}`,
+      Authorization: args.authorization,
+      apikey: args.anonKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: args.model,
-      temperature: 0.35,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
+      task: 'content',
+      system,
+      input,
+      response_format: 'json',
     }),
   })
-  if (!response.ok) throw new Error(`text_provider_failed_${response.status}`)
-  const payload = await response.json()
-  const raw = payload?.choices?.[0]?.message?.content
-  if (typeof raw !== 'string') throw new Error('text_provider_invalid_response')
-  const content = JSON.parse(stripFence(raw)) as AiContent
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(string(payload?.error) || `gateway_http_${response.status}`)
+  if (!isRecord(payload?.content)) throw new Error('gateway_content_invalid_response')
+  const returnedPage = payload.content as unknown as AiPageContent
+  if (string(returnedPage.id) !== string(page.id)) throw new Error('gateway_content_page_id_mismatch')
   return {
-    content,
+    page: returnedPage,
+    provider: string(payload.provider) || 'ai-gateway',
+    model: string(payload.model) || 'configured-model',
     usage: {
-      input_tokens: Number(payload?.usage?.prompt_tokens ?? payload?.usage?.input_tokens ?? 0),
-      output_tokens: Number(payload?.usage?.completion_tokens ?? payload?.usage?.output_tokens ?? 0),
+      input_tokens: Number(payload?.usage?.input_tokens ?? 0) || 0,
+      output_tokens: Number(payload?.usage?.output_tokens ?? 0) || 0,
     },
   }
+}
+
+function contentInputProps(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) return {}
+  const result: Record<string, unknown> = {}
+  for (const key of ['eyebrow', 'kicker', 'title', 'heading', 'subtitle', 'subheading', 'description', 'body', 'label', 'caption']) {
+    const text = nonEmpty(value[key])
+    if (text) result[key] = truncate(text, 500)
+  }
+  for (const key of ['primaryAction', 'secondaryAction']) {
+    const action = value[key]
+    if (!isRecord(action)) continue
+    const label = nonEmpty(action.label)
+    const href = nonEmpty(action.href)
+    if (label || href) result[key] = { ...(label ? { label } : {}), ...(href ? { href } : {}) }
+  }
+  if (Array.isArray(value.items)) {
+    result.items = value.items.slice(0, 8).flatMap((item) => {
+      if (!isRecord(item)) return []
+      const compact: Record<string, string> = {}
+      for (const key of ['title', 'description', 'body', 'label', 'caption']) {
+        const text = nonEmpty(item[key])
+        if (text) compact[key] = truncate(text, 300)
+      }
+      return Object.keys(compact).length ? [compact] : []
+    })
+  }
+  return result
 }
 
 function fallbackContent(brief: Brief, snapshot: any): AiContent {
@@ -997,10 +1034,4 @@ function slug(value: string) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'page'
   )
-}
-function stripFence(value: string) {
-  return value
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/, '')
 }

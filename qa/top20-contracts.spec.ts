@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { getDomainPack } from "@micirql/domains";
 import {
   SCHEMA_VERSION,
@@ -61,6 +62,18 @@ const suppliedBrand = {
 } as const;
 
 test.describe("flagship dental Top-20 contracts", () => {
+  test("content enrichment uses the authenticated provider gateway", () => {
+    const source = readFileSync(
+      "supabase/functions/enrich-site-content/index.ts",
+      "utf8",
+    );
+
+    expect(source).toContain("/functions/v1/ai-gateway");
+    expect(source).toContain("task: 'content'");
+    expect(source).not.toContain("MICIRQL_TEXT_API_KEY");
+    expect(source).not.toContain("MICIRQL_TEXT_BASE_URL");
+  });
+
   test("returns exactly 20 certified clinic/dental compositions with unique identities", () => {
     const presets = dentalPresets();
     const identities = presets.map(compositionIdentityForPreset);

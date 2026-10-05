@@ -67,11 +67,17 @@ test.describe("flagship dental Top-20 contracts", () => {
       "supabase/functions/enrich-site-content/index.ts",
       "utf8",
     );
+    const gateway = readFileSync(
+      "supabase/functions/ai-gateway/index.ts",
+      "utf8",
+    );
 
     expect(source).toContain("/functions/v1/ai-gateway");
     expect(source).toContain("task: 'content'");
     expect(source).not.toContain("MICIRQL_TEXT_API_KEY");
     expect(source).not.toContain("MICIRQL_TEXT_BASE_URL");
+    expect(gateway).toContain("gemini-3.5-flash-lite");
+    expect(gateway).not.toContain("gemini-2.5-flash-lite");
   });
 
   test("returns exactly 20 certified clinic/dental compositions with unique identities", () => {

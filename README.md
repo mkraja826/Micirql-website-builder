@@ -65,7 +65,7 @@ NVIDIA_MODELS=nvidia/nemotron-3.5-lightning-30b-a3b,deepseek-ai/deepseek-v4.1-fl
 NVIDIA_ENDPOINT=https://integrate.api.nvidia.com/v1/chat/completions
 
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-3.5-flash-lite
 
 GROQ_API_KEY=
 GROQ_MODEL=

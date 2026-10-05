@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   siteSchema,
   type CompositionGateReport,
@@ -50,6 +50,8 @@ export function FirstBuildReview({
   const [expandedId, setExpandedId] = useState<string>();
   const [error, setError] = useState("");
   const [gate, setGate] = useState<CompositionGateReport>();
+  const expandedCardRef = useRef<HTMLElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const ranked = useMemo(() => rankPresets(profile), [profile]);
   const ordered = useMemo(
     () => orderFromDraft(ranked, draft?.snapshot),
@@ -75,14 +77,52 @@ export function FirstBuildReview({
   useEffect(() => {
     if (!expandedId) return;
     const previous = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setExpandedId(undefined);
+    const card = expandedCardRef.current;
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const focusable = () =>
+      Array.from(
+        card?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setExpandedId(undefined);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("keydown", handleKeyboard);
+    const focusFrame = window.requestAnimationFrame(() => {
+      card
+        ?.querySelector<HTMLElement>('[data-full-preview-close="true"]')
+        ?.focus();
+    });
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previous;
-      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("keydown", handleKeyboard);
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
     };
   }, [expandedId]);
 
@@ -271,13 +311,24 @@ export function FirstBuildReview({
             <article
               className={`${styles.card}${expanded ? ` ${styles.expandedCard}` : ""}`}
               key={preset.id}
+              ref={expanded ? expandedCardRef : undefined}
+              role={expanded ? "dialog" : undefined}
+              aria-modal={expanded ? true : undefined}
+              aria-labelledby={
+                expanded ? `design-title-${preset.id}` : undefined
+              }
+              aria-describedby={
+                expanded ? `design-description-${preset.id}` : undefined
+              }
             >
               <div className={styles.cardTop}>
                 <span className={styles.badge}>
                   {rank === 1 ? "Rank 1 · Recommended" : "Rank " + rank}
                 </span>
-                <strong>{preset.name}</strong>
-                <small>{preset.description}</small>
+                <strong id={`design-title-${preset.id}`}>{preset.name}</strong>
+                <small id={`design-description-${preset.id}`}>
+                  {preset.description}
+                </small>
                 <div
                   className={styles.signature}
                   aria-label={`${preset.theme.family} design system, ${preset.typographyStrategy} typography, ${preset.theme.brand.density} density`}
@@ -340,6 +391,7 @@ export function FirstBuildReview({
                   <button
                     type="button"
                     aria-expanded={expanded}
+                    data-full-preview-close={expanded ? "true" : undefined}
                     onClick={() =>
                       setExpandedId(expanded ? undefined : preset.id)
                     }

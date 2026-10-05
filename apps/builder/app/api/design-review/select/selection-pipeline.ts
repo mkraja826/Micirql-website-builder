@@ -36,7 +36,9 @@ export function applySelectedDentalCandidate(
   const provenance = generation?.brandProvenance;
   const currentLogo = site.theme.brand.logoAssetId;
 
-  const next = applyIndustryPreset(site, preset);
+  const next = applyIndustryPreset(site, preset, {
+    applyCertifiedMedia: false,
+  });
   next.generation = {
     ...(generation ?? {
       catalogVersion:
@@ -456,7 +458,9 @@ function duplicateHeadingIssues(site: Site): CompositionGateIssue[] {
   for (const page of site.pages) {
     const seen = new Map<string, string>();
     for (const section of page.sections) {
-      const family = sectionFamilyFromComponentId(section.component.componentId);
+      const family = sectionFamilyFromComponentId(
+        section.component.componentId,
+      );
       if (family === "navbar" || family === "footer") continue;
       const heading =
         stringValue(section.props.heading) ?? stringValue(section.props.title);

@@ -4,6 +4,7 @@ import {
   DENTAL_CATALOG_VERSION,
   listIndustryDesignPresets,
 } from "../../../industry-design-preset-data";
+import { applyCertifiedDentalMedia } from "../../../apply-industry-preset";
 import {
   getSupabaseDraft,
   saveSupabaseDraft,
@@ -238,43 +239,30 @@ export async function POST(request: NextRequest) {
 
     let imageResult: FunctionResult | undefined;
     if (contentResult.ok && !contentFallback && !protectedContentMutation) {
-      imageResult = await invokeFunction(url, headers, "generate-site-images", {
-        workspace_id: input.workspaceId,
-        site_id: input.siteId,
-        build_id: optionalString(profile.build_id),
-      });
-      if (!imageResult.ok && imageResult.issue) {
-        pipelineIssues.push(imageResult.issue);
+      const mediaSnapshot = applyCertifiedDentalMedia(
+        saved.snapshot,
+        candidate,
+      );
+      if (protectedStructureChanged(saved.snapshot, mediaSnapshot)) {
+        pipelineIssues.push({
+          code: "IMAGERY_MUTATED_PROTECTED_STRUCTURE",
+          message:
+            "Certified imagery changed protected structure, branding, bindings, or business identity. The editor remains blocked.",
+          severity: "error",
+        });
       } else {
-        saved = await reloadSelectedDraft(
-          request,
-          input.workspaceId,
-          input.siteId,
-        );
-        if (protectedStructureChanged(selectedSnapshot, saved.snapshot)) {
-          pipelineIssues.push({
-            code: "IMAGERY_MUTATED_PROTECTED_STRUCTURE",
-            message:
-              "Image generation changed protected structure, branding, bindings, or business identity. The editor remains blocked.",
-            severity: "error",
-          });
-          saved = await saveSupabaseDraft(request, {
-            snapshot: restoreProtectedStructure(
-              selectedSnapshot,
-              saved.snapshot,
-            ),
-            expectedRevision: saved.revision,
-          });
-        }
-        const warning = optionalString(imageResult.payload?.warning);
-        if (warning) {
-          pipelineIssues.push({
-            code: "IMAGE_GENERATION_INCOMPLETE",
-            message:
-              "Image generation did not fill every required slot. Configure a credential authorized for the production image endpoint and model, then retry selection.",
-            severity: "error",
-          });
-        }
+        saved = await saveSupabaseDraft(request, {
+          snapshot: mediaSnapshot,
+          expectedRevision: saved.revision,
+        });
+        imageResult = {
+          ok: true,
+          status: 200,
+          payload: {
+            mode: "licensed-selection",
+            provider: "pexels",
+          },
+        };
       }
     }
 
@@ -567,14 +555,12 @@ function functionIssue(
     status === 503 ||
     /AUTH|CREDENTIAL|PROVIDER|CONFIG|PERMISSION/i.test(remoteCode);
   return {
-    code:
-      authorizationRequired
-        ? "CONTENT_GENERATION_AUTHORIZATION_REQUIRED"
-        : "CONTENT_GENERATION_FAILED",
-    message:
-      authorizationRequired
-        ? "Configure a server-side credential authorized for the production text-generation endpoint and configured model, then retry design selection."
-        : `Content generation failed (${status}). Retry selection after the content service is healthy.`,
+    code: authorizationRequired
+      ? "CONTENT_GENERATION_AUTHORIZATION_REQUIRED"
+      : "CONTENT_GENERATION_FAILED",
+    message: authorizationRequired
+      ? "Configure a server-side credential authorized for the production text-generation endpoint and configured model, then retry design selection."
+      : `Content generation failed (${status}). Retry selection after the content service is healthy.`,
     severity: "error",
   };
 }

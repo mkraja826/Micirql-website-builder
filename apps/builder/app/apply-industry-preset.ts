@@ -20,9 +20,14 @@ export const DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY = {
   restrained: "mi-dental-calm-clinic",
 } as const satisfies Record<ImageStrategy, string>;
 
+type ApplyIndustryPresetOptions = {
+  applyCertifiedMedia?: boolean;
+};
+
 export function applyIndustryPreset(
   site: Site,
   preset: IndustryDesignPreset,
+  options: ApplyIndustryPresetOptions = {},
 ): Site {
   const next = structuredClone(site);
   const currentLogoAssetId = next.theme.brand.logoAssetId;
@@ -48,26 +53,43 @@ export function applyIndustryPreset(
         componentId: sectionDesignId(preset.theme.family, family, variant),
         version: DENTAL_COMPONENT_VERSION,
       };
-      if (family === "hero" && shouldApplyDentalHero(section.props.image)) {
-        const assetId =
-          DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy];
-        const asset = demoAssetById(assetId);
-        if (!asset) {
-          throw new Error(`Missing certified dental hero asset ${assetId}.`);
-        }
-        section.props.image = {
-          assetId,
-          src: asset.originalUrl,
-          alt: asset.alt,
-          focalPoint: asset.focalPoint,
-          license: asset.license,
-          ...(asset.sourceReference
-            ? { sourceReference: asset.sourceReference }
-            : {}),
-        };
-      }
     }
     page.sections = orderSections(page.sections, preset.sectionOrder);
+  }
+  return options.applyCertifiedMedia === false
+    ? siteSchema.parse(next)
+    : applyCertifiedDentalMedia(next, preset);
+}
+
+export function applyCertifiedDentalMedia(
+  site: Site,
+  preset: IndustryDesignPreset,
+): Site {
+  const next = structuredClone(site);
+  const assetId = DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy];
+  const asset = demoAssetById(assetId);
+  if (!asset) {
+    throw new Error(`Missing certified dental hero asset ${assetId}.`);
+  }
+  for (const page of next.pages) {
+    for (const section of page.sections) {
+      const family = sectionFamilyFromComponentId(
+        section.component.componentId,
+      );
+      if (family !== "hero" || !shouldApplyDentalHero(section.props.image)) {
+        continue;
+      }
+      section.props.image = {
+        assetId,
+        src: asset.originalUrl,
+        alt: asset.alt,
+        focalPoint: asset.focalPoint,
+        license: asset.license,
+        ...(asset.sourceReference
+          ? { sourceReference: asset.sourceReference }
+          : {}),
+      };
+    }
   }
   return siteSchema.parse(next);
 }

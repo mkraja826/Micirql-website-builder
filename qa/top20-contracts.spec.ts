@@ -14,7 +14,11 @@ import {
   redoEditor,
   undoEditor,
 } from "@micirql/workspace";
-import { applyIndustryPreset } from "../apps/builder/app/apply-industry-preset";
+import {
+  DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY,
+  applyCertifiedDentalMedia,
+  applyIndustryPreset,
+} from "../apps/builder/app/apply-industry-preset";
 import {
   applySelectedDentalCandidate,
   protectedStructureChanged,
@@ -250,11 +254,15 @@ test.describe("flagship dental Top-20 contracts", () => {
       site: replacement,
     });
     expect(applied.present.site.theme.family).toBe(preset.theme.family);
-    expect(applied.present.site.generation?.selectedCandidateId).toBe(preset.id);
-    expect(applied.present.site.pages[0]?.sections[0]?.component.componentId)
-      .toContain("-NAV-");
-    expect(applied.present.site.pages[0]?.sections.at(-1)?.component.componentId)
-      .toContain("-FOOT-");
+    expect(applied.present.site.generation?.selectedCandidateId).toBe(
+      preset.id,
+    );
+    expect(
+      applied.present.site.pages[0]?.sections[0]?.component.componentId,
+    ).toContain("-NAV-");
+    expect(
+      applied.present.site.pages[0]?.sections.at(-1)?.component.componentId,
+    ).toContain("-FOOT-");
 
     const undone = undoEditor(applied);
     expect(undone.present.site).toEqual(source);
@@ -376,6 +384,37 @@ test.describe("flagship dental Top-20 contracts", () => {
     expect(restored.seoBlueprint).toEqual(selected.seoBlueprint);
     expect(restored.pages[0]!.sections[1]!.props.description).toBe(
       "Generated, schema-constrained copy.",
+    );
+  });
+
+  test("selection applies licensed dental media only after structure and content", () => {
+    const source = pearlDentalFixture();
+    const preset = dentalPresets()[0]!;
+    const hero = source.pages[0]!.sections.find(
+      (section) => section.component.componentId === "hero.placeholder",
+    )!;
+    const initialImage = {
+      assetId: "mi-dental-calm-clinic",
+      alt: "Bright empty dental office",
+      focalPoint: { x: 0.5, y: 0.5 },
+    };
+    hero.props.image = initialImage;
+
+    const selected = applySelectedDentalCandidate(source, preset);
+    const selectedHero = selected.pages[0]!.sections.find(
+      (section) => section.id === hero.id,
+    )!;
+    expect(selectedHero.props.image).toEqual(initialImage);
+
+    const withMedia = applyCertifiedDentalMedia(selected, preset);
+    const mediaHero = withMedia.pages[0]!.sections.find(
+      (section) => section.id === hero.id,
+    )!;
+    expect((mediaHero.props.image as { assetId?: string }).assetId).toBe(
+      DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy],
+    );
+    expect({ ...mediaHero.props, image: initialImage }).toEqual(
+      selectedHero.props,
     );
   });
 });

@@ -5,6 +5,7 @@ import {
   buildStaticProject,
   createStoredZip,
 } from "../apps/builder/app/api/publish/export-utils";
+import { demoAssetById } from "../apps/builder/app/demo-assets";
 
 const site: Site = {
   schemaVersion: "1.0.0",
@@ -147,10 +148,75 @@ test("static export contains every page, immutable identity and a valid ZIP enve
     files.find((file) => file.path === "index.html")!.bytes,
   );
   expect(home).toContain('content="version-7"');
+  expect(home).toContain('data-mi-theme="minimalist"');
+  expect(home).toContain('data-mi-density="comfortable"');
+  expect(home).toContain('data-section-theme="minimalist"');
+  expect(home).toContain("mi-section-theme--minimalist");
   expect(home).not.toContain("must-not-export");
   const zip = createStoredZip(files);
   expect([...zip.slice(0, 4)]).toEqual([0x50, 0x4b, 0x03, 0x04]);
   expect(new TextDecoder().decode(zip)).toContain("site.schema.json");
+});
+
+test("static export preserves palette, typography and the selected composition identity", async () => {
+  const themedSite = structuredClone(site);
+  themedSite.theme.family = "glass";
+  themedSite.theme.modifiers = ["rounded"];
+  themedSite.theme.brand.colors.primary = "#8a2be2";
+  themedSite.theme.brand.colors.secondary = "#14213d";
+  themedSite.theme.brand.colors.accent = "#fca311";
+  themedSite.theme.brand.typography = {
+    display: "Charter",
+    body: "Candara",
+    ui: "Segoe UI",
+  };
+  themedSite.theme.brand.density = "compact";
+  themedSite.theme.brand.shape = "soft";
+  themedSite.theme.brand.motion = "rich";
+  themedSite.pages[0]!.sections[0]!.component.componentId = "GLS-HERO-002";
+
+  const files = await buildStaticProject({
+    published: { ...published, snapshot: themedSite },
+    requestOrigin: "https://builder.micirql.com",
+  });
+  const decode = (path: string) =>
+    new TextDecoder().decode(files.find((file) => file.path === path)!.bytes);
+  const home = decode("index.html");
+  const css = decode("assets/site.css");
+
+  expect(home).toContain('data-mi-theme="glass"');
+  expect(home).toContain('data-mi-density="compact"');
+  expect(home).toContain('data-mi-shape="soft"');
+  expect(home).toContain('data-mi-motion="rich"');
+  expect(home).toContain('data-section-variant="2"');
+  expect(home).toContain("mi-section-theme--glass");
+  expect(home).toContain("mi-section-variant--2");
+  expect(home).toContain("mi-section__composition mi-split");
+  expect(css).toContain("--mi-color-primary:#8a2be2;");
+  expect(css).toContain("--mi-color-secondary:#14213d;");
+  expect(css).toContain("--mi-color-accent:#fca311;");
+  expect(css).toContain("--mi-font-display:Charter;");
+  expect(css).toContain("--mi-font-body:Candara;");
+  expect(css).toContain("--mi-section-space:clamp(3rem,6vw,5rem);");
+  expect(css).toContain("--mi-radius-card:1.75rem;");
+  expect(css).toContain("--mi-motion-standard:360ms;");
+  expect(css).toContain(
+    '.mi-section-variant--2[data-section-family="hero"] .mi-section__composition',
+  );
+  for (const family of [
+    "minimalist",
+    "corporate",
+    "luxury",
+    "editorial",
+    "glass",
+    "maximalist",
+    "organic",
+    "futuristic",
+    "playful",
+    "cinematic",
+  ]) {
+    expect(css).toContain(`.mi-section-theme--${family}`);
+  }
 });
 
 test("static forms block until the public MiCirql function gateway is configured", async () => {
@@ -164,4 +230,60 @@ test("static forms block until the public MiCirql function gateway is configured
       requestOrigin: "https://builder.micirql.com",
     }),
   ).rejects.toMatchObject({ code: "PUBLIC_FUNCTION_GATEWAY_NOT_CONFIGURED" });
+});
+
+test("certified Pexels media keeps licensing provenance and exports without a broad host exception", async () => {
+  const asset = demoAssetById("mi-dental-calm-clinic");
+  expect(asset).toBeDefined();
+  const withLicensedMedia = structuredClone(site);
+  withLicensedMedia.pages[0]!.sections[0]!.props.image = {
+    assetId: asset!.id,
+    src: asset!.originalUrl,
+    alt: asset!.alt,
+    focalPoint: asset!.focalPoint,
+    license: asset!.license,
+    sourceReference: asset!.sourceReference,
+  };
+
+  const portable = buildPortableExport({
+    ...published,
+    snapshot: withLicensedMedia,
+  });
+  expect(portable.manifest.assets[0]).toMatchObject({
+    assetId: asset!.id,
+    source: "micirql-placeholder",
+    license: "licensed",
+    sourceReference: asset!.sourceReference,
+  });
+
+  const originalFetch = globalThis.fetch;
+  let fetchedUrl = "";
+  globalThis.fetch = async (input) => {
+    fetchedUrl = String(input);
+    return new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), {
+      status: 200,
+      headers: { "content-type": "image/jpeg", "content-length": "4" },
+    });
+  };
+  try {
+    const files = await buildStaticProject({
+      published: { ...published, snapshot: withLicensedMedia },
+      requestOrigin: "https://builder.micirql.com",
+    });
+    expect(fetchedUrl).toBe(asset!.originalUrl);
+    expect(files.map((file) => file.path)).toContain(
+      "assets/media/mi-dental-calm-clinic-1.jpg",
+    );
+    const manifest = JSON.parse(
+      new TextDecoder().decode(
+        files.find((file) => file.path === "assets/manifest.json")!.bytes,
+      ),
+    ) as { assets: Array<Record<string, unknown>> };
+    expect(manifest.assets[0]).toMatchObject({
+      license: "licensed",
+      sourceReference: asset!.sourceReference,
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

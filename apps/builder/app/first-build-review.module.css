@@ -28,15 +28,15 @@
   line-height: 1.55;
 }
 .grid {
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
 }
 .card {
   display: grid;
-  grid-template-rows: auto minmax(440px, 1fr) auto;
+  grid-template-rows: auto 720px auto;
   min-width: 0;
   border: 1px solid #2b2b33;
   border-radius: 18px;
@@ -65,13 +65,97 @@
   color: #9999a4;
   line-height: 1.4;
 }
+.signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+}
+.signature > span:not(.swatches):not(.typeSample) {
+  padding: 4px 7px;
+  border: 1px solid #34343d;
+  border-radius: 999px;
+  color: #c8c8d0;
+  font-size: 0.67rem;
+  text-transform: capitalize;
+}
+.typeSample {
+  min-width: 38px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #fff;
+}
+.swatches {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #3a3a43;
+  border-radius: 999px;
+}
+.swatches i {
+  width: 18px;
+  height: 18px;
+}
+.cardTop .fit {
+  color: #777783;
+}
 .preview {
   min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+  overscroll-behavior: contain;
   background: #f7f7f8;
+  scrollbar-color: #6d5dfc #ededf0;
 }
-.preview > .renderer-preview-stage {
+.previewCanvas {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.previewCanvas > .renderer-preview-stage {
+  min-width: 0;
+}
+.previewToolbar {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #d9d9df;
+  background: #f4f4f7;
+  color: #24242a;
+}
+.previewToolbar > div {
+  display: flex;
+  gap: 4px;
+}
+.previewToolbar button {
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid #ceced6;
+  border-radius: 8px;
+  background: #fff;
+  color: #33333b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.previewToolbar .activeViewport {
+  border-color: #6657e8;
+  background: #e9e6ff;
+  color: #32248e;
+}
+.expandedCard {
+  position: fixed;
+  inset: 16px;
+  z-index: 100;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border-color: #6657e8;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 0.72);
 }
 .actions {
   padding: 14px;
@@ -148,15 +232,15 @@
   text-align: center;
   font-size: 0.82rem;
 }
-@media (max-width: 1280px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
   }
+  .card {
+    grid-template-rows: auto 760px auto;
+  }
+}
+@media (max-width: 800px) {
   .card {
     grid-template-rows: auto 520px auto;
   }
@@ -170,5 +254,16 @@
   }
   .card {
     grid-template-rows: auto 440px auto;
+  }
+  .expandedCard {
+    inset: 0;
+    border-radius: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .previewToolbar {
+    align-items: stretch;
+  }
+  .previewToolbar button {
+    padding-inline: 8px;
   }
 }

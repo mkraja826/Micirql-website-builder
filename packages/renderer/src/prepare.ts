@@ -22,16 +22,28 @@ export async function preparePage(args: {
   if (!parsedSite.success) {
     return {
       ok: false,
-      issues: [{ code: "INVALID_SITE", message: "The site snapshot failed schema validation." }],
+      issues: [
+        {
+          code: "INVALID_SITE",
+          message: "The site snapshot failed schema validation.",
+        },
+      ],
     };
   }
 
   const site = parsedSite.data;
-  const page = site.pages.find((candidate) => candidate.path === normalizePath(args.path));
+  const page = site.pages.find(
+    (candidate) => candidate.path === normalizePath(args.path),
+  );
   if (!page) {
     return {
       ok: false,
-      issues: [{ code: "PAGE_NOT_FOUND", message: `No page is registered for ${normalizePath(args.path)}.` }],
+      issues: [
+        {
+          code: "PAGE_NOT_FOUND",
+          message: `No page is registered for ${normalizePath(args.path)}.`,
+        },
+      ],
     };
   }
 
@@ -42,7 +54,10 @@ export async function preparePage(args: {
   for (const section of page.sections) {
     if (section.hidden) continue;
 
-    const resolved = await args.registry.resolve(section.component.componentId, section.component.version);
+    const resolved = await args.registry.resolve(
+      section.component.componentId,
+      section.component.version,
+    );
     if (!resolved) {
       issues.push({
         code: "COMPONENT_NOT_FOUND",
@@ -92,8 +107,23 @@ export async function preparePage(args: {
         siteId: site.siteId,
         actionId: binding.actionId,
       });
-      if (["submit", "lead", "appointment", "reservation", "quote", "propertyEnquiry", "demo", "booking", "enrollment"].includes(bindingName)) {
-        props.formAction = args.functions.endpointFor({ siteId: site.siteId, actionId: binding.actionId });
+      if (
+        [
+          "submit",
+          "lead",
+          "appointment",
+          "reservation",
+          "quote",
+          "propertyEnquiry",
+          "demo",
+          "booking",
+          "enrollment",
+        ].includes(bindingName)
+      ) {
+        props.formAction = args.functions.endpointFor({
+          siteId: site.siteId,
+          actionId: binding.actionId,
+        });
       }
     }
 
@@ -105,6 +135,9 @@ export async function preparePage(args: {
   const theme = resolveTheme({
     family: site.theme.family,
     modifiers: site.theme.modifiers,
+    density: site.theme.brand.density,
+    shape: site.theme.brand.shape,
+    motion: site.theme.brand.motion,
     colors: {
       primary: site.theme.brand.colors.primary,
       primaryContrast: contrastFor(site.theme.brand.colors.primary),

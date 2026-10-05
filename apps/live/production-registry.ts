@@ -29,6 +29,7 @@ export function createLiveProductionRegistry(): RendererRegistry {
     ) {
       return createElement(SeedSection, {
         family: seed.family,
+        theme: seed.theme,
         variant: seed.variant,
         props: props as unknown as UniversalSectionProps,
       });

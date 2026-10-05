@@ -1,10 +1,16 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Card, Gallery, NavigationMenu, Stats } from "@micirql/components";
 import { Container, Stack, Typography } from "@micirql/primitives";
+import type { ThemeFamily } from "@micirql/schema";
 import type { SectionFamily, SectionVariant } from "./catalog";
 
 type Action = { label: string; href: string };
-type Item = { title: string; description?: string; image?: string; href?: string };
+type Item = {
+  title: string;
+  description?: string;
+  image?: string;
+  href?: string;
+};
 type FooterLink = { label: string; href: string };
 
 type ImageReference = {
@@ -212,11 +218,14 @@ function HeroSection(props: UniversalSectionProps) {
   );
 }
 
-function StandardSection(props: UniversalSectionProps) {
+function StandardSection({
+  family,
+  ...props
+}: UniversalSectionProps & { family: SectionFamily }) {
   return (
-    <section className="mi-section">
+    <section className={`mi-section mi-section--${family}`}>
       <Container>
-        <Stack gap="xl">
+        <Stack gap="xl" className="mi-section__composition">
           <Heading {...props} />
           <ItemGrid items={props.items ?? []} />
           <Actions {...props} />
@@ -233,9 +242,9 @@ function StatsSection(props: UniversalSectionProps) {
     ...(item.description === undefined ? {} : { detail: item.description }),
   }));
   return (
-    <section className="mi-section">
+    <section className="mi-section mi-section--process">
       <Container>
-        <Stack gap="xl">
+        <Stack gap="xl" className="mi-section__composition">
           <Heading {...props} />
           <Stats items={statItems} />
         </Stack>
@@ -249,9 +258,9 @@ function GallerySection(props: UniversalSectionProps) {
     .filter((item): item is Item & { image: string } => Boolean(item.image))
     .map((item) => ({ src: item.image, alt: item.title }));
   return (
-    <section className="mi-section">
+    <section className="mi-section mi-section--gallery">
       <Container>
-        <Stack gap="xl">
+        <Stack gap="xl" className="mi-section__composition">
           <Heading {...props} />
           {galleryItems.length ? (
             <Gallery items={galleryItems} />
@@ -266,7 +275,7 @@ function GallerySection(props: UniversalSectionProps) {
 
 function ContactSection(props: UniversalSectionProps) {
   return (
-    <section className="mi-section">
+    <section className="mi-section mi-section--contact">
       <Container>
         <div className="mi-section__layout">
           <Heading {...props} />
@@ -302,10 +311,12 @@ function ContactSection(props: UniversalSectionProps) {
 }
 
 function FooterSection(props: UniversalSectionProps) {
-  const links = props.footerLinks ?? (props.items ?? []).map((item, index) => ({
-    label: item.title,
-    href: item.description ?? `#section-${index + 1}`,
-  }));
+  const links =
+    props.footerLinks ??
+    (props.items ?? []).map((item, index) => ({
+      label: item.title,
+      href: item.description ?? `#section-${index + 1}`,
+    }));
   return (
     <footer className="mi-section mi-section--footer">
       <Container>
@@ -322,15 +333,26 @@ function FooterSection(props: UniversalSectionProps) {
               </p>
             ) : null}
           </div>
-          {links.length ? <nav aria-label="Footer links">
-            {links.map((item, index) => (
-              <a key={`${item.label}-${index}`} href={safeFooterHref(item.href)}>
-                <InlineField path={`footerLinks.${index}.label`}>{item.label}</InlineField>
-              </a>
-            ))}
-          </nav> : null}
+          {links.length ? (
+            <nav aria-label="Footer links">
+              {links.map((item, index) => (
+                <a
+                  key={`${item.label}-${index}`}
+                  href={safeFooterHref(item.href)}
+                >
+                  <InlineField path={`footerLinks.${index}.label`}>
+                    {item.label}
+                  </InlineField>
+                </a>
+              ))}
+            </nav>
+          ) : null}
         </div>
-        {props.copyright ? <p className="mi-footer__copyright"><InlineField path="copyright">{props.copyright}</InlineField></p> : null}
+        {props.copyright ? (
+          <p className="mi-footer__copyright">
+            <InlineField path="copyright">{props.copyright}</InlineField>
+          </p>
+        ) : null}
       </Container>
     </footer>
   );
@@ -350,32 +372,35 @@ const renderers: Record<
 > = {
   navbar: NavbarSection,
   hero: HeroSection,
-  about: StandardSection,
-  services: StandardSection,
-  features: StandardSection,
+  about: (props) => <StandardSection {...props} family="about" />,
+  services: (props) => <StandardSection {...props} family="services" />,
+  features: (props) => <StandardSection {...props} family="features" />,
   process: StatsSection,
-  testimonials: StandardSection,
+  testimonials: (props) => <StandardSection {...props} family="testimonials" />,
   gallery: GallerySection,
-  team: StandardSection,
-  cta: StandardSection,
+  team: (props) => <StandardSection {...props} family="team" />,
+  cta: (props) => <StandardSection {...props} family="cta" />,
   contact: ContactSection,
   footer: FooterSection,
 };
 
 export function SeedSection({
   family,
+  theme,
   variant,
   props,
 }: {
   family: SectionFamily;
+  theme: ThemeFamily;
   variant: SectionVariant;
   props: UniversalSectionProps;
 }) {
   const Renderer = renderers[family];
   return (
     <div
-      className={`mi-section-variant mi-section-variant--${variant}`}
+      className={`mi-section-variant mi-section-variant--${variant} mi-section-theme mi-section-theme--${theme}`}
       data-section-family={family}
+      data-section-theme={theme}
       data-section-variant={variant}
     >
       <Renderer {...props} />

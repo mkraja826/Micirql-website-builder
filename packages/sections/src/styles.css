@@ -410,7 +410,6 @@
   justify-content: center;
 }
 
-
 /* Generated-site navbar contract: burger below 1024px, full navigation at 1024px+. */
 @media (min-width: 48rem) and (max-width: 63.99rem) {
   .mi-navbar {
@@ -436,5 +435,543 @@
 
   .mi-section--hero .mi-section__layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Certified dental composition identities.
+ * Component IDs encode both a theme family and a structural variant; this
+ * layer makes those identities visible instead of reducing them to token-only
+ * recolors. Every rule remains content-agnostic and works for future briefs.
+ */
+.mi-section-theme {
+  position: relative;
+  isolation: isolate;
+}
+.mi-section-theme:nth-child(even) .mi-section {
+  background: var(--mi-color-surface-elevated);
+}
+.mi-section-theme .mi-section {
+  position: relative;
+  overflow: clip;
+}
+.mi-section-theme .mi-type--eyebrow {
+  width: max-content;
+  max-width: 100%;
+  color: var(--mi-color-primary);
+}
+.mi-section-theme .mi-section__action {
+  transition:
+    transform var(--mi-motion-fast) ease,
+    box-shadow var(--mi-motion-fast) ease,
+    background-color var(--mi-motion-fast) ease;
+}
+.mi-section-theme .mi-section__action:hover {
+  transform: translateY(calc(var(--mi-motion-distance, 8px) * -0.18));
+  box-shadow: var(--mi-shadow-control);
+}
+.mi-section-theme .mi-section__composition {
+  position: relative;
+}
+.mi-section-theme
+  :is(.mi-type--display, .mi-type--h1, .mi-type--h2, .mi-type--h3) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* Variant two changes information architecture, not just decoration. */
+.mi-section-variant--2[data-section-family="hero"] .mi-section__layout {
+  grid-template-columns: minmax(0, 1.12fr) minmax(18rem, 0.88fr);
+}
+.mi-section-variant--2[data-section-family="hero"] .mi-section__media {
+  order: -1;
+}
+.mi-section-variant--2[data-section-family="contact"] .mi-section__heading {
+  order: 2;
+  justify-self: end;
+}
+.mi-section-variant--2[data-section-family="contact"] .mi-section__form,
+.mi-section-variant--2[data-section-family="contact"]
+  .mi-section__layout
+  > div:last-child {
+  order: 1;
+}
+.mi-section-variant--2[data-section-family="footer"] .mi-footer {
+  grid-template-columns: 1fr;
+}
+.mi-section-variant--2[data-section-family="footer"] .mi-footer nav {
+  justify-content: flex-start;
+}
+
+/* Minimalist — typographic calm, hairlines and deliberate negative space. */
+.mi-section-theme--minimalist .mi-section__card {
+  min-height: 0;
+  padding: var(--mi-space-lg) 0;
+  border: 0;
+  border-top: 1px solid var(--mi-color-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mi-section-theme--minimalist .mi-section__grid {
+  column-gap: clamp(1.5rem, 4vw, 4rem);
+}
+.mi-section-theme--minimalist[data-section-family="hero"] .mi-section__media {
+  border-radius: 0;
+  box-shadow: none;
+}
+.mi-section-theme--minimalist .mi-section__action--secondary {
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 0.35em;
+}
+
+/* Corporate — strong alignment, blue-chip bands and disciplined cards. */
+.mi-section-theme--corporate[data-section-family="hero"] .mi-section {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mi-color-primary) 9%, transparent),
+      transparent 62%
+    ),
+    var(--mi-color-surface);
+}
+.mi-section-theme--corporate .mi-section__heading {
+  padding-left: var(--mi-space-lg);
+  border-left: 4px solid var(--mi-color-primary);
+}
+.mi-section-theme--corporate .mi-section__card {
+  border-top: 4px solid var(--mi-color-primary);
+  border-radius: calc(var(--mi-radius-card) * 0.65);
+  box-shadow: none;
+}
+.mi-section-theme--corporate[data-section-family="process"] .mi-stat {
+  border-bottom: 4px solid var(--mi-color-accent);
+}
+
+/* Luxury — restrained serif scale, fine rules and gallery-first pacing. */
+.mi-section-theme--luxury .mi-type--display,
+.mi-section-theme--luxury .mi-type--h2 {
+  font-weight: 420;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+.mi-section-theme--luxury .mi-type--eyebrow {
+  letter-spacing: 0.22em;
+}
+.mi-section-theme--luxury .mi-section__card {
+  min-height: 0;
+  padding-inline: 0;
+  border: 0;
+  border-top: 1px solid
+    color-mix(in srgb, var(--mi-color-accent) 62%, var(--mi-color-border));
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mi-section-theme--luxury[data-section-family="hero"] .mi-section__media {
+  min-height: clamp(28rem, 62vw, 44rem);
+}
+.mi-section-theme--luxury[data-section-family="hero"] .mi-section__media img {
+  height: 100%;
+  aspect-ratio: 3 / 4;
+}
+.mi-section-theme--luxury .mi-section__action--primary {
+  padding-inline: 1.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Editorial — magazine columns, visible rules and content-led rhythm. */
+.mi-section-theme--editorial .mi-section__heading {
+  max-width: 50rem;
+}
+.mi-section-theme--editorial .mi-type--display {
+  font-weight: 520;
+  line-height: 0.94;
+}
+.mi-section-theme--editorial .mi-section__card {
+  min-height: 0;
+  padding: var(--mi-space-lg) 0;
+  border: 0;
+  border-top: 2px solid var(--mi-color-text);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mi-section-theme--editorial .mi-section__card-index {
+  color: var(--mi-color-accent);
+}
+.mi-section-theme--editorial[data-section-family="hero"] .mi-section__layout {
+  align-items: end;
+}
+.mi-section-theme--editorial[data-section-family="hero"] .mi-section__media {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Glass — layered light, translucent panels and depth. */
+.mi-section-theme--glass .mi-section {
+  background:
+    radial-gradient(
+      circle at 88% 12%,
+      color-mix(in srgb, var(--mi-color-accent) 18%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 12% 90%,
+      color-mix(in srgb, var(--mi-color-primary) 12%, transparent),
+      transparent 38%
+    ),
+    var(--mi-color-surface);
+}
+.mi-section-theme--glass .mi-section__card,
+.mi-section-theme--glass .mi-stat,
+.mi-section-theme--glass .mi-section__form {
+  border: 1px solid color-mix(in srgb, var(--mi-color-border) 66%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--mi-color-surface-elevated) 78%,
+    transparent
+  );
+  box-shadow: var(--mi-shadow-card);
+  backdrop-filter: blur(var(--mi-backdrop-blur, 18px));
+}
+.mi-section-theme--glass .mi-section__form {
+  padding: var(--mi-space-lg);
+  border-radius: var(--mi-radius-card);
+}
+.mi-section-theme--glass[data-section-family="hero"] .mi-section__media {
+  transform: perspective(70rem) rotateY(-3deg) rotateX(1deg);
+}
+
+/* Maximalist — graphic blocks, heavy display type and tactile controls. */
+.mi-section-theme--maximalist .mi-type--display {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+}
+.mi-section-theme--maximalist .mi-section__card {
+  border: 2px solid var(--mi-color-text);
+  background: var(--mi-color-surface-elevated);
+  box-shadow: 0.55rem 0.55rem 0
+    color-mix(in srgb, var(--mi-color-accent) 76%, var(--mi-color-text));
+}
+.mi-section-theme--maximalist .mi-section__action--primary {
+  border: 2px solid var(--mi-color-text);
+  box-shadow: 0.3rem 0.3rem 0 var(--mi-color-text);
+}
+.mi-section-theme--maximalist[data-section-family="hero"] .mi-section {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--mi-color-accent) 24%, transparent) 0 30%,
+      transparent 30% 100%
+    ),
+    var(--mi-color-surface);
+}
+
+/* Organic — soft layers, asymmetric curves and generous human spacing. */
+.mi-section-theme--organic .mi-section {
+  margin: clamp(0.25rem, 1vw, 0.75rem);
+  border-radius: clamp(1.5rem, 5vw, 4rem);
+}
+.mi-section-theme--organic .mi-section__card {
+  border-color: transparent;
+  border-radius: clamp(1.5rem, 4vw, 3rem);
+}
+.mi-section-theme--organic .mi-section__card:nth-child(even) {
+  border-radius: 3rem 1.25rem 3rem 1.25rem;
+}
+.mi-section-theme--organic[data-section-family="hero"] .mi-section__media,
+.mi-section-theme--organic[data-section-family="hero"]
+  .mi-section__visual-mark {
+  border-radius: 44% 56% 38% 62% / 54% 40% 60% 46%;
+}
+.mi-section-theme--organic .mi-section__action--primary {
+  padding-inline: 1.4rem;
+  border-radius: 999px;
+}
+
+/* Futuristic — technical grid, precise labels and illuminated edges. */
+.mi-section-theme--futuristic .mi-section {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--mi-color-border) 32%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mi-color-border) 32%, transparent) 1px,
+      transparent 1px
+    ),
+    var(--mi-color-surface);
+  background-size: 2.25rem 2.25rem;
+}
+.mi-section-theme--futuristic .mi-type--eyebrow,
+.mi-section-theme--futuristic .mi-section__card-index {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.mi-section-theme--futuristic .mi-section__card {
+  border-color: color-mix(
+    in srgb,
+    var(--mi-color-accent) 50%,
+    var(--mi-color-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--mi-color-surface-elevated) 92%,
+    transparent
+  );
+  clip-path: polygon(
+    0 0,
+    calc(100% - 1.1rem) 0,
+    100% 1.1rem,
+    100% 100%,
+    0 100%
+  );
+}
+.mi-section-theme--futuristic .mi-section__action--primary {
+  box-shadow: 0 0 2rem
+    color-mix(in srgb, var(--mi-color-accent) 28%, transparent);
+}
+
+/* Playful — lively rhythm without sacrificing clinic credibility. */
+.mi-section-theme--playful .mi-section {
+  background:
+    radial-gradient(
+        circle,
+        color-mix(in srgb, var(--mi-color-accent) 24%, transparent) 1.5px,
+        transparent 1.6px
+      )
+      0 0 / 1.1rem 1.1rem,
+    var(--mi-color-surface);
+}
+.mi-section-theme--playful .mi-section__heading {
+  padding: var(--mi-space-lg);
+  border-radius: 2rem 2rem 0.75rem 2rem;
+  background: var(--mi-color-surface-elevated);
+}
+.mi-section-theme--playful .mi-section__card {
+  border-width: 2px;
+  border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
+  box-shadow: 0.35rem 0.35rem 0
+    color-mix(in srgb, var(--mi-color-accent) 34%, transparent);
+}
+.mi-section-theme--playful .mi-section__card:nth-child(even) {
+  margin-top: var(--mi-space-lg);
+  border-radius: 0.5rem 1.5rem 1.5rem 1.5rem;
+}
+.mi-section-theme--playful .mi-section__action--primary {
+  border-radius: 999px;
+}
+
+/* Cinematic — full-bleed visual storytelling with protected readability. */
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-section {
+  --mi-color-text: #f8fbfb;
+  --mi-color-text-muted: #d8e3e3;
+  min-height: min(52rem, 92svh);
+  padding-block: 0;
+  background: #07171c;
+}
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-type--eyebrow {
+  color: #bfeee8;
+}
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-container {
+  width: 100%;
+  max-width: none;
+}
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-section__layout {
+  min-height: min(52rem, 92svh);
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "cinema";
+  align-items: end;
+}
+.mi-section-theme--cinematic[data-section-family="hero"]
+  .mi-section__layout
+  > * {
+  grid-area: cinema;
+}
+.mi-section-theme--cinematic[data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  z-index: 2;
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+  padding-block: clamp(4rem, 10vw, 8rem);
+}
+.mi-section-theme--cinematic[data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child
+  > * {
+  max-width: 48rem;
+}
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-section__media {
+  position: relative;
+  min-height: inherit;
+  border-radius: 0;
+  box-shadow: none;
+}
+.mi-section-theme--cinematic[data-section-family="hero"]
+  .mi-section__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(3 14 18 / 0.92) 0%,
+    rgb(3 14 18 / 0.52) 56%,
+    rgb(3 14 18 / 0.18) 100%
+  );
+}
+.mi-section-theme--cinematic[data-section-family="hero"]
+  .mi-section__media
+  img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  aspect-ratio: auto;
+}
+.mi-section-theme--cinematic .mi-type--display {
+  font-size: clamp(3.2rem, 10vw, 8rem);
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+.mi-section-theme--cinematic .mi-section__card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mi-section-theme--cinematic[data-section-family="gallery"]
+  .mi-gallery__item:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+@media (min-width: 48rem) {
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-section__composition {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.72fr) minmax(0, 1.28fr);
+    column-gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-section__heading {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-section__grid,
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-gallery,
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-stats {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-section__actions {
+    grid-column: 2;
+  }
+  .mi-section-variant--2[data-section-family="navbar"] .mi-navbar {
+    grid-template-areas: "nav cta brand";
+  }
+  .mi-section-variant--2[data-section-family="navbar"] .mi-navbar__brand {
+    justify-self: end;
+  }
+  .mi-section-theme--editorial[data-section-family="hero"] .mi-section__layout,
+  .mi-section-theme--luxury[data-section-family="hero"] .mi-section__layout {
+    grid-template-columns: minmax(0, 0.72fr) minmax(24rem, 1.28fr);
+  }
+  .mi-section-theme--playful .mi-section__grid {
+    align-items: start;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 71.99rem) {
+  .mi-section-theme .mi-type--display {
+    max-width: 100%;
+    font-size: clamp(3rem, 6vw, 4.25rem);
+    overflow-wrap: break-word;
+  }
+  .mi-section-variant--2:not([data-section-family="navbar"]):not(
+      [data-section-family="hero"]
+    ):not([data-section-family="contact"]):not([data-section-family="footer"])
+    .mi-type--h2 {
+    font-size: clamp(1.65rem, 3.6vw, 2.25rem);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .mi-navbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "nav brand"
+      "cta cta";
+    row-gap: var(--mi-space-sm);
+    padding-block: var(--mi-space-sm);
+  }
+  .mi-navbar__brand {
+    justify-self: end;
+    max-width: calc(100vw - 6rem);
+  }
+  .mi-navbar > .mi-section__action {
+    width: 100%;
+    max-width: none;
+    padding-inline: 1rem;
+  }
+  .mi-section-variant--2[data-section-family="hero"] .mi-section__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mi-section-variant--2[data-section-family="hero"] .mi-section__media,
+  .mi-section-variant--2[data-section-family="contact"] .mi-section__heading,
+  .mi-section-variant--2[data-section-family="contact"] .mi-section__form,
+  .mi-section-variant--2[data-section-family="contact"]
+    .mi-section__layout
+    > div:last-child {
+    order: initial;
+  }
+  .mi-section-theme--glass[data-section-family="hero"] .mi-section__media {
+    transform: none;
+  }
+  .mi-section-theme--playful .mi-section__card:nth-child(even) {
+    margin-top: 0;
+  }
+  .mi-section-theme--cinematic[data-section-family="hero"] .mi-section,
+  .mi-section-theme--cinematic[data-section-family="hero"] .mi-section__layout {
+    min-height: 38rem;
+  }
+  .mi-section-theme--cinematic[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    padding-block: 3.5rem;
+  }
+  .mi-section-theme--cinematic .mi-type--display {
+    font-size: clamp(2.7rem, 14vw, 4.8rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mi-section-theme .mi-section__action {
+    transition: none;
+  }
+  .mi-section-theme .mi-section__action:hover {
+    transform: none;
   }
 }

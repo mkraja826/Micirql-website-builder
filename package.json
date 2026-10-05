@@ -22,6 +22,7 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "latest",
     "prettier": "latest",
     "turbo": "latest",

@@ -1,4 +1,4 @@
-import type { ThemeFamily, ThemeModifier } from "@micirql/schema";
+import type { BrandTokens, ThemeFamily, ThemeModifier } from "@micirql/schema";
 
 export type ThemeTokens = {
   radiusControl: string;
@@ -43,6 +43,9 @@ export type BrandTypography = {
 export type ThemeRequest = {
   family: ThemeFamily;
   modifiers?: ThemeModifier[];
+  density?: BrandTokens["density"];
+  shape?: BrandTokens["shape"];
+  motion?: BrandTokens["motion"];
   colors: BrandColors;
   typography: BrandTypography;
 };

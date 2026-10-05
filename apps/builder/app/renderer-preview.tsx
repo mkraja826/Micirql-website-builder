@@ -236,6 +236,7 @@ export function RendererPreview({
                   ) : null}
                   <SeedSection
                     family={seed.family}
+                    theme={seed.theme}
                     variant={seed.variant}
                     props={
                       section.props as Parameters<

@@ -24,7 +24,11 @@ export function generateStaticParams() {
   return seedSectionCatalog.map((entry) => ({ designId: entry.id }));
 }
 
-export default async function DesignPreviewPage({ params }: { params: Promise<{ designId: string }> }) {
+export default async function DesignPreviewPage({
+  params,
+}: {
+  params: Promise<{ designId: string }>;
+}) {
   const { designId } = await params;
   const entry = seedSectionCatalog.find((item) => item.id === designId);
   if (!entry) notFound();
@@ -34,7 +38,8 @@ export default async function DesignPreviewPage({ params }: { params: Promise<{ 
     modifiers: [],
     colors: previewBrand,
     typography: {
-      display: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      display:
+        'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       body: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
   });
@@ -46,7 +51,12 @@ export default async function DesignPreviewPage({ params }: { params: Promise<{ 
       data-mi-family={entry.family}
       style={theme.cssVariables as CSSProperties}
     >
-      <SeedSection family={entry.family} variant={entry.variant} props={sectionPreviewProps} />
+      <SeedSection
+        family={entry.family}
+        theme={entry.theme}
+        variant={entry.variant}
+        props={sectionPreviewProps}
+      />
     </main>
   );
 }

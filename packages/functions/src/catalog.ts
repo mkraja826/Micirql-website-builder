@@ -7,7 +7,7 @@ const contactSchema = z
     email: z.string().trim().email().max(254).optional(),
     phone: z.string().trim().min(6).max(40).optional(),
     message: z.string().trim().max(4000).optional(),
-    consent: z.boolean().optional(),
+    consent: z.literal(true),
   })
   .refine((value) => Boolean(value.email || value.phone), {
     message: "At least one contact method is required.",
@@ -18,15 +18,25 @@ const createdOutputSchema = z.object({
   status: z.enum(["received", "queued"]),
 });
 
-const publicRateLimit = { limit: 8, windowSeconds: 600, key: "site-ip" as const };
-const newsletterRateLimit = { limit: 5, windowSeconds: 3600, key: "site-ip" as const };
+const publicRateLimit = {
+  limit: 8,
+  windowSeconds: 60,
+  key: "site-ip" as const,
+};
+const newsletterRateLimit = {
+  limit: 5,
+  windowSeconds: 60,
+  key: "site-ip" as const,
+};
 
 export const nativeFunctionCatalog = [
   {
     id: "lead.create",
     version: "1.0.0",
     description: "Capture a general website enquiry.",
-    input: contactSchema.extend({ sourcePage: z.string().startsWith("/").optional() }),
+    input: contactSchema.extend({
+      sourcePage: z.string().startsWith("/").optional(),
+    }),
     output: createdOutputSchema,
     access: "public",
     rateLimit: publicRateLimit,
@@ -37,7 +47,8 @@ export const nativeFunctionCatalog = [
   {
     id: "appointment.request",
     version: "1.0.0",
-    description: "Capture an appointment request without implying confirmed availability.",
+    description:
+      "Capture an appointment request without implying confirmed availability.",
     input: contactSchema.extend({
       service: z.string().trim().max(160).optional(),
       clinician: z.string().trim().max(160).optional(),
@@ -54,7 +65,8 @@ export const nativeFunctionCatalog = [
   {
     id: "reservation.request",
     version: "1.0.0",
-    description: "Capture a restaurant reservation request without confirming a table.",
+    description:
+      "Capture a restaurant reservation request without confirming a table.",
     input: contactSchema.extend({
       requestedDate: z.string().date(),
       requestedTime: z.string().trim().min(1).max(40),
@@ -86,7 +98,8 @@ export const nativeFunctionCatalog = [
   {
     id: "newsletter.subscribe",
     version: "1.0.0",
-    description: "Subscribe an email address to site updates after explicit consent.",
+    description:
+      "Subscribe an email address to site updates after explicit consent.",
     input: z.object({
       email: z.string().trim().email().max(254),
       consent: z.literal(true),
@@ -105,7 +118,9 @@ export const nativeFunctionCatalog = [
     description: "Capture an enquiry about a real-estate property or project.",
     input: contactSchema.extend({
       propertyId: z.string().trim().min(1).max(160),
-      enquiryType: z.enum(["details", "visit", "brochure", "callback"]).default("details"),
+      enquiryType: z
+        .enum(["details", "visit", "brochure", "callback"])
+        .default("details"),
     }),
     output: createdOutputSchema,
     access: "public",
@@ -132,7 +147,8 @@ export const nativeFunctionCatalog = [
   {
     id: "booking.request",
     version: "1.0.0",
-    description: "Capture a hospitality booking enquiry without confirming inventory.",
+    description:
+      "Capture a hospitality booking enquiry without confirming inventory.",
     input: contactSchema.extend({
       checkIn: z.string().date(),
       checkOut: z.string().date(),
@@ -152,7 +168,9 @@ export const nativeFunctionCatalog = [
     description: "Capture an education or training programme enquiry.",
     input: contactSchema.extend({
       course: z.string().trim().max(180).optional(),
-      deliveryMode: z.enum(["online", "in-person", "hybrid", "unsure"]).optional(),
+      deliveryMode: z
+        .enum(["online", "in-person", "hybrid", "unsure"])
+        .optional(),
     }),
     output: createdOutputSchema,
     access: "public",

@@ -12,6 +12,9 @@
   gap: var(--mi-space-xl);
   align-items: center;
 }
+.mi-section__layout > * {
+  min-width: 0;
+}
 .mi-section__media {
   margin: 0;
   overflow: hidden;
@@ -62,6 +65,7 @@
   color: var(--mi-color-text);
 }
 .mi-navbar {
+  position: relative;
   min-height: 4.5rem;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -79,6 +83,7 @@
   text-decoration: none;
 }
 .mi-navbar .mi-nav-menu {
+  position: static;
   grid-area: nav;
   grid-column: auto;
   grid-row: auto;
@@ -150,24 +155,42 @@
 .mi-section__form {
   display: grid;
   gap: var(--mi-space-md);
+  min-width: 0;
+  max-width: 100%;
 }
 .mi-section__form label {
   display: grid;
   gap: 0.4rem;
+  min-width: 0;
   font-weight: 650;
 }
 .mi-section__form input,
-.mi-section__form textarea {
+.mi-section__form textarea,
+.mi-section__form select {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   border: 1px solid var(--mi-color-border);
   border-radius: var(--mi-radius-control);
   background: var(--mi-color-surface);
   color: var(--mi-color-text);
   padding: 0.8rem;
+  font: inherit;
 }
 .mi-section__form textarea {
   min-height: 8rem;
+}
+.mi-section__form .mi-form__consent {
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+}
+.mi-section__form .mi-form__consent input[type="checkbox"] {
+  width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
 }
 .mi-section__form button {
   min-height: 44px;
@@ -176,6 +199,12 @@
   background: var(--mi-color-primary);
   color: var(--mi-color-primary-contrast);
   font-weight: 750;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+.mi-section__form button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 .mi-section-variant--2 .mi-section__heading {
   max-width: 34rem;
@@ -447,12 +476,18 @@
   position: relative;
   isolation: isolate;
 }
+.mi-section-theme[data-section-family="navbar"] {
+  z-index: 100;
+}
 .mi-section-theme:nth-child(even) .mi-section {
   background: var(--mi-color-surface-elevated);
 }
 .mi-section-theme .mi-section {
   position: relative;
   overflow: clip;
+}
+.mi-section-theme[data-section-family="navbar"] .mi-section {
+  overflow: visible;
 }
 .mi-section-theme .mi-type--eyebrow {
   width: max-content;

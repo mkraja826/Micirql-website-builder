@@ -1,5 +1,9 @@
 import type { Site, SitePage, SiteSection } from "@micirql/schema";
 import type { AssetRecord } from "@micirql/assets";
+import {
+  registeredPublicFunctionsOrigin,
+  selectPublicFormBinding,
+} from "@micirql/renderer";
 import { demoAssetById } from "../../demo-assets";
 import type { ExportablePublishedVersion } from "./published-version";
 import { PublishApiError } from "./authorization";
@@ -503,27 +507,15 @@ function resolvePublicFunctionsOrigin(
       "Set MICIRQL_PUBLIC_FUNCTIONS_ORIGIN to the registered public MiCirql form gateway before exporting a site with functional forms.",
     );
   }
-  let url: URL;
-  try {
-    url = new URL(configured);
-  } catch {
+  const origin = registeredPublicFunctionsOrigin(configured);
+  if (!origin) {
     throw new PublishApiError(
       503,
       "PUBLIC_FUNCTION_GATEWAY_INVALID",
-      "MICIRQL_PUBLIC_FUNCTIONS_ORIGIN is invalid.",
+      "MICIRQL_PUBLIC_FUNCTIONS_ORIGIN must be exactly https://forms.micirql.com.",
     );
   }
-  if (
-    url.protocol !== "https:" ||
-    (url.hostname !== "micirql.com" && !url.hostname.endsWith(".micirql.com"))
-  ) {
-    throw new PublishApiError(
-      503,
-      "PUBLIC_FUNCTION_GATEWAY_INVALID",
-      "MICIRQL_PUBLIC_FUNCTIONS_ORIGIN must be an HTTPS micirql.com endpoint.",
-    );
-  }
-  return url.origin;
+  return origin;
 }
 
 function renderStaticPage(input: {
@@ -603,7 +595,7 @@ function renderSection(
           href: itemHref(item) ?? "/",
         }))
       : site.navigation;
-    return `<header class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-navbar"><a class="mi-brand" href="/">${escapeHtml(title)}</a><button class="mi-menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">Menu</button><nav id="site-menu" class="mi-nav" aria-label="Primary">${navItems.map((item) => `<a href="${safeHref(item.href)}">${escapeHtml(item.label)}</a>`).join("")}</nav>${renderAction(props.primaryAction)}</div></header>`;
+    return `<header class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-navbar"><a class="mi-brand" href="/">${escapeHtml(title)}</a><button class="mi-menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open primary navigation"><span>Menu</span><span class="mi-menu-icon" aria-hidden="true"></span></button><nav id="site-menu" class="mi-nav" aria-label="Primary">${navItems.map((item) => `<a href="${safeHref(item.href)}">${escapeHtml(item.label)}</a>`).join("")}</nav>${renderAction(props.primaryAction)}</div></header>`;
   }
   if (family === "footer") {
     const links = list(props.footerLinks);
@@ -627,14 +619,70 @@ function renderForm(
   siteId: string,
   actionOrigin?: string,
 ): string {
-  const binding = Object.values(section.bindings)[0];
-  if (!binding || !actionOrigin) return "";
+  const selected = selectPublicFormBinding(
+    section.bindings,
+    typeof section.props.formBindingKey === "string"
+      ? section.props.formBindingKey
+      : undefined,
+  );
+  if (!selected || !actionOrigin) return "";
+  const { binding } = selected;
   const url = new URL(
     `/api/functions/${encodeURIComponent(binding.actionId)}`,
     actionOrigin,
   );
   url.searchParams.set("siteId", siteId);
-  return `<form class="mi-form" method="post" action="${escapeAttribute(url.toString())}"><label>Name<input name="name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Message<textarea name="message" required></textarea></label><button type="submit">Send enquiry</button></form>`;
+  const newsletter = binding.actionId === "newsletter.subscribe";
+  const identityFields = newsletter
+    ? ""
+    : '<label>Name<input name="name" maxlength="120" autocomplete="name" required></label><label>Phone (optional)<input name="phone" type="tel" minlength="6" maxlength="40" autocomplete="tel"></label>';
+  const message = newsletter
+    ? ""
+    : `<label>Message<textarea name="message" maxlength="4000"${binding.actionId === "lead.create" || binding.actionId === "appointment.request" ? " required" : ""}></textarea></label>`;
+  return `<form id="contact-form" class="mi-form" method="post" action="${escapeAttribute(url.toString())}"><label class="mi-form__honeypot" aria-hidden="true">Website<input name="_website" tabindex="-1" autocomplete="off"></label><input name="_idempotencyKey" type="hidden" value="">${identityFields}<label>Email<input name="email" type="email" maxlength="254" autocomplete="email" required></label>${staticActionFields(binding.actionId)}${message}<label class="mi-form__consent"><input name="consent" type="checkbox" value="true" required><span>${staticConsentText(binding.actionId)}</span></label><button type="submit">${staticSubmitLabel(binding.actionId)}</button></form>`;
+}
+
+function staticConsentText(actionId: string): string {
+  return actionId === "newsletter.subscribe"
+    ? "I agree to receive email updates from this business. I can unsubscribe at any time."
+    : "I agree that this business may use these details to respond to my request.";
+}
+
+function staticActionFields(actionId: string): string {
+  if (actionId === "appointment.request") {
+    return '<label>Service (optional)<input name="service" maxlength="160"></label><label>Preferred date (optional)<input name="preferredDate" type="date"></label><label>Preferred time (optional)<input name="preferredTime" type="time"></label>';
+  }
+  if (actionId === "reservation.request") {
+    return '<label>Requested date<input name="requestedDate" type="date" required></label><label>Requested time<input name="requestedTime" type="time" required></label><label>Party size<input name="partySize" type="number" min="1" max="100" required></label>';
+  }
+  if (actionId === "quote.request") {
+    return '<label>Service or project<input name="service" maxlength="160" required></label><label>Location (optional)<input name="location" maxlength="240"></label><label>Budget range (optional)<input name="budgetRange" maxlength="120"></label>';
+  }
+  if (actionId === "property.enquiry") {
+    return '<label>Property or project reference<input name="propertyId" maxlength="160" required></label><label>Enquiry type<select name="enquiryType"><option value="details">Request details</option><option value="visit">Arrange a visit</option><option value="brochure">Request a brochure</option><option value="callback">Request a callback</option></select></label>';
+  }
+  if (actionId === "demo.request") {
+    return '<label>Company (optional)<input name="company" maxlength="180" autocomplete="organization"></label><label>Role (optional)<input name="role" maxlength="120" autocomplete="organization-title"></label>';
+  }
+  if (actionId === "booking.request") {
+    return '<label>Check-in<input name="checkIn" type="date" required></label><label>Check-out<input name="checkOut" type="date" required></label><label>Guests<input name="guests" type="number" min="1" max="50" required></label><label>Room preference (optional)<input name="roomPreference" maxlength="160"></label>';
+  }
+  if (actionId === "enrollment.enquiry") {
+    return '<label>Course or programme (optional)<input name="course" maxlength="180"></label><label>Preferred delivery mode (optional)<select name="deliveryMode"><option value="unsure">Not sure yet</option><option value="online">Online</option><option value="in-person">In person</option><option value="hybrid">Hybrid</option></select></label>';
+  }
+  return "";
+}
+
+function staticSubmitLabel(actionId: string): string {
+  if (actionId === "appointment.request") return "Request appointment";
+  if (actionId === "reservation.request") return "Request reservation";
+  if (actionId === "quote.request") return "Request quote";
+  if (actionId === "newsletter.subscribe") return "Subscribe";
+  if (actionId === "property.enquiry") return "Send property enquiry";
+  if (actionId === "demo.request") return "Request demo";
+  if (actionId === "booking.request") return "Request booking";
+  if (actionId === "enrollment.enquiry") return "Send enrollment enquiry";
+  return "Send enquiry";
 }
 
 function renderActions(props: Record<string, unknown>): string {
@@ -769,12 +817,14 @@ img{max-width:100%}
 .mi-container{width:min(100% - 2rem,72rem);margin-inline:auto}
 .mi-section{position:relative;isolation:isolate;padding:var(--mi-section-space) 0;overflow:clip}
 .mi-section:nth-child(even):not(.mi-section--navbar){background:var(--mi-color-surface-elevated)}
-.mi-section--navbar{padding:0;border-bottom:var(--mi-border-width) solid var(--mi-color-border);background:var(--mi-color-surface);position:relative;z-index:10}
+.mi-section--navbar{padding:0;border-bottom:var(--mi-border-width) solid var(--mi-color-border);background:var(--mi-color-surface);position:relative;z-index:100;overflow:visible}
 .mi-navbar{min-height:4.75rem;display:flex;align-items:center;gap:1rem}
 .mi-brand{margin-right:auto;color:var(--mi-color-text);font:700 1.1rem/1.1 var(--mi-font-display),sans-serif;text-decoration:none}
 .mi-nav{display:flex;align-items:center;gap:1rem}
 .mi-nav a,.mi-footer a{min-width:44px;min-height:44px;display:inline-flex;align-items:center;color:var(--mi-color-text-muted);text-decoration-thickness:.08em;text-underline-offset:.25em}
-.mi-menu-toggle{display:none;min-width:44px;min-height:44px;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-control);background:var(--mi-color-surface);color:var(--mi-color-text);font:var(--mi-control-weight) .9rem/1 var(--mi-font-ui),sans-serif;padding:.6rem .9rem}
+.mi-menu-toggle{display:none;min-width:44px;min-height:44px;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-control);background:var(--mi-color-surface);color:var(--mi-color-text);font:var(--mi-control-weight) .9rem/1 var(--mi-font-ui),sans-serif;padding:.6rem .9rem;gap:.5rem;cursor:pointer}
+.mi-menu-toggle:focus-visible,.mi-nav a:focus-visible{outline:3px solid var(--mi-color-primary);outline-offset:3px}
+.mi-menu-icon,.mi-menu-icon::before,.mi-menu-icon::after{display:block;width:1rem;height:2px;border-radius:999px;background:currentColor;content:"";transition:transform var(--mi-motion-fast) ease,top var(--mi-motion-fast) ease,background-color var(--mi-motion-fast) ease}.mi-menu-icon{position:relative}.mi-menu-icon::before,.mi-menu-icon::after{position:absolute;left:0}.mi-menu-icon::before{top:-.32rem}.mi-menu-icon::after{top:.32rem}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon{background:transparent}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon::before{top:0;transform:rotate(45deg)}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon::after{top:0;transform:rotate(-45deg)}
 .mi-section__composition{position:relative}
 .mi-heading{max-width:45rem}
 .mi-heading>p{max-width:65ch;color:var(--mi-color-text-muted)}
@@ -783,7 +833,7 @@ h1,h2,h3{max-width:100%;font-family:var(--mi-font-display),sans-serif;line-heigh
 h1{font-size:clamp(2.7rem,8vw,5.6rem);margin:.25em 0}
 h2{font-size:clamp(2rem,5vw,3.6rem);margin:.25em 0 .45em}
 h3{font-size:1.25rem;margin:.2em 0 .55em}
-.mi-split{display:grid;gap:clamp(1.5rem,5vw,4rem);align-items:center}
+.mi-split{display:grid;gap:clamp(1.5rem,5vw,4rem);align-items:center}.mi-split>*{min-width:0}
 .mi-grid{display:grid;gap:1rem;margin-top:2.5rem}
 .mi-card{min-width:0;padding:1.4rem;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-card);background:var(--mi-color-surface);box-shadow:var(--mi-shadow-card)}
 .mi-card p{color:var(--mi-color-text-muted)}
@@ -793,27 +843,33 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-action,.mi-form button{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:.75rem 1rem;border-radius:var(--mi-radius-control);font:var(--mi-control-weight) .92rem/1 var(--mi-font-ui),sans-serif;text-decoration:none;transition:transform var(--mi-motion-fast) ease,box-shadow var(--mi-motion-fast) ease,background-color var(--mi-motion-fast) ease}
 .mi-action:hover,.mi-form button:hover{transform:translateY(calc(var(--mi-motion-distance) * -.18));box-shadow:var(--mi-shadow-control)}
 .mi-action--primary,.mi-form button{border:0;background:var(--mi-color-primary);color:var(--mi-color-primary-contrast)}
+.mi-form button:disabled{opacity:.7;cursor:wait;transform:none;box-shadow:none}
 .mi-action--secondary{border:var(--mi-border-width) solid var(--mi-color-border);color:var(--mi-color-text)}
-.mi-form{display:grid;gap:1rem;max-width:38rem;margin-top:2rem}
-.mi-form label{display:grid;gap:.35rem;font:650 .95rem/1.4 var(--mi-font-ui),sans-serif}
-.mi-form input,.mi-form textarea{width:100%;min-height:44px;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-control);padding:.75rem;background:var(--mi-color-surface);color:var(--mi-color-text);font:inherit}
+.mi-form{display:grid;gap:1rem;min-width:0;max-width:38rem;margin-top:2rem}
+.mi-form label{display:grid;gap:.35rem;min-width:0;font:650 .95rem/1.4 var(--mi-font-ui),sans-serif}
+.mi-form input,.mi-form textarea,.mi-form select{width:100%;min-width:0;max-width:100%;min-height:44px;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-control);padding:.75rem;background:var(--mi-color-surface);color:var(--mi-color-text);font:inherit}
 .mi-form textarea{min-height:8rem}
+.mi-form .mi-form__consent{grid-template-columns:44px minmax(0,1fr);align-items:center}
+.mi-form .mi-form__consent input[type=checkbox]{width:44px;min-height:44px;margin:0;padding:0}
+.mi-form__honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .mi-footer{display:grid;gap:2rem}
 .mi-footer nav{display:flex;flex-wrap:wrap;gap:1rem}
 
 /* Structural variant two changes the exported composition, not only its color. */
 @media(min-width:48rem){
   .mi-split{grid-template-columns:1fr 1fr}
+  .mi-section-theme[data-section-family="contact"] .mi-section__composition{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(1.5rem,5vw,4rem);align-items:center}
   .mi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   .mi-footer{grid-template-columns:1fr auto}
   .mi-section-variant--2[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,1.12fr) minmax(18rem,.88fr)}
   .mi-section-variant--2[data-section-family="hero"] .mi-media{order:-1}
+  .mi-section-theme--editorial[data-section-family="hero"] .mi-section__composition,.mi-section-theme--luxury[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,.72fr) minmax(24rem,1.28fr)}
   .mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-section__composition{display:grid;grid-template-columns:minmax(14rem,.72fr) minmax(0,1.28fr);column-gap:clamp(2rem,6vw,6rem);align-items:start}
   .mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-heading{grid-column:1;grid-row:1/span 2}
   .mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-grid,
   .mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-media,
   .mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-form{grid-column:2;grid-row:1;margin-top:0}
-  .mi-section-variant--2[data-section-family="contact"] .mi-section__composition{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(18rem,.9fr);gap:clamp(2rem,6vw,6rem)}
+  .mi-section-variant--2[data-section-family="contact"] .mi-section__composition{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
   .mi-section-variant--2[data-section-family="contact"] .mi-heading{grid-column:2}
   .mi-section-variant--2[data-section-family="contact"] .mi-form{grid-column:1;grid-row:1;margin-top:0}
   .mi-section-variant--2[data-section-family="footer"] .mi-footer{grid-template-columns:1fr}
@@ -880,20 +936,32 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-section-theme--cinematic .mi-card{border:0;border-radius:0;background:transparent;box-shadow:none}
 
 @media(min-width:48rem) and (max-width:71.99rem){h1{max-width:100%;font-size:clamp(3rem,6vw,4.25rem);overflow-wrap:break-word}.mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) h2{font-size:clamp(1.65rem,3.6vw,2.25rem)}}
+@media(min-width:48rem) and (max-width:63.99rem){
+  .mi-section--hero .mi-section__composition{grid-template-columns:minmax(0,1fr)}
+  .mi-section-variant--2[data-section-family="navbar"] .mi-navbar{grid-template-areas:"toggle cta brand"}
+  .mi-section-variant--2[data-section-family="navbar"] .mi-brand{justify-self:end}
+}
 @media(max-width:63.99rem){
+  .mi-navbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"toggle brand cta"}
+  .mi-brand{grid-area:brand;min-width:0;margin:0;justify-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mi-menu-toggle{display:inline-flex;align-items:center}
-  .mi-nav{display:none;position:absolute;top:100%;left:1rem;right:1rem;flex-direction:column;align-items:stretch;padding:1rem;background:var(--mi-color-surface);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);box-shadow:var(--mi-shadow-card)}
+  .mi-menu-toggle{grid-area:toggle}
+  .mi-navbar>.mi-action{grid-area:cta;max-width:30vw}
+  .mi-nav{display:none;position:absolute;z-index:30;top:calc(100% + .5rem);left:1rem;flex-direction:column;align-items:stretch;width:min(18rem,calc(100vw - 2rem));padding:.4rem;background:var(--mi-color-surface);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);box-shadow:var(--mi-shadow-card)}
   .mi-nav[data-open="true"]{display:flex}
-  .mi-nav a{padding:.25rem .5rem}
+  .mi-nav a{padding:.55rem .7rem;border-radius:calc(var(--mi-radius-control) * .7)}
 }
 @media(max-width:47.99rem){
+  .mi-navbar{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"toggle brand" "cta cta";row-gap:.625rem;padding-block:.625rem}
+  .mi-brand{justify-self:end}
+  .mi-navbar>.mi-action{width:100%;max-width:none}
   .mi-section-theme--glass[data-section-family="hero"] .mi-media{transform:none}
   .mi-section-theme--playful .mi-card:nth-child(even){margin-top:0}
   .mi-section-theme--cinematic[data-section-family="hero"],.mi-section-theme--cinematic[data-section-family="hero"] .mi-section__composition{min-height:38rem}
   .mi-section-theme--cinematic[data-section-family="hero"] .mi-heading{padding-block:3.5rem}
   .mi-section-theme--cinematic h1{font-size:clamp(2.7rem,14vw,4.8rem)}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.mi-action,.mi-form button{transition:none!important}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.mi-action,.mi-form button,.mi-menu-icon,.mi-menu-icon::before,.mi-menu-icon::after{transition:none!important}}
 `;
 }
 
@@ -1176,7 +1244,7 @@ function staticThemeTokens(site: Site): StaticThemeTokens {
   return tokens;
 }
 
-const STATIC_JAVASCRIPT = `document.addEventListener("click",function(event){const button=event.target.closest(".mi-menu-toggle");if(!button)return;const menu=document.getElementById(button.getAttribute("aria-controls"));if(!menu)return;const open=button.getAttribute("aria-expanded")!=="true";button.setAttribute("aria-expanded",String(open));menu.dataset.open=String(open)});`;
+const STATIC_JAVASCRIPT = `function micirqlSubmissionKey(){if(typeof crypto!=="undefined"&&typeof crypto.randomUUID==="function")return crypto.randomUUID();return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2)}function micirqlPrepareForm(form,rotateKey){const key=form.querySelector('input[name="_idempotencyKey"]');if(key instanceof HTMLInputElement&&(rotateKey||!key.value))key.value=micirqlSubmissionKey();const button=form.querySelector('button[type="submit"]');if(button instanceof HTMLButtonElement){button.disabled=false;button.removeAttribute("aria-disabled")}}document.querySelectorAll('form[action*="/api/functions/"]').forEach(function(form){micirqlPrepareForm(form,false);form.addEventListener("submit",function(){const button=form.querySelector('button[type="submit"]');if(button instanceof HTMLButtonElement){button.disabled=true;button.setAttribute("aria-disabled","true")}})});window.addEventListener("pageshow",function(event){if(!event.persisted)return;document.querySelectorAll('form[action*="/api/functions/"]').forEach(function(form){micirqlPrepareForm(form,true)})});function closeNavigation(button,restoreFocus){const menu=document.getElementById(button.getAttribute("aria-controls")||"");button.setAttribute("aria-expanded","false");button.setAttribute("aria-label","Open primary navigation");if(menu)menu.dataset.open="false";if(restoreFocus)button.focus()}document.addEventListener("click",function(event){const target=event.target instanceof Element?event.target:null;const clicked=target&&target.closest(".mi-menu-toggle");document.querySelectorAll(".mi-menu-toggle").forEach(function(button){const menu=document.getElementById(button.getAttribute("aria-controls")||"");const open=button===clicked&&button.getAttribute("aria-expanded")!=="true";button.setAttribute("aria-expanded",String(open));button.setAttribute("aria-label",(open?"Close":"Open")+" primary navigation");if(menu)menu.dataset.open=String(open)})});document.addEventListener("keydown",function(event){if(event.key!=="Escape")return;const button=document.querySelector('.mi-menu-toggle[aria-expanded="true"]');if(button instanceof HTMLElement)closeNavigation(button,true)});document.addEventListener("focusin",function(event){const target=event.target instanceof Node?event.target:null;document.querySelectorAll('.mi-menu-toggle[aria-expanded="true"]').forEach(function(button){const menu=document.getElementById(button.getAttribute("aria-controls")||"");if(target&&target!==button&&(!menu||!menu.contains(target)))closeNavigation(button,false)})});window.matchMedia("(min-width: 64rem)").addEventListener("change",function(event){if(!event.matches)return;document.querySelectorAll('.mi-menu-toggle[aria-expanded="true"]').forEach(function(button){closeNavigation(button,false)})});`;
 
 function sanitizeValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sanitizeValue);

@@ -1,0 +1,16 @@
+diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
+index b1f6f0d775447e070e725b4e5290055f25520355..d4fafc03208d33c563e626fb2f867d5ae7aae058 100644
+--- a/dist/cli/build/bundle-server.js
++++ b/dist/cli/build/bundle-server.js
+@@ -111,6 +111,11 @@ export async function bundleServer(buildOpts, projectOpts) {
+                 : {
+                     "next/dist/compiled/@vercel/og/index.edge.js": path.join(buildOpts.outputDir, "cloudflare-templates/shims/throw.js"),
+                 }),
++            ...(nextConfig.images?.unoptimized === true
++                ? {
++                    sharp: path.join(buildOpts.outputDir, "cloudflare-templates/shims/throw.js"),
++                }
++                : {}),
+             // Workers have `fetch` so the `node-fetch` polyfill is not needed
+             "next/dist/compiled/node-fetch": path.join(buildOpts.outputDir, "cloudflare-templates/shims/fetch.js"),
+             // Workers have builtin Web Sockets

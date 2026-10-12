@@ -1,8 +1,20 @@
-import type { Site } from "@micirql/schema";
-import type { RendererRegistry, FunctionBindingResolver } from "@micirql/renderer";
-import { createCryptoSnapshotHasher, createPublishingStore, createVersionIdFactory, type PublishingSqlDriver } from "./adapters";
+import { generatedLiveHostname, type Site } from "@micirql/schema";
+import type {
+  RendererRegistry,
+  FunctionBindingResolver,
+} from "@micirql/renderer";
+import {
+  createCryptoSnapshotHasher,
+  createPublishingStore,
+  createVersionIdFactory,
+  type PublishingSqlDriver,
+} from "./adapters";
 import { publishSite, rollbackSite } from "./publish";
-import type { DomainActivator, PublishCache, PublishedVersionRecord } from "./types";
+import type {
+  DomainActivator,
+  PublishCache,
+  PublishedVersionRecord,
+} from "./types";
 
 export type PublishingQueryDriver = {
   one<T>(query: string, params: unknown[]): Promise<T | undefined>;
@@ -15,11 +27,27 @@ export type LiveUrlResolver = {
 };
 
 export type ProductionPublishRuntime = {
-  publish(args: { site: Site; createdBy: string }): Promise<ReturnType<typeof publishSite> extends Promise<infer T> ? T & { liveUrl?: string } : never>;
-  rollback(args: { siteId: string; targetVersionId: string }): Promise<ReturnType<typeof rollbackSite> extends Promise<infer T> ? T & { liveUrl?: string } : never>;
+  publish(args: {
+    site: Site;
+    createdBy: string;
+  }): Promise<
+    ReturnType<typeof publishSite> extends Promise<infer T>
+      ? T & { liveUrl?: string }
+      : never
+  >;
+  rollback(args: {
+    siteId: string;
+    targetVersionId: string;
+  }): Promise<
+    ReturnType<typeof rollbackSite> extends Promise<infer T>
+      ? T & { liveUrl?: string }
+      : never
+  >;
 };
 
-export function createSqlPublishingDriver(db: PublishingQueryDriver): PublishingSqlDriver {
+export function createSqlPublishingDriver(
+  db: PublishingQueryDriver,
+): PublishingSqlDriver {
   return {
     getVersion(siteId, versionId) {
       return db.one<PublishedVersionRecord>(
@@ -39,10 +67,20 @@ export function createSqlPublishingDriver(db: PublishingQueryDriver): Publishing
       );
     },
     async publishVersion(args) {
-      const row = await db.one<{ versionId: string; versionNumber: number; createdAt: string }>(
+      const row = await db.one<{
+        versionId: string;
+        versionNumber: number;
+        createdAt: string;
+      }>(
         `select version_id as "versionId", version_number as "versionNumber", created_at as "createdAt"
            from publish_site_version($1,$2,$3,$4,$5)`,
-        [args.versionId, args.siteId, args.snapshot, args.snapshotHash, args.createdBy],
+        [
+          args.versionId,
+          args.siteId,
+          args.snapshot,
+          args.snapshotHash,
+          args.createdBy,
+        ],
       );
       if (!row) throw new Error("Publishing transaction returned no version.");
       return {
@@ -64,13 +102,23 @@ export function createSqlPublishingDriver(db: PublishingQueryDriver): Publishing
         [args.siteId, args.targetVersionId],
       );
       if (!target) throw new Error("Rollback target was not found.");
-      const row = await db.one<{ versionId: string; versionNumber: number; createdAt: string }>(
+      const row = await db.one<{
+        versionId: string;
+        versionNumber: number;
+        createdAt: string;
+      }>(
         `select version_id as "versionId", version_number as "versionNumber", created_at as "createdAt"
            from rollback_site_version($1,$2)`,
         [args.siteId, args.targetVersionId],
       );
       if (!row) throw new Error("Rollback transaction returned no version.");
-      return { ...target, status: "published", versionId: row.versionId, versionNumber: row.versionNumber, createdAt: row.createdAt };
+      return {
+        ...target,
+        status: "published",
+        versionId: row.versionId,
+        versionNumber: row.versionNumber,
+        createdAt: row.createdAt,
+      };
     },
   };
 }
@@ -97,7 +145,10 @@ export function createProductionPublishRuntime(args: {
     async publish(draft) {
       const result = await publishSite(dependencies, draft);
       if (!result.ok) return result;
-      return { ...result, liveUrl: await args.liveUrls.forSite(result.version.snapshot) };
+      return {
+        ...result,
+        liveUrl: await args.liveUrls.forSite(result.version.snapshot),
+      };
     },
     async rollback(input) {
       const result = await rollbackSite(dependencies, input);
@@ -109,7 +160,15 @@ export function createProductionPublishRuntime(args: {
 }
 
 export function defaultLiveUrl(site: Site): string {
-  const primary = site.domains.find((item) => item.primary && item.status === "active" && item.sslStatus === "active")
-    ?? site.domains.find((item) => item.status === "active" && item.sslStatus === "active");
-  return primary ? `https://${primary.hostname}` : `https://${site.siteId}.micirql.com`;
+  const primary =
+    site.domains.find(
+      (item) =>
+        item.primary && item.status === "active" && item.sslStatus === "active",
+    ) ??
+    site.domains.find(
+      (item) => item.status === "active" && item.sslStatus === "active",
+    );
+  return primary
+    ? `https://${primary.hostname}`
+    : `https://${generatedLiveHostname(site.siteId)}`;
 }

@@ -1,4 +1,4 @@
-import { siteSchema, type Site } from "@micirql/schema";
+import { generatedLiveHostname, siteSchema, type Site } from "@micirql/schema";
 import { preparePage } from "@micirql/renderer";
 import type {
   PublishDraft,
@@ -13,12 +13,18 @@ export async function publishSite(
 ): Promise<PublishResult> {
   const parsed = siteSchema.safeParse(draft.site);
   if (!parsed.success) {
-    return failure({ code: "INVALID_DRAFT", message: "The draft site failed schema validation." });
+    return failure({
+      code: "INVALID_DRAFT",
+      message: "The draft site failed schema validation.",
+    });
   }
 
   const site = parsed.data;
   if (site.pages.length === 0) {
-    return failure({ code: "NO_PAGES", message: "A site must contain at least one page before publishing." });
+    return failure({
+      code: "NO_PAGES",
+      message: "A site must contain at least one page before publishing.",
+    });
   }
 
   const primaryOrigin = originForSite(site);
@@ -43,7 +49,8 @@ export async function publishSite(
     }
   }
 
-  if (validationIssues.length > 0) return { ok: false, issues: validationIssues };
+  if (validationIssues.length > 0)
+    return { ok: false, issues: validationIssues };
 
   if (dependencies.domains) {
     const activation = await dependencies.domains.activate(site);
@@ -73,15 +80,22 @@ export async function rollbackSite(
   dependencies: PublishingDependencies,
   args: { siteId: string; targetVersionId: string },
 ): Promise<PublishResult> {
-  const target = await dependencies.store.getVersion(args.siteId, args.targetVersionId);
+  const target = await dependencies.store.getVersion(
+    args.siteId,
+    args.targetVersionId,
+  );
   if (!target) {
-    return failure({ code: "VERSION_NOT_FOUND", message: "The requested rollback version does not exist." });
+    return failure({
+      code: "VERSION_NOT_FOUND",
+      message: "The requested rollback version does not exist.",
+    });
   }
 
   if (target.status !== "archived" && target.status !== "published") {
     return failure({
       code: "VERSION_NOT_ROLLBACK_ELIGIBLE",
-      message: "Only archived or currently published versions can be activated by rollback.",
+      message:
+        "Only archived or currently published versions can be activated by rollback.",
     });
   }
 
@@ -109,7 +123,10 @@ export async function rollbackSite(
   if (dependencies.domains) {
     const activation = await dependencies.domains.activate(target.snapshot);
     if (!activation.ok) {
-      return failure({ code: "DOMAIN_ACTIVATION_FAILED", message: activation.reason });
+      return failure({
+        code: "DOMAIN_ACTIVATION_FAILED",
+        message: activation.reason,
+      });
     }
   }
 
@@ -127,9 +144,19 @@ function immutableSnapshot(site: Site): Site {
 }
 
 function originForSite(site: Site): string {
-  const primary = site.domains.find((domain) => domain.primary && domain.status === "active" && domain.sslStatus === "active")
-    ?? site.domains.find((domain) => domain.status === "active" && domain.sslStatus === "active");
-  return primary ? `https://${primary.hostname}` : `https://${site.siteId}.micirql.com`;
+  const primary =
+    site.domains.find(
+      (domain) =>
+        domain.primary &&
+        domain.status === "active" &&
+        domain.sslStatus === "active",
+    ) ??
+    site.domains.find(
+      (domain) => domain.status === "active" && domain.sslStatus === "active",
+    );
+  return primary
+    ? `https://${primary.hostname}`
+    : `https://${generatedLiveHostname(site.siteId)}`;
 }
 
 function failure(issue: PublishIssue): PublishResult {

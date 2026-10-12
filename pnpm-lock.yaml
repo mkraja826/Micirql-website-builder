@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@opennextjs/cloudflare@1.20.7':
+    hash: 87dd2a3b1d30eaf2bc2331bb66b88edd3b058c1be001343770698d24969cebcb
+    path: patches/@opennextjs__cloudflare@1.20.7.patch
+
 importers:
 
   .:
@@ -70,8 +75,8 @@ importers:
         version: 19.3.0(react@19.3.0)
     devDependencies:
       '@opennextjs/cloudflare':
-        specifier: latest
-        version: 1.20.7(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))
+        specifier: 1.20.7
+        version: 1.20.7(patch_hash=87dd2a3b1d30eaf2bc2331bb66b88edd3b058c1be001343770698d24969cebcb)(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))
       '@types/node':
         specifier: latest
         version: 26.6.3
@@ -138,8 +143,8 @@ importers:
         version: 19.3.0(react@19.3.0)
     devDependencies:
       '@opennextjs/cloudflare':
-        specifier: latest
-        version: 1.20.7(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))
+        specifier: 1.20.7
+        version: 1.20.7(patch_hash=87dd2a3b1d30eaf2bc2331bb66b88edd3b058c1be001343770698d24969cebcb)(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))
       '@types/node':
         specifier: latest
         version: 26.6.3
@@ -3765,7 +3770,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.7(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))':
+  '@opennextjs/cloudflare@1.20.7(patch_hash=87dd2a3b1d30eaf2bc2331bb66b88edd3b058c1be001343770698d24969cebcb)(next@16.3.8(@playwright/test@1.63.0)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(wrangler@4.146.0(@types/node@26.6.3))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0

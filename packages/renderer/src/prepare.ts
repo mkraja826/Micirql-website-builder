@@ -1,4 +1,4 @@
-import { siteSchema, type Site } from "@micirql/schema";
+import { siteSchema, type Site, type SiteSection } from "@micirql/schema";
 import { resolveTheme } from "@micirql/themes";
 import type {
   FunctionBindingResolver,
@@ -9,6 +9,41 @@ import type {
   RendererRegistry,
 } from "./types";
 import { buildRenderedSeo } from "./seo";
+
+const PUBLIC_FORM_ACTION_IDS = new Set([
+  "lead.create",
+  "appointment.request",
+  "reservation.request",
+  "quote.request",
+  "newsletter.subscribe",
+  "property.enquiry",
+  "demo.request",
+  "booking.request",
+  "enrollment.enquiry",
+]);
+
+export function selectPublicFormBinding(
+  bindings: SiteSection["bindings"],
+  preferredBindingName?: string,
+):
+  | {
+      bindingName: string;
+      binding: SiteSection["bindings"][string];
+    }
+  | undefined {
+  const preferred = preferredBindingName
+    ? bindings[preferredBindingName]
+    : undefined;
+  const selected =
+    preferred && PUBLIC_FORM_ACTION_IDS.has(preferred.actionId)
+      ? ([preferredBindingName!, preferred] as const)
+      : Object.entries(bindings).find(([, binding]) =>
+          PUBLIC_FORM_ACTION_IDS.has(binding.actionId),
+        );
+  return selected
+    ? { bindingName: selected[0], binding: selected[1] }
+    : undefined;
+}
 
 export async function preparePage(args: {
   site: Site;
@@ -92,6 +127,12 @@ export async function preparePage(args: {
     }
 
     const props: Record<string, unknown> = { ...section.props };
+    const selectedFormBinding = selectPublicFormBinding(
+      section.bindings,
+      typeof section.props.formBindingKey === "string"
+        ? section.props.formBindingKey
+        : undefined,
+    );
     for (const [bindingName, binding] of Object.entries(section.bindings)) {
       const registered = await args.functions.isRegistered(binding.actionId);
       if (!registered) {
@@ -107,23 +148,12 @@ export async function preparePage(args: {
         siteId: site.siteId,
         actionId: binding.actionId,
       });
-      if (
-        [
-          "submit",
-          "lead",
-          "appointment",
-          "reservation",
-          "quote",
-          "propertyEnquiry",
-          "demo",
-          "booking",
-          "enrollment",
-        ].includes(bindingName)
-      ) {
+      if (selectedFormBinding?.bindingName === bindingName) {
         props.formAction = args.functions.endpointFor({
           siteId: site.siteId,
           actionId: binding.actionId,
         });
+        props.formActionId = binding.actionId;
       }
     }
 

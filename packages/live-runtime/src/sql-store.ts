@@ -1,4 +1,4 @@
-import type { Site } from "@micirql/schema";
+import { generatedLiveSiteId, type Site } from "@micirql/schema";
 import type { LiveSiteStore, PublishedSiteRecord } from "./index";
 
 export type LiveQueryDriver = {
@@ -17,16 +17,20 @@ export function createSqlLiveSiteStore(db: LiveQueryDriver): LiveSiteStore {
       );
       if (direct) return direct;
 
-      const subdomain = hostname.endsWith(".micirql.com") ? hostname.slice(0, -".micirql.com".length) : undefined;
-      if (!subdomain) return undefined;
+      const generatedSiteId = generatedLiveSiteId(hostname);
+      if (!generatedSiteId) return undefined;
       return db.one<{ siteId: string }>(
         `select id as "siteId" from sites where id::text = $1 and status = 'active' limit 1`,
-        [subdomain],
+        [generatedSiteId],
       );
     },
 
     async getPublishedSite(siteId) {
-      const row = await db.one<{ siteId: string; versionId: string; snapshot: Site }>(
+      const row = await db.one<{
+        siteId: string;
+        versionId: string;
+        snapshot: Site;
+      }>(
         `select s.id::text as "siteId", v.id as "versionId", v.snapshot
            from sites s
            join site_versions v on v.id = s.published_version_id
@@ -34,7 +38,13 @@ export function createSqlLiveSiteStore(db: LiveQueryDriver): LiveSiteStore {
           limit 1`,
         [siteId],
       );
-      return row ? ({ siteId: row.siteId, versionId: row.versionId, snapshot: row.snapshot } satisfies PublishedSiteRecord) : undefined;
+      return row
+        ? ({
+            siteId: row.siteId,
+            versionId: row.versionId,
+            snapshot: row.snapshot,
+          } satisfies PublishedSiteRecord)
+        : undefined;
     },
   };
 }

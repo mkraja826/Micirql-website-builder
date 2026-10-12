@@ -1,6 +1,11 @@
-import type { LiveSiteStore, PublishedSiteRecord } from "@micirql/live-runtime";
+import {
+  liveResolverHostname,
+  type LiveSiteStore,
+  type PublishedSiteRecord,
+} from "@micirql/live-runtime";
 import {
   createFunctionBindingResolver,
+  registeredPublicFunctionsOrigin,
   renderPreparedPage,
   type PreparedPage,
 } from "@micirql/renderer";
@@ -17,10 +22,16 @@ export function ensureLiveRuntimeConfigured() {
 
   const supabaseUrl = process.env.MICIRQL_SUPABASE_URL?.replace(/\/+$/, "");
   const publishableKey = process.env.MICIRQL_SUPABASE_PUBLISHABLE_KEY;
+  const publicFunctionsOrigin = registeredPublicFunctionsOrigin(
+    process.env.MICIRQL_PUBLIC_FUNCTIONS_ORIGIN,
+  );
 
-  if (!supabaseUrl || !publishableKey) return;
+  if (!supabaseUrl || !publishableKey || !publicFunctionsOrigin) return;
 
-  const rpc = async <T>(name: string, body: Record<string, unknown>): Promise<T> => {
+  const rpc = async <T>(
+    name: string,
+    body: Record<string, unknown>,
+  ): Promise<T> => {
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
       method: "POST",
       headers: {
@@ -33,7 +44,9 @@ export function ensureLiveRuntimeConfigured() {
     });
 
     if (!response.ok) {
-      throw new Error(`Live Supabase RPC ${name} failed with ${response.status}.`);
+      throw new Error(
+        `Live Supabase RPC ${name} failed with ${response.status}.`,
+      );
     }
 
     return (await response.json()) as T;
@@ -41,16 +54,23 @@ export function ensureLiveRuntimeConfigured() {
 
   const store: LiveSiteStore = {
     async resolveHostname(hostname) {
-      const rows = await rpc<Array<{ site_id: string }>>("resolve_live_site_hostname", {
-        p_hostname: hostname,
-      });
+      const rows = await rpc<Array<{ site_id: string }>>(
+        "resolve_live_site_hostname",
+        {
+          p_hostname: liveResolverHostname(hostname),
+        },
+      );
       const siteId = rows[0]?.site_id;
       return siteId ? { siteId } : undefined;
     },
 
     async getPublishedSite(siteId) {
       const rows = await rpc<
-        Array<{ site_id: string; version_id: string; snapshot: PublishedSiteRecord["snapshot"] }>
+        Array<{
+          site_id: string;
+          version_id: string;
+          snapshot: PublishedSiteRecord["snapshot"];
+        }>
       >("get_live_published_site", { p_site_id: siteId });
       const row = rows[0];
       if (!row) return undefined;
@@ -67,6 +87,7 @@ export function ensureLiveRuntimeConfigured() {
     registry: createLiveProductionRegistry(),
     functions: createFunctionBindingResolver({
       actionIds: nativeFunctionCatalog.map((definition) => definition.id),
+      gatewayBasePath: `${publicFunctionsOrigin}/api/functions`,
     }),
     renderPage(page: PreparedPage) {
       return renderToStaticMarkup(renderPreparedPage(page));

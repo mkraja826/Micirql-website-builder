@@ -224,7 +224,10 @@
   border-radius: 999px;
   background: currentColor;
   content: "";
-  transition: transform 0.16s ease, top 0.16s ease, background-color 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    top 0.16s ease,
+    background-color 0.16s ease;
 }
 .mi-nav-menu__icon {
   position: relative;
@@ -247,7 +250,7 @@
   position: absolute;
   z-index: 30;
   top: calc(100% + 0.5rem);
-  right: 0;
+  left: 0;
   display: grid;
   gap: 0.2rem;
   width: min(18rem, calc(100vw - 2rem));
@@ -258,9 +261,11 @@
   box-shadow: var(--mi-shadow-card);
 }
 .mi-nav-menu a {
+  min-width: 44px;
   min-height: 44px;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0.55rem 0.7rem;
   border-radius: calc(var(--mi-radius-control) * 0.7);
 }
@@ -514,24 +519,6 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--mi-space-md);
   }
-  .mi-nav-menu__toggle {
-    display: none;
-  }
-  .mi-nav-menu ul,
-  .mi-nav-menu ul.is-open {
-    position: static;
-    display: flex;
-    width: auto;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    gap: var(--mi-space-sm);
-  }
-  .mi-nav-menu a {
-    padding: 0;
-  }
   .mi-mega__panel {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     min-width: min(56rem, 90vw);
@@ -550,11 +537,23 @@
   }
 }
 
-
 /* Generated-site navigation contract: mobile/tablet burger until the 1024px desktop cutoff. */
 @media (min-width: 48rem) and (max-width: 63.99rem) {
   .mi-nav-menu__toggle {
     display: inline-flex;
+  }
+  .mi-nav-menu > ul,
+  .mi-nav-menu > ul.is-open {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: min(18rem, calc(100vw - 2rem));
+    padding: 0.4rem;
+    border: 1px solid var(--mi-color-border);
+    border-radius: var(--mi-radius-card);
+    background: var(--mi-color-surface);
+    box-shadow: var(--mi-shadow-card);
   }
   .mi-nav-menu > ul {
     display: none;

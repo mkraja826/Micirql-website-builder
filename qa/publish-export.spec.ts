@@ -158,6 +158,38 @@ test("static export contains every page, immutable identity and a valid ZIP enve
   expect(new TextDecoder().decode(zip)).toContain("site.schema.json");
 });
 
+test("static export keeps the responsive navigation accessible and above page content", async () => {
+  const withNavigation = structuredClone(site);
+  withNavigation.pages[0]!.sections[0]!.component.componentId = "MIN-NAV-001";
+  withNavigation.pages[0]!.sections[0]!.props = {
+    title: "Pearl Dental Studio",
+    items: [
+      { title: "Treatments", href: "/services" },
+      { title: "Contact", href: "/contact" },
+    ],
+    primaryAction: { label: "Request appointment", href: "/contact" },
+  };
+
+  const files = await buildStaticProject({
+    published: { ...published, snapshot: withNavigation },
+    requestOrigin: "https://builder.micirql.com",
+  });
+  const decode = (path: string) =>
+    new TextDecoder().decode(files.find((file) => file.path === path)!.bytes);
+  const home = decode("index.html");
+  const css = decode("assets/site.css");
+  const script = decode("assets/site.js");
+
+  expect(home).toContain('aria-label="Open primary navigation"');
+  expect(home).toContain('class="mi-menu-icon" aria-hidden="true"');
+  expect(css).toContain("z-index:100;overflow:visible");
+  expect(css).toContain("top:calc(100% + .5rem);left:1rem");
+  expect(css).toContain('grid-template-areas:"toggle cta brand"');
+  expect(script).toContain('event.key!=="Escape"');
+  expect(script).toContain('window.matchMedia("(min-width: 64rem)")');
+  expect(script).toContain('"Close":"Open"');
+});
+
 test("static export preserves palette, typography and the selected composition identity", async () => {
   const themedSite = structuredClone(site);
   themedSite.theme.family = "glass";
@@ -203,6 +235,9 @@ test("static export preserves palette, typography and the selected composition i
   expect(css).toContain(
     '.mi-section-variant--2[data-section-family="hero"] .mi-section__composition',
   );
+  expect(css).toContain(
+    '.mi-section-theme[data-section-family="contact"] .mi-section__composition',
+  );
   for (const family of [
     "minimalist",
     "corporate",
@@ -230,6 +265,136 @@ test("static forms block until the public MiCirql function gateway is configured
       requestOrigin: "https://builder.micirql.com",
     }),
   ).rejects.toMatchObject({ code: "PUBLIC_FUNCTION_GATEWAY_NOT_CONFIGURED" });
+});
+
+test("static forms target only the registered public MiCirql gateway", async () => {
+  const withForm = structuredClone(site);
+  withForm.pages[0]!.sections[0]!.component.componentId = "MIN-CONT-001";
+  withForm.pages[0]!.sections[0]!.bindings = {
+    appointment: { actionId: "appointment.request", inputMap: {} },
+  };
+  await expect(
+    buildStaticProject({
+      published: { ...published, snapshot: withForm },
+      requestOrigin: "https://builder.micirql.com",
+      publicFunctionsOrigin: "https://unregistered.micirql.com",
+    }),
+  ).rejects.toMatchObject({ code: "PUBLIC_FUNCTION_GATEWAY_INVALID" });
+  const files = await buildStaticProject({
+    published: { ...published, snapshot: withForm },
+    requestOrigin: "https://builder.micirql.com",
+    publicFunctionsOrigin: "https://forms.micirql.com",
+  });
+  const home = new TextDecoder().decode(
+    files.find((file) => file.path === "index.html")!.bytes,
+  );
+  const script = new TextDecoder().decode(
+    files.find((file) => file.path === "assets/site.js")!.bytes,
+  );
+  expect(home).toContain(
+    "https://forms.micirql.com/api/functions/appointment.request?siteId=site-export-test",
+  );
+  expect(home).toContain('name="_website"');
+  expect(home).toContain('id="contact-form"');
+  expect(home).toContain('name="_idempotencyKey"');
+  expect(home).toContain('name="service"');
+  expect(home).toContain('name="preferredDate"');
+  expect(home).toContain('name="consent"');
+  expect(home).toContain('minlength="6"');
+  expect(home).toContain("Request appointment");
+  expect(script).toContain("micirqlSubmissionKey");
+  expect(script).toContain("button.disabled=true");
+  expect(script).toContain('window.addEventListener("pageshow"');
+  expect(script).toContain("button.disabled=false");
+  expect(home).not.toContain("MICIRQL_SUPABASE_SECRET_KEY");
+});
+
+test("static forms render the fields required by every registered request action", async () => {
+  const requiredFields: Record<string, string[]> = {
+    "lead.create": ["name", "email", "message", "consent"],
+    "appointment.request": ["name", "email", "service", "consent"],
+    "reservation.request": [
+      "name",
+      "email",
+      "requestedDate",
+      "requestedTime",
+      "partySize",
+      "consent",
+    ],
+    "quote.request": ["name", "email", "service", "consent"],
+    "newsletter.subscribe": ["email", "consent"],
+    "property.enquiry": [
+      "name",
+      "email",
+      "propertyId",
+      "enquiryType",
+      "consent",
+    ],
+    "demo.request": ["name", "email", "company", "consent"],
+    "booking.request": [
+      "name",
+      "email",
+      "checkIn",
+      "checkOut",
+      "guests",
+      "consent",
+    ],
+    "enrollment.enquiry": [
+      "name",
+      "email",
+      "course",
+      "deliveryMode",
+      "consent",
+    ],
+  };
+
+  for (const [actionId, fields] of Object.entries(requiredFields)) {
+    const withForm = structuredClone(site);
+    withForm.pages[0]!.sections[0]!.component.componentId = "MIN-CONT-001";
+    withForm.pages[0]!.sections[0]!.bindings = {
+      submit: { actionId, inputMap: {} },
+    };
+    const files = await buildStaticProject({
+      published: { ...published, snapshot: withForm },
+      requestOrigin: "https://builder.micirql.com",
+      publicFunctionsOrigin: "https://forms.micirql.com",
+    });
+    const home = new TextDecoder().decode(
+      files.find((file) => file.path === "index.html")!.bytes,
+    );
+    for (const field of fields) {
+      expect(home, `${actionId} must render ${field}`).toContain(
+        `name="${field}"`,
+      );
+    }
+    if (actionId === "newsletter.subscribe") {
+      expect(home).not.toContain('name="name"');
+      expect(home).not.toContain('name="message"');
+      expect(home).toContain("I agree to receive email updates");
+    }
+  }
+});
+
+test("static forms use the same deterministic binding selection as live rendering", async () => {
+  const withForm = structuredClone(site);
+  withForm.pages[0]!.sections[0]!.component.componentId = "MIN-CONT-001";
+  withForm.pages[0]!.sections[0]!.bindings = {
+    action1: { actionId: "analytics.track", inputMap: {} },
+    submit: { actionId: "lead.create", inputMap: {} },
+    appointment2: { actionId: "appointment.request", inputMap: {} },
+  };
+  withForm.pages[0]!.sections[0]!.props.formBindingKey = "appointment2";
+  const files = await buildStaticProject({
+    published: { ...published, snapshot: withForm },
+    requestOrigin: "https://builder.micirql.com",
+    publicFunctionsOrigin: "https://forms.micirql.com",
+  });
+  const home = new TextDecoder().decode(
+    files.find((file) => file.path === "index.html")!.bytes,
+  );
+  expect(home).toContain("/api/functions/appointment.request?");
+  expect(home).not.toContain("/api/functions/lead.create?");
+  expect(home).not.toContain("/api/functions/analytics.track?");
 });
 
 test("certified Pexels media keeps licensing provenance and exports without a broad host exception", async () => {

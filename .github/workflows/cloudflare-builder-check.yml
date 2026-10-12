@@ -1,22 +1,28 @@
-name: Cloudflare Builder Check
+name: Cloudflare Worker Checks
 
 on:
   push:
     branches:
       - deploy/cloudflare-builder
     paths:
-      - 'apps/builder/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/cloudflare-builder-check.yml'
+      - "apps/builder/**"
+      - "apps/live/**"
+      - "packages/**"
+      - "patches/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/cloudflare-builder-check.yml"
   pull_request:
     paths:
-      - 'apps/builder/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.github/workflows/cloudflare-builder-check.yml'
+      - "apps/builder/**"
+      - "apps/live/**"
+      - "packages/**"
+      - "patches/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/cloudflare-builder-check.yml"
 
 jobs:
   build-worker:
@@ -34,7 +40,23 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @micirql/builder exec wrangler types --env-interface CloudflareEnv --include-runtime false --check cloudflare-env.d.ts
+      - run: pnpm --filter @micirql/builder cf-typecheck
       - run: pnpm --filter @micirql/builder typecheck
       - run: pnpm --filter @micirql/builder exec opennextjs-cloudflare build
       - run: pnpm --filter @micirql/builder exec wrangler deploy --dry-run --keep-vars
+
+  build-live-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @micirql/live cf-typecheck
+      - run: pnpm --filter @micirql/live typecheck
+      - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build
+      - run: pnpm --filter @micirql/live exec wrangler deploy --dry-run --keep-vars

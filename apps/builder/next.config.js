@@ -22,6 +22,7 @@ const buildMetadata = {
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   env: buildMetadata,
+  images: { unoptimized: true },
 };
 
 module.exports = nextConfig;

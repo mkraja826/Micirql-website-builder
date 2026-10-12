@@ -19,6 +19,12 @@ export type DentalBrief = {
   notes?: string | null;
 };
 
+export const DENTAL_HERO_COPY_LIMITS = {
+  title: 52,
+  description: 150,
+  serviceHighlights: 3,
+} as const;
+
 const HOME_FAMILIES: SectionFamily[] = [
   "navbar",
   "hero",
@@ -117,7 +123,6 @@ function sectionFor(
   navigation: Site["navigation"],
 ): SiteSection {
   const id = pageKey + "-" + family + "-" + (index + 1);
-  const location = brief.location ? " in " + brief.location : "";
   const firstService = brief.services[0] || "dental care";
   const common = {
     id,
@@ -143,11 +148,8 @@ function sectionFor(
         ...common,
         props: {
           eyebrow: brief.location || "Dental care",
-          title:
-            pageKey === "home"
-              ? brief.businessName + ": " + title(firstService) + location
-              : pageHeading(pageKey, brief),
-          description: pageDescription(
+          title: heroTitle(pageKey, brief, firstService),
+          description: heroDescription(
             "/" + (pageKey === "home" ? "" : pageKey),
             brief,
           ),
@@ -282,11 +284,20 @@ function sectionFor(
         props: {
           title: "Contact " + brief.businessName,
           description: brief.location
-            ? "Send an enquiry to the clinic in " + brief.location + "."
-            : "Send an enquiry and the clinic can respond with the appropriate next step.",
-          primaryAction: { label: "Send enquiry", href: "#contact-form" },
+            ? "Request an appointment with the clinic in " +
+              brief.location +
+              ". The clinic will confirm availability."
+            : "Request an appointment and the clinic will confirm availability.",
+          primaryAction: {
+            label: "Request appointment",
+            href: "#contact-form",
+          },
+          formBindingKey: "appointment",
         },
-        bindings: { submit: { actionId: "lead.create", inputMap: {} } },
+        bindings: {
+          appointment: { actionId: "appointment.request", inputMap: {} },
+          submit: { actionId: "lead.create", inputMap: {} },
+        },
       };
     case "footer":
       return {
@@ -327,6 +338,110 @@ function pageHeading(pageKey: string, brief: DentalBrief) {
     contact: "Request an appointment",
   };
   return headings[pageKey] ?? brief.businessName;
+}
+
+function heroTitle(
+  pageKey: string,
+  brief: DentalBrief,
+  firstService: string,
+): string {
+  if (pageKey !== "home") {
+    const pageTitle = pageHeading(pageKey, brief);
+    if (fits(pageTitle, DENTAL_HERO_COPY_LIMITS.title)) return pageTitle;
+    const fallback =
+      pageKey === "about"
+        ? "About the clinic"
+        : pageKey === "contact"
+          ? "Request an appointment"
+          : pageKey === "doctors"
+            ? "Meet the dental team"
+            : "Explore dental services";
+    return fallback;
+  }
+
+  const businessName = cleanDisplayText(brief.businessName);
+  const service = title(cleanDisplayText(firstService));
+  const candidates = [
+    businessName && service ? businessName + ": " + service : "",
+    businessName,
+    service && brief.location
+      ? service + " in " + cleanDisplayText(brief.location)
+      : service,
+    brief.location
+      ? "Dental care in " + cleanDisplayText(brief.location)
+      : "Dental care",
+    "Dental care",
+  ];
+  return (
+    candidates.find(
+      (candidate) =>
+        candidate && fits(candidate, DENTAL_HERO_COPY_LIMITS.title),
+    ) ?? "Dental care"
+  );
+}
+
+function heroDescription(path: string, brief: DentalBrief): string {
+  if (path === "/" || path === "/services") {
+    const closing =
+      path === "/"
+        ? "Request an appointment to discuss next steps."
+        : "Contact the clinic for verified information.";
+    return compactServiceDescription(brief.services, closing);
+  }
+
+  const description = pageDescription(path, brief);
+  if (fits(description, DENTAL_HERO_COPY_LIMITS.description)) {
+    return description;
+  }
+  if (path === "/doctors") {
+    return "Meet clinicians after the clinic supplies their verified names, roles and credentials.";
+  }
+  if (path === "/about") {
+    return "Learn about the clinic using information supplied and approved by the clinic.";
+  }
+  if (path === "/contact") {
+    return "Send an enquiry or appointment request. The clinic confirms availability.";
+  }
+  return "Explore verified clinic information and contact the clinic for the next step.";
+}
+
+function compactServiceDescription(
+  services: string[],
+  closing: string,
+): string {
+  const highlights: string[] = [];
+  for (const service of services) {
+    if (highlights.length >= DENTAL_HERO_COPY_LIMITS.serviceHighlights) break;
+    const normalized = title(cleanDisplayText(service));
+    if (!normalized) continue;
+    const candidate = serviceDescription([...highlights, normalized], closing);
+    if (!fits(candidate, DENTAL_HERO_COPY_LIMITS.description)) break;
+    highlights.push(normalized);
+  }
+  const description = serviceDescription(highlights, closing);
+  if (fits(description, DENTAL_HERO_COPY_LIMITS.description)) {
+    return description;
+  }
+  return "Explore dental services. Request an appointment for the next step.";
+}
+
+function serviceDescription(services: string[], closing: string): string {
+  const subject = services.length ? naturalList(services) : "dental services";
+  return "Explore " + subject + ". " + closing;
+}
+
+function naturalList(values: string[]): string {
+  if (values.length < 2) return values[0] ?? "";
+  if (values.length === 2) return values[0] + " and " + values[1];
+  return values.slice(0, -1).join(", ") + ", and " + values[values.length - 1];
+}
+
+function cleanDisplayText(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function fits(value: string, maximum: number): boolean {
+  return value.length <= maximum;
 }
 
 function pageDescription(path: string, brief: DentalBrief) {

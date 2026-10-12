@@ -3,7 +3,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { seedSectionCatalog } from "@micirql/sections";
 
-const requiredWidths = [320, 360, 390, 430, 1280] as const;
+const requiredWidths = [320, 360, 390, 430, 768, 1024, 1280, 1440] as const;
 const full = process.env.MI_QA_FULL === "1";
 const clientJsBudgetBytes = 180 * 1024;
 
@@ -17,7 +17,18 @@ for (const entry of entries) {
       test(`${width}px protocol smoke`, async ({ page }, testInfo) => {
         await page.setViewportSize({
           width,
-          height: width >= 1000 ? 900 : 844,
+          height:
+            width === 360
+              ? 800
+              : width === 390
+                ? 844
+                : width === 430
+                  ? 932
+                  : width === 768
+                    ? 1024
+                    : width === 1024
+                      ? 768
+                      : 900,
         });
         const response = await page.goto(`/library/${entry.id}`, {
           waitUntil: "networkidle",
@@ -33,18 +44,83 @@ for (const entry of entries) {
           const toggle = menu.locator(".mi-nav-menu__toggle");
           const links = menu.locator("ul");
           if (width < 1024) {
+            const headerHeight = await root
+              .locator("header")
+              .evaluate((header) => header.getBoundingClientRect().height);
             await expect(toggle).toBeVisible();
             await expect(toggle).toHaveAttribute("aria-expanded", "false");
-            await expect(toggle).toHaveAttribute("aria-label", "Open primary navigation");
+            await expect(toggle).toHaveAttribute(
+              "aria-label",
+              "Open primary navigation",
+            );
             await expect(links).toBeHidden();
             await toggle.click();
             await expect(toggle).toHaveAttribute("aria-expanded", "true");
-            await expect(toggle).toHaveAttribute("aria-label", "Close primary navigation");
+            await expect(toggle).toHaveAttribute(
+              "aria-label",
+              "Close primary navigation",
+            );
             await expect(links).toBeVisible();
+            const openHeaderHeight = await root
+              .locator("header")
+              .evaluate((header) => header.getBoundingClientRect().height);
+            expect(
+              Math.abs(openHeaderHeight - headerHeight),
+              "opening the burger must not reflow the header",
+            ).toBeLessThanOrEqual(1);
+            const firstLink = links.locator("a").first();
+            const linkBox = await firstLink.boundingBox();
+            const navbarBox = await root.locator(".mi-navbar").boundingBox();
+            expect(
+              linkBox,
+              "the first mobile navigation link must have a box",
+            ).not.toBeNull();
+            expect(
+              navbarBox,
+              "the responsive navbar must have a box",
+            ).not.toBeNull();
+            expect(
+              linkBox!.x,
+              "the menu must not open offscreen left",
+            ).toBeGreaterThanOrEqual(0);
+            expect(
+              linkBox!.x + linkBox!.width,
+              "the menu must not open offscreen right",
+            ).toBeLessThanOrEqual(width);
+            expect(
+              linkBox!.y,
+              "the menu must open below the complete navbar, including its CTA row",
+            ).toBeGreaterThanOrEqual(navbarBox!.y + navbarBox!.height);
+            const linkIsHitTarget = await page.evaluate(
+              ({ x, y }) =>
+                Boolean(
+                  document.elementFromPoint(x, y)?.closest(".mi-nav-menu a"),
+                ),
+              {
+                x: linkBox!.x + linkBox!.width / 2,
+                y: linkBox!.y + linkBox!.height / 2,
+              },
+            );
+            expect(
+              linkIsHitTarget,
+              "the open menu must not be clipped or covered",
+            ).toBe(true);
+
+            await page.mouse.click(width - 2, 2);
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            await toggle.click();
+            await firstLink.focus();
+            await root.locator(".mi-navbar__brand").focus();
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+            await toggle.click();
             await links.locator("a").first().focus();
             await links.locator("a").first().press("Escape");
             await expect(toggle).toHaveAttribute("aria-expanded", "false");
-            await expect(toggle).toHaveAttribute("aria-label", "Open primary navigation");
+            await expect(toggle).toHaveAttribute(
+              "aria-label",
+              "Open primary navigation",
+            );
             await expect(toggle).toBeFocused();
           } else {
             await expect(toggle).toBeHidden();
@@ -55,8 +131,13 @@ for (const entry of entries) {
         if (entry.family === "footer") {
           const footer = root.locator(".mi-section--footer");
           await expect(footer).toBeVisible();
-          await expect(footer.getByRole("navigation", { name: "Footer links" })).toBeVisible();
-          await expect(footer.locator("a").first()).toHaveAttribute("href", /^(?:\/|#|https:\/\/|mailto:|tel:)/);
+          await expect(
+            footer.getByRole("navigation", { name: "Footer links" }),
+          ).toBeVisible();
+          await expect(footer.locator("a").first()).toHaveAttribute(
+            "href",
+            /^(?:\/|#|https:\/\/|mailto:|tel:)/,
+          );
         }
 
         if (entry.family === "services" && entry.variant === 2) {

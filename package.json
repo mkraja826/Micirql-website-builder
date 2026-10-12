@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "dev": "turbo dev",
@@ -27,5 +27,10 @@
     "prettier": "latest",
     "turbo": "latest",
     "typescript": "latest"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@opennextjs/cloudflare@1.20.7": "patches/@opennextjs__cloudflare@1.20.7.patch"
+    }
   }
 }

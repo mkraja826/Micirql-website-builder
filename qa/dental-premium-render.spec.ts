@@ -17,13 +17,20 @@ import {
   listIndustryDesignPresets,
   type IndustryDesignPreset,
 } from "../apps/builder/app/industry-design-preset-data";
+import {
+  handlePublicFunctionRequest,
+  type PublicFunctionDependencies,
+} from "../apps/live/function-gateway";
+import { LIVE_SITE_SCRIPT } from "../apps/live/live-site-assets";
 
 const premiumViewports = [
+  { width: 320, height: 800 },
   { width: 360, height: 800 },
   { width: 390, height: 844 },
   { width: 430, height: 932 },
   { width: 768, height: 1024 },
   { width: 1024, height: 768 },
+  { width: 1280, height: 900 },
   { width: 1440, height: 900 },
 ] as const;
 
@@ -193,6 +200,100 @@ test.describe("certified dental compositions: rendered premium gate", () => {
     ).toBe(mediaByStrategy.size);
   });
 
+  test("the rendered dental appointment form submits through the production gateway contract", async ({
+    page,
+  }) => {
+    const siteId = "f9145920-ece1-4230-b90c-4d2b93f1e8f0";
+    const preset = listIndustryDesignPresets("clinic", "dental")[0]!;
+    const candidate = applyIndustryPreset(generatedDentalScaffold(), preset);
+    candidate.siteId = siteId;
+    const composition = allCompositions[0]!;
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mountComposition(page, composition.identity);
+    await applyDentalFixtureContent(page);
+
+    const form = page.locator("#contact-form");
+    const action = `https://forms.micirql.com/api/functions/appointment.request?siteId=${siteId}`;
+    await form.evaluate(
+      (element, formAction) => element.setAttribute("action", formAction),
+      action,
+    );
+    await page.addScriptTag({ content: LIVE_SITE_SCRIPT });
+    await expect(form).toHaveAttribute("action", action);
+    await form.locator('input[name="name"]').fill("Test Visitor");
+    await form.locator('input[name="email"]').fill("visitor@example.com");
+    await form
+      .locator('textarea[name="message"]')
+      .fill("Please contact me about an appointment.");
+    await form.locator('input[name="consent"]').check();
+
+    const entries = await form.evaluate((element) =>
+      [...new FormData(element as HTMLFormElement).entries()].map(
+        ([key, value]) => [key, String(value)] as [string, string],
+      ),
+    );
+    const formBody = new URLSearchParams(entries);
+    const idempotencyKey = formBody.get("_idempotencyKey");
+    expect(idempotencyKey).toMatch(/^[A-Za-z0-9._:-]+$/);
+    await form.evaluate((element) => {
+      element.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
+      );
+    });
+    await expect(form.locator('button[type="submit"]')).toBeDisabled();
+
+    const records: Array<Record<string, unknown>> = [];
+    const dependencies: PublicFunctionDependencies = {
+      ipHashSalt: "rendered-form-test-salt",
+      async getPublishedSite(requestedSiteId) {
+        return requestedSiteId === siteId
+          ? { siteId, snapshot: candidate }
+          : undefined;
+      },
+      async createRecord(input) {
+        records.push(input);
+        return {
+          ...input,
+          id: "record-rendered-form",
+          createdAt: "2026-10-12T00:00:00.000Z",
+        };
+      },
+      async writeAudit() {},
+      async rateLimit() {
+        return true;
+      },
+    };
+    const response = await handlePublicFunctionRequest(
+      new Request(action, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: formBody,
+      }),
+      "appointment.request",
+      dependencies,
+    );
+    expect(response.status).toBe(201);
+    expect(records).toHaveLength(1);
+    expect(records[0]?.idempotencyKey).toBe(idempotencyKey);
+    expect(records[0]?.payload).not.toHaveProperty("_idempotencyKey");
+    expect(records[0]?.payload).not.toHaveProperty("preferredDate");
+
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new PageTransitionEvent("pageshow", { persisted: true }),
+      );
+    });
+    await expect(form.locator('button[type="submit"]')).toBeEnabled();
+    const rotatedIdempotencyKey = await form
+      .locator('input[name="_idempotencyKey"]')
+      .inputValue();
+    expect(rotatedIdempotencyKey).toMatch(/^[A-Za-z0-9._:-]+$/);
+    expect(rotatedIdempotencyKey).not.toBe(idempotencyKey);
+  });
+
   test("the Top 20 expose twenty distinct rendered visual signatures", async ({
     page,
   }) => {
@@ -290,6 +391,7 @@ test.describe("certified dental compositions: rendered premium gate", () => {
       test.setTimeout(180_000);
       await page.setViewportSize(premiumViewports[0]);
       await mountComposition(page, composition.identity);
+      await applyDentalFixtureContent(page);
 
       const root = page.locator(`[data-mi-composition-id="${composition.id}"]`);
       await expect(root).toBeVisible();
@@ -299,7 +401,6 @@ test.describe("certified dental compositions: rendered premium gate", () => {
         await test.step(`${viewport.width}x${viewport.height}`, async () => {
           await page.setViewportSize(viewport);
           await verifyNavigation(page, viewport.width);
-          await applyDentalFixtureContent(page);
 
           const geometry = await page.evaluate(() => {
             const visibleInteractive = [
@@ -537,10 +638,11 @@ async function mountComposition(page: Page, identity: CompositionIdentity) {
 }
 
 async function verifyNavigation(page: Page, width: number) {
+  const startingViewport = page.viewportSize();
   const navigation = page.getByRole("navigation", {
     name: "Primary navigation",
   });
-  const toggle = navigation.getByRole("button");
+  const toggle = navigation.locator(".mi-nav-menu__toggle");
   const links = navigation.getByRole("link");
 
   await expect(navigation).toBeVisible();
@@ -565,6 +667,33 @@ async function verifyNavigation(page: Page, width: number) {
       "Close primary navigation",
     );
     await expect(links.first()).toBeVisible();
+    const navbarBox = await page.locator(".mi-navbar").first().boundingBox();
+    const firstLinkBox = await links.first().boundingBox();
+    expect(navbarBox, "the responsive navbar must have a box").not.toBeNull();
+    expect(firstLinkBox, "the open menu link must have a box").not.toBeNull();
+    expect(
+      firstLinkBox!.x,
+      "the open menu must stay within the left viewport edge",
+    ).toBeGreaterThanOrEqual(0);
+    expect(
+      firstLinkBox!.x + firstLinkBox!.width,
+      "the open menu must stay within the right viewport edge",
+    ).toBeLessThanOrEqual(width);
+    expect(
+      firstLinkBox!.y,
+      "the menu must open below the complete navbar",
+    ).toBeGreaterThanOrEqual(navbarBox!.y + navbarBox!.height);
+    const linkIsHitTarget = await page.evaluate(
+      ({ x, y }) =>
+        Boolean(document.elementFromPoint(x, y)?.closest(".mi-nav-menu a")),
+      {
+        x: firstLinkBox!.x + firstLinkBox!.width / 2,
+        y: firstLinkBox!.y + firstLinkBox!.height / 2,
+      },
+    );
+    expect(linkIsHitTarget, "the menu must not be clipped or covered").toBe(
+      true,
+    );
     await links.first().focus();
     await links.first().press("Escape");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -573,6 +702,21 @@ async function verifyNavigation(page: Page, width: number) {
       "Open primary navigation",
     );
     await expect(toggle).toBeFocused();
+
+    if (width === 768 && startingViewport) {
+      await toggle.press("Enter");
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await page.setViewportSize({
+        width: 1024,
+        height: startingViewport.height,
+      });
+      await expect(toggle).toBeHidden();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(links.first()).toBeVisible();
+      await page.setViewportSize(startingViewport);
+      await expect(toggle).toBeVisible();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    }
   } else {
     await expect(toggle).toBeHidden();
     await expect(links.first()).toBeVisible();
@@ -621,6 +765,11 @@ async function applyDentalFixtureContent(page: Page) {
       cta: "Ready to ask about your next step?",
       contact: "Contact Pearl Dental Studio",
     };
+
+    setText(
+      root.querySelector("[data-section-family='hero'] .mi-section__lede"),
+      "Clear information about preventive, restorative, and implant dentistry, with practical next steps from Pearl Dental Studio in Hyderabad.",
+    );
 
     root
       .querySelectorAll<HTMLElement>("[data-section-family]")
@@ -709,6 +858,33 @@ async function verifyDocumentSemantics(page: Page) {
     skippedHeadingLevels,
     `heading levels must not be skipped: ${JSON.stringify(skippedHeadingLevels)}`,
   ).toEqual([]);
+
+  const appointmentForm = page.locator("#contact-form");
+  await expect(appointmentForm).toHaveCount(1);
+  await expect(appointmentForm).toHaveAttribute(
+    "action",
+    "/api/functions/appointment.request",
+  );
+  await expect(appointmentForm).toHaveAttribute("method", "post");
+  await expect(
+    appointmentForm.locator('input[name="_idempotencyKey"]'),
+  ).toHaveAttribute("type", "hidden");
+  await expect(appointmentForm.locator('input[name="phone"]')).toHaveAttribute(
+    "minlength",
+    "6",
+  );
+  await expect(
+    appointmentForm.locator('input[name="consent"]'),
+  ).toHaveAttribute("required", "");
+  await expect(
+    appointmentForm.locator('input[name="preferredDate"]'),
+  ).toHaveAttribute("type", "date");
+  await expect(
+    appointmentForm.locator('input[name="preferredTime"]'),
+  ).toHaveAttribute("type", "time");
+  await expect(
+    appointmentForm.getByRole("button", { name: "Request appointment" }),
+  ).toHaveAttribute("type", "submit");
 
   const imageAlternatives = await page.locator("img").evaluateAll((images) =>
     images.flatMap((image) => {
@@ -842,11 +1018,11 @@ function generatedDentalScaffold(): Site {
           bindings:
             family === "contact"
               ? {
-                  submit: { actionId: "lead.create", inputMap: {} },
                   appointment: {
                     actionId: "appointment.request",
                     inputMap: {},
                   },
+                  submit: { actionId: "lead.create", inputMap: {} },
                 }
               : {},
           hidden: false,

@@ -28,6 +28,8 @@ export type UniversalSectionProps = {
   items?: Item[];
   image?: ImageReference;
   formAction?: string;
+  formActionId?: string;
+  formBindingKey?: string;
   footerLinks?: FooterLink[];
   copyright?: string;
 };
@@ -274,6 +276,8 @@ function GallerySection(props: UniversalSectionProps) {
 }
 
 function ContactSection(props: UniversalSectionProps) {
+  const actionId = props.formActionId ?? "lead.create";
+  const newsletter = actionId === "newsletter.subscribe";
   return (
     <section className="mi-section mi-section--contact">
       <Container>
@@ -281,23 +285,68 @@ function ContactSection(props: UniversalSectionProps) {
           <Heading {...props} />
           {props.formAction ? (
             <form
+              id="contact-form"
               className="mi-section__form"
               action={props.formAction}
               method="post"
             >
-              <label>
-                Name
-                <input name="name" required />
+              <label className="mi-form__honeypot" aria-hidden="true">
+                Website
+                <input name="_website" tabIndex={-1} autoComplete="off" />
               </label>
+              <input name="_idempotencyKey" type="hidden" defaultValue="" />
+              {!newsletter ? (
+                <>
+                  <label>
+                    Name
+                    <input
+                      name="name"
+                      maxLength={120}
+                      autoComplete="name"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Phone (optional)
+                    <input
+                      name="phone"
+                      type="tel"
+                      minLength={6}
+                      maxLength={40}
+                      autoComplete="tel"
+                    />
+                  </label>
+                </>
+              ) : null}
               <label>
                 Email
-                <input name="email" type="email" required />
+                <input
+                  name="email"
+                  type="email"
+                  maxLength={254}
+                  autoComplete="email"
+                  required
+                />
               </label>
-              <label>
-                Message
-                <textarea name="message" required />
+              <ActionSpecificFields actionId={actionId} />
+              {!newsletter ? (
+                <label>
+                  Message
+                  <textarea
+                    name="message"
+                    maxLength={4000}
+                    required={
+                      actionId === "lead.create" ||
+                      actionId === "appointment.request"
+                    }
+                  />
+                </label>
+              ) : null}
+              <label className="mi-form__consent">
+                <input name="consent" type="checkbox" value="true" required />
+                <span>{formConsentText(actionId)}</span>
               </label>
-              <button type="submit">Send enquiry</button>
+              <button type="submit">{formSubmitLabel(actionId)}</button>
             </form>
           ) : (
             <div>
@@ -308,6 +357,160 @@ function ContactSection(props: UniversalSectionProps) {
       </Container>
     </section>
   );
+}
+
+function ActionSpecificFields({ actionId }: { actionId: string }) {
+  if (actionId === "appointment.request") {
+    return (
+      <>
+        <label>
+          Service (optional)
+          <input name="service" maxLength={160} />
+        </label>
+        <label>
+          Preferred date (optional)
+          <input name="preferredDate" type="date" />
+        </label>
+        <label>
+          Preferred time (optional)
+          <input name="preferredTime" type="time" />
+        </label>
+      </>
+    );
+  }
+  if (actionId === "reservation.request") {
+    return (
+      <>
+        <label>
+          Requested date
+          <input name="requestedDate" type="date" required />
+        </label>
+        <label>
+          Requested time
+          <input name="requestedTime" type="time" required />
+        </label>
+        <label>
+          Party size
+          <input name="partySize" type="number" min={1} max={100} required />
+        </label>
+      </>
+    );
+  }
+  if (actionId === "quote.request") {
+    return (
+      <>
+        <label>
+          Service or project
+          <input name="service" maxLength={160} required />
+        </label>
+        <label>
+          Location (optional)
+          <input name="location" maxLength={240} />
+        </label>
+        <label>
+          Budget range (optional)
+          <input name="budgetRange" maxLength={120} />
+        </label>
+      </>
+    );
+  }
+  if (actionId === "property.enquiry") {
+    return (
+      <>
+        <label>
+          Property or project reference
+          <input name="propertyId" maxLength={160} required />
+        </label>
+        <label>
+          Enquiry type
+          <select name="enquiryType" defaultValue="details">
+            <option value="details">Request details</option>
+            <option value="visit">Arrange a visit</option>
+            <option value="brochure">Request a brochure</option>
+            <option value="callback">Request a callback</option>
+          </select>
+        </label>
+      </>
+    );
+  }
+  if (actionId === "demo.request") {
+    return (
+      <>
+        <label>
+          Company (optional)
+          <input name="company" maxLength={180} autoComplete="organization" />
+        </label>
+        <label>
+          Role (optional)
+          <input
+            name="role"
+            maxLength={120}
+            autoComplete="organization-title"
+          />
+        </label>
+      </>
+    );
+  }
+  if (actionId === "booking.request") {
+    return (
+      <>
+        <label>
+          Check-in
+          <input name="checkIn" type="date" required />
+        </label>
+        <label>
+          Check-out
+          <input name="checkOut" type="date" required />
+        </label>
+        <label>
+          Guests
+          <input name="guests" type="number" min={1} max={50} required />
+        </label>
+        <label>
+          Room preference (optional)
+          <input name="roomPreference" maxLength={160} />
+        </label>
+      </>
+    );
+  }
+  if (actionId === "enrollment.enquiry") {
+    return (
+      <>
+        <label>
+          Course or programme (optional)
+          <input name="course" maxLength={180} />
+        </label>
+        <label>
+          Preferred delivery mode (optional)
+          <select name="deliveryMode" defaultValue="unsure">
+            <option value="unsure">Not sure yet</option>
+            <option value="online">Online</option>
+            <option value="in-person">In person</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+        </label>
+      </>
+    );
+  }
+  return null;
+}
+
+function formSubmitLabel(actionId: string) {
+  if (actionId === "appointment.request") return "Request appointment";
+  if (actionId === "reservation.request") return "Request reservation";
+  if (actionId === "quote.request") return "Request quote";
+  if (actionId === "newsletter.subscribe") return "Subscribe";
+  if (actionId === "property.enquiry") return "Send property enquiry";
+  if (actionId === "demo.request") return "Request demo";
+  if (actionId === "booking.request") return "Request booking";
+  if (actionId === "enrollment.enquiry") return "Send enrollment enquiry";
+  return "Send enquiry";
+}
+
+function formConsentText(actionId: string) {
+  return actionId === "newsletter.subscribe"
+    ? "I agree to receive email updates from this business. I can unsubscribe at any time."
+    : "I agree that this business may use these details to respond to my request.";
 }
 
 function FooterSection(props: UniversalSectionProps) {

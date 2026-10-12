@@ -8,9 +8,17 @@ type RuntimeVersion = {
   timestamp: string | null;
 };
 
+type VersionMetadataBinding = {
+  id?: string;
+  tag?: string;
+  timestamp?: string;
+};
+
 function runtimeVersion(): RuntimeVersion {
   try {
-    const { env } = getCloudflareContext();
+    const { env } = getCloudflareContext() as unknown as {
+      env: { CF_VERSION_METADATA?: VersionMetadataBinding };
+    };
     const metadata = env.CF_VERSION_METADATA;
 
     return {

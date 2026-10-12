@@ -21,6 +21,10 @@ import {
   applyIndustryPreset,
 } from "../apps/builder/app/apply-industry-preset";
 import {
+  DENTAL_HERO_COPY_LIMITS,
+  createDentalStructuralScaffold,
+} from "../apps/builder/app/dental-scaffold";
+import {
   applySelectedDentalCandidate,
   protectedStructureChanged,
   restoreProtectedStructure,
@@ -85,9 +89,9 @@ test.describe("flagship dental Top-20 contracts", () => {
 
   test("normalizes NVIDIA structured responses without accepting truncated JSON", () => {
     expect(parseProviderJson('{"id":"home"}')).toEqual({ id: "home" });
-    expect(
-      parseProviderJson('```json\n{"id":"services"}\n```'),
-    ).toEqual({ id: "services" });
+    expect(parseProviderJson('```json\n{"id":"services"}\n```')).toEqual({
+      id: "services",
+    });
     expect(
       parseProviderJson(
         '<think>Internal reasoning that must be ignored.</think>\n```json\n{"id":"contact"}\n```',
@@ -128,6 +132,40 @@ test.describe("flagship dental Top-20 contracts", () => {
       expect(identity.subtype).toBe("dental");
       expect(identity.catalogVersion).toBe(DENTAL_CATALOG_VERSION);
       expect(identity.archetype).toBe("healthcare-clinic");
+    }
+  });
+
+  test("keeps factual review hero copy within the certified content-fit limits", () => {
+    const service = "Crowns Root Canal Teeth Alignment Teeth Whitening";
+    const scaffold = createDentalStructuralScaffold(pearlDentalFixture(), {
+      businessName: "Anil dental care",
+      location: "Hyderabad Telangana",
+      services: [service],
+      goals: ["Request appointments"],
+      languages: ["en"],
+    });
+    const home = scaffold.pages.find((page) => page.path === "/");
+    const hero = home?.sections.find((section) =>
+      section.component.componentId.startsWith("hero."),
+    );
+    const title = String(hero?.props.title ?? "");
+    const description = String(hero?.props.description ?? "");
+
+    expect(title).toBe("Anil dental care");
+    expect(title.length).toBeLessThanOrEqual(DENTAL_HERO_COPY_LIMITS.title);
+    expect(description).toContain(service);
+    expect(description.length).toBeLessThanOrEqual(
+      DENTAL_HERO_COPY_LIMITS.description,
+    );
+
+    for (const preset of dentalPresets()) {
+      const candidate = applyIndustryPreset(scaffold, preset);
+      const candidateHome = candidate.pages.find((page) => page.path === "/");
+      const candidateHero = candidateHome?.sections.find(
+        (section) => section.id === hero?.id,
+      );
+      expect(candidateHero?.props.title, preset.id).toBe(title);
+      expect(candidateHero?.props.description, preset.id).toBe(description);
     }
   });
 
@@ -639,8 +677,8 @@ function page(
       bindings:
         family === "contact"
           ? {
-              submit: { actionId: "lead.create", inputMap: {} },
               appointment: { actionId: "appointment.request", inputMap: {} },
+              submit: { actionId: "lead.create", inputMap: {} },
             }
           : family === "gallery" && id === "home"
             ? { enquiry: { actionId: "case.enquiry", inputMap: {} } }

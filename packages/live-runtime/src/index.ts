@@ -1,4 +1,9 @@
-import { preparePage, type FunctionBindingResolver, type PreparedPage, type RendererRegistry } from "@micirql/renderer";
+import {
+  preparePage,
+  type FunctionBindingResolver,
+  type PreparedPage,
+  type RendererRegistry,
+} from "@micirql/renderer";
 import { siteSchema, type Site } from "@micirql/schema";
 
 export type PublishedSiteRecord = {
@@ -26,20 +31,37 @@ export type LiveRuntimeDependencies = {
   cacheTtlSeconds?: number;
 };
 
-export async function handleLiveRequest(request: Request, dependencies: LiveRuntimeDependencies): Promise<Response> {
+export async function handleLiveRequest(
+  request: Request,
+  dependencies: LiveRuntimeDependencies,
+): Promise<Response> {
   const url = new URL(request.url);
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const hostname = normalizeHostname(forwardedHost ?? request.headers.get("host") ?? url.hostname);
+  const forwardedHost = request.headers
+    .get("x-forwarded-host")
+    ?.split(",")[0]
+    ?.trim();
+  const hostname = normalizeHostname(
+    forwardedHost ?? request.headers.get("host") ?? url.hostname,
+  );
   if (!hostname) return textResponse("Invalid hostname", 400);
 
   const resolved = await dependencies.store.resolveHostname(hostname);
-  if (!resolved) return htmlResponse(notFoundDocument("Website not found"), 404, { "x-robots-tag": "noindex" });
+  if (!resolved)
+    return htmlResponse(notFoundDocument("Website not found"), 404, {
+      "x-robots-tag": "noindex",
+    });
 
   const published = await dependencies.store.getPublishedSite(resolved.siteId);
-  if (!published) return htmlResponse(notFoundDocument("Website not published"), 404, { "x-robots-tag": "noindex" });
+  if (!published)
+    return htmlResponse(notFoundDocument("Website not published"), 404, {
+      "x-robots-tag": "noindex",
+    });
 
   const parsed = siteSchema.safeParse(published.snapshot);
-  if (!parsed.success) return htmlResponse(errorDocument("Published site is invalid"), 500, { "cache-control": "no-store" });
+  if (!parsed.success)
+    return htmlResponse(errorDocument("Published site is invalid"), 500, {
+      "cache-control": "no-store",
+    });
   const site = parsed.data;
   const origin = canonicalOrigin(site, hostname);
 
@@ -51,13 +73,28 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
   const cached = await dependencies.cache?.get(cacheKey);
   if (cached) return cached;
 
-  const prepared = await preparePage({ site, path, origin, registry: dependencies.registry, functions: dependencies.functions, mode: "production" });
+  const prepared = await preparePage({
+    site,
+    path,
+    origin,
+    registry: dependencies.registry,
+    functions: dependencies.functions,
+    mode: "production",
+  });
   if (!prepared.ok) {
-    const is404 = prepared.issues.some((issue) => issue.code === "PAGE_NOT_FOUND");
-    return htmlResponse(is404 ? notFoundDocument("Page not found") : errorDocument("Unable to render page"), is404 ? 404 : 500, {
-      "x-robots-tag": "noindex",
-      "cache-control": is404 ? "public, max-age=60" : "no-store",
-    });
+    const is404 = prepared.issues.some(
+      (issue) => issue.code === "PAGE_NOT_FOUND",
+    );
+    return htmlResponse(
+      is404
+        ? notFoundDocument("Page not found")
+        : errorDocument("Unable to render page"),
+      is404 ? 404 : 500,
+      {
+        "x-robots-tag": "noindex",
+        "cache-control": is404 ? "public, max-age=60" : "no-store",
+      },
+    );
   }
 
   const content = await dependencies.renderPage(prepared.value);
@@ -74,52 +111,139 @@ export async function handleLiveRequest(request: Request, dependencies: LiveRunt
     "x-micirql-site": site.siteId,
     "x-micirql-version": published.versionId,
   });
-  await dependencies.cache?.put(cacheKey, response.clone(), dependencies.cacheTtlSeconds ?? 300);
+  await dependencies.cache?.put(
+    cacheKey,
+    response.clone(),
+    dependencies.cacheTtlSeconds ?? 300,
+  );
   return response;
 }
 
 function pageDocument(
-  seo: { title: string; description: string; canonical: string; robots: string; structuredData: Record<string, unknown>[] },
+  seo: {
+    title: string;
+    description: string;
+    canonical: string;
+    robots: string;
+    structuredData: Record<string, unknown>[];
+  },
   body: string,
   versionId: string,
   styles?: string,
   script?: string,
 ) {
-  const structured = seo.structuredData.map((item) => `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`).join("");
+  const structured = seo.structuredData
+    .map(
+      (item) =>
+        `<script type="application/ld+json">${escapeScriptJson(JSON.stringify(item))}</script>`,
+    )
+    .join("");
   const styleTag = styles ? `<style>${escapeStyleText(styles)}</style>` : "";
-  const scriptTag = script ? `<script>${escapeScriptText(script)}</script>` : "";
+  const scriptTag = script
+    ? `<script>${escapeScriptText(script)}</script>`
+    : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(seo.title)}</title><meta name="description" content="${escapeAttr(seo.description)}"><meta name="robots" content="${escapeAttr(seo.robots)}"><meta name="micirql-version" content="${escapeAttr(versionId)}"><link rel="canonical" href="${escapeAttr(seo.canonical)}">${structured}${styleTag}</head><body>${body}${scriptTag}</body></html>`;
 }
 
 function robotsResponse(site: Site, origin: string) {
   const hasIndexable = site.pages.some((page) => page.seo.indexable);
   const body = `${hasIndexable ? "User-agent: *\nAllow: /" : "User-agent: *\nDisallow: /"}\nSitemap: ${origin}/sitemap.xml\n`;
-  return new Response(body, { status: 200, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, s-maxage=3600" } });
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, s-maxage=3600",
+    },
+  });
 }
 
 function sitemapResponse(site: Site, origin: string) {
-  const urls = site.pages.filter((page) => page.seo.indexable).map((page) => `<url><loc>${escapeXml(`${origin}${page.path}`)}</loc></url>`).join("");
+  const urls = site.pages
+    .filter((page) => page.seo.indexable)
+    .map(
+      (page) => `<url><loc>${escapeXml(`${origin}${page.path}`)}</loc></url>`,
+    )
+    .join("");
   const body = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
-  return new Response(body, { status: 200, headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, s-maxage=3600" } });
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/xml; charset=utf-8",
+      "cache-control": "public, s-maxage=3600",
+    },
+  });
 }
 
 function canonicalOrigin(site: Site, requestHost: string) {
-  const primary = site.domains.find((domain) => domain.primary && domain.status === "active" && domain.sslStatus === "active") ?? site.domains.find((domain) => domain.status === "active" && domain.sslStatus === "active");
+  const primary =
+    site.domains.find(
+      (domain) =>
+        domain.primary &&
+        domain.status === "active" &&
+        domain.sslStatus === "active",
+    ) ??
+    site.domains.find(
+      (domain) => domain.status === "active" && domain.sslStatus === "active",
+    );
   return `https://${primary?.hostname ?? requestHost}`;
 }
 
-function normalizeHostname(value: string) { return value.trim().toLowerCase().replace(/:\d+$/, "").replace(/^\.+|\.+$/g, ""); }
-function normalizePath(value: string) { if (!value || value === "/") return "/"; const clean = `/${value.replace(/^\/+|\/+$/g, "")}`; return clean || "/"; }
-function htmlResponse(body: string, status: number, headers: Record<string,string> = {}) { return new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", ...headers } }); }
-function textResponse(body: string, status: number) { return new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8" } }); }
-function notFoundDocument(message: string) { return `<!doctype html><html><head><meta name="robots" content="noindex"><title>404</title></head><body><main><h1>404</h1><p>${escapeHtml(message)}</p></main></body></html>`; }
-function errorDocument(message: string) { return `<!doctype html><html><head><meta name="robots" content="noindex"><title>Site unavailable</title></head><body><main><h1>Site unavailable</h1><p>${escapeHtml(message)}</p></main></body></html>`; }
-function escapeHtml(value: string) { return value.replace(/[&<>]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[char]!)); }
-function escapeAttr(value: string) { return escapeHtml(value).replace(/"/g, "&quot;"); }
-function escapeXml(value: string) { return escapeAttr(value).replace(/'/g, "&apos;"); }
-function escapeScriptJson(value: string) { return value.replace(/</g, "\\u003c"); }
-function escapeStyleText(value: string) { return value.replace(/<\/style/gi, "<\\/style"); }
-function escapeScriptText(value: string) { return value.replace(/<\/script/gi, "<\\/script"); }
+function normalizeHostname(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, "")
+    .replace(/^\.+|\.+$/g, "");
+}
+function normalizePath(value: string) {
+  if (!value || value === "/") return "/";
+  const clean = `/${value.replace(/^\/+|\/+$/g, "")}`;
+  return clean || "/";
+}
+function htmlResponse(
+  body: string,
+  status: number,
+  headers: Record<string, string> = {},
+) {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html; charset=utf-8", ...headers },
+  });
+}
+function textResponse(body: string, status: number) {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  });
+}
+function notFoundDocument(message: string) {
+  return `<!doctype html><html><head><meta name="robots" content="noindex"><title>404</title></head><body><main><h1>404</h1><p>${escapeHtml(message)}</p></main></body></html>`;
+}
+function errorDocument(message: string) {
+  return `<!doctype html><html><head><meta name="robots" content="noindex"><title>Site unavailable</title></head><body><main><h1>Site unavailable</h1><p>${escapeHtml(message)}</p></main></body></html>`;
+}
+function escapeHtml(value: string) {
+  return value.replace(
+    /[&<>]/g,
+    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[char]!,
+  );
+}
+function escapeAttr(value: string) {
+  return escapeHtml(value).replace(/"/g, "&quot;");
+}
+function escapeXml(value: string) {
+  return escapeAttr(value).replace(/'/g, "&apos;");
+}
+function escapeScriptJson(value: string) {
+  return value.replace(/</g, "\\u003c");
+}
+function escapeStyleText(value: string) {
+  return value.replace(/<\/style/gi, "<\\/style");
+}
+function escapeScriptText(value: string) {
+  return value.replace(/<\/script/gi, "<\\/script");
+}
 
 export * from "./sql-store";
 export * from "./cloudflare";
+export { liveResolverHostname, siteSchema, type Site } from "@micirql/schema";

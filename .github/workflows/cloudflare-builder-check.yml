@@ -40,9 +40,11 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @micirql/builder cf-typecheck
       - run: pnpm --filter @micirql/builder typecheck
       - run: pnpm --filter @micirql/builder exec opennextjs-cloudflare build
+      # Wrangler includes the generated OpenNext entrypoint in CloudflareEnv,
+      # so check the committed types only after that entrypoint exists.
+      - run: pnpm --filter @micirql/builder cf-typecheck
       - run: pnpm --filter @micirql/builder exec wrangler deploy --dry-run --keep-vars
 
   build-live-worker:
@@ -56,7 +58,8 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @micirql/live cf-typecheck
       - run: pnpm --filter @micirql/live typecheck
       - run: pnpm --filter @micirql/live exec opennextjs-cloudflare build
+      # Keep type generation deterministic with the generated Worker entrypoint.
+      - run: pnpm --filter @micirql/live cf-typecheck
       - run: pnpm --filter @micirql/live exec wrangler deploy --dry-run --keep-vars

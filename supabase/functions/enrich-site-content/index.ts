@@ -567,18 +567,9 @@ function completeContentCoverage(generated: AiContent, deterministic: AiContent,
 
 function mergeContent(snapshot: any, content: AiContent, brief: Brief) {
   const next = structuredClone(snapshot)
-  next.name = brief.businessName || next.name
-  if (!next.seoBlueprint) next.seoBlueprint = {}
-  const seoBlueprint = content.seo_blueprint ?? {}
-  next.seoBlueprint.primaryGoal = nonEmpty(seoBlueprint.primary_goal) || next.seoBlueprint.primaryGoal || brief.goals[0] || 'Present the business clearly and convert visitors'
-  next.seoBlueprint.targetLocations = brief.location ? [brief.location] : stringArray(next.seoBlueprint.targetLocations)
-  next.seoBlueprint.priorityTopics = brief.services.length ? [...brief.services] : stringArray(next.seoBlueprint.priorityTopics)
-  next.seoBlueprint.audiences = stringArray(seoBlueprint.audiences).length ? stringArray(seoBlueprint.audiences) : stringArray(next.seoBlueprint.audiences)
-  next.seoBlueprint.languages = brief.languages.length ? [...brief.languages] : stringArray(next.seoBlueprint.languages).length ? stringArray(next.seoBlueprint.languages) : ['en']
-  next.seoBlueprint.localSeo = Boolean(brief.location || next.seoBlueprint.localSeo)
-  next.seoBlueprint.servicePages = seoBlueprint.service_pages !== false
-  next.seoBlueprint.locationPages = Boolean(seoBlueprint.location_pages)
-  next.seoBlueprint.blog = Boolean(seoBlueprint.blog ?? brief.requiredCapabilities.some((item) => /blog/i.test(item)))
+  // Planning owns the site identity and SEO blueprint. Content enrichment is
+  // deliberately limited to page SEO and schema-constrained section copy so a
+  // provider response can never mutate the selected composition or its facts.
 
   const pageContentById = new Map((content.pages ?? []).filter((page) => page?.id).map((page) => [String(page.id), page]))
   for (const page of sitePages(next)) {

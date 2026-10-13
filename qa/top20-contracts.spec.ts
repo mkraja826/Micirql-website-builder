@@ -81,6 +81,14 @@ test.describe("flagship dental Top-20 contracts", () => {
     expect(source).toContain("task: 'content'");
     expect(source).not.toContain("MICIRQL_TEXT_API_KEY");
     expect(source).not.toContain("MICIRQL_TEXT_BASE_URL");
+    const mergeContentSource = source.slice(
+      source.indexOf("function mergeContent"),
+      source.indexOf("function ensureUniqueHeadings"),
+    );
+    expect(mergeContentSource).not.toMatch(/\bnext\.name\s*=/);
+    expect(mergeContentSource).not.toMatch(/\bnext\.seoBlueprint\b/);
+    expect(mergeContentSource).toContain("page.seo.title =");
+    expect(mergeContentSource).toContain("section.props =");
     expect(gateway).toContain("type Provider = 'nvidia'");
     expect(gateway).toContain("enable_thinking: false");
     expect(gateway).not.toContain("GEMINI_API_KEY");

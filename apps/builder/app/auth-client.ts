@@ -38,8 +38,23 @@ async function authRequest(path: string, init: RequestInit) {
     headers: { apikey: anon, "content-type": "application/json", ...(init.headers ?? {}) },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.msg ?? payload?.message ?? payload?.error_description ?? payload?.error ?? `Authentication failed (${response.status}).`);
+  if (!response.ok) {
+    const message =
+      payload?.msg ??
+      payload?.message ??
+      payload?.error_description ??
+      payload?.error ??
+      `Authentication failed (${response.status}).`;
+    const error = new Error(message) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
   return payload;
+}
+
+export function isTerminalAuthFailure(error: unknown) {
+  const status = (error as { status?: unknown } | undefined)?.status;
+  return status === 400 || status === 401 || status === 403;
 }
 
 export async function signIn(email: string, password: string): Promise<SupabaseSession> {

@@ -95,7 +95,7 @@ function defaultSite(workspaceId: string, siteId: string): Site {
 
 async function getJson<T>(url: string, headers: Record<string, string>): Promise<T> {
   const response = await fetch(url, { headers, cache: "no-store" });
-  if (!response.ok) throw new Error(`Supabase context request failed (${response.status}).`);
+  if (!response.ok) throw responseError(`Supabase context request failed (${response.status}).`, response.status);
   return response.json() as Promise<T>;
 }
 
@@ -106,6 +106,12 @@ async function postJson<T>(url: string, headers: Record<string, string>, body: u
     body: JSON.stringify(body),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Supabase context creation failed (${response.status}).`);
+  if (!response.ok) throw responseError(`Supabase context creation failed (${response.status}).`, response.status);
   return response.json() as Promise<T>;
+}
+
+function responseError(message: string, status: number) {
+  const error = new Error(message) as Error & { status?: number };
+  error.status = status;
+  return error;
 }

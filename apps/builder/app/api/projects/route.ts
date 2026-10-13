@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 function text(v:unknown){return typeof v==="string"?v.trim():""}
-async function getJson<T>(url:string,headers:Record<string,string>):Promise<T>{const r=await fetch(url,{headers,cache:"no-store"});if(!r.ok)throw new Error(`Supabase request failed (${r.status}).`);return r.json() as Promise<T>}
-async function writeJson<T>(url:string,headers:Record<string,string>,method:string,body:unknown,representation=false):Promise<T>{const r=await fetch(url,{method,headers:{...headers,...(representation?{Prefer:"return=representation"}:{})},body:JSON.stringify(body),cache:"no-store"});if(!r.ok)throw new Error(`Supabase write failed (${r.status}).`);return r.json() as Promise<T>}
+async function getJson<T>(url:string,headers:Record<string,string>):Promise<T>{const r=await fetch(url,{headers,cache:"no-store"});if(!r.ok)throw upstreamError(`Supabase request failed (${r.status}).`,r.status);return r.json() as Promise<T>}
+async function writeJson<T>(url:string,headers:Record<string,string>,method:string,body:unknown,representation=false):Promise<T>{const r=await fetch(url,{method,headers:{...headers,...(representation?{Prefer:"return=representation"}:{})},body:JSON.stringify(body),cache:"no-store"});if(!r.ok)throw upstreamError(`Supabase write failed (${r.status}).`,r.status);return r.json() as Promise<T>}
+function upstreamError(message:string,status:number){const error=new Error(message) as Error&{status?:number};error.status=status;return error}
 function fail(e:unknown){return NextResponse.json({error:e instanceof Error?e.message:"Project request failed."},{status:(e as Error&{status?:number}).status??500})}

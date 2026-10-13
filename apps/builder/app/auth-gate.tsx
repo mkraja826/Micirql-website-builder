@@ -1,7 +1,18 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { ensureFreshSession, readStoredSession, signIn, signOut, signUp, type SupabaseSession } from "./auth-client";
+import {
+  ensureFreshSession,
+  isTerminalAuthFailure,
+  readStoredSession,
+  refreshSession,
+  signIn,
+  signOut,
+  signUp,
+  storeSession,
+  type SupabaseSession,
+} from "./auth-client";
+import { createAuthenticatedFetch } from "./authenticated-fetch";
 
 const authStyles = `
 .auth-shell{min-height:100svh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 10%,rgba(124,58,237,.18),transparent 34rem),radial-gradient(circle at 85% 85%,rgba(99,102,241,.10),transparent 28rem),#0a0a0c}
@@ -24,23 +35,72 @@ export function AuthGate({ children }: { children(session: SupabaseSession): Rea
   const [message, setMessage] = useState("");
   const [authFetchReady, setAuthFetchReady] = useState(false);
 
-  useEffect(() => { let cancelled=false;(async()=>{const stored=readStoredSession();if(!stored){if(!cancelled)setChecking(false);return}try{const fresh=await ensureFreshSession(stored);if(!cancelled)setSession(fresh)}catch{}finally{if(!cancelled)setChecking(false)}})();return()=>{cancelled=true}},[]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const stored = readStoredSession();
+      if (!stored) {
+        if (!cancelled) setChecking(false);
+        return;
+      }
+      try {
+        const fresh = await ensureFreshSession(stored);
+        if (!cancelled) setSession(fresh);
+      } catch (failure) {
+        if (!cancelled) {
+          if (isTerminalAuthFailure(failure)) {
+            storeSession(undefined);
+            setSession(undefined);
+          } else {
+            setSession(stored);
+          }
+        }
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!session?.access_token) return;
     const nativeFetch = window.fetch.bind(window);
+    const authenticatedFetch = createAuthenticatedFetch({
+      session,
+      fetcher: nativeFetch,
+      refresh: refreshSession,
+      onSession: (fresh) => {
+        storeSession(fresh);
+        setSession(fresh);
+      },
+      onAuthFailure: (failure) => {
+        if (!isTerminalAuthFailure(failure)) return;
+        storeSession(undefined);
+        setSession(undefined);
+      },
+      prepareHeaders: (headers) => {
+        try {
+          const active = JSON.parse(
+            localStorage.getItem("micirql_active_project") ?? "null",
+          ) as { workspaceId?: string; siteId?: string } | null;
+          if (active?.workspaceId)
+            headers.set("x-micirql-workspace-id", active.workspaceId);
+          if (active?.siteId)
+            headers.set("x-micirql-site-id", active.siteId);
+        } catch {}
+      },
+    });
     window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
       const target = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const isBuilderApi = target.startsWith("/api/") || target.startsWith(`${window.location.origin}/api/`);
       if (!isBuilderApi) return nativeFetch(input, init);
-      const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-      if (!headers.has("Authorization")) headers.set("Authorization", `Bearer ${session.access_token}`);
-      try { const active=JSON.parse(localStorage.getItem("micirql_active_project")??"null") as {workspaceId?:string;siteId?:string}|null; if(active?.workspaceId)headers.set("x-micirql-workspace-id",active.workspaceId);if(active?.siteId)headers.set("x-micirql-site-id",active.siteId); } catch {}
-      return nativeFetch(input, { ...init, headers });
+      return authenticatedFetch(input, init);
     };
     setAuthFetchReady(true);
     return () => { window.fetch = nativeFetch; setAuthFetchReady(false); };
-  }, [session?.access_token]);
+  }, [session?.user.id]);
 
   async function submit(event: FormEvent) { event.preventDefault();setSubmitting(true);setError("");setMessage("");try{if(mode==="signin")setSession(await signIn(email.trim(),password));else{const created=await signUp(email.trim(),password);if(created)setSession(created);else setMessage("Account created. Check your email to confirm it, then sign in.")}}catch(caught){setError(caught instanceof Error?caught.message:"Authentication failed.")}finally{setSubmitting(false)}}
 

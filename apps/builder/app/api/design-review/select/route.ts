@@ -4,7 +4,11 @@ import {
   DENTAL_CATALOG_VERSION,
   listIndustryDesignPresets,
 } from "../../../industry-design-preset-data";
-import { applyCertifiedDentalMedia } from "../../../apply-industry-preset";
+import {
+  applyCertifiedDentalMedia,
+  certifiedDentalMediaIssues,
+} from "../../../apply-industry-preset";
+import { normalizeServiceInput } from "../../../service-normalization";
 import {
   getSupabaseDraft,
   saveSupabaseDraft,
@@ -243,6 +247,7 @@ export async function POST(request: NextRequest) {
         saved.snapshot,
         candidate,
       );
+      pipelineIssues.push(...certifiedDentalMediaIssues(mediaSnapshot));
       if (protectedStructureChanged(saved.snapshot, mediaSnapshot)) {
         pipelineIssues.push({
           code: "IMAGERY_MUTATED_PROTECTED_STRUCTURE",
@@ -582,12 +587,17 @@ async function reloadSelectedDraft(
 }
 
 function profileBrief(profile: OnboardingProfile) {
+  const industry = string(profile.industry);
+  const subindustry = optionalString(profile.subindustry);
   return {
     businessName: string(profile.business_name),
-    industry: string(profile.industry),
-    subindustry: optionalString(profile.subindustry),
+    industry,
+    subindustry,
     location: optionalString(profile.location),
-    services: stringArray(profile.services),
+    services: normalizeServiceInput(profile.services, {
+      industry,
+      subindustry,
+    }),
     goals: stringArray(profile.goals),
     styleTags: stringArray(profile.style_tags),
     requiredCapabilities: stringArray(profile.required_capabilities),

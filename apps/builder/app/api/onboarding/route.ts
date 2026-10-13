@@ -6,6 +6,7 @@ import { createDentalStructuralScaffold } from "../../dental-scaffold";
 import { DENTAL_CATALOG_VERSION, DESIGN_REVIEW_COUNT } from "../../industry-design-preset-data";
 import { resolveOnboardingStatus } from "../../onboarding-status";
 import { rankPresets } from "../../preset-ranking";
+import { normalizeServiceInput } from "../../service-normalization";
 import { getSupabaseDraft, saveSupabaseDraft } from "../drafts/supabase-store";
 
 function config() {
@@ -79,7 +80,10 @@ export async function POST(request: NextRequest) {
     const user = await userResponse.json() as { id?: string };
     if (!user.id) throw new Error("Authenticated user could not be resolved.");
 
-    const services = stringArray(body.services);
+    const services = normalizeServiceInput(body.services, {
+      industry,
+      subindustry: body.subindustry,
+    });
     const goals = stringArray(body.goals);
     const styleTags = stringArray(body.styleTags);
     const requiredCapabilities = stringArray(body.requiredCapabilities);

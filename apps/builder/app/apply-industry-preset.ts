@@ -1,4 +1,9 @@
-import { siteSchema, type ImageStrategy, type Site } from "@micirql/schema";
+import {
+  siteSchema,
+  type CompositionGateIssue,
+  type ImageStrategy,
+  type Site,
+} from "@micirql/schema";
 import {
   DENTAL_COMPONENT_VERSION,
   FAMILY_CODES,
@@ -19,6 +24,24 @@ export const DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY = {
   "people-led": "mi-dental-welcoming-clinic",
   restrained: "mi-dental-calm-clinic",
 } as const satisfies Record<ImageStrategy, string>;
+
+const DENTAL_HERO_ASSET_IDS = [
+  "mi-dental-calm-clinic",
+  "mi-dental-smile-contour",
+  "mi-dental-precision-instruments",
+  "mi-dental-editorial-pattern",
+  "mi-dental-documentary-clinic",
+  "mi-dental-welcoming-clinic",
+] as const;
+
+export const DENTAL_HERO_ASSETS_BY_IMAGE_STRATEGY = {
+  documentary: dentalHeroAssetSequence("mi-dental-documentary-clinic"),
+  "editorial-crop": dentalHeroAssetSequence("mi-dental-editorial-pattern"),
+  immersive: dentalHeroAssetSequence("mi-dental-smile-contour"),
+  "product-detail": dentalHeroAssetSequence("mi-dental-precision-instruments"),
+  "people-led": dentalHeroAssetSequence("mi-dental-welcoming-clinic"),
+  restrained: dentalHeroAssetSequence("mi-dental-calm-clinic"),
+} as const satisfies Record<ImageStrategy, readonly string[]>;
 
 type ApplyIndustryPresetOptions = {
   applyCertifiedMedia?: boolean;
@@ -66,12 +89,20 @@ export function applyCertifiedDentalMedia(
   preset: IndustryDesignPreset,
 ): Site {
   const next = structuredClone(site);
-  const assetId = DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy];
-  const asset = demoAssetById(assetId);
-  if (!asset) {
-    throw new Error(`Missing certified dental hero asset ${assetId}.`);
-  }
-  for (const page of next.pages) {
+  const assetIds = DENTAL_HERO_ASSETS_BY_IMAGE_STRATEGY[preset.imageStrategy];
+  for (const [pageIndex, page] of next.pages.entries()) {
+    const assetId =
+      assetIds[dentalPageMediaSlot(page.path, pageIndex) % assetIds.length] ??
+      assetIds[0];
+    if (!assetId) {
+      throw new Error(
+        `No certified dental media is configured for ${preset.imageStrategy}.`,
+      );
+    }
+    const asset = demoAssetById(assetId);
+    if (!asset) {
+      throw new Error(`Missing certified dental hero asset ${assetId}.`);
+    }
     for (const section of page.sections) {
       const family = sectionFamilyFromComponentId(
         section.component.componentId,
@@ -92,6 +123,80 @@ export function applyCertifiedDentalMedia(
     }
   }
   return siteSchema.parse(next);
+}
+
+function dentalHeroAssetSequence(primaryAssetId: string) {
+  return [
+    primaryAssetId,
+    ...DENTAL_HERO_ASSET_IDS.filter(
+      (candidate) => candidate !== primaryAssetId,
+    ),
+  ];
+}
+
+export function certifiedDentalMediaIssues(site: Site): CompositionGateIssue[] {
+  const requiredPaths = new Set([
+    "/",
+    "/services",
+    "/doctors",
+    "/about",
+    "/contact",
+  ]);
+  const heroAssets = site.pages
+    .filter((page) => requiredPaths.has(page.path))
+    .map((page) => {
+      const hero = page.sections.find(
+        (section) =>
+          sectionFamilyFromComponentId(section.component.componentId) ===
+          "hero",
+      );
+      const image =
+        hero?.props.image &&
+        typeof hero.props.image === "object" &&
+        !Array.isArray(hero.props.image)
+          ? (hero.props.image as Record<string, unknown>)
+          : undefined;
+      const assetId =
+        typeof image?.assetId === "string" ? image.assetId.trim() : "";
+      return { page, assetId, asset: demoAssetById(assetId) };
+    });
+  const issues: CompositionGateIssue[] = [];
+  for (const { page, assetId, asset } of heroAssets) {
+    if (
+      !assetId ||
+      !asset?.active ||
+      asset.license !== "licensed" ||
+      !asset.sourceReference?.startsWith("https://www.pexels.com/")
+    ) {
+      issues.push({
+        code: "DENTAL_HERO_MEDIA_NOT_CERTIFIED",
+        message: `The ${page.name} hero does not use an active, licensed dental media asset with provenance.`,
+        severity: "error",
+      });
+    }
+  }
+  if (
+    heroAssets.length === requiredPaths.size &&
+    new Set(heroAssets.map(({ assetId }) => assetId)).size !== heroAssets.length
+  ) {
+    issues.push({
+      code: "DENTAL_HERO_MEDIA_REPEATED",
+      message:
+        "The required dental pages must not reuse one hero image across the site.",
+      severity: "error",
+    });
+  }
+  return issues;
+}
+
+function dentalPageMediaSlot(path: string, fallbackIndex: number): number {
+  const normalized = path.trim().toLowerCase().replace(/\/$/, "") || "/";
+  if (normalized === "/") return 0;
+  if (/service|treatment/.test(normalized)) return 1;
+  if (/doctor|team|people|staff/.test(normalized)) return 2;
+  if (/about|story/.test(normalized)) return 3;
+  if (/contact|appointment|book|enquir/.test(normalized)) return 4;
+  return fallbackIndex;
 }
 
 function shouldApplyDentalHero(value: unknown): boolean {

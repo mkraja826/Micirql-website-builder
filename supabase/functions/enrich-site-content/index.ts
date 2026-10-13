@@ -612,7 +612,6 @@ function mergeContent(snapshot: any, content: AiContent, brief: Brief) {
 }
 
 function ensureUniqueHeadings(pages: any[]) {
-  const counts = new Map<string, number>()
   const alternatives: Record<string, string[]> = {
     about: ['Our approach', 'What guides us', 'Why it matters'],
     services: ['Our capabilities', 'Explore our work', 'How we can help'],
@@ -625,6 +624,10 @@ function ensureUniqueHeadings(pages: any[]) {
     cta: ['Take the next step', 'Let’s begin', 'Ready when you are'],
   }
   for (const page of pages) {
+    // Headings need to be unique within a page, not across the entire site.
+    // A site-wide counter produced awkward copy such as "About Acme for About"
+    // when another page had already used the same factual heading.
+    const counts = new Map<string, number>()
     for (const section of siteSections(page)) {
       const component = sectionFamily(section?.component?.componentId)
       if (component === 'navbar' || component === 'footer') continue
@@ -970,12 +973,14 @@ function isGenericCopy(value: unknown) {
 }
 
 function normalizeBrief(value: any): Brief {
+  const industry = string(value.industry)
+  const subindustry = optional(value.subindustry)
   return {
     businessName: string(value.businessName ?? value.business_name),
-    industry: string(value.industry),
-    subindustry: optional(value.subindustry),
+    industry,
+    subindustry,
     location: optional(value.location),
-    services: stringArray(value.services),
+    services: normalizeServiceInput(value.services, { industry, subindustry }),
     goals: stringArray(value.goals),
     styleTags: stringArray(value.styleTags ?? value.style_tags),
     requiredCapabilities: stringArray(value.requiredCapabilities ?? value.required_capabilities),
@@ -1008,6 +1013,51 @@ function optional(value: unknown) {
 }
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(string).filter(Boolean) : []
+}
+const DENTAL_SERVICE_PHRASES = [
+  'emergency dental care', 'preventive dentistry', 'restorative dentistry', 'cosmetic dentistry',
+  'pediatric dentistry', "children's dentistry", 'root canal treatment', 'root canal therapy',
+  'wisdom tooth removal', 'teeth straightening', 'teeth alignment', 'teeth whitening',
+  'dental implants', 'dental cleaning', 'teeth cleaning', 'clear aligners', 'smile makeover',
+  'tooth extractions', 'tooth extraction', 'gum treatment', 'emergency dentistry', 'oral surgery',
+  'root canal', 'dental exams', 'dental exam', 'check-ups', 'checkups', 'orthodontics',
+  'periodontics', 'invisalign', 'dentures', 'fillings', 'veneers', 'bridges', 'braces', 'crowns',
+  'hygiene',
+]
+function normalizeServiceInput(value: unknown, context: { industry?: unknown; subindustry?: unknown }): string[] {
+  const source = Array.isArray(value) ? value : [value]
+  const separated = source.flatMap((entry) =>
+    typeof entry === 'string'
+      ? entry.split(/[,;\n\r|•·]+/).map((item) => item.replace(/^[-–—*\s]+|[-–—*\s]+$/g, '').trim()).filter(Boolean)
+      : [],
+  )
+  const dental = /\b(?:dental|dentist|dentistry|orthodont|oral care)\b/i.test(
+    `${string(context.industry)} ${string(context.subindustry)}`,
+  )
+  const normalized = separated.flatMap((service) => dental ? splitKnownDentalSequence(service) : [service])
+  const seen = new Set<string>()
+  return normalized.filter((service) => {
+    const key = service.toLocaleLowerCase('en-US')
+    if (!service || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+function splitKnownDentalSequence(value: string): string[] {
+  const expression = [...DENTAL_SERVICE_PHRASES].sort((left, right) => right.length - left.length).map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+  const matches = [...value.matchAll(new RegExp(expression, 'gi'))]
+    .map((match) => ({ start: match.index ?? 0, end: (match.index ?? 0) + match[0].length }))
+    .filter(({ start, end }) =>
+      !/[a-z0-9]/i.test(start > 0 ? value[start - 1] : '') &&
+      !/[a-z0-9]/i.test(end < value.length ? value[end] : ''),
+    )
+  if (matches.length < 2) return [value]
+  const uncovered = [...value]
+  for (const match of matches) {
+    for (let index = match.start; index < match.end; index += 1) uncovered[index] = ' '
+  }
+  const residue = uncovered.join('').replace(/\b(?:and|or)\b/gi, '').replace(/[\s,;|/&+•·–—-]+/g, '')
+  return residue ? [value] : matches.map((match) => value.slice(match.start, match.end).trim())
 }
 function nonEmpty(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : ''

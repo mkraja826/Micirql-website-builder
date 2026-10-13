@@ -19,6 +19,7 @@ import {
   DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY,
   applyCertifiedDentalMedia,
   applyIndustryPreset,
+  certifiedDentalMediaIssues,
 } from "../apps/builder/app/apply-industry-preset";
 import {
   DENTAL_HERO_COPY_LIMITS,
@@ -42,6 +43,7 @@ import {
 } from "../apps/builder/app/industry-design-preset-data";
 import { resolveOnboardingStatus } from "../apps/builder/app/onboarding-status";
 import { rankPresets } from "../apps/builder/app/preset-ranking";
+import { normalizeServiceInput } from "../apps/builder/app/service-normalization";
 import { parseProviderJson } from "../supabase/functions/ai-gateway/json";
 
 const requiredDentalFamilies = [
@@ -78,7 +80,10 @@ test.describe("flagship dental Top-20 contracts", () => {
     );
 
     expect(source).toContain("/functions/v1/ai-gateway");
-    expect(source).toContain("task: 'content'");
+    expect(source).toMatch(/task:\s*["']content["']/);
+    expect(source).toContain(
+      "services: normalizeServiceInput(value.services, { industry, subindustry })",
+    );
     expect(source).not.toContain("MICIRQL_TEXT_API_KEY");
     expect(source).not.toContain("MICIRQL_TEXT_BASE_URL");
     const mergeContentSource = source.slice(
@@ -175,6 +180,40 @@ test.describe("flagship dental Top-20 contracts", () => {
       expect(candidateHero?.props.title, preset.id).toBe(title);
       expect(candidateHero?.props.description, preset.id).toBe(description);
     }
+  });
+
+  test("normalizes delimiter-free dental services without inventing facts", () => {
+    expect(
+      normalizeServiceInput(
+        "Crowns Root Canal Teeth Alignment Teeth Whitening",
+        { industry: "Dental Clinic", subindustry: "dental" },
+      ),
+    ).toEqual([
+      "Crowns",
+      "Root Canal",
+      "Teeth Alignment",
+      "Teeth Whitening",
+    ]);
+    expect(
+      normalizeServiceInput("Crowns; Root Canal\nTeeth Whitening", {
+        industry: "Dental Clinic",
+      }),
+    ).toEqual(["Crowns", "Root Canal", "Teeth Whitening"]);
+    expect(
+      normalizeServiceInput("Tooth Extractions Crowns", {
+        subindustry: "dental",
+      }),
+    ).toEqual(["Tooth Extractions", "Crowns"]);
+    expect(
+      normalizeServiceInput("Crowns Bespoke Smile Programme", {
+        industry: "Dental Clinic",
+      }),
+    ).toEqual(["Crowns Bespoke Smile Programme"]);
+    expect(
+      normalizeServiceInput("Strategy Consulting Operations", {
+        industry: "Professional Services",
+      }),
+    ).toEqual(["Strategy Consulting Operations"]);
   });
 
   test("every pair is materially different in structure and visual direction", () => {
@@ -478,31 +517,68 @@ test.describe("flagship dental Top-20 contracts", () => {
   test("selection applies licensed dental media only after structure and content", () => {
     const source = pearlDentalFixture();
     const preset = dentalPresets()[0]!;
-    const hero = source.pages[0]!.sections.find(
-      (section) => section.component.componentId === "hero.placeholder",
-    )!;
     const initialImage = {
       assetId: "mi-dental-calm-clinic",
       alt: "Bright empty dental office",
       focalPoint: { x: 0.5, y: 0.5 },
     };
-    hero.props.image = initialImage;
+    for (const page of source.pages) {
+      const hero = page.sections.find(
+        (section) => section.component.componentId === "hero.placeholder",
+      );
+      if (hero) hero.props.image = initialImage;
+    }
 
     const selected = applySelectedDentalCandidate(source, preset);
-    const selectedHero = selected.pages[0]!.sections.find(
-      (section) => section.id === hero.id,
+    const selectedHero = selected.pages[0]!.sections.find((section) =>
+      section.component.componentId.includes("-HERO-"),
     )!;
     expect(selectedHero.props.image).toEqual(initialImage);
 
     const withMedia = applyCertifiedDentalMedia(selected, preset);
-    const mediaHero = withMedia.pages[0]!.sections.find(
-      (section) => section.id === hero.id,
+    const mediaHero = withMedia.pages[0]!.sections.find((section) =>
+      section.component.componentId.includes("-HERO-"),
     )!;
     expect((mediaHero.props.image as { assetId?: string }).assetId).toBe(
       DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy],
     );
     expect({ ...mediaHero.props, image: initialImage }).toEqual(
       selectedHero.props,
+    );
+
+    const requiredHeroAssets = withMedia.pages
+      .filter((page) =>
+        ["/", "/services", "/doctors", "/about", "/contact"].includes(
+          page.path,
+        ),
+      )
+      .map((page) =>
+        page.sections.find((section) =>
+          section.component.componentId.includes("-HERO-"),
+        ),
+      )
+      .map((hero) =>
+        String((hero?.props.image as { assetId?: string } | undefined)?.assetId),
+      );
+    expect(requiredHeroAssets).toHaveLength(5);
+    expect(new Set(requiredHeroAssets).size).toBe(5);
+    expect(certifiedDentalMediaIssues(withMedia)).toEqual([]);
+
+    const repeatedMedia = structuredClone(withMedia);
+    const repeatedAsset = repeatedMedia.pages[0]!.sections.find((section) =>
+      section.component.componentId.includes("-HERO-"),
+    )!.props.image;
+    for (const page of repeatedMedia.pages.filter((page) =>
+      ["/", "/services", "/doctors", "/about", "/contact"].includes(
+        page.path,
+      ),
+    )) {
+      page.sections.find((section) =>
+        section.component.componentId.includes("-HERO-"),
+      )!.props.image = repeatedAsset;
+    }
+    expect(certifiedDentalMediaIssues(repeatedMedia)).toContainEqual(
+      expect.objectContaining({ code: "DENTAL_HERO_MEDIA_REPEATED" }),
     );
   });
 });

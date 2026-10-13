@@ -1,7 +1,7 @@
 diff --git a/dist/esm/server/next-server.js b/dist/esm/server/next-server.js
 index 7e72ab6eec6dbe31a702fc0f5b8859b68caed412..e2e260e60df6d9dc19106f73e9b40c279518faa4 100644
 --- a/dist/esm/server/next-server.js
-+++ b/dist/esm/server/next-server.js
++++ b/dist/esm/server/next-server.js	
 @@ -933,7 +933,7 @@ export default class NextNodeServer extends BaseServer {
          if (this.minimalMode) {
              return null;
@@ -14,7 +14,7 @@ index 7e72ab6eec6dbe31a702fc0f5b8859b68caed412..e2e260e60df6d9dc19106f73e9b40c27
 diff --git a/dist/server/next-server.js b/dist/server/next-server.js
 index 4d1c47ad31b07c7a1f71374333df14c373a7b615..f871ceae642148009bf8367cd9e1db1492b1f3e0 100644
 --- a/dist/server/next-server.js
-+++ b/dist/server/next-server.js
++++ b/dist/server/next-server.js	
 @@ -1002,7 +1002,7 @@ class NextNodeServer extends _baseserver.default {
          if (this.minimalMode) {
              return null;

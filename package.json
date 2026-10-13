@@ -18,6 +18,7 @@
     "qa:sections": "playwright test qa/sections.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
     "qa:sections:evidence": "node qa/build-evidence.mjs",
+    "verify:opennext-bundles": "node qa/verify-opennext-bundle.mjs apps/builder apps/live",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -30,7 +31,8 @@
   },
   "pnpm": {
     "patchedDependencies": {
-      "@opennextjs/cloudflare@1.20.7": "patches/@opennextjs__cloudflare@1.20.7.patch"
+      "@opennextjs/cloudflare@1.20.7": "patches/@opennextjs__cloudflare@1.20.7.patch",
+      "next@16.3.8": "patches/next@16.3.8.patch"
     }
   }
 }

@@ -135,6 +135,12 @@ test.describe("Restaurant Top 20: rendered Home catalog", () => {
             .toBeLessThanOrEqual(1);
           expect.soft(audit.escapedElements, candidate.id).toEqual([]);
           expect.soft(audit.clippedText, candidate.id).toEqual([]);
+          expect
+            .soft(
+              audit.menuContainmentIssues,
+              `${candidate.id} menu text containment at ${viewport.width}px`,
+            )
+            .toEqual([]);
           expect.soft(audit.h1.count, candidate.id).toBe(1);
           expect
             .soft(audit.h1.fontWeight, candidate.id)
@@ -571,6 +577,33 @@ async function responsiveAudit(page: Page, recipeId: string) {
         0,
       );
 
+      const menuGroups = root.querySelector<HTMLElement>(
+        '[data-section-family="services"] .mi-section__item-groups',
+      );
+      if (!menuGroups) throw new Error("Candidate is missing its menu groups");
+      const menuGroupsRect = menuGroups.getBoundingClientRect();
+      const menuContainmentIssues = [
+        ...menuGroups.querySelectorAll<HTMLElement>(
+          ".mi-section__item-group > .mi-type--h3, .mi-section__card > .mi-type--h3, .mi-section__card-meta, .mi-section__card > .mi-type--body-sm",
+        ),
+      ]
+        .filter((element) => visibleSet.has(element))
+        .flatMap((element) => {
+          const rect = element.getBoundingClientRect();
+          const issues: string[] = [];
+          if (rect.left < menuGroupsRect.left - 1) {
+            issues.push(
+              `${describe(element)} escapes the menu by ${Math.ceil(menuGroupsRect.left - rect.left)}px on the left`,
+            );
+          }
+          if (rect.right > menuGroupsRect.right + 1) {
+            issues.push(
+              `${describe(element)} escapes the menu by ${Math.ceil(rect.right - menuGroupsRect.right)}px on the right`,
+            );
+          }
+          return issues;
+        });
+
       const logoIssues = [
         ...root.querySelectorAll<HTMLImageElement>(
           'img[data-mi-logo-asset-id="qa-only/restaurant-supplied-logo-contract"]',
@@ -638,6 +671,7 @@ async function responsiveAudit(page: Page, recipeId: string) {
         ),
         galleryHeightPx: Math.ceil(gallery.getBoundingClientRect().height),
         readabilityIssues,
+        menuContainmentIssues,
         logoIssues,
         h1: {
           count: h1s.length,

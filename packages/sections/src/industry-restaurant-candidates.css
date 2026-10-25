@@ -278,7 +278,11 @@
     [data-section-family="services"]
     .mi-section__composition {
     display: grid;
-    grid-template-columns: minmax(15rem, 5fr) minmax(0, 7fr);
+    /* Universal section variants also define desktop composition tracks later
+     * in the bundle. Restaurant owns a two-column menu anatomy, so protect the
+     * semantic heading/menu split from being collapsed into a 12-column
+     * variant grid. */
+    grid-template-columns: minmax(15rem, 5fr) minmax(0, 7fr) !important;
     column-gap: clamp(2rem, 5vw, 5rem);
     align-items: start;
   }
@@ -288,8 +292,8 @@
     ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
     [data-section-family="services"]
     .mi-section__heading {
-    grid-column: 1;
-    grid-row: 1;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
     inline-size: min(100%, 26rem);
     min-inline-size: 0;
     max-inline-size: 100%;
@@ -300,8 +304,8 @@
     ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
     [data-section-family="services"]
     .mi-section__item-groups {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     min-width: 0;
     max-width: 100%;
     margin: 0;
@@ -313,7 +317,12 @@
     [data-section-family="services"]
     .mi-section__item-group
     > .mi-section__grid {
+    grid-column: auto !important;
+    grid-row: auto !important;
     grid-template-columns: var(--mi-r-menu-columns, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    margin: 0 !important;
   }
 
   [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
@@ -510,10 +519,26 @@
 
 [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
   [data-section-family="hero"]
+  .mi-section__layout {
+  justify-items: stretch;
+  text-align: left;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
   .mi-section__layout
   > div:first-child {
   position: relative;
   z-index: 2;
+  width: auto;
+  max-width: 100%;
+  justify-self: stretch;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
+  .mi-section__actions {
+  justify-content: flex-start;
 }
 
 [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]

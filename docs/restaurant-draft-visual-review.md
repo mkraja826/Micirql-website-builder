@@ -2,11 +2,11 @@
 
 Review date: 2026-10-24  
 Fixture: Aarunya Table, a fictional internal factual-boundary fixture  
-Status: reference direction accepted for the next Top-20 design phase; Restaurant remains unregistered, unavailable in onboarding, and uncertified
+Status: Top-20 responsive route checkpoint accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified
 
 ## Decision
 
-The factual Restaurant / Restaurant reference is ready to become the common content and behavior baseline for 20 independently art-directed candidates. It is not a certified pack and must not be exposed as a Builder choice yet.
+The factual Restaurant / Restaurant reference is the common content and behavior baseline for 20 independently art-directed staging candidates. The candidates now pass the complete six-route/five-width responsive matrix, but this is not a certified pack and must not be exposed as a Builder choice yet.
 
 The reference is materially different from the Dental and Physiotherapy systems. It uses a warm table-editorial grammar: moderate serif display type, double rules, menu-category rhythm, item/price alignment, square reservation actions, warm paper fields, and an editorial venue/food gallery. It does not reuse treatment cards, clinic hero geometry, movement paths, appointment language, or a clinic page sequence.
 
@@ -63,10 +63,21 @@ Portable-export evidence is retained under:
 
 The live gate retains full-page 320, 390, and 1440 px screenshots for all six routes plus Home fold captures. The static gate retains full-page screenshots for every route at all five widths.
 
+## Top-20 responsive route checkpoint — 2026-10-25
+
+- The staging catalog owns 20 immutable candidates with unique Home flows, labels, visual identities, component tuples, hero assets, ranking behavior, and candidate-scoped media selections.
+- All 190 within-Restaurant and 800 Restaurant-vs-certified-industry comparisons pass the `0.74` and `0.56` similarity ceilings.
+- The contract and factual-scaffold suite passes **23/23**.
+- The Home catalog passes **20/20 candidates and 100/100 responsive states** at 320, 390, 768, 1024, and 1440 px. A new containment assertion protects menu headings, item names, descriptions, and prices from escaping their owned menu track.
+- Senior screenshot inspection found five desktop menu compositions whose generic section-variant grid had squeezed content into a 30 px track: Market Ledger, Courtyard Threshold, Open Fire, Counter Signal, and Linen and Light. The Restaurant-owned two-column menu anatomy now overrides that generic grid without changing mobile layouts.
+- The new all-route matrix passes **20/20 candidates and 600/600 states** across Home, Menu, Visit, Reservations, Story, and Contact at all five widths. It verifies exact candidate identity, page anatomy, factual copy boundaries, separate reservation/general-enquiry forms, menu prices, the exact supplied QA logo, image count/loading/alt text, unique route heroes, responsive typography, 44 px mobile controls, navigation separation, overflow, clipping, and menu containment.
+- The all-route gate caught and fixed an Open Fire Home hero whose centered generic variant could expand the copy outside the canvas at 1024 and 1440 px. The final candidate-scoped layout stretches the copy inside its grid track while preserving the dark fire-led direction.
+- Full-page 320 and 1440 px evidence for every candidate and route is retained under `qa-artifacts/restaurant-candidate-route-matrix` when `pnpm qa:restaurant:routes` runs with its default screenshot settings. This yields 240 retained screenshots.
+
 ## Release boundary and next milestone
 
-Restaurant still has no 20-candidate catalog, ranking evidence, candidate-level accessibility matrix, three-brief factual variance matrix, cross-surface candidate matrix, or final Dental/Physiotherapy preservation rerun. It therefore remains `Planned` and cannot be selected or published through the certified-pack flow.
+Restaurant now has the 20-candidate catalog, deterministic ranking evidence, and the complete live-preview responsive route matrix. It still has no candidate-level accessibility matrix, three-brief factual variance matrix, full cross-surface preview/editor/live/static-export matrix, Restaurant-specific logo aspect-ratio matrix, recorded senior 4/5 review for every candidate, or final Dental/Physiotherapy preservation rerun. It therefore remains `Planned` and cannot be selected or published through the certified-pack flow.
 
-The next milestone is to create 20 independently art-directed Restaurant candidates. Each needs its own dominant idea, hero composition, menu rhythm, venue-proof model, reservation presentation, responsive transformation, palette, and imagery strategy. Every candidate must retain this reference’s factual boundaries and six-route conversion behavior while remaining materially different from Dental, Physiotherapy, and the other Restaurant candidates.
+The next milestone is the three-brief factual variance matrix and candidate-level WCAG/keyboard/reduced-motion gate, followed by cross-surface, logo-aspect-ratio, senior-review, and Dental/Physiotherapy preservation evidence. Registration remains a separate explicit decision after those gates pass.
 
 No database migration, deployment, customer publication, or commercial release was performed.

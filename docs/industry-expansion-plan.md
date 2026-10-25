@@ -314,11 +314,19 @@ Typography uses an editorial serif or soft grotesk at weight 500–650 for displ
 
 ### Reference-scaffold checkpoint — 2026-10-24
 
-The factual Restaurant reference scaffold now covers Home, Menu, Visit, Reservations, Story, and Contact. It preserves the exact QA-supplied logo asset in the header and footer, uses 16 unique audited licensed stock assets with visible disclosure, and keeps the reservation-request form separate from the Contact general-enquiry form. The focused reference suite passes 7/7; the live-preview and portable-export visual matrices each pass all 30 route/viewport states at 320, 390, 768, 1024, and 1440 px, for 60 checked states in total. The [Restaurant factual-reference visual review](restaurant-draft-visual-review.md) records the senior scorecard, corrected defects, evidence, and remaining gates. This is reference evidence only: Restaurant remains unregistered, unavailable in onboarding, uncertified, and without a 20-candidate catalog.
+The factual Restaurant reference scaffold now covers Home, Menu, Visit, Reservations, Story, and Contact. It preserves the exact QA-supplied logo asset in the header and footer, uses 16 unique audited licensed stock assets with visible disclosure, and keeps the reservation-request form separate from the Contact general-enquiry form. The focused reference suite passes 7/7; the live-preview and portable-export visual matrices each pass all 30 route/viewport states at 320, 390, 768, 1024, and 1440 px, for 60 checked states in total. The [Restaurant factual-reference visual review](restaurant-draft-visual-review.md) records the senior scorecard, corrected defects, evidence, and remaining gates. This remains reference evidence rather than certification; the later staging catalog checkpoint below does not register Restaurant or make it available in onboarding.
+
+### Top-20 responsive checkpoint — 2026-10-25
+
+The 20 independently art-directed staging candidates now exist and pass their catalog, ranking, factual-preservation, media-selection, and anti-cloning contracts. Senior screenshot review caught and corrected five desktop menu-track collapses caused by a generic section-variant grid, then the strengthened Home gate passed **20/20 candidates and 100/100 responsive states**.
+
+A new all-route production-preview matrix covers Home, Menu, Visit, Reservations, Story, and Contact at 320, 390, 768, 1024, and 1440 px for every candidate. It caught and corrected Open Fire's out-of-canvas Home copy at 1024/1440 px. The final-code rerun passes **20/20 candidates and 600/600 responsive states**. Default runs retain 320/1440 full-page evidence for all candidate/route combinations under `qa-artifacts/restaurant-candidate-route-matrix` (240 screenshots).
+
+This checkpoint closes the candidate-catalog and full responsive route-matrix milestones only. Restaurant remains unregistered and `Planned` while three-brief variance, candidate accessibility/keyboard/reduced-motion, full cross-surface parity, Restaurant logo aspect-ratio, recorded per-candidate senior scoring, and final Dental/Physiotherapy preservation gates remain open.
 
 ### Path from draft to certification
 
-The factual reference scaffold is now accepted. The next Restaurant milestone is not registration; it is 20 independently art-directed candidates, each with its own dominant idea, hero composition, menu rhythm, venue proof model, and reservation presentation. Promotion then requires:
+The factual reference scaffold and 20-candidate responsive route matrix are now accepted. Promotion still requires:
 
 - at least three materially different factual restaurant briefs with no invented menu, price, hours, people, compliance, availability, or provider claims;
 - all six routes and the exact primary action in preview, editor, live, and static export;
@@ -330,7 +338,7 @@ The factual reference scaffold is now accepted. The next Restaurant milestone is
 
 ### Next implementation step
 
-Build and visually rank 20 independently art-directed Restaurant candidates from the accepted factual reference, then run the full content-safety, accessibility, cross-surface, cross-industry, logo, imagery, and Dental/Physiotherapy preservation gates. Restaurant stays `Planned` in Builder and marketing until that candidate evidence passes and an explicit registration decision is made. No deployment, customer publishing, or commercial release is authorized by this checkpoint.
+Run the three-brief factual variance matrix and candidate-level accessibility/keyboard/reduced-motion gate, then complete cross-surface, logo-aspect-ratio, recorded senior-review, and Dental/Physiotherapy preservation evidence. Restaurant stays `Planned` in Builder and marketing until every candidate gate passes and an explicit registration decision is made. No deployment, customer publishing, or commercial release is authorized by this checkpoint.
 
 ## Research basis
 

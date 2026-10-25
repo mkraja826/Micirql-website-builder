@@ -135,7 +135,7 @@ function personalities(theme: ThemeFamily): string[] {
   return map[theme];
 }
 
-export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCatalog.map((seed) => ({
+const currentSeedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCatalog.map((seed) => ({
   id: seed.id,
   family: seed.family,
   theme: seed.theme,
@@ -176,7 +176,7 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
     passed: seed.status === "production",
     score: seed.status === "production" ? 92 : 0,
     checkedAt: seed.status === "production"
-      ? "2026-10-03T00:00:00.000Z"
+      ? "2026-10-14T00:00:00.000Z"
       : new Date(0).toISOString(),
   },
   dependencies: ["@micirql/primitives", "@micirql/components"],
@@ -191,5 +191,28 @@ export const seedSectionRegistryEntries: DesignRegistryEntry[] = seedSectionCata
   },
   usage: { selected: 0, published: 0, replaced: 0 },
 }));
+
+const legacyDentalSectionRegistryEntries: DesignRegistryEntry[] =
+  currentSeedSectionRegistryEntries
+    .filter(
+      (entry) =>
+        entry.status === "production" && /-00[12]$/.test(entry.id),
+    )
+    .map((entry) => ({
+      ...entry,
+      version: "1.0.0",
+      tags: [...entry.tags.filter((tag) => tag !== "dental-flagship-certified"), "dental-flagship-legacy"],
+      protocol: {
+        ...entry.protocol,
+        checkedAt: "2026-10-03T00:00:00.000Z",
+      },
+    }));
+
+/** Includes the immutable 1.0 renderer contract so existing saved and
+ * published dental sites remain resolvable after the 1.1 catalog ships. */
+export const seedSectionRegistryEntries: DesignRegistryEntry[] = [
+  ...currentSeedSectionRegistryEntries,
+  ...legacyDentalSectionRegistryEntries,
+];
 
 export const SEED_REGISTRY_ENTRY_COUNT = seedSectionRegistryEntries.length;

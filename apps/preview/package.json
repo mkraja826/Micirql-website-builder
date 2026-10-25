@@ -9,7 +9,11 @@
   },
   "dependencies": {
     "@micirql/components": "workspace:*",
+    "@micirql/domains": "workspace:*",
+    "@micirql/functions": "workspace:*",
     "@micirql/primitives": "workspace:*",
+    "@micirql/renderer": "workspace:*",
+    "@micirql/schema": "workspace:*",
     "@micirql/sections": "workspace:*",
     "@micirql/themes": "workspace:*",
     "next": "latest",

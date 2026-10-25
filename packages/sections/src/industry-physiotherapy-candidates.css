@@ -1,0 +1,1217 @@
+/* Candidate-owned Physiotherapy identities.
+ *
+ * The base industry sheet owns readability and patient-safety ergonomics.
+ * This sheet owns recognisable composition: any non-reference candidate first
+ * sheds Movement Pathway's motifs, then receives its own visual language.
+ */
+
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  [data-section-family="navbar"]
+  .mi-navbar::after,
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  [data-section-family="hero"]
+  .mi-section__layout::before,
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  [data-section-family="process"]
+  .mi-stats::before,
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  [data-section-family="cta"]
+  .mi-section::after {
+  content: none;
+}
+
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-color: var(--mi-color-border);
+  box-shadow: var(--mi-shadow-card);
+}
+
+[data-mi-subtype="physiotherapy"]:not(
+    [data-mi-candidate="clinic-physiotherapy-movement-pathway"]
+  )
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__card:nth-child(even) {
+  margin-top: 0;
+}
+
+/* 02 — Mobility Atlas: local wayfinding and broad landscape fields. */
+[data-mi-candidate="clinic-physiotherapy-mobility-atlas"] {
+  background-image:
+    radial-gradient(
+      circle at 12% 8%,
+      transparent 0 4rem,
+      var(--mi-physio-path) 4.05rem 4.12rem,
+      transparent 4.17rem
+    ),
+    linear-gradient(
+      90deg,
+      transparent 49.8%,
+      color-mix(in srgb, var(--mi-color-primary) 7%, transparent) 50%,
+      transparent 50.2%
+    );
+}
+
+[data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  aspect-ratio: 16 / 7;
+  border-radius: 0.75rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-mobility-atlas"] .mi-section__card {
+  border-radius: 0.5rem;
+  border-left: 0.35rem solid var(--mi-color-accent);
+}
+
+[data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+  [data-section-family="process"]
+  .mi-stat {
+  border-style: dashed;
+}
+
+/* 03 — Assessment Blueprint: measured technical grid and annotations. */
+[data-mi-candidate="clinic-physiotherapy-assessment-blueprint"] {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--mi-color-primary) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mi-color-primary) 6%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 2rem 2rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+  :is(.mi-section, .mi-section__card, .mi-section__media, .mi-stat) {
+  border-radius: 0.2rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+  .mi-section__card-index {
+  border-radius: 0;
+  background: var(--mi-color-primary);
+  color: var(--mi-color-surface);
+  font-family: var(--mi-font-mono);
+}
+
+[data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border: 1px solid var(--mi-color-primary);
+  outline: 1px dashed var(--mi-color-accent);
+  outline-offset: 0.65rem;
+}
+
+/* 04 — Recovery Journal: ruled paper, note tabs and factual captions. */
+[data-mi-candidate="clinic-physiotherapy-recovery-journal"] .mi-section {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 1.85rem,
+    color-mix(in srgb, var(--mi-color-border) 55%, transparent) 1.9rem 1.96rem
+  );
+}
+
+[data-mi-candidate="clinic-physiotherapy-recovery-journal"] .mi-section__card {
+  border-radius: 0.15rem 1rem 1rem 0.15rem;
+  border-left: 0.28rem solid var(--mi-color-accent);
+  box-shadow: 0.35rem 0.45rem 0
+    color-mix(in srgb, var(--mi-color-primary) 8%, transparent);
+}
+
+[data-mi-candidate="clinic-physiotherapy-recovery-journal"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  transform: rotate(1.25deg);
+  border-radius: 0.2rem;
+}
+
+/* 05 — Active Studio: dark dock, diagonal energy and large numerals. */
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-active-studio"]
+  [data-section-family="hero"]
+  .mi-section {
+  color: #f7faf8;
+  background: linear-gradient(
+    112deg,
+    var(--mi-color-secondary) 0 56%,
+    var(--mi-color-primary) 56%
+  ) !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-active-studio"]
+  [data-section-family="hero"]
+  :is(.mi-type--display, .mi-type--body, .mi-type--eyebrow) {
+  color: inherit;
+}
+
+[data-mi-candidate="clinic-physiotherapy-active-studio"]
+  [data-section-family="hero"]
+  .mi-section__action--secondary {
+  border-color: color-mix(in srgb, #f7faf8 68%, transparent) !important;
+  background: transparent !important;
+  color: #f7faf8 !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-active-studio"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0;
+  clip-path: polygon(9% 0, 100% 0, 91% 100%, 0 100%);
+}
+
+[data-mi-candidate="clinic-physiotherapy-active-studio"]
+  .mi-section__card-index {
+  font-size: clamp(2rem, 4vw, 4rem);
+  color: var(--mi-color-accent);
+}
+
+/* Candidate promises are geometry contracts, not copy-only metadata. These
+ * desktop rules deliberately replace the shared five-mode hero geometry with
+ * the composition named by each Physiotherapy blueprint. Mobile and tablet
+ * keep the safe copy-first collapse from the industry foundation. */
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    justify-items: center;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    text-align: center;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    width: min(100%, 52rem);
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__actions {
+    justify-content: center;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 16 / 7;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-mobility-atlas"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 16 / 7;
+    object-fit: cover;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas: none;
+    align-items: center;
+    justify-items: stretch;
+    gap: clamp(2.5rem, 6vw, 6rem);
+    text-align: left;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > * {
+    grid-area: auto;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    max-width: 44rem;
+    margin: 0;
+    padding: clamp(1.25rem, 3vw, 2.5rem) 0 clamp(1.25rem, 3vw, 2.5rem)
+      clamp(1.25rem, 3vw, 2.25rem);
+    border: 0;
+    border-left: 0.25rem solid var(--mi-color-accent);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-assessment-blueprint"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-recovery-journal"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-areas: none;
+    align-items: center;
+    gap: 0;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-recovery-journal"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    z-index: 2;
+    grid-column: 1 / span 7;
+    grid-row: 1;
+    width: auto;
+    max-width: 46rem;
+    margin: 0;
+    padding: clamp(1.75rem, 4vw, 3.5rem);
+    border: 1px solid var(--mi-color-border);
+    border-left: 0.3rem solid var(--mi-color-accent);
+    background: color-mix(
+      in srgb,
+      var(--mi-color-surface) 96%,
+      var(--mi-color-accent)
+    );
+    box-shadow: 0.75rem 0.85rem 0
+      color-mix(in srgb, var(--mi-color-primary) 9%, transparent);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-recovery-journal"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 6 / -1;
+    grid-row: 1;
+    justify-self: end;
+    width: min(100%, 34rem);
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-recovery-journal"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+}
+
+/* 06 — Calm Arrival: centered quiet window and breathing ring. */
+[data-mi-candidate="clinic-physiotherapy-calm-arrival"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  text-align: center;
+}
+
+[data-mi-candidate="clinic-physiotherapy-calm-arrival"]
+  [data-section-family="hero"]
+  .mi-section__actions {
+  justify-content: center;
+}
+
+[data-mi-candidate="clinic-physiotherapy-calm-arrival"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border: 0.65rem solid
+    color-mix(in srgb, var(--mi-color-primary) 8%, var(--mi-color-surface));
+  border-radius: 50% 50% 46% 54% / 42% 58% 42% 58%;
+  box-shadow: 0 0 0 1.15rem
+    color-mix(in srgb, var(--mi-color-primary) 4%, transparent);
+}
+
+[data-mi-candidate="clinic-physiotherapy-calm-arrival"] .mi-section__card {
+  box-shadow: none;
+  background: color-mix(
+    in srgb,
+    var(--mi-color-surface) 94%,
+    var(--mi-color-primary)
+  );
+}
+
+/* 07 — Functional Grid: compact utility modules and hard alignment. */
+[data-mi-candidate="clinic-physiotherapy-functional-grid"]
+  :is(
+    .mi-section,
+    .mi-section__card,
+    .mi-section__media,
+    .mi-stat,
+    .mi-section__action
+  ) {
+  border-radius: 0;
+}
+
+[data-mi-candidate="clinic-physiotherapy-functional-grid"] .mi-section__card {
+  border: 1px solid var(--mi-color-secondary);
+  box-shadow: none;
+}
+
+[data-mi-candidate="clinic-physiotherapy-functional-grid"] .mi-section__grid {
+  gap: 1px;
+  background: var(--mi-color-secondary);
+  border: 1px solid var(--mi-color-secondary);
+}
+
+[data-mi-candidate="clinic-physiotherapy-functional-grid"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  border-block: 1px solid var(--mi-color-secondary);
+  padding-block: clamp(1rem, 3vw, 2rem);
+}
+
+/* 08 — Guided Milestones: vertical rail and alternating nodes. */
+[data-mi-candidate="clinic-physiotherapy-guided-milestones"]
+  [data-section-family="process"]
+  .mi-stats {
+  position: relative;
+  grid-template-columns: 1fr;
+  padding-left: 2rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-guided-milestones"]
+  [data-section-family="process"]
+  .mi-stats::after {
+  content: "";
+  position: absolute;
+  inset-block: 1.25rem;
+  left: 0.75rem;
+  width: 0.2rem;
+  border-radius: 999px;
+  background: var(--mi-color-primary);
+}
+
+[data-mi-candidate="clinic-physiotherapy-guided-milestones"]
+  [data-section-family="process"]
+  .mi-stat:nth-child(even) {
+  margin-left: clamp(1rem, 8vw, 7rem);
+}
+
+/* 09 — Local Access: route strip, pin cards and compact bands. */
+[data-mi-candidate="clinic-physiotherapy-local-access"]
+  [data-section-family="navbar"]
+  .mi-navbar {
+  border-left: 0.55rem solid var(--mi-color-accent);
+}
+
+[data-mi-candidate="clinic-physiotherapy-local-access"] .mi-section__card {
+  border-radius: 2rem 2rem 2rem 0.35rem;
+  box-shadow: none;
+}
+
+[data-mi-candidate="clinic-physiotherapy-local-access"]
+  .mi-section__card-index {
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+}
+
+[data-mi-candidate="clinic-physiotherapy-local-access"]
+  .mi-section__card-index::first-line {
+  transform: rotate(45deg);
+}
+
+/* 10 — Clinical Notebook: index tabs, rules and pinned imagery. */
+[data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section__composition {
+  border-left: 1px solid var(--mi-color-accent);
+  padding-left: clamp(1rem, 3vw, 2.5rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-clinical-notebook"] .mi-section__card {
+  border-radius: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 1.7rem,
+    color-mix(in srgb, var(--mi-color-border) 55%, transparent) 1.75rem 1.8rem
+  );
+}
+
+[data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0;
+  transform: rotate(-1deg);
+  box-shadow: 0.65rem 0.65rem 0 var(--mi-color-accent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout {
+  isolation: isolate;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-left: 0.18rem solid var(--mi-color-accent);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 2.05rem,
+    color-mix(in srgb, var(--mi-color-border) 58%, transparent) 2.05rem 2.1rem
+  );
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout::after {
+  content: "VISIT NOTES · 01";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: clamp(1rem, 3vw, 2rem);
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--mi-color-border);
+  background: var(--mi-color-surface);
+  color: var(--mi-color-secondary);
+  font: 700 0.72rem/1 var(--mi-font-body);
+  letter-spacing: 0.12em;
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  position: relative;
+  z-index: 2;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  background: color-mix(in srgb, var(--mi-color-surface) 92%, transparent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  border-radius: 0;
+  transform: rotate(-1.4deg);
+  box-shadow: 0.65rem 0.65rem 0 var(--mi-color-accent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: -0.65rem;
+  right: 1.2rem;
+  width: 1.15rem;
+  aspect-ratio: 1;
+  border: 0.22rem solid var(--mi-color-surface);
+  border-radius: 50%;
+  background: var(--mi-color-accent);
+  box-shadow: 0 0.18rem 0.45rem color-mix(in srgb, #000 24%, transparent);
+}
+
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 0.75fr);
+    min-height: 34rem;
+    gap: clamp(2rem, 5vw, 5rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    min-height: 27rem;
+    aspect-ratio: 4 / 5;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-clinical-notebook"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+/* 11 — Arc and Anchor: tall arch, grounded copy and anchor dot. */
+[data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  aspect-ratio: 4 / 5;
+  border-radius: 50% 50% 1.25rem 1.25rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  align-self: end;
+  padding-bottom: clamp(1rem, 6vw, 5rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-arc-and-anchor"] .mi-section__card {
+  border-radius: 8rem 8rem 1rem 1rem;
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+@media (min-width: 64rem) {
+  [data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+    [data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-areas: none;
+    gap: clamp(3rem, 7vw, 7rem);
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    margin: 0;
+    padding: 0 0 clamp(1rem, 6vw, 5rem);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+    [data-section-family="hero"]
+    .mi-type--display {
+    max-inline-size: 16ch;
+    font-size: clamp(2rem, 5vw, 3.75rem) !important;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-arc-and-anchor"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 34rem;
+  }
+}
+
+/* 12 — Range of Motion: panoramic frames and angle markers. */
+[data-mi-candidate="clinic-physiotherapy-range-of-motion"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  grid-template-columns: 1fr;
+}
+
+[data-mi-candidate="clinic-physiotherapy-range-of-motion"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  aspect-ratio: 21 / 8;
+  border-radius: 0.35rem;
+  clip-path: polygon(2% 0, 100% 0, 98% 100%, 0 100%);
+}
+
+[data-mi-candidate="clinic-physiotherapy-range-of-motion"] .mi-section__card {
+  border-top: 0.22rem solid var(--mi-color-accent);
+  border-radius: 0.25rem;
+}
+
+/* 13 — Step by Step: large numerals and a solid vertical path. */
+[data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  [data-section-family="hero"]
+  .mi-section__layout::after {
+  content: "01";
+  position: absolute;
+  z-index: 0;
+  top: -0.2em;
+  left: -0.05em;
+  color: color-mix(in srgb, var(--mi-color-primary) 18%, transparent);
+  font: 700 clamp(7rem, 20vw, 16rem) / 1 var(--mi-font-display);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout {
+  isolation: isolate;
+  padding-top: 5.5rem;
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout::after {
+  content: "01";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  color: color-mix(
+    in srgb,
+    var(--mi-color-primary) 24%,
+    var(--mi-color-surface)
+  );
+  font: 700 5rem/0.82 var(--mi-font-display);
+  letter-spacing: -0.08em;
+  pointer-events: none;
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child,
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.36fr);
+    grid-template-areas: none;
+    min-height: 34rem;
+    padding: 0 0 0 clamp(8.5rem, 14vw, 13rem);
+    gap: clamp(2rem, 5vw, 5rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout::after {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: clamp(9rem, 17vw, 15rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    padding: clamp(1rem, 3vw, 2rem);
+    background: color-mix(in srgb, var(--mi-color-surface) 92%, transparent);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 29rem;
+    aspect-ratio: 2 / 5;
+    border-radius: 0.25rem;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-step-by-step"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+[data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  [data-section-family="process"]
+  .mi-stats {
+  grid-template-columns: 1fr;
+  border-left: 0.3rem solid var(--mi-color-primary);
+  padding-left: clamp(1rem, 4vw, 3rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-step-by-step"]
+  .mi-section__card-index {
+  font-size: 1.5rem;
+  color: var(--mi-color-accent);
+}
+
+/* 14 — Kinetic Bands: offset horizontal bands and early action energy. */
+[data-mi-candidate="clinic-physiotherapy-kinetic-bands"] {
+  background-image: repeating-linear-gradient(
+    -8deg,
+    transparent 0 9rem,
+    color-mix(in srgb, var(--mi-color-primary) 5%, transparent) 9rem 11rem
+  );
+}
+
+[data-mi-candidate="clinic-physiotherapy-kinetic-bands"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0;
+  box-shadow:
+    1.2rem 1.2rem 0 var(--mi-color-accent),
+    -1.2rem -1.2rem 0
+      color-mix(in srgb, var(--mi-color-primary) 22%, transparent);
+}
+
+[data-mi-candidate="clinic-physiotherapy-kinetic-bands"]
+  .mi-section__card:nth-child(even) {
+  transform: translateX(clamp(0rem, 3vw, 2rem));
+}
+
+/* 15 — Balance Field: bilateral planes and a central axis. */
+[data-mi-candidate="clinic-physiotherapy-balance-field"]
+  [data-section-family="hero"]
+  .mi-section {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mi-color-primary) 10%, var(--mi-color-surface)) 0
+      50%,
+    var(--mi-color-surface) 50%
+  );
+}
+
+[data-mi-candidate="clinic-physiotherapy-balance-field"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  border-inline: 1px solid var(--mi-color-primary);
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-balance-field"] .mi-section__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+[data-mi-candidate="clinic-physiotherapy-balance-field"]
+  .mi-section__card:nth-child(odd) {
+  text-align: right;
+}
+
+/* 16 — Human Pace: documentary pauses and a caption rail. */
+[data-mi-candidate="clinic-physiotherapy-human-pace"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0;
+  border-bottom: 0.35rem solid var(--mi-color-accent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media {
+  position: relative;
+  overflow: visible;
+  margin-bottom: 2.35rem;
+  border-radius: 0;
+  border-bottom: 0.35rem solid var(--mi-color-accent);
+  box-shadow: none;
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media::after {
+  content: "MOVEMENT STUDY · ILLUSTRATIVE";
+  position: absolute;
+  right: 0;
+  bottom: -2.35rem;
+  left: 0;
+  min-height: 2rem;
+  padding: 0.55rem 0;
+  color: var(--mi-color-secondary);
+  font: 650 0.72rem/1.2 var(--mi-font-body);
+  letter-spacing: 0.12em;
+  text-align: left;
+}
+
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(22rem, 1.15fr) minmax(0, 0.85fr);
+    grid-template-areas: none;
+    gap: clamp(3rem, 7vw, 7rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 28rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-human-pace"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+[data-mi-candidate="clinic-physiotherapy-human-pace"] .mi-section__heading {
+  border-left: 0.2rem solid var(--mi-color-accent);
+  padding-left: clamp(1rem, 2vw, 1.75rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-human-pace"] .mi-section__card {
+  border: 0;
+  border-bottom: 1px solid var(--mi-color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 17 — Assessment Rings: open circles without scores. */
+[data-mi-candidate="clinic-physiotherapy-assessment-rings"]
+  [data-section-family="hero"]
+  .mi-section {
+  background-image:
+    radial-gradient(
+      circle at 86% 35%,
+      transparent 0 4rem,
+      color-mix(in srgb, var(--mi-color-accent) 35%, transparent) 4.1rem 4.5rem,
+      transparent 4.6rem
+    ),
+    radial-gradient(
+      circle at 86% 35%,
+      transparent 0 6rem,
+      color-mix(in srgb, var(--mi-color-primary) 22%, transparent) 6.1rem
+        6.35rem,
+      transparent 6.45rem
+    );
+}
+
+[data-mi-candidate="clinic-physiotherapy-assessment-rings"] .mi-section__card {
+  border-radius: 2rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-assessment-rings"]
+  .mi-section__card-index {
+  width: 3rem;
+  height: 3rem;
+  border: 0.3rem solid var(--mi-color-accent);
+  border-left-color: transparent;
+  border-radius: 50%;
+}
+
+/* 18 — Motion Tiles: one image viewed through a stepped mask. */
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0;
+  clip-path: polygon(
+    0 0,
+    68% 0,
+    68% 14%,
+    100% 14%,
+    100% 100%,
+    30% 100%,
+    30% 86%,
+    0 86%
+  );
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"] .mi-section__grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__composition {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  :is(.mi-section__heading, .mi-section__grid) {
+  grid-column: 1 / -1 !important;
+  width: 100%;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__heading {
+  grid-row: 1 !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__grid {
+  grid-row: 2 !important;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"] .mi-section__card {
+  grid-column: span 4 !important;
+  border-radius: 0.4rem;
+}
+
+[data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+  .mi-section__card:nth-child(even) {
+  transform: translateY(clamp(0.5rem, 2vw, 1.5rem));
+}
+
+/* 19 — Grounded Strength: heavy baseline and structural joints. */
+[data-mi-candidate="clinic-physiotherapy-grounded-strength"] .mi-section__card,
+[data-mi-candidate="clinic-physiotherapy-grounded-strength"] .mi-stat {
+  border-radius: 0.25rem;
+  border-bottom: 0.45rem solid var(--mi-color-secondary);
+  box-shadow: none;
+}
+
+[data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0.25rem;
+  box-shadow: 0 1rem 0
+    color-mix(in srgb, var(--mi-color-primary) 18%, transparent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section {
+  background-image: linear-gradient(
+    to bottom,
+    var(--mi-color-surface) 0 76%,
+    color-mix(in srgb, var(--mi-color-primary) 10%, var(--mi-color-surface)) 76%
+      100%
+  );
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout {
+  isolation: isolate;
+  align-items: end;
+  padding-bottom: clamp(1.5rem, 4vw, 3rem);
+  border-bottom: 0.7rem solid var(--mi-color-secondary);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  bottom: -1.03rem;
+  left: calc(50% - 0.62rem);
+  width: 1.25rem;
+  aspect-ratio: 1;
+  border: 0.22rem solid var(--mi-color-surface);
+  background: var(--mi-color-accent);
+  transform: rotate(45deg);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  position: relative;
+  z-index: 2;
+  padding-left: clamp(1rem, 2vw, 1.75rem);
+  border-left: 0.32rem solid var(--mi-color-secondary);
+  background: color-mix(in srgb, var(--mi-color-surface) 94%, transparent);
+}
+
+[data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  .mi-section-theme[data-section-family="hero"]
+  .mi-section__media {
+  border-radius: 0.2rem;
+  border-bottom: 0.7rem solid var(--mi-color-secondary);
+  box-shadow: 0.9rem 0.9rem 0
+    color-mix(in srgb, var(--mi-color-primary) 15%, transparent);
+}
+
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(22rem, 1.08fr) minmax(0, 0.92fr);
+    grid-template-areas: none;
+    gap: clamp(3rem, 7vw, 7rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    margin-bottom: 1rem;
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    min-height: 28rem;
+    aspect-ratio: 4 / 3;
+    transform: translateY(2rem);
+  }
+
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    .mi-section-theme[data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
+[data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+  [data-section-family="process"]
+  .mi-stats {
+  border-block: 0.2rem solid var(--mi-color-secondary);
+  padding-block: 1rem;
+}
+
+@media (min-width: 48rem) {
+  [data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    [data-section-family="footer"]
+    .mi-footer {
+    grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr) !important;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-grounded-strength"]
+    [data-section-family="footer"]
+    .mi-footer
+    nav {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-content: start;
+    justify-content: flex-end;
+  }
+}
+
+/* 20 — Open Practice: transparent disclosure rail and open frames. */
+[data-mi-candidate="clinic-physiotherapy-open-practice"]
+  :is(.mi-section__card, .mi-stat, .mi-section__media) {
+  border: 1px solid var(--mi-color-primary);
+  border-radius: 0.2rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-mi-candidate="clinic-physiotherapy-open-practice"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  border: 1px solid var(--mi-color-primary);
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+[data-mi-candidate="clinic-physiotherapy-open-practice"]
+  [data-section-family="hero"]
+  .mi-section__layout::after {
+  content: "PRACTICAL INFORMATION";
+  position: absolute;
+  top: 0;
+  left: clamp(1rem, 4vw, 3rem);
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 0.15rem 0.7rem;
+  background: var(--mi-color-surface);
+  color: var(--mi-color-primary);
+  font: 700 0.68rem / 1.4 var(--mi-font-ui);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+@media (max-width: 47.99rem) {
+  [data-mi-subtype="physiotherapy"][data-mi-candidate="clinic-physiotherapy-active-studio"]
+    [data-section-family="hero"]
+    .mi-section {
+    background: var(--mi-color-secondary) !important;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-active-studio"]
+    [data-section-family="hero"]
+    .mi-section__media,
+  [data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+    [data-section-family="hero"]
+    .mi-section__media,
+  [data-mi-candidate="clinic-physiotherapy-range-of-motion"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    clip-path: none;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-balance-field"] .mi-section__grid,
+  [data-mi-candidate="clinic-physiotherapy-motion-tiles"] .mi-section__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-balance-field"]
+    .mi-section__card:nth-child(odd) {
+    text-align: left;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-motion-tiles"] .mi-section__card {
+    grid-column: auto !important;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-motion-tiles"]
+    .mi-section__card:nth-child(even),
+  [data-mi-candidate="clinic-physiotherapy-kinetic-bands"]
+    .mi-section__card:nth-child(even),
+  [data-mi-candidate="clinic-physiotherapy-guided-milestones"]
+    [data-section-family="process"]
+    .mi-stat:nth-child(even) {
+    margin-left: 0;
+    transform: none;
+  }
+
+  [data-mi-candidate="clinic-physiotherapy-calm-arrival"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    box-shadow: 0 0 0 0.45rem
+      color-mix(in srgb, var(--mi-color-primary) 5%, transparent);
+  }
+}
+
+@media (max-width: 22.5rem) {
+  [data-mi-subtype="physiotherapy"] [data-section-family="process"] .mi-stats {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

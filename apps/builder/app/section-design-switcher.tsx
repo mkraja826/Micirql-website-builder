@@ -1,6 +1,6 @@
 "use client";
 
-import { LAYOUT_VARIANTS, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
+import { CERTIFIED_SECTION_COMPONENT_VERSION, LAYOUT_VARIANTS, sectionDesignId, type SectionFamily, type SectionVariant } from "@micirql/sections";
 import type { ThemeFamily } from "@micirql/schema";
 
 const VARIANTS: SectionVariant[] = [1, 2, 3, 4, 5];
@@ -31,7 +31,9 @@ export function SectionDesignSwitcher({
               key={componentId}
               type="button"
               className={`design-card ${current ? "is-current" : ""}`}
-              onClick={() => onSelect(componentId, "1.0.0")}
+              onClick={() =>
+                onSelect(componentId, CERTIFIED_SECTION_COMPONENT_VERSION)
+              }
               aria-pressed={current}
             >
               <DesignSchematic variant={variant} />

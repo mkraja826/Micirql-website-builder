@@ -1,0 +1,548 @@
+/* Restaurant / Restaurant draft owns a table-led editorial grammar.
+ * Exact domain + subtype scoping keeps this layer out of Dental, Physio and
+ * future Restaurant sub-industries until their own visual systems are built.
+ */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] {
+  --mi-restaurant-paper: color-mix(
+    in srgb,
+    var(--mi-color-surface) 94%,
+    var(--mi-color-accent)
+  );
+  --mi-restaurant-rule: color-mix(
+    in srgb,
+    var(--mi-color-border) 72%,
+    var(--mi-color-text)
+  );
+  --mi-r-hero-min-height: clamp(34rem, 72vh, 47rem);
+  --mi-r-hero-media-min-height: 28rem;
+  --mi-r-display-measure: 13ch;
+  --mi-r-display-min: 2.75rem;
+  --mi-r-display-fluid: 6.6vw;
+  --mi-r-display-max: 4.25rem;
+  --mi-r-display-weight: 600;
+  --mi-r-display-leading: 1.02;
+  --mi-r-display-tracking: -0.035em;
+  --mi-r-mobile-display-min: 2.1rem;
+  --mi-r-mobile-display-fluid: 10cqi;
+  --mi-r-mobile-display-max: 2.85rem;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 3px double var(--mi-restaurant-rule);
+  --mi-r-cta-border-bottom: 3px double var(--mi-restaurant-rule);
+  --mi-r-gallery-ratio: 4 / 3;
+  --mi-r-body-size: 1.0625rem;
+  --mi-r-body-small-size: 0.95rem;
+  --mi-r-price-size: 1rem;
+  --mi-r-logo-nav-width: 15.5rem;
+  --mi-r-logo-nav-height: 3.35rem;
+  --mi-r-logo-footer-width: 17rem;
+  --mi-r-logo-footer-height: 4.5rem;
+  overflow-x: clip;
+  background: var(--mi-color-surface);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-section-theme
+  .mi-section {
+  --mi-section-space: clamp(3.75rem, 8vw, 7.5rem);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mi-color-accent) 5%, transparent) 1px,
+      transparent 1px
+    ),
+    var(--mi-color-surface);
+  background-size: min(8vw, 7rem) 100%;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-section-theme:nth-child(odd)
+  .mi-section {
+  background-color: var(--mi-restaurant-paper);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="navbar"]
+  .mi-section {
+  border-bottom: 0;
+  background: var(--mi-color-surface);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="navbar"]
+  .mi-navbar {
+  min-height: 5rem;
+  border-top: 1px solid var(--mi-restaurant-rule);
+  border-bottom: 3px double var(--mi-restaurant-rule);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-type--eyebrow {
+  color: var(--mi-color-primary);
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.3;
+  letter-spacing: 0.15em;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  :is(.mi-type--display, .mi-type--h1, .mi-type--h2, .mi-type--h3) {
+  hyphens: none;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  text-wrap: balance;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-type--display {
+  max-width: var(--mi-r-display-measure);
+  font-size: clamp(
+    var(--mi-r-display-min),
+    var(--mi-r-display-fluid),
+    var(--mi-r-display-max)
+  ) !important;
+  font-weight: var(--mi-r-display-weight);
+  line-height: var(--mi-r-display-leading);
+  letter-spacing: var(--mi-r-display-tracking);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-type--h2 {
+  max-width: 18ch;
+  font-weight: 580;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-type--body {
+  font-size: var(--mi-r-body-size);
+  line-height: 1.68;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-type--body-sm {
+  font-size: var(--mi-r-body-small-size);
+  line-height: 1.58;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-navbar__brand
+  .mi-brand-mark {
+  max-width: min(var(--mi-r-logo-nav-width), 100%);
+  max-height: var(--mi-r-logo-nav-height);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-footer__brand
+  .mi-brand-mark {
+  max-width: min(var(--mi-r-logo-footer-width), 100%);
+  max-height: var(--mi-r-logo-footer-height);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section {
+  padding-top: clamp(3rem, 7vw, 6.5rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  min-height: var(--mi-r-hero-min-height);
+  column-gap: clamp(2rem, 6vw, 7rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section__heading {
+  z-index: 1;
+  padding-block: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  position: relative;
+  min-height: var(--mi-r-hero-media-min-height);
+  display: grid;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section__media::before {
+  content: "";
+  position: absolute;
+  inset: 0.8rem -0.8rem -0.8rem 0.8rem;
+  z-index: -1;
+  border: 1px solid var(--mi-color-accent);
+  pointer-events: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="hero"]
+  .mi-section__media
+  img {
+  height: 100%;
+  min-height: inherit;
+  aspect-ratio: var(--mi-r-hero-ratio, 5 / 6);
+  border-radius: 0;
+  object-fit: cover;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-section__action {
+  min-height: 44px;
+  border-radius: var(--mi-r-action-radius);
+  padding-inline: 1.2rem;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-section__action--secondary {
+  border-width: 0 0 1px;
+}
+
+/* Menu sections read as a menu, not as clinic/service cards. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem clamp(1rem, 4vw, 3rem);
+  padding: 1.15rem 0;
+  border: 0;
+  border-top: 1px solid var(--mi-restaurant-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card:hover {
+  transform: none;
+  border-color: var(--mi-color-primary);
+  box-shadow: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card-index {
+  display: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card
+  > .mi-type--h3 {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--mi-font-display), serif;
+  font-size: clamp(1.125rem, 2vw, 1.4rem);
+  font-weight: 600;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card-meta {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: baseline;
+  margin: 0;
+  white-space: nowrap;
+  color: var(--mi-color-primary);
+  font-size: var(--mi-r-price-size);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__card
+  > .mi-type--body-sm {
+  grid-column: 1 / -1;
+  max-width: 62ch;
+  margin: 0;
+  color: var(--mi-color-text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__item-groups {
+  margin-top: clamp(2rem, 5vw, 4.5rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__item-group
+  > .mi-type--h3 {
+  width: 100%;
+  margin: 0;
+  padding-bottom: 0.65rem;
+  border-bottom: 3px double var(--mi-color-text);
+  color: var(--mi-color-text);
+  font-family: var(--mi-font-display), serif;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-weight: 580;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="services"]
+  .mi-section__item-group
+  > .mi-section__grid {
+  margin-top: 0;
+}
+
+/* Editorial gallery: alternating table/place rhythm instead of a clinic grid. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: clamp(0.65rem, 1.8vw, 1.5rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-gallery__item {
+  grid-column: auto !important;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-gallery__item:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  .mi-gallery__item
+  img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: var(--mi-r-gallery-ratio);
+  object-fit: cover;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="contact"]
+  .mi-section__layout {
+  align-items: start;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="contact"]
+  .mi-section__form {
+  border: 1px solid var(--mi-restaurant-rule);
+  border-top: 4px solid var(--mi-color-primary);
+  border-radius: 0;
+  background: var(--mi-color-surface);
+  box-shadow: 0 1.4rem 4rem
+    color-mix(in srgb, var(--mi-color-text) 7%, transparent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+  [data-section-family="cta"]
+  .mi-section {
+  border-top: var(--mi-r-cta-border-top);
+  border-bottom: var(--mi-r-cta-border-bottom);
+}
+
+@media (min-width: 64rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__heading {
+    inline-size: min(100%, 26rem);
+    min-inline-size: min(18rem, 100%);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__heading
+    .mi-type--body {
+    max-inline-size: 54ch;
+  }
+}
+
+@media (min-width: 48rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(17rem, 0.8fr) minmax(24rem, 1.2fr) !important;
+    grid-template-areas: none !important;
+    align-items: center;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout
+    > * {
+    grid-area: auto !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    width: auto !important;
+    margin: 0 !important;
+    padding: clamp(1rem, 2vw, 2rem) 0 !important;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__media,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__media
+    img {
+    width: 100%;
+    min-height: 30rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__item-groups {
+    grid-column: 5 / -1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__item-group
+    > .mi-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(2rem, 5vw, 5rem);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-theme
+    .mi-section {
+    --mi-section-space: clamp(3rem, 14vw, 4.75rem);
+    background-size: 4.5rem 100%;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-type--display {
+    max-width: 100%;
+    font-size: clamp(
+      var(--mi-r-mobile-display-min),
+      var(--mi-r-mobile-display-fluid),
+      var(--mi-r-mobile-display-max)
+    ) !important;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout
+    > * {
+    grid-area: auto !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section-variant--5[data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="hero"]
+    .mi-section__media,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="hero"]
+    .mi-section__media
+    img {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    min-height: 16rem;
+    aspect-ratio: 4 / 3;
+    box-sizing: border-box;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    overflow: hidden;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="hero"]
+    .mi-section__media::before {
+    inset: 0.5rem -0.4rem -0.5rem 0.4rem;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-gallery {
+    grid-template-columns: 1fr !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-gallery__item,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-gallery__item:nth-child(n) {
+    grid-column: 1 !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-gallery__item
+    img {
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.75rem;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__card-meta {
+    max-width: 8rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+}
+
+@media (max-width: 22rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    [data-section-family="services"]
+    .mi-section__card-meta {
+    grid-column: 1;
+    grid-row: auto;
+    max-width: 100%;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"] .mi-section__card,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]
+    .mi-section__action {
+    transition: none;
+  }
+}

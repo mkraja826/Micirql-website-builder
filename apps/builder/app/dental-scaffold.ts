@@ -9,6 +9,9 @@ import {
 import type { SectionFamily } from "@micirql/sections";
 import { applyBrandInput } from "./brand-provenance";
 import { demoAssetById } from "./demo-assets";
+import { applyDentalVisitorContentHygiene } from "./dental-content-hygiene";
+import { dentalServiceDescription } from "./dental-service-content";
+import { normalizeServiceInput } from "./service-normalization";
 
 export type DentalBrief = {
   businessName: string;
@@ -17,6 +20,14 @@ export type DentalBrief = {
   goals: string[];
   languages: string[];
   notes?: string | null;
+  clinicians?: DentalClinician[];
+};
+
+export type DentalClinician = {
+  name: string;
+  role: string;
+  credentials?: string;
+  biography?: string;
 };
 
 export const DENTAL_HERO_COPY_LIMITS = {
@@ -40,6 +51,13 @@ const HOME_FAMILIES: SectionFamily[] = [
   "footer",
 ];
 
+const PAGE_FAMILY_ADDITIONS: Partial<Record<string, SectionFamily[]>> = {
+  services: ["process"],
+  doctors: ["features", "process"],
+  about: ["process", "cta"],
+  contact: ["features"],
+};
+
 export function createDentalStructuralScaffold(
   source: Site,
   brief: DentalBrief,
@@ -47,17 +65,28 @@ export function createDentalStructuralScaffold(
   brandProvenance?: BrandProvenance,
 ): Site {
   const next = structuredClone(source);
+  const clinicians = normalizeDentalClinicians(brief.clinicians);
+  const normalizedBrief = {
+    ...brief,
+    clinicians,
+    services: normalizeServiceInput(brief.services, {
+      industry: "Dental clinic",
+      subindustry: "dental",
+    }),
+  };
   const pack = getDomainPack("clinic");
-  const navigation = pack.defaultPages
-    .filter((page) => page.required)
-    .map((page) => ({
-      label: page.label
-        .replace("Treatments / ", "")
-        .replace(" / Appointment", ""),
-      href: page.slug,
-    }));
+  const includedPages = pack.defaultPages.filter(
+    (page) =>
+      page.required && (page.slug !== "/doctors" || clinicians.length > 0),
+  );
+  const navigation = includedPages.map((page) => ({
+    label: page.label
+      .replace("Treatments / ", "")
+      .replace(" / Appointment", ""),
+    href: page.slug,
+  }));
 
-  next.name = brief.businessName;
+  next.name = normalizedBrief.businessName;
   next.domain = "clinic";
   next.subtype = "dental";
   next.navigation = navigation;
@@ -65,54 +94,55 @@ export function createDentalStructuralScaffold(
   next.seoBlueprint = {
     ...next.seoBlueprint,
     primaryGoal:
-      brief.goals[0] ||
+      normalizedBrief.goals[0] ||
       "Help patients understand services and request an appointment",
-    targetLocations: brief.location ? [brief.location] : [],
-    priorityTopics: [...brief.services],
-    languages: brief.languages.length ? [...brief.languages] : ["en"],
-    localSeo: Boolean(brief.location),
+    targetLocations: normalizedBrief.location ? [normalizedBrief.location] : [],
+    priorityTopics: [...normalizedBrief.services],
+    languages: normalizedBrief.languages.length
+      ? [...normalizedBrief.languages]
+      : ["en"],
+    localSeo: Boolean(normalizedBrief.location),
     servicePages: true,
   };
-  next.pages = pack.defaultPages
-    .filter((page) => page.required)
-    .map((page) => {
-      const pageKey =
-        page.slug === "/"
-          ? "home"
-          : page.slug.slice(1).replace(/[^a-z0-9]+/g, "-");
-      const families =
-        page.slug === "/"
-          ? HOME_FAMILIES
-          : uniqueFamilies([
-              "navbar",
-              ...page.sectionFamilies,
-              "footer",
-            ] as SectionFamily[]);
-      return {
-        id: pageKey,
-        path: page.slug,
-        name: page.label,
-        sections: families.map((family, index) =>
-          sectionFor(family, pageKey, index, brief, navigation),
+  next.pages = includedPages.map((page) => {
+    const pageKey =
+      page.slug === "/"
+        ? "home"
+        : page.slug.slice(1).replace(/[^a-z0-9]+/g, "-");
+    const families =
+      page.slug === "/"
+        ? HOME_FAMILIES
+        : uniqueFamilies([
+            "navbar",
+            ...page.sectionFamilies,
+            ...(PAGE_FAMILY_ADDITIONS[pageKey] ?? []),
+            "footer",
+          ] as SectionFamily[]);
+    return {
+      id: pageKey,
+      path: page.slug,
+      name: page.label,
+      sections: families.map((family, index) =>
+        sectionFor(family, pageKey, index, normalizedBrief, navigation),
+      ),
+      seo: {
+        title: truncate(
+          page.slug === "/"
+            ? normalizedBrief.businessName + " | Dental clinic"
+            : page.label + " | " + normalizedBrief.businessName,
+          70,
         ),
-        seo: {
-          title: truncate(
-            page.slug === "/"
-              ? brief.businessName + " | Dental clinic"
-              : page.label + " | " + brief.businessName,
-            70,
-          ),
-          description: truncate(pageDescription(page.slug, brief), 180),
-          canonicalPath: page.slug,
-          indexable: true,
-          structuredDataTypes:
-            page.slug === "/"
-              ? ["Dentist", "LocalBusiness"]
-              : ["Dentist", "BreadcrumbList"],
-        },
-      };
-    });
-  return siteSchema.parse(next);
+        description: truncate(pageDescription(page.slug, normalizedBrief), 180),
+        canonicalPath: page.slug,
+        indexable: true,
+        structuredDataTypes:
+          page.slug === "/"
+            ? ["Dentist", "LocalBusiness"]
+            : ["Dentist", "BreadcrumbList"],
+      },
+    };
+  });
+  return applyDentalVisitorContentHygiene(siteSchema.parse(next)).site;
 }
 
 function sectionFor(
@@ -123,7 +153,6 @@ function sectionFor(
   navigation: Site["navigation"],
 ): SiteSection {
   const id = pageKey + "-" + family + "-" + (index + 1);
-  const firstService = brief.services[0] || "dental care";
   const common = {
     id,
     component: { componentId: family + ".placeholder", version: "1.0.0" },
@@ -148,7 +177,7 @@ function sectionFor(
         ...common,
         props: {
           eyebrow: brief.location || "Dental care",
-          title: heroTitle(pageKey, brief, firstService),
+          title: heroTitle(pageKey, brief),
           description: heroDescription(
             "/" + (pageKey === "home" ? "" : pageKey),
             brief,
@@ -163,10 +192,8 @@ function sectionFor(
         ...common,
         props: {
           title: "About " + brief.businessName,
-          description:
-            brief.notes ||
-            "Use this section for verified information about the clinic, its approach and its location.",
-          items: [],
+          description: safeAboutDescription(brief),
+          items: aboutItems(brief),
         },
       };
     case "services":
@@ -175,94 +202,61 @@ function sectionFor(
         props: {
           title: "Dental services",
           description:
-            "Explore the treatments supplied in the business brief. Contact the clinic for information relevant to your needs.",
+            "Understand the treatments listed by the clinic, the questions to ask, and the next step to confirm before making a care decision.",
           items: brief.services.map((service) => ({
             title: title(service),
-            description:
-              "Ask " +
-              brief.businessName +
-              " for verified information about " +
-              service +
-              ", suitability and next steps.",
+            description: dentalServiceDescription(service, {
+              businessName: brief.businessName,
+            }),
           })),
         },
       };
     case "features":
       return {
         ...common,
-        props: {
-          title: "Plan your visit with clear information",
-          items: [
-            {
-              title: "Review services",
-              description: "Start with the treatments listed by the clinic.",
-            },
-            {
-              title: "Share your needs",
-              description:
-                "Send an enquiry without implying confirmed availability.",
-            },
-            {
-              title: "Confirm next steps",
-              description:
-                "The clinic can respond with information relevant to your request.",
-            },
-          ],
-        },
+        props: featureContent(pageKey, brief),
       };
     case "process":
       return {
         ...common,
-        props: {
-          title: "Requesting an appointment",
-          items: [
-            {
-              title: "Choose a service",
-              description: "Review the available treatment information.",
-            },
-            {
-              title: "Send a request",
-              description:
-                "Provide a contact method and your preferred next step.",
-            },
-            {
-              title: "Await confirmation",
-              description:
-                "An appointment is not confirmed until the clinic responds.",
-            },
-          ],
-        },
+        props: processContent(pageKey, brief),
       };
     case "testimonials":
       return {
         ...common,
-        props: {
-          title: "Patient feedback",
-          description:
-            "Verified reviews supplied or approved by the clinic can be added here.",
-          items: [],
-        },
+        props: { title: "Patient feedback", items: [] },
+        hidden: true,
       };
     case "gallery":
       return {
         ...common,
-        props: {
-          title: "Clinic gallery",
-          description:
-            "Approved clinic-owned or accurately licensed images can be added here.",
-          items: [],
-        },
+        props: { title: "Clinic gallery", items: [] },
+        hidden: true,
       };
-    case "team":
+    case "team": {
+      const clinicians = normalizeDentalClinicians(brief.clinicians);
       return {
         ...common,
         props: {
           title: "Dental team",
           description:
-            "Add only verified clinician names, roles, biographies and credentials.",
-          items: [],
+            "Meet the clinicians whose names, roles and credentials were supplied by the clinic.",
+          items: clinicians.map((clinician) => ({
+            name: clinician.name,
+            title: clinician.name,
+            eyebrow: clinician.role,
+            description: [
+              clinician.role,
+              clinician.credentials,
+              clinician.biography,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          })),
         },
+        hidden: clinicians.length === 0,
       };
+    }
     case "cta":
       return {
         ...common,
@@ -340,11 +334,7 @@ function pageHeading(pageKey: string, brief: DentalBrief) {
   return headings[pageKey] ?? brief.businessName;
 }
 
-function heroTitle(
-  pageKey: string,
-  brief: DentalBrief,
-  firstService: string,
-): string {
+function heroTitle(pageKey: string, brief: DentalBrief): string {
   if (pageKey !== "home") {
     const pageTitle = pageHeading(pageKey, brief);
     if (fits(pageTitle, DENTAL_HERO_COPY_LIMITS.title)) return pageTitle;
@@ -360,13 +350,8 @@ function heroTitle(
   }
 
   const businessName = cleanDisplayText(brief.businessName);
-  const service = title(cleanDisplayText(firstService));
   const candidates = [
-    businessName && service ? businessName + ": " + service : "",
     businessName,
-    service && brief.location
-      ? service + " in " + cleanDisplayText(brief.location)
-      : service,
     brief.location
       ? "Dental care in " + cleanDisplayText(brief.location)
       : "Dental care",
@@ -394,10 +379,10 @@ function heroDescription(path: string, brief: DentalBrief): string {
     return description;
   }
   if (path === "/doctors") {
-    return "Meet clinicians after the clinic supplies their verified names, roles and credentials.";
+    return `Contact ${brief.businessName} for current information about clinicians, services and appointment requests.`;
   }
   if (path === "/about") {
-    return "Learn about the clinic using information supplied and approved by the clinic.";
+    return safeAboutDescription(brief);
   }
   if (path === "/contact") {
     return "Send an enquiry or appointment request. The clinic confirms availability.";
@@ -457,17 +442,8 @@ function pageDescription(path: string, brief: DentalBrief) {
       " for verified information relevant to your needs."
     );
   if (path === "/doctors")
-    return (
-      "Meet verified clinicians at " +
-      brief.businessName +
-      " once the clinic supplies their names, roles and credentials."
-    );
-  if (path === "/about")
-    return (
-      "Learn about " +
-      brief.businessName +
-      " using information supplied and approved by the clinic."
-    );
+    return `Contact ${brief.businessName} for current information about clinicians, dental services and appointment requests.`;
+  if (path === "/about") return safeAboutDescription(brief);
   if (path === "/contact")
     return (
       "Send an enquiry or appointment request to " +
@@ -486,6 +462,197 @@ function pageDescription(path: string, brief: DentalBrief) {
 
 function uniqueFamilies(families: SectionFamily[]) {
   return families.filter((family, index) => families.indexOf(family) === index);
+}
+
+function normalizeDentalClinicians(
+  clinicians: DentalBrief["clinicians"],
+): DentalClinician[] {
+  if (!Array.isArray(clinicians)) return [];
+  return clinicians.flatMap((clinician) => {
+    if (!clinician || typeof clinician !== "object") return [];
+    const name = cleanDisplayText(clinician.name);
+    const role = cleanDisplayText(clinician.role);
+    if (!name || !role) return [];
+    const credentials = clinician.credentials
+      ? cleanDisplayText(clinician.credentials)
+      : undefined;
+    const biography = clinician.biography
+      ? cleanDisplayText(clinician.biography)
+      : undefined;
+    return [
+      {
+        name,
+        role,
+        ...(credentials ? { credentials } : {}),
+        ...(biography ? { biography } : {}),
+      },
+    ];
+  });
+}
+
+function safeAboutDescription(brief: DentalBrief) {
+  const services = brief.services.slice(0, 3).map((service) => title(service));
+  const subject = services.length ? naturalList(services) : "Dental services";
+  return (
+    brief.businessName +
+    (brief.location
+      ? " serves people looking for dental care in " + brief.location
+      : " provides dental care information") +
+    ". Explore " +
+    subject +
+    ", prepare questions for the clinic, and request an appointment when you are ready to discuss the next step."
+  );
+}
+
+function aboutItems(brief: DentalBrief) {
+  return [
+    {
+      title: "Treatments in one place",
+      description: brief.services.length
+        ? `Review ${naturalList(brief.services.slice(0, 3).map(title))} and the other services supplied in the clinic brief.`
+        : "Review the dental services supplied in the clinic brief.",
+    },
+    {
+      title: "Questions before decisions",
+      description:
+        "Use each service overview to identify what you want to ask about assessment, suitability and next steps.",
+    },
+    {
+      title: "A clear appointment request",
+      description:
+        "Share the service you are interested in and a reliable contact method; the clinic confirms availability separately.",
+    },
+  ];
+}
+
+function featureContent(pageKey: string, brief: DentalBrief) {
+  if (pageKey === "doctors") {
+    return {
+      title: "Prepare for a clinician conversation",
+      description:
+        "The clinic should confirm who will provide care and which clinician is appropriate for your request.",
+      items: [
+        {
+          title: "Ask who will provide care",
+          description:
+            "Request current clinician names, roles and qualifications directly from the clinic before your visit.",
+        },
+        {
+          title: "Share relevant context",
+          description:
+            "Mention the service you are considering and any information the clinic should know when reviewing your request.",
+        },
+        {
+          title: "Confirm the next step",
+          description:
+            "Ask whether an assessment is needed and what the clinic wants you to bring or prepare.",
+        },
+      ],
+    };
+  }
+  if (pageKey === "contact") {
+    return {
+      title: "Prepare a useful appointment request",
+      description:
+        "A few clear details help the clinic understand why you are getting in touch.",
+      items: [
+        {
+          title: "Name the service",
+          description:
+            "Mention the treatment or dental concern you want to discuss without sharing unnecessary sensitive information.",
+        },
+        {
+          title: "Choose a contact method",
+          description:
+            "Provide an email address and, if useful, a phone number where the clinic can respond.",
+        },
+        {
+          title: "Wait for confirmation",
+          description:
+            "Submitting the form sends a request; an appointment is confirmed only when the clinic responds.",
+        },
+      ],
+    };
+  }
+  if (pageKey === "services") {
+    return {
+      title: "Compare treatments with the right questions",
+      description:
+        "Service information is a starting point; a dental professional determines what is relevant after assessment.",
+      items: [
+        {
+          title: "Purpose",
+          description:
+            "Understand what the treatment is commonly used to address and which alternatives may be discussed.",
+        },
+        {
+          title: "Suitability",
+          description:
+            "Ask what examination or records may be needed before a recommendation can be made.",
+        },
+        {
+          title: "Aftercare and follow-up",
+          description:
+            "Confirm the expected care instructions, follow-up approach and questions to raise before proceeding.",
+        },
+      ],
+    };
+  }
+  return {
+    title: "Plan your visit with clear information",
+    description: brief.location
+      ? `Explore the clinic brief for ${brief.location}, then send a focused request when you are ready.`
+      : "Explore the clinic brief, then send a focused request when you are ready.",
+    items: [
+      {
+        title: "Review services",
+        description:
+          "Start with the listed treatments and note the questions that matter to your decision.",
+      },
+      {
+        title: "Share your needs",
+        description:
+          "Tell the clinic which service you want to discuss and how you would like them to respond.",
+      },
+      {
+        title: "Confirm next steps",
+        description:
+          "The clinic can explain whether an assessment is needed and confirm appointment availability.",
+      },
+    ],
+  };
+}
+
+function processContent(pageKey: string, brief: DentalBrief) {
+  const titles =
+    pageKey === "services"
+      ? [
+          "Explore the overview",
+          "Prepare your questions",
+          "Request an assessment",
+        ]
+      : pageKey === "doctors"
+        ? ["Send your request", "Confirm the clinician", "Confirm the visit"]
+        : ["Choose a service", "Send a request", "Await confirmation"];
+  return {
+    title:
+      pageKey === "services"
+        ? "From service research to a clinic conversation"
+        : pageKey === "doctors"
+          ? "How clinician information is confirmed"
+          : "Requesting an appointment",
+    description:
+      "The website starts the conversation; the clinic provides individual information and confirms availability.",
+    items: titles.map((itemTitle, index) => ({
+      title: itemTitle,
+      description:
+        index === 0
+          ? `Review the information from ${brief.businessName} and identify the service or question you want to discuss.`
+          : index === 1
+            ? "Share a reliable contact method and ask for the current information relevant to your request."
+            : "Wait for the clinic to respond before treating the request as a confirmed appointment.",
+    })),
+  };
 }
 
 function title(value: string) {

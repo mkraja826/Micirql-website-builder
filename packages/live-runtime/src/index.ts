@@ -2,6 +2,7 @@ import {
   preparePage,
   type FunctionBindingResolver,
   type PreparedPage,
+  type ResolvedBrandMark,
   type RendererRegistry,
 } from "@micirql/renderer";
 import { siteSchema, type Site } from "@micirql/schema";
@@ -21,6 +22,9 @@ export type LiveRuntimeDependencies = {
   store: LiveSiteStore;
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
+  brandMarks?: {
+    resolve(site: Site): Promise<ResolvedBrandMark | undefined>;
+  };
   renderPage: (page: PreparedPage) => Promise<string> | string;
   documentStyles?: string;
   documentScript?: string;
@@ -73,6 +77,8 @@ export async function handleLiveRequest(
   const cached = await dependencies.cache?.get(cacheKey);
   if (cached) return cached;
 
+  const brandMark = await dependencies.brandMarks?.resolve(site);
+
   const prepared = await preparePage({
     site,
     path,
@@ -80,6 +86,7 @@ export async function handleLiveRequest(
     registry: dependencies.registry,
     functions: dependencies.functions,
     mode: "production",
+    ...(brandMark ? { brandMark } : {}),
   });
   if (!prepared.ok) {
     const is404 = prepared.issues.some(

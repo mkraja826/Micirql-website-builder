@@ -9,6 +9,11 @@ export function renderPreparedPage(prepared: PreparedPage): ReactNode {
       data-mi-site={prepared.site.siteId}
       data-mi-page={prepared.page.id}
       data-mi-theme={prepared.site.theme.family}
+      data-mi-domain={prepared.site.domain}
+      data-mi-subtype={prepared.site.subtype || undefined}
+      data-mi-candidate={
+        prepared.site.generation?.selectedCandidateId || undefined
+      }
       style={style}
     >
       {prepared.sections.map(({ section, component, props }, index) => (
@@ -30,5 +35,7 @@ export function renderPreparedPage(prepared: PreparedPage): ReactNode {
 }
 
 export function serializeJsonLd(prepared: PreparedPage): string[] {
-  return prepared.seo.structuredData.map((item) => JSON.stringify(item).replace(/</g, "\\u003c"));
+  return prepared.seo.structuredData.map((item) =>
+    JSON.stringify(item).replace(/</g, "\\u003c"),
+  );
 }

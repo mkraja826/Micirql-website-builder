@@ -38,6 +38,10 @@ const DENTAL_SERVICE_PHRASES = [
   "hygiene",
 ] as const;
 
+const DENTAL_COMPOUND_SERVICE_PHRASES = new Set([
+  "crowns and bridges",
+]);
+
 type ServiceContext = {
   industry?: unknown;
   subindustry?: unknown;
@@ -82,6 +86,13 @@ function isDentalContext(context: ServiceContext) {
 }
 
 function splitKnownDentalSequence(value: string): string[] {
+  if (
+    DENTAL_COMPOUND_SERVICE_PHRASES.has(
+      value.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " "),
+    )
+  ) {
+    return [value];
+  }
   const matches = dentalServicePattern()
     .execAll(value)
     .filter(({ start, end }) => {

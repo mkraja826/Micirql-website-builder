@@ -15,6 +15,7 @@
     "qa:top20": "playwright test qa/top20-contracts.spec.ts",
     "qa:dental:premium": "playwright test qa/dental-premium-render.spec.ts --workers=4",
     "qa:dental:premium:smoke": "playwright test qa/dental-premium-render.spec.ts --grep clinic-dental-precision",
+    "qa:builder:chrome": "playwright test -c qa/playwright.builder.config.ts",
     "qa:sections": "playwright test qa/sections.spec.ts",
     "qa:sections:full": "MI_QA_FULL=1 playwright test qa/sections.spec.ts",
     "qa:sections:evidence": "node qa/build-evidence.mjs",
@@ -34,5 +35,10 @@
       "@opennextjs/cloudflare@1.20.7": "patches/@opennextjs__cloudflare@1.20.7.patch",
       "next@16.3.8": "patches/next@16.3.8.patch"
     }
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tooling/*"
+  ]
 }

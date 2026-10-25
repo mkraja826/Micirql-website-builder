@@ -38,6 +38,7 @@ export type BrandColors = {
 export type BrandTypography = {
   display: string;
   body: string;
+  ui?: string;
 };
 
 export type ThemeRequest = {

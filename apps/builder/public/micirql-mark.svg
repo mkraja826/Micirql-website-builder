@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Micirql mark</title>
+  <desc id="desc">Interlocking geometric forms suggesting construction, motion and connection.</desc>
+  <defs>
+    <linearGradient id="violet" x1="10" y1="11" x2="45" y2="49" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="47" y1="9" x2="55" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8B4FE"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="9" fill="#08080D"/>
+  <path d="M10 47V22L24 11L38 22V35L24 25V47H10Z" fill="url(#violet)"/>
+  <path d="M28 46V31L42 20L54 29V46L42 37V30L28 41V46Z" fill="#F7F5FF"/>
+  <rect x="47" y="9" width="8" height="8" fill="url(#spark)"/>
+</svg>

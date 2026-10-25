@@ -1,6 +1,11 @@
-import { siteVersionSchema, type SiteVersion } from "@micirql/schema";
+import { siteVersionSchema, type Site, type SiteVersion } from "@micirql/schema";
 import { preparePage } from "./prepare";
-import type { FunctionBindingResolver, PreparedPage, RendererRegistry } from "./types";
+import type {
+  FunctionBindingResolver,
+  PreparedPage,
+  RendererRegistry,
+  ResolvedBrandMark,
+} from "./types";
 
 export type PublishedSiteRecord = {
   siteId: string;
@@ -37,6 +42,9 @@ export function createCustomerSiteRuntime(args: {
   store: PublishedSiteStore;
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
+  brandMarks?: {
+    resolve(site: Site): Promise<ResolvedBrandMark | undefined>;
+  };
   cache?: PublishedSnapshotCache;
   snapshotTtlSeconds?: number;
 }) {
@@ -71,6 +79,7 @@ export function createCustomerSiteRuntime(args: {
       }
 
       const origin = `https://${primaryHostname}`;
+      const brandMark = await args.brandMarks?.resolve(version.snapshot);
       const prepared = await preparePage({
         site: version.snapshot,
         path,
@@ -78,6 +87,7 @@ export function createCustomerSiteRuntime(args: {
         registry: args.registry,
         functions: args.functions,
         mode: "production",
+        ...(brandMark ? { brandMark } : {}),
       });
 
       if (!prepared.ok) {

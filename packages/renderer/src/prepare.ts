@@ -4,6 +4,7 @@ import type {
   FunctionBindingResolver,
   PrepareResult,
   PreparedSection,
+  ResolvedBrandMark,
   RendererIssue,
   RendererMode,
   RendererRegistry,
@@ -52,6 +53,8 @@ export async function preparePage(args: {
   registry: RendererRegistry;
   functions: FunctionBindingResolver;
   mode?: RendererMode;
+  /** The exact logo asset named by site.theme.brand.logoAssetId, if supplied. */
+  brandMark?: ResolvedBrandMark;
 }): Promise<PrepareResult> {
   const parsedSite = siteSchema.safeParse(args.site);
   if (!parsedSite.success) {
@@ -77,6 +80,22 @@ export async function preparePage(args: {
         {
           code: "PAGE_NOT_FOUND",
           message: `No page is registered for ${normalizePath(args.path)}.`,
+        },
+      ],
+    };
+  }
+  const rawLogoAssetId = site.theme.brand.logoAssetId;
+  const logoAssetId = rawLogoAssetId?.trim() ? rawLogoAssetId : undefined;
+  const brandMark = logoAssetId
+    ? normalizeBrandMark(args.brandMark, logoAssetId, site.name)
+    : undefined;
+  if (logoAssetId && !brandMark) {
+    return {
+      ok: false,
+      issues: [
+        {
+          code: "BRAND_LOGO_UNRESOLVED",
+          message: `Logo asset ${logoAssetId} could not be resolved for rendering.`,
         },
       ],
     };
@@ -127,6 +146,17 @@ export async function preparePage(args: {
     }
 
     const props: Record<string, unknown> = { ...section.props };
+    // Brand identity comes from the canonical theme asset, never from stale or
+    // generated section content. Text-only sites therefore keep their existing
+    // title treatment, while a supplied logo is shared by header and footer.
+    delete props.brandMark;
+    if (
+      brandMark &&
+      (resolved.registry.family === "navbar" ||
+        resolved.registry.family === "footer")
+    ) {
+      props.brandMark = brandMark;
+    }
     const selectedFormBinding = selectPublicFormBinding(
       section.bindings,
       typeof section.props.formBindingKey === "string"
@@ -186,6 +216,7 @@ export async function preparePage(args: {
     typography: {
       display: site.theme.brand.typography.display,
       body: site.theme.brand.typography.body,
+      ui: site.theme.brand.typography.ui,
     },
   });
 
@@ -215,4 +246,37 @@ function contrastFor(color: string): string {
   const b = Number.parseInt(hex.slice(4, 6), 16);
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luminance > 0.55 ? "#111111" : "#ffffff";
+}
+
+function normalizeBrandMark(
+  value: ResolvedBrandMark | undefined,
+  expectedAssetId: string,
+  siteName: string,
+): ResolvedBrandMark | undefined {
+  if (
+    !value ||
+    value.assetId !== expectedAssetId ||
+    typeof value.src !== "string" ||
+    !value.src.trim() ||
+    !Number.isFinite(value.width) ||
+    value.width <= 0 ||
+    !Number.isFinite(value.height) ||
+    value.height <= 0
+  ) {
+    return undefined;
+  }
+  return {
+    assetId: value.assetId,
+    src: value.src.trim(),
+    alt:
+      (typeof value.alt === "string" ? value.alt.trim() : "") ||
+      `${siteName} logo`,
+    width: value.width,
+    height: value.height,
+    ...(typeof value.aspectRatio === "number" &&
+    Number.isFinite(value.aspectRatio) &&
+    value.aspectRatio > 0
+      ? { aspectRatio: value.aspectRatio }
+      : {}),
+  };
 }

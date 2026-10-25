@@ -1,1 +1,158 @@
-.studio{display:grid;gap:18px}.section{display:grid;gap:9px}.label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8f8f9a}.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.chips button,.palette button,.type button{border:1px solid #2b2b32;background:#151519;color:#bdbdc5;border-radius:10px;cursor:pointer}.chips button{min-height:38px;padding:0 9px;text-transform:capitalize}.chips button.active{border-color:#7c3aed;background:#24193a;color:white}.palette{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.palette button{padding:7px;display:flex;align-items:center;gap:8px;text-align:left}.swatch{width:34px;height:28px;border-radius:7px;border:1px solid rgba(255,255,255,.12);flex:none}.type{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.type button{min-height:58px;padding:7px;display:grid;place-items:center;gap:2px}.type strong{font-size:13px}.type small{font-size:9px;color:#84848e}.controls{display:grid;grid-template-columns:1fr;gap:8px}.controls label,.pickers label{display:grid;gap:5px;font-size:11px;color:#9999a3}.controls select{width:100%;min-height:36px;border:1px solid #2b2b32;border-radius:9px;background:#151519;color:white;padding:0 9px}.pickers{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.pickers input{width:100%;height:36px;border:1px solid #2b2b32;border-radius:9px;padding:3px;background:#151519}@media(min-width:1200px){.controls{grid-template-columns:repeat(3,1fr)}}
+.studio {
+  display: grid;
+  gap: 22px;
+}
+
+.section,
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+.section + .section,
+.section + .controls,
+.controls + .section {
+  padding-top: 20px;
+  border-top: 1px solid #e4e5eb;
+}
+
+.label {
+  color: #555762;
+  font-size: 0.72rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chips,
+.palette {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chips button,
+.palette button,
+.type button {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #d9dbe3;
+  border-radius: 11px;
+  background: #fff;
+  color: #353740;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chips button {
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 670;
+  text-transform: capitalize;
+}
+
+.chips button:hover,
+.palette button:hover,
+.type button:hover {
+  border-color: #9d94df;
+  background: #faf9ff;
+}
+
+.chips button.active,
+.palette button.active,
+.type button.active {
+  border-color: #5b4be7;
+  background: #eeebff;
+  color: #4437ba;
+  box-shadow: inset 0 0 0 1px #5b4be7;
+}
+
+.palette button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  font-size: 0.76rem;
+  font-weight: 660;
+  text-align: left;
+}
+
+.swatch {
+  width: 38px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid rgb(23 24 30 / 12%);
+  border-radius: 8px;
+}
+
+.type {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.type button {
+  min-height: 68px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 8px 5px;
+}
+
+.type strong {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+
+.type small {
+  color: #656873;
+  font-size: 0.68rem;
+}
+
+.controls {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.controls label,
+.pickers label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: #5f616b;
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.controls select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 34px 0 11px;
+  border: 1px solid #d6d8df;
+  border-radius: 10px;
+  background: #fff;
+  color: #2d2f36;
+  font: inherit;
+}
+
+.pickers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pickers input {
+  width: 100%;
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid #d6d8df;
+  border-radius: 10px;
+  background: #fff;
+}
+
+@media (min-width: 1200px) {
+  .controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -1,5 +1,9 @@
 import type { Site, SiteVersion } from "@micirql/schema";
-import type { FunctionBindingResolver, RendererRegistry } from "@micirql/renderer";
+import type {
+  FunctionBindingResolver,
+  RendererRegistry,
+  ResolvedBrandMark,
+} from "@micirql/renderer";
 
 export type PublishDraft = {
   site: Site;
@@ -50,6 +54,9 @@ export type PublishingDependencies = {
   versionIds: VersionIdFactory;
   cache?: PublishCache;
   domains?: DomainActivator;
+  brandMarks?: {
+    resolve(site: Site): Promise<ResolvedBrandMark | undefined>;
+  };
 };
 
 export type PublishIssue = {

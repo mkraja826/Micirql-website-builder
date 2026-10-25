@@ -1,17 +1,6 @@
 import type { NextRequest } from "next/server";
 import type { Site } from "@micirql/schema";
-import { isDentalCertifiedSection } from "@micirql/sections";
-import {
-  DENTAL_CATALOG_VERSION,
-  DENTAL_REQUIRED_ACTIONS,
-  DENTAL_REQUIRED_PAGE_PATHS,
-  DENTAL_SUBTYPE,
-  listIndustryDesignPresets,
-} from "../../industry-design-preset-data";
-import {
-  selectedCandidateStructureIssues,
-  validateSelectedDraft,
-} from "../design-review/select/selection-pipeline";
+import { assessCertifiedPublishGate } from "../../certified-publish-gate";
 import {
   bearerToken,
   getSupabaseDraft,
@@ -174,121 +163,9 @@ export function assertExactSavedRevision(
 }
 
 export function assertPremiumGate(site: Site) {
-  const report = site.generation?.premiumGate;
-  if (!report) {
-    throw new PublishApiError(
-      422,
-      "PREMIUM_REPORT_REQUIRED",
-      "The exact saved revision does not contain a premium validation report.",
-    );
-  }
-  if (!report.passed) {
-    const diagnostics = report.issues
-      .filter((issue) => issue.severity === "error")
-      .map((issue) => issue.message)
-      .slice(0, 3)
-      .join(" ");
-    throw new PublishApiError(
-      422,
-      "PREMIUM_GATE_FAILED",
-      diagnostics ||
-        "The exact saved revision has not passed the premium validation gate.",
-    );
-  }
-
-  const generation = site.generation;
-  const candidateIds = generation?.candidateIds ?? [];
-  const selectedCandidateId = generation?.selectedCandidateId;
-  const approvedCandidates = listIndustryDesignPresets("clinic", DENTAL_SUBTYPE);
-  const approvedCandidateIds = new Set(approvedCandidates.map((candidate) => candidate.id));
-  const selectedCandidate = approvedCandidates.find(
-    (candidate) => candidate.id === selectedCandidateId,
-  );
-  const currentReport = validateSelectedDraft(
-    site,
-    selectedCandidate
-      ? selectedCandidateStructureIssues(site, selectedCandidate)
-      : [],
-  );
-  const pagePaths = new Set(site.pages.map((page) => page.path));
-  const actionIds = new Set(
-    site.pages.flatMap((page) =>
-      page.sections.flatMap((section) =>
-        Object.values(section.bindings).map((binding) => binding.actionId),
-      ),
-    ),
-  );
-  const componentIssues = site.pages.flatMap((page) =>
-    page.sections
-      .filter(
-        (section) =>
-          !section.hidden &&
-          !isDentalCertifiedSection(
-            section.component.componentId,
-            section.component.version,
-          ),
-      )
-      .map(
-        (section) =>
-          `${page.path}:${section.component.componentId}@${section.component.version}`,
-      ),
-  );
-  const invalidCandidateIds = candidateIds.filter(
-    (candidateId) => !approvedCandidateIds.has(candidateId),
-  );
-  const invariantIssues = [
-    ...(site.domain === "clinic" ? [] : ["domain must be clinic"]),
-    ...(site.subtype?.trim().toLowerCase() === DENTAL_SUBTYPE
-      ? []
-      : ["subtype must be dental"]),
-    ...(generation?.packStatus === "certified"
-      ? []
-      : ["generation pack must be certified"]),
-    ...(generation?.catalogVersion === DENTAL_CATALOG_VERSION
-      ? []
-      : ["dental catalog version is stale or missing"]),
-    ...(candidateIds.length === 20 && new Set(candidateIds).size === 20
-      ? []
-      : ["ranked candidate set must contain 20 unique IDs"]),
-    ...(invalidCandidateIds.length
-      ? [`unknown candidate IDs: ${invalidCandidateIds.slice(0, 3).join(", ")}`]
-      : []),
-    ...(selectedCandidateId &&
-    candidateIds.includes(selectedCandidateId) &&
-    approvedCandidateIds.has(selectedCandidateId)
-      ? []
-      : ["selected candidate is missing or unapproved"]),
-    ...(currentReport.score >= 85 &&
-    !currentReport.issues.some((issue) => issue.severity === "error")
-      ? []
-      : ["premium score or diagnostics do not satisfy the release threshold"]),
-    ...(currentReport.passed && currentReport.score >= 85
-      ? []
-      : [
-          `the exact saved snapshot no longer passes premium validation: ${currentReport.issues
-            .filter((issue) => issue.severity === "error")
-            .slice(0, 2)
-            .map((issue) => issue.message)
-            .join(" ") || "score is below 85"}`,
-        ]),
-    ...DENTAL_REQUIRED_PAGE_PATHS.filter((path) => !pagePaths.has(path)).map(
-      (path) => `required page ${path} is missing`,
-    ),
-    ...DENTAL_REQUIRED_ACTIONS.filter((actionId) => !actionIds.has(actionId)).map(
-      (actionId) => `required action ${actionId} is missing`,
-    ),
-    ...(componentIssues.length
-      ? [
-          `non-certified components: ${componentIssues.slice(0, 3).join(", ")}`,
-        ]
-      : []),
-  ];
-  if (invariantIssues.length) {
-    throw new PublishApiError(
-      422,
-      "PREMIUM_GATE_STALE_OR_TAMPERED",
-      invariantIssues.slice(0, 4).join(". "),
-    );
+  const assessment = assessCertifiedPublishGate(site);
+  if (!assessment.ok) {
+    throw new PublishApiError(422, assessment.code, assessment.message);
   }
 }
 

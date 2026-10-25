@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CompositionGateIssue } from "@micirql/schema";
 import {
-  DENTAL_CATALOG_VERSION,
-  listIndustryDesignPresets,
-} from "../../../industry-design-preset-data";
-import {
-  applyCertifiedDentalMedia,
-  certifiedDentalMediaIssues,
-} from "../../../apply-industry-preset";
+  resolveCertifiedIndustryPackRuntimeForSite,
+  type RegisteredIndustryPackRuntime,
+} from "../../../industry-packs";
 import { normalizeServiceInput } from "../../../service-normalization";
 import {
   getSupabaseDraft,
@@ -16,16 +12,6 @@ import {
   supabaseHeaders,
   type DraftRecord,
 } from "../../drafts/supabase-store";
-import {
-  applySelectedDentalCandidate,
-  candidateCatalogVersion,
-  isDentalSubtype,
-  protectedStructureChanged,
-  repairSelectedDraftContentFit,
-  restoreProtectedStructure,
-  selectedCandidateStructureIssues,
-  validateSelectedDraft,
-} from "./selection-pipeline";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -40,6 +26,8 @@ const PRE_CONTENT_BLOCKERS = new Set([
   "SITE_SCHEMA_INVALID",
   "DENTAL_DOMAIN_MISMATCH",
   "DENTAL_PACK_NOT_CERTIFIED",
+  "INDUSTRY_DOMAIN_MISMATCH",
+  "INDUSTRY_PACK_NOT_CERTIFIED",
   "DESIGN_SELECTION_MISSING",
   "REQUIRED_PAGE_MISSING",
   "REQUIRED_ACTION_MISSING",
@@ -54,6 +42,7 @@ const PRE_CONTENT_BLOCKERS = new Set([
   "COMPONENT_FAMILY_UNKNOWN",
   "CANDIDATE_COMPONENT_MISMATCH",
   "CANDIDATE_SECTION_ORDER_MISMATCH",
+  "PHYSIOTHERAPY_PAGE_ANATOMY_UNKNOWN",
 ]);
 
 type OnboardingProfile = {
@@ -115,9 +104,21 @@ export async function POST(request: NextRequest) {
       input.workspaceId,
       input.siteId,
     );
-    assertCertifiedDentalContext(current, profile, input.candidateId);
+    const industryRuntime = assertCertifiedPackContext(
+      current,
+      profile,
+      input.candidateId,
+    );
+    const industryPack = industryRuntime.pack;
+    const rankedCandidates = industryRuntime
+      .rankCandidates(profileBrief(profile))
+      .map(
+      (item) => item.candidate,
+    );
+    assertCandidateSetMatchesCatalog(current, rankedCandidates);
     if (
-      current.snapshot.generation?.catalogVersion !== DENTAL_CATALOG_VERSION
+      current.snapshot.generation?.catalogVersion !==
+      industryPack.catalogVersion
     ) {
       throw selectionError(
         409,
@@ -126,18 +127,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const candidates = listIndustryDesignPresets("clinic", "dental");
-    assertCandidateSetMatchesCatalog(current, candidates);
-    const candidate = candidates.find((item) => item.id === input.candidateId);
-    if (!candidate || candidate.domain !== "clinic") {
+    const candidate = industryRuntime.resolveCandidate(input.candidateId);
+    if (
+      !candidate ||
+      candidate.domain !== industryPack.domain ||
+      candidate.subtype !== industryPack.subtype
+    ) {
       throw selectionError(
         422,
-        "CANDIDATE_NOT_IN_CERTIFIED_DENTAL_CATALOG",
-        "The requested design is not part of the certified dental catalog.",
+        "CANDIDATE_NOT_IN_CERTIFIED_INDUSTRY_CATALOG",
+        "The requested design is not part of this certified industry catalog.",
       );
     }
-    const presetVersion = candidateCatalogVersion(candidate);
-    if (presetVersion !== DENTAL_CATALOG_VERSION) {
+    if (candidate.catalogVersion !== industryPack.catalogVersion) {
       throw selectionError(
         409,
         "CATALOG_VERSION_MISMATCH",
@@ -145,13 +147,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const selectedSnapshot = applySelectedDentalCandidate(
+    const selectedSnapshot = industryRuntime.applySelectedCandidate(
       current.snapshot,
-      candidate,
+      input.candidateId,
     );
-    const structuralGate = validateSelectedDraft(
+    const structuralGate = industryRuntime.validateDraft(
       selectedSnapshot,
-      selectedCandidateStructureIssues(selectedSnapshot, candidate),
+      industryRuntime.candidateStructureIssues(
+        selectedSnapshot,
+        input.candidateId,
+      ),
     );
     const structuralBlockers = structuralGate.issues.filter((issue) =>
       PRE_CONTENT_BLOCKERS.has(issue.code),
@@ -196,7 +201,7 @@ export async function POST(request: NextRequest) {
     const contentResult = await invokeFunction(
       url,
       headers,
-      "enrich-site-content",
+      industryRuntime.functionPolicy.contentEnrichment.functionName,
       {
         workspace_id: input.workspaceId,
         site_id: input.siteId,
@@ -205,7 +210,6 @@ export async function POST(request: NextRequest) {
       },
     );
     let protectedContentMutation = false;
-    let contentFallback = false;
     if (!contentResult.ok && contentResult.issue) {
       pipelineIssues.push(contentResult.issue);
     } else {
@@ -214,7 +218,7 @@ export async function POST(request: NextRequest) {
         input.workspaceId,
         input.siteId,
       );
-      protectedContentMutation = protectedStructureChanged(
+      protectedContentMutation = industryRuntime.protectedStructureChanged(
         selectedSnapshot,
         saved.snapshot,
       );
@@ -226,29 +230,53 @@ export async function POST(request: NextRequest) {
           severity: "error",
         });
         saved = await saveSupabaseDraft(request, {
-          snapshot: restoreProtectedStructure(selectedSnapshot, saved.snapshot),
+          snapshot: industryRuntime.restoreProtectedStructure(
+            selectedSnapshot,
+            saved.snapshot,
+          ),
           expectedRevision: saved.revision,
         });
       }
-      if (contentResult.payload?.mode === "fallback") {
-        contentFallback = true;
+      const contentMode = optionalString(contentResult.payload?.mode);
+      if (
+        contentMode &&
+        !industryRuntime.functionPolicy.contentEnrichment.certifiedModes.includes(
+          contentMode,
+        ) &&
+        !industryRuntime.functionPolicy.contentEnrichment.fallbackIsCertifiable
+      ) {
         pipelineIssues.push({
           code: "CONTENT_GENERATION_AUTHORIZATION_REQUIRED",
           message:
-            "Configure a server-side credential authorized for the production text endpoint and model. Deterministic fallback copy cannot pass flagship certification.",
+            "Configure a server-side credential authorized for the production text endpoint and model. The returned fallback mode cannot pass this industry pack’s certification gate.",
           severity: "error",
         });
       }
     }
 
+    const hygiene = industryRuntime.applyContentHygiene(saved.snapshot);
+    if (hygiene.changed) {
+      saved = await saveSupabaseDraft(request, {
+        snapshot: hygiene.site,
+        expectedRevision: saved.revision,
+      });
+    }
+
     let imageResult: FunctionResult | undefined;
-    if (contentResult.ok && !contentFallback && !protectedContentMutation) {
-      const mediaSnapshot = applyCertifiedDentalMedia(
+    // Certified pack media is deterministic and does not depend on the text
+    // provider. A text timeout must not collapse a content-rich composition to
+    // a single hero image.
+    if (!protectedContentMutation) {
+      const mediaSnapshot = industryRuntime.applyCertifiedMedia(
         saved.snapshot,
-        candidate,
+        input.candidateId,
       );
-      pipelineIssues.push(...certifiedDentalMediaIssues(mediaSnapshot));
-      if (protectedStructureChanged(saved.snapshot, mediaSnapshot)) {
+      pipelineIssues.push(
+        ...industryRuntime.certifiedMediaIssues(mediaSnapshot),
+      );
+      if (
+        industryRuntime.protectedStructureChanged(saved.snapshot, mediaSnapshot)
+      ) {
         pipelineIssues.push({
           code: "IMAGERY_MUTATED_PROTECTED_STRUCTURE",
           message:
@@ -264,22 +292,27 @@ export async function POST(request: NextRequest) {
           ok: true,
           status: 200,
           payload: {
-            mode: "licensed-selection",
-            provider: "pexels",
+            mode: industryRuntime.functionPolicy.certifiedMedia.mode,
+            ...(industryRuntime.functionPolicy.certifiedMedia.provider
+              ? {
+                  provider:
+                    industryRuntime.functionPolicy.certifiedMedia.provider,
+                }
+              : {}),
           },
         };
       }
     }
 
-    let gate = validateSelectedDraft(saved.snapshot, pipelineIssues);
+    let gate = industryRuntime.validateDraft(saved.snapshot, pipelineIssues);
     if (gate.issues.some((issue) => REPAIRABLE_ISSUES.has(issue.code))) {
-      const repair = repairSelectedDraftContentFit(saved.snapshot);
+      const repair = industryRuntime.repairContentFit(saved.snapshot);
       if (repair.changed) {
         saved = await saveSupabaseDraft(request, {
           snapshot: repair.site,
           expectedRevision: saved.revision,
         });
-        gate = validateSelectedDraft(saved.snapshot, pipelineIssues);
+        gate = industryRuntime.validateDraft(saved.snapshot, pipelineIssues);
       }
     }
 
@@ -420,11 +453,11 @@ async function loadOnboardingProfile(
   return profile as OnboardingProfile;
 }
 
-function assertCertifiedDentalContext(
+function assertCertifiedPackContext(
   draft: DraftRecord,
   profile: OnboardingProfile,
   candidateId: string,
-) {
+): RegisteredIndustryPackRuntime {
   const generation = draft.snapshot.generation;
   if (
     string(profile.workspace_id) !== draft.workspaceId ||
@@ -436,60 +469,67 @@ function assertCertifiedDentalContext(
       "The business brief does not belong to this workspace draft.",
     );
   }
-  const profileClassification = `${string(profile.industry)} ${string(profile.subindustry)}`;
-  const draftIsDental = isDentalSubtype(draft.snapshot.subtype);
-  const profileIsDental = isDentalSubtype(profileClassification);
+  const industryRuntime = resolveCertifiedIndustryPackRuntimeForSite({
+    domain: draft.snapshot.domain,
+    subtype: draft.snapshot.subtype ?? null,
+  });
   if (
-    draft.snapshot.domain !== "clinic" ||
-    !draftIsDental ||
-    !profileIsDental
+    !industryRuntime ||
+    !industryRuntime.pack.matchesProfile({
+      domain: draft.snapshot.domain,
+      industry: profile.industry,
+      subindustry: profile.subindustry,
+      services: profile.services,
+    })
   ) {
     throw selectionError(
       409,
       "INDUSTRY_PACK_NOT_CERTIFIED",
-      "This brief is not dental. Its industry pack is not yet certified, so a dental design cannot be applied.",
+      "This draft and business brief do not match the same certified industry pack.",
     );
   }
   if (!generation || generation.packStatus !== "certified") {
     throw selectionError(
       409,
-      "DENTAL_PACK_NOT_READY",
-      "Generate the certified dental Top 20 before selecting a design.",
+      "INDUSTRY_PACK_NOT_READY",
+      `Generate the certified ${industryRuntime.pack.label} design review before selecting a design.`,
     );
   }
   if (
-    generation.candidateIds.length !== 20 ||
-    new Set(generation.candidateIds).size !== 20
+    generation.candidateIds.length !== industryRuntime.pack.reviewCount ||
+    new Set(generation.candidateIds).size !==
+      industryRuntime.pack.reviewCount
   ) {
     throw selectionError(
       409,
       "CANDIDATE_SET_INCOMPLETE",
-      "The stored dental review does not contain 20 unique certified candidates. Regenerate the review.",
+      `The stored review does not contain ${industryRuntime.pack.reviewCount} unique certified candidates. Regenerate the review.`,
     );
   }
   if (!generation.candidateIds.includes(candidateId)) {
     throw selectionError(
       422,
       "CANDIDATE_NOT_IN_RANKED_SET",
-      "The requested design is not in this draft’s ranked dental candidate set.",
+      "The requested design is not in this draft’s ranked candidate set.",
     );
   }
+  return industryRuntime;
 }
 
 function assertCandidateSetMatchesCatalog(
   draft: DraftRecord,
-  candidates: ReturnType<typeof listIndustryDesignPresets>,
+  candidates: readonly { id: string }[],
 ) {
   const storedIds = draft.snapshot.generation?.candidateIds ?? [];
-  const catalogIds = new Set(candidates.map((candidate) => candidate.id));
+  const catalogIds = candidates.map((candidate) => candidate.id);
   if (
-    storedIds.length !== catalogIds.size ||
-    storedIds.some((candidateId) => !catalogIds.has(candidateId))
+    storedIds.length !== catalogIds.length ||
+    storedIds.some((candidateId, index) => candidateId !== catalogIds[index])
   ) {
     throw selectionError(
       409,
       "CANDIDATE_SET_CATALOG_MISMATCH",
-      "The stored ranked designs do not match the active certified dental catalog. Regenerate the design review before selecting.",
+      "The stored ranked designs do not match the active certified industry catalog and order. Regenerate the design review before selecting.",
     );
   }
 }
@@ -497,7 +537,7 @@ function assertCandidateSetMatchesCatalog(
 async function invokeFunction(
   url: string,
   headers: Record<string, string>,
-  functionName: "enrich-site-content" | "generate-site-images",
+  functionName: string,
   body: Record<string, unknown>,
 ): Promise<FunctionResult> {
   let response: Response;
@@ -534,7 +574,7 @@ async function invokeFunction(
 }
 
 function functionIssue(
-  functionName: "enrich-site-content" | "generate-site-images",
+  functionName: string,
   status: number,
   remoteCode: string,
 ): CompositionGateIssue {

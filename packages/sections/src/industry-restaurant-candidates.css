@@ -1,0 +1,1500 @@
+/* Restaurant candidate identities.
+ *
+ * The base Restaurant sheet owns factual/menu readability and the accepted
+ * Table Story reference. Every other candidate first sheds that reference's
+ * paper grid, double rule, offset frame and lead-gallery grammar, then receives
+ * candidate-owned hero, menu, venue-proof and reservation geometry. Rules are
+ * deliberately scoped to the exact Restaurant subtype and selected candidate.
+ */
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]:where(
+    :not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  ) {
+  --mi-r-hero-min-height: clamp(31rem, 68vh, 44rem);
+  --mi-r-hero-media-min-height: clamp(24rem, 52vh, 38rem);
+  --mi-r-display-measure: 14ch;
+  --mi-r-display-min: 2.6rem;
+  --mi-r-display-fluid: 5.8vw;
+  --mi-r-display-max: 4rem;
+  --mi-r-display-weight: 590;
+  --mi-r-display-leading: 1.04;
+  --mi-r-display-tracking: -0.03em;
+  --mi-r-mobile-display-min: 2.05rem;
+  --mi-r-mobile-display-fluid: 8.8cqi;
+  --mi-r-mobile-display-max: 2.7rem;
+  --mi-r-action-radius: 0.35rem;
+  --mi-r-cta-border-top: 1px solid var(--mi-color-border);
+  --mi-r-cta-border-bottom: 1px solid var(--mi-color-border);
+  --mi-r-gallery-ratio: 4 / 3;
+  --mi-r-copy-padding: 0;
+  --mi-r-copy-border: 0;
+  --mi-r-copy-background: transparent;
+  --mi-r-copy-shadow: none;
+  --mi-r-tablet-hero-ratio: 16 / 10;
+  --mi-r-tablet-hero-min-height: 0;
+  --mi-r-mobile-hero-ratio: 4 / 3;
+  --mi-r-mobile-hero-min-height: 0;
+  --mi-r-tablet-copy-width: 100%;
+  --mi-r-tablet-copy-margin: 0;
+  --mi-r-tablet-media-width: 100%;
+  --mi-r-tablet-media-margin: 0;
+  --mi-r-mobile-copy-width: 100%;
+  --mi-r-mobile-copy-margin: 0;
+  --mi-r-mobile-media-width: 100%;
+  --mi-r-mobile-media-margin: 0;
+  --mi-r-tablet-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-tablet-menu-gap: clamp(0.75rem, 2vw, 1rem);
+  --mi-r-mobile-menu-columns: minmax(0, 1fr);
+  --mi-r-mobile-menu-gap: 0.75rem;
+  --mi-r-tablet-gallery-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-logo-nav-min-width: 6rem;
+  --mi-r-logo-nav-fluid-width: 18vw;
+  --mi-r-logo-nav-min-height: 2rem;
+  --mi-r-logo-nav-fluid-height: 4.4vw;
+  --mi-r-logo-footer-min-width: 8.75rem;
+  --mi-r-logo-footer-fluid-width: 21vw;
+  --mi-r-logo-footer-min-height: 2.25rem;
+  --mi-r-logo-footer-fluid-height: 5.5vw;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-section-theme
+  .mi-section {
+  background-image: none;
+  background-color: var(--mi-color-surface);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-section-theme:nth-child(odd)
+  .mi-section {
+  background-color: color-mix(
+    in srgb,
+    var(--mi-color-background) 78%,
+    var(--mi-color-surface)
+  );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="navbar"]
+  .mi-navbar {
+  border-top: 0;
+  border-bottom: 1px solid var(--mi-color-border);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-navbar__brand
+  .mi-brand-mark {
+  width: clamp(
+    var(--mi-r-logo-nav-min-width),
+    var(--mi-r-logo-nav-fluid-width),
+    var(--mi-r-logo-nav-width)
+  );
+  height: clamp(
+    var(--mi-r-logo-nav-min-height),
+    var(--mi-r-logo-nav-fluid-height),
+    var(--mi-r-logo-nav-height)
+  );
+  max-width: min(var(--mi-r-logo-nav-width), 100%);
+  max-height: var(--mi-r-logo-nav-height);
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-footer__brand
+  .mi-brand-mark {
+  width: clamp(
+    var(--mi-r-logo-footer-min-width),
+    var(--mi-r-logo-footer-fluid-width),
+    var(--mi-r-logo-footer-width)
+  );
+  height: clamp(
+    var(--mi-r-logo-footer-min-height),
+    var(--mi-r-logo-footer-fluid-height),
+    var(--mi-r-logo-footer-height)
+  );
+  max-width: min(var(--mi-r-logo-footer-width), 100%);
+  max-height: var(--mi-r-logo-footer-height);
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  box-sizing: border-box;
+  padding: var(--mi-r-copy-padding);
+  border: var(--mi-r-copy-border);
+  background: var(--mi-r-copy-background);
+  box-shadow: var(--mi-r-copy-shadow);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="hero"]
+  .mi-section__media {
+  min-height: var(--mi-r-hero-media-min-height);
+  display: grid;
+  overflow: hidden;
+  border-radius: var(--mi-r-media-radius, 0.75rem);
+  box-shadow: var(--mi-r-media-shadow, none);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="hero"]
+  .mi-section__media::before {
+  content: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="hero"]
+  .mi-section__media
+  img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  aspect-ratio: var(--mi-r-hero-ratio, 4 / 3);
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="services"]
+  .mi-section__item-group
+  > .mi-type--h3 {
+  border-bottom: var(
+    --mi-r-menu-heading-rule,
+    1px solid var(--mi-color-border)
+  );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="services"]
+  .mi-section__card {
+  padding: var(--mi-r-menu-item-padding, 1rem 0);
+  border: var(--mi-r-menu-item-border, 0);
+  border-bottom: var(--mi-r-menu-row-rule, 1px solid var(--mi-color-border));
+  border-radius: var(--mi-r-menu-radius, 0);
+  background: var(--mi-r-menu-background, transparent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-gallery {
+  grid-template-columns: var(
+    --mi-r-gallery-columns,
+    repeat(3, minmax(0, 1fr))
+  ) !important;
+  gap: var(--mi-r-gallery-gap, 1rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-gallery__item:first-child,
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  .mi-gallery__item:nth-child(n) {
+  grid-column: auto !important;
+  border-radius: var(--mi-r-gallery-radius, 0.5rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+    [data-mi-candidate]
+  ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+  [data-section-family="contact"]
+  .mi-section__form {
+  border: var(--mi-r-form-border, 1px solid var(--mi-color-border));
+  border-radius: var(--mi-r-form-radius, 0.75rem);
+  background: var(--mi-r-form-background, var(--mi-color-surface));
+  box-shadow: var(--mi-r-form-shadow, none);
+}
+
+@media (min-width: 64rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: var(
+      --mi-r-hero-columns,
+      minmax(0, 1fr) minmax(0, 1fr)
+    ) !important;
+    grid-template-areas: none !important;
+    gap: var(--mi-r-hero-gap, clamp(2rem, 5vw, 5rem));
+    align-items: var(--mi-r-hero-align, center);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    grid-column: var(--mi-r-copy-column, 1);
+    grid-row: var(--mi-r-copy-row, 1);
+    align-self: var(--mi-r-copy-align, center);
+    width: auto;
+    margin: 0;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media {
+    grid-column: var(--mi-r-media-column, 2);
+    grid-row: var(--mi-r-media-row, 1);
+    align-self: var(--mi-r-media-align, stretch);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__composition {
+    display: grid;
+    grid-template-columns: minmax(15rem, 5fr) minmax(0, 7fr);
+    column-gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__heading {
+    grid-column: 1;
+    grid-row: 1;
+    inline-size: min(100%, 26rem);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__item-groups {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__item-group
+    > .mi-section__grid {
+    grid-template-columns: var(--mi-r-menu-columns, minmax(0, 1fr));
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="contact"]
+    .mi-section__layout {
+    grid-template-columns: var(
+      --mi-r-contact-columns,
+      minmax(0, 0.8fr) minmax(0, 1.2fr)
+    ) !important;
+  }
+}
+
+/* 02 — Market Ledger: compact price ledger and narrow documentary rail. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-market-ledger"] {
+  --mi-r-hero-min-height: clamp(30rem, 62vh, 40rem);
+  --mi-r-display-measure: 10ch;
+  --mi-r-display-weight: 620;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 1px dashed var(--mi-color-text);
+  --mi-r-cta-border-bottom: 1px dashed var(--mi-color-text);
+  --mi-r-gallery-ratio: 5 / 4;
+  --mi-r-tablet-hero-ratio: 4 / 3;
+  --mi-r-mobile-hero-ratio: 4 / 5;
+  --mi-r-hero-columns: minmax(0, 1.4fr) minmax(18rem, 0.6fr);
+  --mi-r-hero-ratio: 3 / 4;
+  --mi-r-hero-gap: clamp(1.25rem, 3vw, 2.5rem);
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-gallery-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 0.75fr));
+  --mi-r-menu-item-padding: 0.75rem 0.6rem;
+  --mi-r-menu-row-rule: 1px solid var(--mi-color-text);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-market-ledger"]
+  .mi-section-theme
+  .mi-section {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 2.1rem,
+    color-mix(in srgb, var(--mi-color-border) 35%, transparent) 2.1rem 2.15rem
+  );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-market-ledger"]
+  [data-section-family="services"]
+  .mi-section__card-meta {
+  padding-inline: 0.45rem;
+  border: 1px solid var(--mi-color-text);
+  font-family: var(--mi-font-mono, monospace);
+}
+
+/* 03 — Courtyard Threshold: environment-led rectangular botanical field. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-courtyard-threshold"] {
+  --mi-r-display-weight: 560;
+  --mi-r-action-radius: 0.15rem;
+  --mi-r-gallery-ratio: 5 / 4;
+  --mi-r-mobile-hero-ratio: 16 / 10;
+  --mi-r-hero-columns: minmax(0, 1.55fr) minmax(18rem, 0.45fr);
+  --mi-r-copy-column: 2;
+  --mi-r-media-column: 1;
+  --mi-r-hero-ratio: 16 / 10;
+  --mi-r-media-radius: 0 2.5rem 0 0;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-gallery-columns: 1.35fr 0.65fr 0.65fr;
+  --mi-r-gallery-radius: 0 1.5rem 0 0;
+  --mi-r-form-radius: 0 1.5rem 0 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-courtyard-threshold"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  padding-left: clamp(1.25rem, 3vw, 2.5rem);
+  border-left: 0.35rem solid var(--mi-color-accent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-courtyard-threshold"]
+  [data-section-family="services"]
+  .mi-section__item-group
+  > .mi-type--h3::before {
+  content: "◆";
+  margin-right: 0.65rem;
+  color: var(--mi-color-primary);
+  font-size: 0.65em;
+}
+
+/* 04 — Tasting Sequence: calm programme frame, never a progress UI. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-tasting-sequence"] {
+  --mi-r-hero-min-height: auto;
+  --mi-r-hero-media-min-height: clamp(16rem, 34vw, 28rem);
+  --mi-r-display-measure: 18ch;
+  --mi-r-display-weight: 540;
+  --mi-r-action-radius: 999px;
+  --mi-r-gallery-ratio: 3 / 2;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-hero-columns: minmax(0, 1fr);
+  --mi-r-copy-column: 1;
+  --mi-r-copy-row: 1;
+  --mi-r-media-column: 1;
+  --mi-r-media-row: 2;
+  --mi-r-hero-ratio: 21 / 8;
+  --mi-r-media-radius: 0;
+  --mi-r-menu-columns: minmax(0, 1fr);
+  --mi-r-gallery-columns: repeat(4, minmax(0, 1fr));
+  --mi-r-contact-columns: minmax(0, 1fr) minmax(24rem, 0.68fr);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  max-width: 48rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+  [data-section-family="hero"]
+  .mi-section__actions {
+  justify-content: center;
+}
+
+/* 05 — Neighbourhood Window: storefront panorama and address-band cadence. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-neighbourhood-window"] {
+  --mi-r-hero-min-height: auto;
+  --mi-r-hero-media-min-height: clamp(18rem, 38vw, 31rem);
+  --mi-r-display-measure: 10ch;
+  --mi-r-action-radius: 0.2rem;
+  --mi-r-gallery-ratio: 16 / 11;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-copy-padding: clamp(1.25rem, 3vw, 2.5rem);
+  --mi-r-copy-background: var(--mi-color-surface);
+  --mi-r-tablet-copy-width: min(42rem, calc(100% - 3rem));
+  --mi-r-tablet-copy-margin: clamp(-4rem, -6vw, -2.5rem) auto 0;
+  --mi-r-mobile-copy-width: calc(100% - 2rem);
+  --mi-r-mobile-copy-margin: clamp(-3rem, -10vw, -2rem) auto 0;
+  --mi-r-hero-columns: repeat(12, minmax(0, 1fr));
+  --mi-r-copy-column: 2 / span 5;
+  --mi-r-media-column: 1 / -1;
+  --mi-r-copy-row: 2;
+  --mi-r-media-row: 1;
+  --mi-r-hero-ratio: 18 / 7;
+  --mi-r-gallery-columns: 1.5fr 1fr 0.75fr;
+  --mi-r-menu-columns: repeat(3, minmax(0, 1fr));
+  --mi-r-form-radius: 0.25rem;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  z-index: 2;
+  margin-top: -5rem;
+  border-top: 0.45rem solid var(--mi-color-primary);
+}
+
+/* 06 — Open Fire: protected charcoal hero and ember menu bars. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"] {
+  --mi-r-display-measure: 11ch;
+  --mi-r-display-weight: 620;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 0.2rem solid var(--mi-color-primary);
+  --mi-r-cta-border-bottom: 0.2rem solid var(--mi-color-primary);
+  --mi-r-gallery-ratio: 1 / 1;
+  --mi-r-hero-columns: minmax(21rem, 0.72fr) minmax(0, 1.28fr);
+  --mi-r-hero-ratio: 5 / 4;
+  --mi-r-media-radius: 0;
+  --mi-r-copy-padding: clamp(1.25rem, 3vw, 2.5rem);
+  --mi-r-copy-background: var(--mi-color-secondary);
+  --mi-r-gallery-columns: 1.4fr 0.8fr 0.8fr;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem;
+  --mi-r-menu-background: color-mix(in srgb, var(--mi-color-surface) 88%, #000);
+  --mi-r-menu-row-rule: 0.2rem solid var(--mi-color-primary);
+  --mi-r-form-background: var(--mi-color-secondary);
+  --mi-r-form-border: 1px solid var(--mi-color-accent);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
+  .mi-section {
+  background: linear-gradient(
+    112deg,
+    var(--mi-color-secondary) 0 47%,
+    #2b211c 47%
+  ) !important;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  position: relative;
+  z-index: 2;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  clip-path: polygon(7% 0, 100% 0, 100% 100%, 0 92%);
+}
+
+/* 07 — Seasonal Journal: broad folds and edition marks without notebook rules. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-seasonal-journal"] {
+  --mi-r-display-weight: 540;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 5 / 4;
+  --mi-r-tablet-hero-ratio: 4 / 3;
+  --mi-r-mobile-hero-ratio: 4 / 5;
+  --mi-r-hero-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  --mi-r-copy-column: 2;
+  --mi-r-media-column: 1;
+  --mi-r-hero-ratio: 3 / 4;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: 0.8fr 1.25fr 0.95fr;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-form-radius: 0;
+  --mi-r-form-shadow: 0.75rem 0.75rem 0
+    color-mix(in srgb, var(--mi-color-accent) 18%, transparent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-seasonal-journal"]
+  .mi-section-theme:nth-child(3n)
+  .mi-section {
+  background: linear-gradient(
+    102deg,
+    transparent 0 64%,
+    color-mix(in srgb, var(--mi-color-accent) 9%, transparent) 64%
+  ) !important;
+}
+
+/* 08 — Family Table: warm rounded grouping and generous request panel. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-family-table"] {
+  --mi-r-display-weight: 570;
+  --mi-r-action-radius: 999px;
+  --mi-r-gallery-ratio: 4 / 3;
+  --mi-r-hero-columns: minmax(0, 1.18fr) minmax(20rem, 0.82fr);
+  --mi-r-copy-column: 2;
+  --mi-r-media-column: 1;
+  --mi-r-hero-ratio: 16 / 11;
+  --mi-r-media-radius: 2.25rem;
+  --mi-r-media-shadow: 1rem 1rem 0
+    color-mix(in srgb, var(--mi-color-accent) 28%, transparent);
+  --mi-r-gallery-columns: 1.2fr 0.9fr 0.9fr;
+  --mi-r-gallery-radius: 1.5rem;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1.2rem;
+  --mi-r-menu-radius: 1rem;
+  --mi-r-menu-background: var(--mi-color-surface);
+  --mi-r-form-radius: 1.5rem;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-family-table"]
+  .mi-section__action {
+  border-radius: 999px;
+}
+
+/* 09 — Ingredient Atlas: specimen index, macro details and pale fields. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-ingredient-atlas"] {
+  --mi-r-display-measure: 11ch;
+  --mi-r-display-weight: 560;
+  --mi-r-action-radius: 999px;
+  --mi-r-gallery-ratio: 1 / 1;
+  --mi-r-tablet-hero-ratio: 1 / 1;
+  --mi-r-mobile-hero-ratio: 1 / 1;
+  --mi-r-hero-columns: minmax(20rem, 0.72fr) minmax(0, 1.28fr);
+  --mi-r-hero-ratio: 1 / 1;
+  --mi-r-media-radius: 50%;
+  --mi-r-gallery-columns: repeat(5, minmax(0, 1fr));
+  --mi-r-gallery-radius: 50%;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem;
+  --mi-r-menu-background: color-mix(
+    in srgb,
+    var(--mi-color-primary) 5%,
+    var(--mi-color-surface)
+  );
+  --mi-r-form-radius: 0.25rem;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-ingredient-atlas"]
+  .mi-section-theme
+  .mi-section {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--mi-color-primary) 18%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 1.2rem 1.2rem;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-ingredient-atlas"]
+  [data-section-family="services"]
+  .mi-section__card
+  > .mi-type--body-sm {
+  color: color-mix(
+    in srgb,
+    var(--mi-color-text-muted) 82%,
+    var(--mi-color-text)
+  );
+}
+
+/* 10 — Counter Signal: shallow marquee, linear board and early request band. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-counter-rhythm"] {
+  --mi-r-hero-min-height: auto;
+  --mi-r-hero-media-min-height: clamp(15rem, 30vw, 24rem);
+  --mi-r-display-measure: 18ch;
+  --mi-r-display-weight: 620;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 3 / 2;
+  --mi-r-tablet-hero-ratio: 21 / 8;
+  --mi-r-mobile-hero-ratio: 16 / 7;
+  --mi-r-hero-columns: minmax(0, 1fr);
+  --mi-r-copy-column: 1;
+  --mi-r-copy-row: 1;
+  --mi-r-media-column: 1;
+  --mi-r-media-row: 2;
+  --mi-r-hero-ratio: 16 / 5;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: repeat(4, minmax(0, 1fr));
+  --mi-r-menu-columns: minmax(0, 1fr);
+  --mi-r-menu-row-rule: 0.25rem solid var(--mi-color-text);
+  --mi-r-form-radius: 0;
+  --mi-r-contact-columns: minmax(0, 1fr) minmax(24rem, 0.75fr);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-counter-rhythm"]
+  [data-section-family="hero"]
+  .mi-type--display {
+  max-width: 20ch;
+  padding-block: 0.35rem;
+  border-block: 0.28rem solid var(--mi-color-text);
+}
+
+/* 11 — Night Passage: sole full-bleed dark cinematic direction. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-night-passage"] {
+  --mi-r-display-measure: 12ch;
+  --mi-r-display-weight: 610;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 1px solid var(--mi-color-accent);
+  --mi-r-cta-border-bottom: 1px solid var(--mi-color-accent);
+  --mi-r-gallery-ratio: 16 / 10;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-mobile-image-filter: brightness(0.74) saturate(0.9);
+  --mi-r-copy-padding: clamp(1.5rem, 4vw, 3rem);
+  --mi-r-copy-background: color-mix(
+    in srgb,
+    var(--mi-color-secondary) 90%,
+    transparent
+  );
+  --mi-r-tablet-copy-width: min(40rem, calc(100% - 3rem));
+  --mi-r-tablet-copy-margin: clamp(-4rem, -6vw, -2.5rem) auto 0;
+  --mi-r-mobile-copy-width: calc(100% - 2rem);
+  --mi-r-mobile-copy-margin: clamp(-3rem, -10vw, -2rem) auto 0;
+  --mi-r-hero-columns: repeat(12, minmax(0, 1fr));
+  --mi-r-copy-column: 2 / span 5;
+  --mi-r-media-column: 1 / -1;
+  --mi-r-copy-row: 1;
+  --mi-r-media-row: 1;
+  --mi-r-hero-ratio: 21 / 10;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: 1.5fr repeat(2, 0.75fr);
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-form-background: var(--mi-color-secondary);
+  --mi-r-form-border: 1px solid var(--mi-color-accent);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-night-passage"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  z-index: 2;
+  border-left: 0.2rem solid var(--mi-color-accent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-night-passage"]
+  [data-section-family="hero"]
+  .mi-section__media
+  img {
+  filter: brightness(0.58) saturate(0.9);
+}
+
+/* 12 — Linen and Light: quiet portrait, fine rules and wide margins. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-linen-and-light"] {
+  --mi-r-display-weight: 520;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 3 / 4;
+  --mi-r-tablet-hero-ratio: 4 / 3;
+  --mi-r-mobile-hero-ratio: 4 / 5;
+  --mi-r-hero-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+  --mi-r-copy-column: 2;
+  --mi-r-media-column: 1;
+  --mi-r-hero-ratio: 3 / 4;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: 0.72fr 1.56fr 0.72fr;
+  --mi-r-gallery-gap: 2rem;
+  --mi-r-menu-columns: minmax(0, 1fr);
+  --mi-r-contact-columns: minmax(0, 1.3fr) minmax(22rem, 0.7fr);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-linen-and-light"]
+  .mi-section__composition {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+/* 13 — Brass and Spice: saturated collage with protected reading fields. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-brass-and-spice"] {
+  --mi-r-display-measure: 11ch;
+  --mi-r-display-weight: 610;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 1 / 1;
+  --mi-r-tablet-hero-ratio: 6 / 5;
+  --mi-r-mobile-hero-ratio: 6 / 5;
+  --mi-r-copy-padding: clamp(1.25rem, 3vw, 2.5rem);
+  --mi-r-copy-border: 1px solid
+    color-mix(in srgb, var(--mi-color-primary) 24%, var(--mi-color-border));
+  --mi-r-copy-background: color-mix(
+    in srgb,
+    var(--mi-color-surface) 96%,
+    transparent
+  );
+  --mi-r-copy-shadow: 0.7rem 0.7rem 0
+    color-mix(in srgb, var(--mi-color-accent) 42%, transparent);
+  --mi-r-hero-columns: minmax(18rem, 0.68fr) minmax(0, 1.32fr);
+  --mi-r-hero-ratio: 6 / 5;
+  --mi-r-media-radius: 0;
+  --mi-r-media-shadow: 0.8rem 0.8rem 0 var(--mi-color-accent);
+  --mi-r-gallery-columns: repeat(5, minmax(0, 1fr));
+  --mi-r-gallery-gap: 0.35rem;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem;
+  --mi-r-menu-background: var(--mi-color-surface);
+  --mi-r-menu-row-rule: 0;
+  --mi-r-form-border: 0.3rem solid var(--mi-color-accent);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-brass-and-spice"]
+  [data-section-family="hero"]
+  .mi-section {
+  background: linear-gradient(
+    135deg,
+    var(--mi-color-primary) 0 34%,
+    var(--mi-color-background) 34% 72%,
+    var(--mi-color-accent) 72%
+  ) !important;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-brass-and-spice"]
+  [data-section-family="hero"]
+  .mi-section__layout
+  > div:first-child {
+  position: relative;
+  z-index: 2;
+}
+
+/* 14 — Menu Poster: two-ink bands and mixed-case category posters. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-menu-poster"] {
+  --mi-r-display-measure: 10ch;
+  --mi-r-display-weight: 620;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 0.2rem dashed var(--mi-color-primary);
+  --mi-r-cta-border-bottom: 0.2rem dashed var(--mi-color-primary);
+  --mi-r-gallery-ratio: 4 / 5;
+  --mi-r-tablet-hero-ratio: 1 / 1;
+  --mi-r-mobile-hero-ratio: 1 / 1;
+  --mi-r-hero-columns: minmax(0, 1.45fr) minmax(16rem, 0.55fr);
+  --mi-r-hero-ratio: 1 / 1;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-gallery-gap: 0.5rem;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem;
+  --mi-r-menu-background: var(--mi-color-surface);
+  --mi-r-menu-row-rule: 0;
+  --mi-r-menu-radius: 0;
+  --mi-r-form-border: 0.2rem dashed var(--mi-color-primary);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-menu-poster"]
+  [data-section-family="services"]
+  .mi-section__item-group {
+  padding: clamp(1rem, 3vw, 2rem);
+  background: color-mix(
+    in srgb,
+    var(--mi-color-accent) 22%,
+    var(--mi-color-background)
+  );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-menu-poster"]
+  [data-section-family="services"]
+  .mi-section__item-group:nth-child(even) {
+  background: color-mix(
+    in srgb,
+    var(--mi-color-primary) 15%,
+    var(--mi-color-surface)
+  );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-menu-poster"]
+  [data-section-family="services"]
+  .mi-section__card-meta {
+  color: color-mix(in srgb, var(--mi-color-primary) 86%, var(--mi-color-text));
+}
+
+/* 15 — Reservation Concierge: service utility, policy rail and opaque form. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-reservation-concierge"] {
+  --mi-r-display-measure: 13ch;
+  --mi-r-display-weight: 580;
+  --mi-r-action-radius: 0.35rem;
+  --mi-r-gallery-ratio: 16 / 10;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-hero-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  --mi-r-hero-ratio: 16 / 9;
+  --mi-r-media-radius: 0.35rem;
+  --mi-r-gallery-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-columns: repeat(3, minmax(0, 1fr));
+  --mi-r-contact-columns: minmax(0, 0.62fr) minmax(26rem, 1.38fr);
+  --mi-r-form-radius: 0.35rem;
+  --mi-r-form-border: 0.18rem solid var(--mi-color-primary);
+  --mi-r-form-shadow: 0 1.25rem 3rem
+    color-mix(in srgb, var(--mi-color-primary) 14%, transparent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-reservation-concierge"]
+  :is(.mi-section__card, .mi-section__form) {
+  border-top: 0.3rem solid var(--mi-color-primary);
+}
+
+/* 16 — Terrace Air: panoramic light, three venue apertures and opaque form. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-terrace-air"] {
+  --mi-r-display-weight: 550;
+  --mi-r-action-radius: 999px;
+  --mi-r-gallery-ratio: 3 / 4;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-hero-columns: minmax(0, 0.76fr) minmax(0, 1.24fr);
+  --mi-r-hero-ratio: 19 / 9;
+  --mi-r-media-radius: 2rem 0 2rem 0;
+  --mi-r-gallery-columns: repeat(3, minmax(0, 1fr));
+  --mi-r-gallery-gap: clamp(1rem, 3vw, 2.5rem);
+  --mi-r-gallery-radius: 8rem 8rem 0 0;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-contact-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
+  --mi-r-form-radius: 1rem;
+  --mi-r-form-background: var(--mi-color-surface);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-terrace-air"]
+  .mi-section-theme:nth-child(odd)
+  .mi-section {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--mi-color-primary) 7%, var(--mi-color-background)),
+    var(--mi-color-surface)
+  ) !important;
+}
+
+/* 17 — Banquet Plan: factual planning matrix without capacity claims. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-banquet-plan"] {
+  --mi-r-display-measure: 12ch;
+  --mi-r-display-weight: 590;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 3 / 2;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-hero-columns: minmax(0, 1fr) minmax(0, 1fr);
+  --mi-r-hero-ratio: 2 / 1;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: repeat(4, minmax(0, 1fr));
+  --mi-r-menu-columns: repeat(3, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem;
+  --mi-r-menu-item-border: 1px solid var(--mi-color-border);
+  --mi-r-menu-row-rule: 0;
+  --mi-r-form-radius: 0;
+  --mi-r-contact-columns: minmax(0, 1fr) minmax(28rem, 1fr);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-banquet-plan"]
+  :is(.mi-section__card, .mi-section__form) {
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--mi-color-primary) 28%, transparent);
+}
+
+/* 18 — Kitchen Pass: documentary strip and order-ticket menu groups. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-kitchen-pass"] {
+  --mi-r-hero-min-height: auto;
+  --mi-r-hero-media-min-height: clamp(15rem, 28vw, 23rem);
+  --mi-r-display-measure: 16ch;
+  --mi-r-display-weight: 620;
+  --mi-r-action-radius: 0;
+  --mi-r-cta-border-top: 1px dashed var(--mi-color-text);
+  --mi-r-cta-border-bottom: 1px dashed var(--mi-color-text);
+  --mi-r-gallery-ratio: 3 / 2;
+  --mi-r-tablet-hero-ratio: 21 / 8;
+  --mi-r-mobile-hero-ratio: 16 / 7;
+  --mi-r-hero-columns: minmax(0, 1fr);
+  --mi-r-copy-column: 1;
+  --mi-r-copy-row: 2;
+  --mi-r-media-column: 1;
+  --mi-r-media-row: 1;
+  --mi-r-hero-ratio: 24 / 7;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: 1.6fr repeat(4, 0.6fr);
+  --mi-r-gallery-gap: 0.3rem;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem 1.25rem;
+  --mi-r-menu-item-border: 1px solid var(--mi-color-text);
+  --mi-r-menu-row-rule: 0;
+  --mi-r-menu-radius: 0;
+  --mi-r-form-border: 1px dashed var(--mi-color-text);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-kitchen-pass"]
+  [data-section-family="services"]
+  .mi-section__card {
+  clip-path: polygon(
+    0.5rem 0,
+    100% 0,
+    100% calc(100% - 0.5rem),
+    calc(100% - 0.5rem) 100%,
+    0 100%,
+    0 0.5rem
+  );
+}
+
+/* 19 — Dual Script: equal-status paired measures with one shared price rail. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-dual-script"] {
+  --mi-r-display-measure: 11ch;
+  --mi-r-display-weight: 570;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 4 / 3;
+  --mi-r-tablet-hero-ratio: 16 / 10;
+  --mi-r-mobile-hero-ratio: 16 / 10;
+  --mi-r-hero-columns: minmax(0, 0.9fr) minmax(20rem, 1.2fr) minmax(0, 0.9fr);
+  --mi-r-copy-column: 1;
+  --mi-r-media-column: 2 / -1;
+  --mi-r-hero-ratio: 16 / 10;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: 1fr 1.5fr 1fr;
+  --mi-r-menu-columns: repeat(2, minmax(0, 1fr));
+  --mi-r-menu-item-padding: 1rem 1.25rem;
+  --mi-r-menu-item-border: 1px solid var(--mi-color-border);
+  --mi-r-menu-row-rule: 0;
+  --mi-r-menu-radius: 0;
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-dual-script"]
+  [data-section-family="services"]
+  .mi-section__card-meta {
+  min-width: 6rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--mi-color-primary);
+  text-align: right;
+}
+
+/* 20 — Quiet Room: one calm panorama and almost no card chrome. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"] {
+  --mi-r-display-measure: 12ch;
+  --mi-r-display-weight: 520;
+  --mi-r-action-radius: 0;
+  --mi-r-gallery-ratio: 4 / 3;
+  --mi-r-tablet-hero-ratio: 16 / 9;
+  --mi-r-mobile-hero-ratio: 16 / 9;
+  --mi-r-hero-columns: minmax(18rem, 0.55fr) minmax(0, 1.45fr);
+  --mi-r-copy-column: 1;
+  --mi-r-media-column: 2;
+  --mi-r-hero-ratio: 17 / 8;
+  --mi-r-media-radius: 0;
+  --mi-r-gallery-columns: repeat(12, minmax(0, 1fr));
+  --mi-r-gallery-gap: clamp(0.75rem, 1.8vw, 1.5rem);
+  --mi-r-menu-columns: minmax(0, 1fr);
+  --mi-r-menu-row-rule: 1px solid
+    color-mix(in srgb, var(--mi-color-border) 58%, transparent);
+  --mi-r-contact-columns: minmax(0, 1.35fr) minmax(22rem, 0.65fr);
+  --mi-r-form-border: 1px solid var(--mi-color-border);
+  --mi-r-form-radius: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"]
+  :is(.mi-section__card, .mi-section__form, .mi-section__media) {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"]
+  .mi-gallery__item:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"]
+  .mi-gallery__item:first-child
+  img {
+  aspect-ratio: 21 / 8;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"]
+  .mi-gallery__item:nth-child(n + 2) {
+  grid-column: span 3 !important;
+}
+
+/* Responsive menu rhythm remains candidate-owned. Programme and quiet-room
+ * directions stay linear; planning directions retain a denser scan; tactile
+ * card directions may form a second phone track only when it can fit. */
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+    [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+    [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+    [data-mi-candidate="restaurant-restaurant-quiet-room"],
+    [data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+  ) {
+  --mi-r-tablet-menu-columns: minmax(0, 1fr);
+  --mi-r-tablet-menu-gap: 0;
+  --mi-r-mobile-menu-gap: 0;
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+    [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+    [data-mi-candidate="restaurant-restaurant-neighbourhood-window"],
+    [data-mi-candidate="restaurant-restaurant-reservation-concierge"]
+  ) {
+  --mi-r-tablet-menu-columns: repeat(3, minmax(0, 1fr));
+  --mi-r-tablet-menu-gap: clamp(0.65rem, 1.6vw, 1rem);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+    [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+    [data-mi-candidate="restaurant-restaurant-family-table"],
+    [data-mi-candidate="restaurant-restaurant-ingredient-atlas"],
+    [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+    [data-mi-candidate="restaurant-restaurant-menu-poster"],
+    [data-mi-candidate="restaurant-restaurant-reservation-concierge"]
+  ) {
+  --mi-r-mobile-menu-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  --mi-r-mobile-menu-gap: clamp(0.6rem, 2.5vw, 0.85rem);
+}
+
+/* Tablet transformation: candidate heroes remain a safe semantic column while
+ * gallery and menu rhythm retain more of each direction. Table Story keeps its
+ * separately reviewed reference behavior from the base Restaurant sheet. */
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__composition {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.75rem, 4vw, 3rem);
+    align-items: start;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    :is(.mi-section__heading, .mi-section__item-groups) {
+    grid-column: 1;
+    grid-row: auto;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    min-height: auto;
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    transform: none;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    order: var(--mi-r-tablet-copy-order, 1);
+    width: var(--mi-r-tablet-copy-width);
+    margin: var(--mi-r-tablet-copy-margin);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media {
+    width: var(--mi-r-tablet-media-width);
+    min-height: var(--mi-r-tablet-hero-min-height);
+    margin: var(--mi-r-tablet-media-margin);
+    order: var(--mi-r-tablet-media-order, 2);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+    min-height: var(--mi-r-tablet-hero-min-height);
+    aspect-ratio: var(--mi-r-tablet-hero-ratio);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__item-group
+    > .mi-section__grid {
+    grid-template-columns: var(--mi-r-tablet-menu-columns) !important;
+    gap: var(--mi-r-tablet-menu-gap);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    .mi-gallery {
+    grid-template-columns: var(--mi-r-tablet-gallery-columns) !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    .mi-gallery__item:nth-child(n) {
+    grid-column: auto !important;
+    border-radius: var(
+      --mi-r-tablet-gallery-radius,
+      var(--mi-r-gallery-radius, 0.5rem)
+    );
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-courtyard-threshold"],
+      [data-mi-candidate="restaurant-restaurant-family-table"],
+      [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+      [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"],
+      [data-mi-candidate="restaurant-restaurant-night-passage"],
+      [data-mi-candidate="restaurant-restaurant-quiet-room"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"]
+    ) {
+    --mi-r-tablet-copy-order: 2;
+    --mi-r-tablet-media-order: 1;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-quiet-room"]
+    .mi-gallery__item:first-child {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* Phone transformation: all hero copy remains a single semantic column and
+ * every action retains the base 44px minimum. Gallery patterns stay bounded
+ * but do not collapse all nineteen candidate directions into one long stack. */
+@media (max-width: 47.99rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    min-height: 0;
+    gap: clamp(1.25rem, 6vw, 2rem);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    transform: none;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__layout
+    > div:first-child {
+    order: var(--mi-r-mobile-copy-order, 1);
+    width: var(--mi-r-mobile-copy-width);
+    margin: var(--mi-r-mobile-copy-margin);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media {
+    width: var(--mi-r-mobile-media-width);
+    min-height: var(--mi-r-mobile-hero-min-height);
+    margin: var(--mi-r-mobile-media-margin);
+    order: var(--mi-r-mobile-media-order, 2);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: auto;
+    min-height: var(--mi-r-mobile-hero-min-height);
+    aspect-ratio: var(--mi-r-mobile-hero-ratio);
+    filter: var(--mi-r-mobile-image-filter, none);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__item-group
+    > .mi-section__grid {
+    grid-template-columns: var(--mi-r-mobile-menu-columns) !important;
+    gap: var(--mi-r-mobile-menu-gap);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    .mi-gallery {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    .mi-gallery__item:nth-child(n) {
+    grid-column: auto !important;
+    border-radius: var(
+      --mi-r-mobile-gallery-radius,
+      var(--mi-r-gallery-radius, 0.5rem)
+    );
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    .mi-gallery__item
+    img {
+    aspect-ratio: var(--mi-r-mobile-gallery-ratio, var(--mi-r-gallery-ratio));
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-courtyard-threshold"],
+      [data-mi-candidate="restaurant-restaurant-family-table"],
+      [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+      [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"],
+      [data-mi-candidate="restaurant-restaurant-night-passage"],
+      [data-mi-candidate="restaurant-restaurant-quiet-room"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"]
+    ) {
+    --mi-r-mobile-copy-order: 2;
+    --mi-r-mobile-media-order: 1;
+  }
+
+  /* Pattern A: one lead image above a compact two-by-two proof mosaic. */
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-brass-and-spice"],
+      [data-mi-candidate="restaurant-restaurant-courtyard-threshold"],
+      [data-mi-candidate="restaurant-restaurant-family-table"],
+      [data-mi-candidate="restaurant-restaurant-ingredient-atlas"],
+      [data-mi-candidate="restaurant-restaurant-market-ledger"],
+      [data-mi-candidate="restaurant-restaurant-quiet-room"],
+      [data-mi-candidate="restaurant-restaurant-terrace-air"]
+    )
+    .mi-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(0.6rem, 3vw, 1rem);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-brass-and-spice"],
+      [data-mi-candidate="restaurant-restaurant-courtyard-threshold"],
+      [data-mi-candidate="restaurant-restaurant-family-table"],
+      [data-mi-candidate="restaurant-restaurant-ingredient-atlas"],
+      [data-mi-candidate="restaurant-restaurant-market-ledger"],
+      [data-mi-candidate="restaurant-restaurant-quiet-room"],
+      [data-mi-candidate="restaurant-restaurant-terrace-air"]
+    )
+    .mi-gallery__item:first-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-brass-and-spice"],
+      [data-mi-candidate="restaurant-restaurant-courtyard-threshold"],
+      [data-mi-candidate="restaurant-restaurant-family-table"],
+      [data-mi-candidate="restaurant-restaurant-ingredient-atlas"],
+      [data-mi-candidate="restaurant-restaurant-market-ledger"],
+      [data-mi-candidate="restaurant-restaurant-quiet-room"],
+      [data-mi-candidate="restaurant-restaurant-terrace-air"]
+    )
+    .mi-gallery__item:nth-child(n + 2) {
+    grid-column: auto !important;
+  }
+
+  /* Pattern B: a six-track stagger keeps documentary sequences directional. */
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: clamp(0.45rem, 2vw, 0.7rem);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery__item:nth-child(n) {
+    grid-column: auto !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery__item:first-child {
+    grid-column: span 4 !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery__item:nth-child(2) {
+    grid-column: span 2 !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery__item:is(:nth-child(3), :nth-child(4)) {
+    grid-column: span 3 !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-banquet-plan"],
+      [data-mi-candidate="restaurant-restaurant-counter-rhythm"],
+      [data-mi-candidate="restaurant-restaurant-dual-script"],
+      [data-mi-candidate="restaurant-restaurant-menu-poster"],
+      [data-mi-candidate="restaurant-restaurant-open-fire"],
+      [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+      [data-mi-candidate="restaurant-restaurant-neighbourhood-window"]
+    )
+    .mi-gallery__item:nth-child(5) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Pattern C: paired editorial frames with a central full-width pause. */
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+      [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+      [data-mi-candidate="restaurant-restaurant-reservation-concierge"],
+      [data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+    )
+    .mi-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: clamp(0.65rem, 3vw, 1rem);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+      [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+      [data-mi-candidate="restaurant-restaurant-reservation-concierge"],
+      [data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+    )
+    .mi-gallery__item:nth-child(n) {
+    grid-column: auto !important;
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+      [data-mi-candidate="restaurant-restaurant-kitchen-pass"],
+      [data-mi-candidate="restaurant-restaurant-linen-and-light"],
+      [data-mi-candidate="restaurant-restaurant-reservation-concierge"],
+      [data-mi-candidate="restaurant-restaurant-tasting-sequence"]
+    )
+    .mi-gallery__item:nth-child(3) {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 22.5rem) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
+      [data-mi-candidate]
+    ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
+    [data-section-family="services"]
+    .mi-section__card-meta {
+    grid-column: 1;
+    grid-row: auto;
+    min-width: 0;
+    max-width: 100%;
+    padding-left: 0;
+    border-left: 0;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
+    :is(.mi-section__card, .mi-section__action, .mi-section__media) {
+    transition: none;
+  }
+}

@@ -7,6 +7,10 @@ import {
 } from "@micirql/schema";
 import { applyIndustryPreset } from "../../../apply-industry-preset";
 import { applyBrandInput } from "../../../brand-provenance";
+import {
+  dentalVisitorContentIssues,
+  isRequiredPagePathForSite,
+} from "../../../dental-content-hygiene";
 import type { IndustryDesignPreset } from "../../../industry-design-preset-data";
 import {
   DENTAL_COMPONENT_VERSION,
@@ -115,7 +119,8 @@ export function validateSelectedDraft(
   const pack = getDomainPack("clinic");
   const paths = new Set(site.pages.map((page) => page.path));
   for (const page of pack.defaultPages.filter(
-    (candidate) => candidate.required,
+    (candidate) =>
+      candidate.required && isRequiredPagePathForSite(site, candidate.slug),
   )) {
     if (!paths.has(page.slug)) {
       issues.push({
@@ -157,6 +162,7 @@ export function validateSelectedDraft(
   issues.push(...contentFitIssues(site));
   issues.push(...duplicateHeadingIssues(site));
   issues.push(...brandPreservationIssues(site));
+  issues.push(...dentalVisitorContentIssues(site));
 
   const uniqueIssues = deduplicateIssues(issues);
   const errorCount = uniqueIssues.filter(

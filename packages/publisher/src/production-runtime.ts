@@ -2,6 +2,7 @@ import { generatedLiveHostname, type Site } from "@micirql/schema";
 import type {
   RendererRegistry,
   FunctionBindingResolver,
+  ResolvedBrandMark,
 } from "@micirql/renderer";
 import {
   createCryptoSnapshotHasher,
@@ -130,6 +131,9 @@ export function createProductionPublishRuntime(args: {
   domains?: DomainActivator;
   cache?: PublishCache;
   liveUrls: LiveUrlResolver;
+  brandMarks?: {
+    resolve(site: Site): Promise<ResolvedBrandMark | undefined>;
+  };
 }): ProductionPublishRuntime {
   const dependencies = {
     store: createPublishingStore(createSqlPublishingDriver(args.db)),
@@ -139,6 +143,7 @@ export function createProductionPublishRuntime(args: {
     versionIds: createVersionIdFactory(),
     ...(args.domains ? { domains: args.domains } : {}),
     ...(args.cache ? { cache: args.cache } : {}),
+    ...(args.brandMarks ? { brandMarks: args.brandMarks } : {}),
   };
 
   return {

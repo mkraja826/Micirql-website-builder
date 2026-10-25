@@ -8,15 +8,29 @@ type Action = { label: string; href: string };
 type Item = {
   title: string;
   description?: string;
-  image?: string;
+  group?: string;
+  meta?: string;
+  image?: string | ImageReference;
   href?: string;
 };
 type FooterLink = { label: string; href: string };
+
+export type BrandMarkReference = {
+  assetId: string;
+  src: string;
+  alt?: string;
+  width: number;
+  height: number;
+  aspectRatio?: number;
+};
 
 type ImageReference = {
   src: string;
   alt: string;
   focalPoint?: { x: number; y: number };
+  assetId?: string;
+  license?: string;
+  sourceReference?: string;
 };
 
 export type UniversalSectionProps = {
@@ -32,6 +46,7 @@ export type UniversalSectionProps = {
   formBindingKey?: string;
   footerLinks?: FooterLink[];
   copyright?: string;
+  brandMark?: BrandMarkReference;
 };
 
 function InlineField({
@@ -96,36 +111,86 @@ function Heading(props: UniversalSectionProps) {
 }
 
 function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
+  const hasGroups = items.some((item) => item.group?.trim());
+  if (!hasGroups) {
+    return (
+      <div className="mi-section__grid">
+        {items.map((item, index) => (
+          <ItemCard item={item} index={index} key={`${item.title}-${index}`} />
+        ))}
+      </div>
+    );
+  }
+
+  const groups = items.reduce<
+    Array<{ label: string; items: Array<{ item: Item; index: number }> }>
+  >((result, item, index) => {
+    const label = item.group?.trim() || "Menu";
+    const group = result.find((entry) => entry.label === label);
+    if (group) {
+      group.items.push({ item, index });
+    } else {
+      result.push({ label, items: [{ item, index }] });
+    }
+    return result;
+  }, []);
+
   return (
-    <div className="mi-section__grid">
-      {items.map((item, index) => (
-        <Card key={`${item.title}-${index}`} className="mi-section__card">
-          {item.image ? (
-            <img
-              src={item.image}
-              alt={item.title}
-              loading="lazy"
-              data-mi-image-field={`items.${index}.image`}
-            />
-          ) : null}
-          <span className="mi-section__card-index" aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
-          </span>
+    <div className="mi-section__item-groups">
+      {groups.map((group) => (
+        <section className="mi-section__item-group" key={group.label}>
           <Typography as="h3" variant="h3">
-            <InlineField path={`items.${index}.title`}>
-              {item.title}
+            <InlineField path={`items.${group.items[0]!.index}.group`}>
+              {group.label}
             </InlineField>
           </Typography>
-          {item.description ? (
-            <Typography variant="body-sm">
-              <InlineField path={`items.${index}.description`}>
-                {item.description}
-              </InlineField>
-            </Typography>
-          ) : null}
-        </Card>
+          <div className="mi-section__grid">
+            {group.items.map(({ item, index }) => (
+              <ItemCard
+                item={item}
+                index={index}
+                key={`${item.title}-${index}`}
+              />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
+  );
+}
+
+function ItemCard({ item, index }: { item: Item; index: number }) {
+  const image = itemImage(item.image, item.title);
+  return (
+    <Card className="mi-section__card">
+      {image ? (
+        <img
+          src={image.src}
+          alt={image.alt}
+          loading="lazy"
+          data-mi-image-field={`items.${index}.image`}
+          style={image.style}
+        />
+      ) : null}
+      <span className="mi-section__card-index" aria-hidden="true">
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <Typography as="h3" variant="h3">
+        <InlineField path={`items.${index}.title`}>{item.title}</InlineField>
+      </Typography>
+      {item.meta ? (
+        <p className="mi-section__card-meta">
+          <InlineField path={`items.${index}.meta`}>{item.meta}</InlineField>
+        </p>
+      ) : null}
+      {item.description ? (
+        <Typography variant="body-sm">
+          <InlineField path={`items.${index}.description`}>
+            {item.description}
+          </InlineField>
+        </Typography>
+      ) : null}
+    </Card>
   );
 }
 
@@ -133,13 +198,22 @@ function NavbarSection({
   title,
   items = [],
   primaryAction,
+  brandMark,
 }: UniversalSectionProps) {
   return (
     <header className="mi-section mi-section--navbar">
       <Container>
         <div className="mi-navbar">
-          <a href="/" className="mi-navbar__brand">
-            <InlineField path="title">{title}</InlineField>
+          <a
+            href="/"
+            className={`mi-navbar__brand${brandMark ? " mi-navbar__brand--mark" : ""}`}
+            aria-label={brandMark ? `${title} home` : undefined}
+          >
+            {brandMark ? (
+              <BrandMark brandMark={brandMark} eager />
+            ) : (
+              <InlineField path="title">{title}</InlineField>
+            )}
           </a>
           <NavigationMenu
             items={items.map((item, i) => ({
@@ -257,8 +331,9 @@ function StatsSection(props: UniversalSectionProps) {
 
 function GallerySection(props: UniversalSectionProps) {
   const galleryItems = (props.items ?? [])
-    .filter((item): item is Item & { image: string } => Boolean(item.image))
-    .map((item) => ({ src: item.image, alt: item.title }));
+    .map((item) => itemImage(item.image, item.title))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .map(({ src, alt }) => ({ src, alt }));
   return (
     <section className="mi-section mi-section--gallery">
       <Container>
@@ -273,6 +348,28 @@ function GallerySection(props: UniversalSectionProps) {
       </Container>
     </section>
   );
+}
+
+function itemImage(
+  value: Item["image"],
+  fallbackAlt: string,
+): { src: string; alt: string; style?: CSSProperties } | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return { src: value, alt: fallbackAlt };
+  }
+  if (!value || typeof value !== "object" || !value.src?.trim()) {
+    return undefined;
+  }
+  const style = value.focalPoint
+    ? ({
+        objectPosition: `${percentage(value.focalPoint.x)} ${percentage(value.focalPoint.y)}`,
+      } as CSSProperties)
+    : undefined;
+  return {
+    src: value.src,
+    alt: value.alt?.trim() || fallbackAlt,
+    ...(style ? { style } : {}),
+  };
 }
 
 function ContactSection(props: UniversalSectionProps) {
@@ -497,7 +594,7 @@ function ActionSpecificFields({ actionId }: { actionId: string }) {
 
 function formSubmitLabel(actionId: string) {
   if (actionId === "appointment.request") return "Request appointment";
-  if (actionId === "reservation.request") return "Request reservation";
+  if (actionId === "reservation.request") return "Request a table";
   if (actionId === "quote.request") return "Request quote";
   if (actionId === "newsletter.subscribe") return "Subscribe";
   if (actionId === "property.enquiry") return "Send property enquiry";
@@ -525,9 +622,19 @@ function FooterSection(props: UniversalSectionProps) {
       <Container>
         <div className="mi-footer">
           <div className="mi-footer__brand">
-            <strong>
-              <InlineField path="title">{props.title}</InlineField>
-            </strong>
+            {props.brandMark ? (
+              <a
+                href="/"
+                className="mi-footer__brand-home"
+                aria-label={`${props.title} home`}
+              >
+                <BrandMark brandMark={props.brandMark} />
+              </a>
+            ) : (
+              <strong>
+                <InlineField path="title">{props.title}</InlineField>
+              </strong>
+            )}
             {props.description ? (
               <p>
                 <InlineField path="description">
@@ -558,6 +665,29 @@ function FooterSection(props: UniversalSectionProps) {
         ) : null}
       </Container>
     </footer>
+  );
+}
+
+function BrandMark({
+  brandMark,
+  eager = false,
+}: {
+  brandMark: BrandMarkReference;
+  eager?: boolean;
+}) {
+  return (
+    <img
+      className="mi-brand-mark"
+      src={brandMark.src}
+      alt={brandMark.alt?.trim() || ""}
+      width={brandMark.width}
+      height={brandMark.height}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      data-mi-image-field="brandMark"
+      data-mi-logo-asset-id={brandMark.assetId}
+      style={{ aspectRatio: `${brandMark.width} / ${brandMark.height}` }}
+    />
   );
 }
 

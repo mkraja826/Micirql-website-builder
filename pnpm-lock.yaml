@@ -169,9 +169,21 @@ importers:
       '@micirql/components':
         specifier: workspace:*
         version: link:../../packages/components
+      '@micirql/domains':
+        specifier: workspace:*
+        version: link:../../packages/domains
+      '@micirql/functions':
+        specifier: workspace:*
+        version: link:../../packages/functions
       '@micirql/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@micirql/renderer':
+        specifier: workspace:*
+        version: link:../../packages/renderer
+      '@micirql/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@micirql/sections':
         specifier: workspace:*
         version: link:../../packages/sections

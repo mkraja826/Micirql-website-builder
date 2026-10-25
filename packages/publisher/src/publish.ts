@@ -29,6 +29,7 @@ export async function publishSite(
 
   const primaryOrigin = originForSite(site);
   const validationIssues: PublishIssue[] = [];
+  const brandMark = await dependencies.brandMarks?.resolve(site);
 
   for (const page of site.pages) {
     const prepared = await preparePage({
@@ -38,6 +39,7 @@ export async function publishSite(
       registry: dependencies.registry,
       functions: dependencies.functions,
       mode: "production",
+      ...(brandMark ? { brandMark } : {}),
     });
 
     if (!prepared.ok) {
@@ -101,6 +103,7 @@ export async function rollbackSite(
 
   const primaryOrigin = originForSite(target.snapshot);
   const issues: PublishIssue[] = [];
+  const brandMark = await dependencies.brandMarks?.resolve(target.snapshot);
   for (const page of target.snapshot.pages) {
     const prepared = await preparePage({
       site: target.snapshot,
@@ -109,6 +112,7 @@ export async function rollbackSite(
       registry: dependencies.registry,
       functions: dependencies.functions,
       mode: "production",
+      ...(brandMark ? { brandMark } : {}),
     });
     if (!prepared.ok) {
       issues.push({

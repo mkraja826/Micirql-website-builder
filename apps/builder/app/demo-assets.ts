@@ -1,6 +1,194 @@
 import type { AssetRecord } from "@micirql/assets";
+import { PHYSIOTHERAPY_CANDIDATE_MEDIA_ASSETS } from "./industry-packs/drafts/physiotherapy-media-assets";
+import { RESTAURANT_DRAFT_MEDIA_ASSETS } from "./industry-packs/drafts/restaurant-media-assets";
+
+const EXTRA_DENTAL_PEXELS_ASSETS: AssetRecord[] = [
+  dentalPexelsAsset({
+    id: "mi-dental-tools-drawer",
+    photoId: "6502551",
+    name: "Organized dental instrument drawer",
+    alt: "Organized sterile dental tools and equipment arranged inside a clinic drawer",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["corporate", "minimalist", "editorial"],
+    tags: ["instruments", "sterile", "organized", "detail"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-modern-instruments",
+    photoId: "6812482",
+    name: "Modern dental instruments",
+    alt: "Close-up of modern dental instruments in a clean clinical setting",
+    focalPoint: { x: 0.54, y: 0.48 },
+    themes: ["glass", "futuristic", "corporate"],
+    tags: ["instruments", "technology", "precision", "detail"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-treatment-tray",
+    photoId: "4687361",
+    name: "Prepared dental treatment tray",
+    alt: "Sterile dental instruments arranged on a treatment tray in a clinic",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["minimalist", "corporate", "editorial"],
+    tags: ["tray", "instruments", "clean", "procedure"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-workstation-tool",
+    photoId: "10820367",
+    name: "Dental workstation detail",
+    alt: "Modern dental tool resting on a clean clinical workstation",
+    focalPoint: { x: 0.48, y: 0.5 },
+    themes: ["cinematic", "luxury", "futuristic"],
+    tags: ["tool", "workstation", "modern", "detail"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-colourful-tools",
+    photoId: "6627719",
+    name: "Colourful dental tool arrangement",
+    alt: "Colourful dental tools arranged on a clean clinic table",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["playful", "organic", "maximalist"],
+    tags: ["tools", "colour", "welcoming", "detail"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-high-tech-tools",
+    photoId: "7789651",
+    name: "High-tech dental equipment",
+    alt: "High-tech dental tools in a clean bright clinical environment",
+    focalPoint: { x: 0.52, y: 0.5 },
+    themes: ["futuristic", "glass", "corporate"],
+    tags: ["technology", "equipment", "bright", "precision"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-blue-equipment",
+    photoId: "6627724",
+    name: "Dental equipment on blue",
+    alt: "Dental instruments and models arranged on a sterile blue background",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["maximalist", "playful", "editorial"],
+    tags: ["equipment", "models", "blue", "graphic"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-tools-green",
+    photoId: "4269356",
+    name: "Dental tools on green",
+    alt: "Colourful dental instruments arranged on a light green background",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["organic", "playful", "minimalist"],
+    tags: ["tools", "green", "colour", "graphic"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-modern-office",
+    photoId: "30902075",
+    name: "High-tech dental office",
+    alt: "Bright modern dental chair and equipment inside an empty high-tech clinic",
+    focalPoint: { x: 0.55, y: 0.5 },
+    themes: ["glass", "futuristic", "minimalist", "corporate"],
+    tags: ["clinic", "interior", "chair", "technology", "non-human"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-steel-tools",
+    photoId: "4269366",
+    name: "Steel dental instruments",
+    alt: "Stainless steel dental instruments arranged on a sterile blue surface",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["editorial", "corporate", "futuristic"],
+    tags: ["tools", "steel", "sterile", "graphic"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-models-blue",
+    photoId: "6528854",
+    name: "Dental models and tools",
+    alt: "Dental tools and clinical models arranged on a blue surface",
+    focalPoint: { x: 0.5, y: 0.5 },
+    themes: ["editorial", "playful", "maximalist"],
+    tags: ["models", "tools", "blue", "graphic"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-clinic-toolset",
+    photoId: "6502336",
+    name: "Clinic toolset",
+    alt: "Sterile dental equipment prepared inside a modern treatment room",
+    focalPoint: { x: 0.52, y: 0.48 },
+    themes: ["cinematic", "luxury", "corporate"],
+    tags: ["equipment", "clinic", "sterile", "technology"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-chair-equipment",
+    photoId: "4687148",
+    name: "Dental chair equipment detail",
+    alt: "Close-up of modern dental chair equipment inside a clean clinic",
+    focalPoint: { x: 0.48, y: 0.48 },
+    themes: ["corporate", "minimalist", "glass"],
+    tags: ["chair", "equipment", "clinic", "technology"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-instrument-console",
+    photoId: "6629413",
+    name: "Dental instrument console",
+    alt: "Close-up of a modern dental instrument console in a clinical workspace",
+    focalPoint: { x: 0.52, y: 0.5 },
+    themes: ["futuristic", "editorial", "cinematic"],
+    tags: ["console", "equipment", "precision", "technology"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-consultation-model",
+    photoId: "4269353",
+    name: "Dental model consultation",
+    alt: "Dentist using a dental model to explain care during a patient consultation",
+    focalPoint: { x: 0.5, y: 0.45 },
+    themes: ["organic", "corporate", "editorial"],
+    tags: ["dentist", "patient", "consultation", "education", "people"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-friendly-consultation",
+    photoId: "3884103",
+    name: "Friendly dental consultation",
+    alt: "Dentist and patient having a friendly conversation beside a dental chair",
+    focalPoint: { x: 0.5, y: 0.42 },
+    themes: ["organic", "playful", "cinematic"],
+    tags: ["dentist", "patient", "conversation", "welcoming", "people"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-chairside-conversation",
+    photoId: "3881423",
+    name: "Chairside treatment conversation",
+    alt: "Dentist discussing treatment information with a patient in a modern clinic",
+    focalPoint: { x: 0.48, y: 0.42 },
+    themes: ["corporate", "minimalist", "glass"],
+    tags: ["dentist", "patient", "discussion", "treatment", "people"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-positive-checkup",
+    photoId: "3884101",
+    name: "Positive dental checkup conversation",
+    alt: "Dentist speaking with a patient during a checkup in a modern dental room",
+    focalPoint: { x: 0.52, y: 0.43 },
+    themes: ["organic", "minimalist", "corporate"],
+    tags: ["dentist", "patient", "checkup", "confidence", "people"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-treatment-explanation",
+    photoId: "4971507",
+    name: "Dental treatment explanation",
+    alt: "Dentist holding a tooth model while explaining oral care to a patient",
+    focalPoint: { x: 0.5, y: 0.42 },
+    themes: ["editorial", "corporate", "cinematic"],
+    tags: ["dentist", "patient", "tooth model", "education", "people"],
+  }),
+  dentalPexelsAsset({
+    id: "mi-dental-reception-consultation",
+    photoId: "6812429",
+    name: "Dental reception consultation",
+    alt: "Dentist and patient discussing next steps at a modern clinic reception",
+    focalPoint: { x: 0.5, y: 0.45 },
+    themes: ["cinematic", "luxury", "corporate"],
+    tags: ["dentist", "patient", "reception", "conversation", "people"],
+  }),
+];
 
 export const DEMO_ASSETS: AssetRecord[] = [
+  ...RESTAURANT_DRAFT_MEDIA_ASSETS,
+  ...PHYSIOTHERAPY_CANDIDATE_MEDIA_ASSETS,
+  ...EXTRA_DENTAL_PEXELS_ASSETS,
   {
     id: "mi-dental-calm-clinic",
     source: "micirql-placeholder",
@@ -247,6 +435,48 @@ export const DEMO_ASSETS: AssetRecord[] = [
     createdAt: "2026-08-15T00:00:00.000Z",
   },
 ];
+
+function dentalPexelsAsset({
+  id,
+  photoId,
+  name,
+  alt,
+  focalPoint,
+  themes,
+  tags,
+}: {
+  id: string;
+  photoId: string;
+  name: string;
+  alt: string;
+  focalPoint: AssetRecord["focalPoint"];
+  themes: AssetRecord["themes"];
+  tags: string[];
+}): AssetRecord {
+  return {
+    id,
+    source: "micirql-placeholder",
+    kind: "image",
+    name,
+    alt,
+    width: 1600,
+    height: 1000,
+    orientation: "landscape",
+    aspectRatio: 1.6,
+    focalPoint,
+    domains: ["clinic"],
+    subtypes: ["dental"],
+    sectionFamilies: ["hero", "about", "gallery", "services", "features"],
+    themes,
+    tags: ["dental", "licensed", "pexels", "non-human", ...tags],
+    license: "licensed",
+    sourceReference: `https://www.pexels.com/photo/${photoId}/`,
+    originalUrl: `https://images.pexels.com/photos/${photoId}/pexels-photo-${photoId}.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=1000`,
+    variants: [],
+    active: true,
+    createdAt: "2026-10-13T00:00:00.000Z",
+  };
+}
 
 export function demoAssetById(assetId: string) {
   return DEMO_ASSETS.find((asset) => asset.id === assetId);

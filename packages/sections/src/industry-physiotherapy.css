@@ -1,0 +1,355 @@
+/* Clinic / Physiotherapy owns a movement-pathway visual grammar.
+ *
+ * The subtype scope is deliberate: this layer must never recolour or reshape
+ * Dental (or a future industry) by accident. Shared section components remain
+ * accessible primitives, while the rendered industry's domain identity owns
+ * its composition rhythm, image treatment and responsive art direction.
+ */
+[data-mi-subtype="physiotherapy"] {
+  --mi-physio-path: color-mix(
+    in srgb,
+    var(--mi-color-primary) 30%,
+    var(--mi-color-border)
+  );
+  --mi-physio-warm: color-mix(
+    in srgb,
+    var(--mi-color-accent) 82%,
+    var(--mi-color-surface)
+  );
+  background: color-mix(
+    in srgb,
+    var(--mi-color-primary) 5%,
+    var(--mi-color-surface)
+  );
+}
+
+[data-mi-subtype="physiotherapy"] .mi-section-theme .mi-section {
+  --mi-section-space: clamp(3.25rem, 7vw, 6rem);
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="navbar"]
+  .mi-navbar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -0.1rem;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mi-color-primary) 18% 70%,
+    var(--mi-color-accent),
+    transparent
+  );
+  opacity: 0.44;
+  pointer-events: none;
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="hero"]
+  .mi-section__layout {
+  position: relative;
+  column-gap: clamp(2.5rem, 6vw, 6.5rem);
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="hero"]
+  .mi-section__layout::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 10%;
+  left: 6%;
+  width: min(44cqi, 33rem);
+  aspect-ratio: 1.35;
+  border: 1px solid var(--mi-physio-path);
+  border-radius: 58% 42% 55% 45% / 45% 55% 45% 55%;
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="hero"]
+  .mi-type--display {
+  max-inline-size: min(17ch, 100%);
+  font-size: clamp(2rem, 5.5cqi, 4rem) !important;
+  font-weight: 650 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.024em;
+  text-transform: none !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none;
+}
+
+[data-mi-subtype="physiotherapy"]
+  .mi-section__heading
+  :is(.mi-type--h2, .mi-type--h3) {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+[data-mi-subtype="physiotherapy"] .mi-section__heading .mi-type--h2 {
+  font-size: clamp(1.75rem, 2.8cqi, 3rem) !important;
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="hero"]
+  .mi-section__media {
+  border: 1px solid
+    color-mix(in srgb, var(--mi-color-primary) 24%, var(--mi-color-border));
+  box-shadow:
+    1.1rem 1.1rem 0 color-mix(in srgb, var(--mi-color-primary) 7%, transparent),
+    var(--mi-shadow-card);
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="services"]
+  .mi-section__grid,
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="features"]
+  .mi-section__grid {
+  align-items: start;
+}
+
+[data-mi-subtype="physiotherapy"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__card {
+  border: 1px solid
+    color-mix(in srgb, var(--mi-color-primary) 16%, var(--mi-color-border));
+  background: color-mix(
+    in srgb,
+    var(--mi-color-surface-elevated) 94%,
+    var(--mi-color-primary)
+  );
+  box-shadow: 0 1.25rem 3.5rem
+    color-mix(in srgb, var(--mi-color-secondary) 8%, transparent);
+}
+
+[data-mi-subtype="physiotherapy"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__card
+  img {
+  aspect-ratio: 5 / 4;
+  border-radius: 1.3rem 1.3rem 0.45rem 0.45rem;
+}
+
+[data-mi-subtype="physiotherapy"]
+  :is([data-section-family="services"], [data-section-family="features"])
+  .mi-section__card-index {
+  min-width: 2.15rem;
+  min-height: 2.15rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+  border: 1px solid var(--mi-physio-path);
+  border-radius: 999px;
+  background: var(--mi-color-surface);
+  color: var(--mi-color-primary);
+  letter-spacing: 0.06em;
+}
+
+[data-mi-subtype="physiotherapy"] [data-section-family="process"] .mi-stats {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-mi-subtype="physiotherapy"] [data-section-family="process"] .mi-stat {
+  border-color: var(--mi-physio-path);
+  background: var(--mi-color-surface);
+}
+
+[data-mi-subtype="physiotherapy"]
+  .mi-section-theme.mi-section-variant--4[data-section-family="about"]
+  .mi-section__grid:empty {
+  display: none;
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="contact"]
+  .mi-section__layout:not(:has(.mi-section__form)) {
+  grid-template-columns: minmax(0, 42rem);
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="contact"]
+  .mi-section__layout:not(:has(.mi-section__form))
+  > * {
+  order: initial;
+  justify-self: start;
+}
+
+[data-mi-subtype="physiotherapy"] [data-section-family="cta"] .mi-section {
+  background:
+    linear-gradient(
+      112deg,
+      transparent 0 72%,
+      color-mix(in srgb, var(--mi-color-accent) 14%, transparent) 72% 100%
+    ),
+    color-mix(in srgb, var(--mi-color-primary) 7%, var(--mi-color-surface));
+}
+
+[data-mi-subtype="physiotherapy"]
+  [data-section-family="cta"]
+  .mi-section::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  right: clamp(1.5rem, 7vw, 7rem);
+  width: clamp(3rem, 8vw, 7rem);
+  aspect-ratio: 1;
+  border: clamp(0.45rem, 1.2vw, 0.9rem) solid var(--mi-physio-warm);
+  border-left-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-26deg);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+[data-mi-subtype="physiotherapy"]
+  .mi-section-theme.mi-section-variant--2[data-section-family="cta"]
+  .mi-section.mi-section--cta
+  .mi-section__composition {
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 34rem);
+  justify-content: start;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  padding-right: min(24vw, 20rem);
+}
+
+[data-mi-subtype="physiotherapy"]
+  .mi-section-theme.mi-section-variant--2[data-section-family="cta"]
+  .mi-section.mi-section--cta
+  :is(.mi-section__heading, .mi-section__actions) {
+  grid-column: 1;
+}
+
+[data-mi-subtype="physiotherapy"]
+  .mi-section-theme.mi-section-variant--2[data-section-family="cta"]
+  .mi-section.mi-section--cta
+  .mi-section__actions {
+  justify-content: flex-start;
+}
+
+@media (min-width: 48rem) {
+  [data-mi-subtype="physiotherapy"]
+    :is([data-section-family="services"], [data-section-family="features"])
+    .mi-section__card:nth-child(even) {
+    margin-top: clamp(1rem, 2.8vw, 2.5rem);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="process"]
+    .mi-stats::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 2.15rem;
+    right: 8%;
+    left: 8%;
+    height: 2px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--mi-physio-path) 0 0.65rem,
+      transparent 0.65rem 1.15rem
+    );
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  [data-mi-subtype="physiotherapy"] .mi-section-theme .mi-section {
+    --mi-section-space: clamp(3rem, 4.5vw, 4rem);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="hero"]
+    .mi-section__layout {
+    min-height: clamp(27rem, 54vh, 35rem);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    .mi-section-theme.mi-section-variant--4[data-section-family="about"]
+    .mi-section__composition:has(.mi-section__grid:empty) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 50rem);
+    margin-inline: auto;
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    .mi-section-theme.mi-section-variant--4[data-section-family="about"]
+    .mi-section__composition:has(.mi-section__grid:empty)
+    .mi-section__heading {
+    grid-column: 1;
+    grid-row: auto;
+    width: min(100%, 44rem);
+  }
+}
+
+@media (min-width: 80rem) {
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="services"]
+    .mi-section__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.99rem) {
+  [data-mi-subtype="physiotherapy"] .mi-section-theme .mi-section {
+    --mi-section-space: clamp(2.75rem, 12vw, 3.5rem);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="hero"]
+    .mi-section__layout::before {
+    top: auto;
+    bottom: 1rem;
+    left: 8%;
+    width: 74%;
+    transform: rotate(-4deg);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    box-shadow:
+      0.55rem 0.55rem 0
+        color-mix(in srgb, var(--mi-color-primary) 7%, transparent),
+      var(--mi-shadow-card);
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    [data-section-family="cta"]
+    .mi-section::after {
+    top: auto;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    width: 3.5rem;
+    opacity: 0.5;
+  }
+
+  [data-mi-subtype="physiotherapy"]
+    .mi-section-theme.mi-section-variant--2[data-section-family="cta"]
+    .mi-section.mi-section--cta
+    .mi-section__composition {
+    padding-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-mi-subtype="physiotherapy"] .mi-section__card,
+  [data-mi-subtype="physiotherapy"] .mi-section__action,
+  [data-mi-subtype="physiotherapy"] .mi-nav-menu__icon,
+  [data-mi-subtype="physiotherapy"] .mi-nav-menu__icon::before,
+  [data-mi-subtype="physiotherapy"] .mi-nav-menu__icon::after {
+    transition: none;
+  }
+}

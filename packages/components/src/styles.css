@@ -253,12 +253,15 @@
   left: 0;
   display: grid;
   gap: 0.2rem;
-  width: min(18rem, calc(100vw - 2rem));
+  width: min(24rem, calc(100vw - 2rem));
   padding: 0.4rem;
   border: 1px solid var(--mi-color-border);
   border-radius: var(--mi-radius-card);
   background: var(--mi-color-surface);
   box-shadow: var(--mi-shadow-card);
+}
+.mi-nav-menu__backdrop {
+  display: none;
 }
 .mi-nav-menu a {
   min-width: 44px;
@@ -538,6 +541,30 @@
 }
 
 /* Generated-site navigation contract: mobile/tablet burger until the 1024px desktop cutoff. */
+@media (max-width: 63.99rem) {
+  .mi-nav-menu__toggle {
+    position: relative;
+    z-index: 32;
+  }
+  .mi-nav-menu > ul.is-open {
+    z-index: 31;
+  }
+  .mi-nav-menu__toggle.is-open ~ .mi-nav-menu__backdrop {
+    position: fixed;
+    z-index: 30;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: rgb(7 23 28 / 0.42);
+    backdrop-filter: blur(2px);
+    cursor: default;
+  }
+}
 @media (min-width: 48rem) and (max-width: 63.99rem) {
   .mi-nav-menu__toggle {
     display: inline-flex;
@@ -545,10 +572,10 @@
   .mi-nav-menu > ul,
   .mi-nav-menu > ul.is-open {
     position: absolute;
-    z-index: 30;
+    z-index: 31;
     top: calc(100% + 0.5rem);
     left: 0;
-    width: min(18rem, calc(100vw - 2rem));
+    width: min(24rem, calc(100vw - 2rem));
     padding: 0.4rem;
     border: 1px solid var(--mi-color-border);
     border-radius: var(--mi-radius-card);
@@ -580,5 +607,8 @@
   }
   .mi-nav-menu a {
     padding: 0;
+  }
+  .mi-nav-menu__backdrop {
+    display: none;
   }
 }

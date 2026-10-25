@@ -7,13 +7,9 @@ import {
   type Site,
 } from "@micirql/schema";
 import type { SupabaseSession } from "./auth-client";
-import { applyIndustryPreset } from "./apply-industry-preset";
-import { DESIGN_REVIEW_COUNT } from "./industry-design-preset-data";
-import {
-  rankPresets,
-  type OnboardingProfile,
-  type RankedPreset,
-} from "./preset-ranking";
+import { resolveCertifiedIndustryPackRuntimeForSite } from "./industry-packs";
+import { type OnboardingProfile, type RankedPreset } from "./preset-ranking";
+import { ProductBrand } from "./product-brand";
 import { RendererPreview } from "./renderer-preview";
 import styles from "./first-build-review.module.css";
 
@@ -44,15 +40,41 @@ export function FirstBuildReview({
   const [draft, setDraft] = useState<DraftRecord>();
   const [savingId, setSavingId] = useState<string>();
   const [pageIndex, setPageIndex] = useState(0);
+  const [focusedIds, setFocusedIds] = useState<Record<number, string>>({});
   const [viewports, setViewports] = useState<Record<string, ReviewViewport>>(
     {},
   );
+  const [defaultViewport, setDefaultViewport] =
+    useState<ReviewViewport>("desktop");
+  const [previewPaths, setPreviewPaths] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string>();
   const [error, setError] = useState("");
   const [gate, setGate] = useState<CompositionGateReport>();
   const expandedCardRef = useRef<HTMLElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const ranked = useMemo(() => rankPresets(profile), [profile]);
+  const industryRuntime = useMemo(
+    () =>
+      draft
+        ? resolveCertifiedIndustryPackRuntimeForSite({
+            domain: draft.snapshot.domain,
+            subtype: draft.snapshot.subtype ?? null,
+          })
+        : undefined,
+    [draft],
+  );
+  const ranked = useMemo<RankedPreset[]>(
+    () =>
+      industryRuntime
+        ? industryRuntime
+            .rankCandidates(profile)
+            .map(({ candidate, ...ranking }) => ({
+              preset: candidate,
+              ...ranking,
+            }))
+        : [],
+    [industryRuntime, profile],
+  );
+  const reviewCount = industryRuntime?.pack.reviewCount ?? 0;
   const ordered = useMemo(
     () => orderFromDraft(ranked, draft?.snapshot),
     [ranked, draft?.snapshot],
@@ -67,12 +89,42 @@ export function FirstBuildReview({
     [ordered, pageIndex],
   );
   const choices = useMemo(() => {
-    if (!draft) return [];
-    return visibleRanked.map((item) => ({
-      ...item,
-      site: applyIndustryPreset(draft.snapshot, item.preset),
-    }));
-  }, [draft, visibleRanked]);
+    if (!draft || !industryRuntime) return [];
+    return visibleRanked.map((item) => {
+      const composed = industryRuntime.applyCandidate(
+        draft.snapshot,
+        item.preset.id,
+      );
+      if (composed.generation) {
+        composed.generation = {
+          ...composed.generation,
+          selectedCandidateId: item.preset.id,
+        };
+      }
+      return {
+        ...item,
+        site: industryRuntime.applyContentHygiene(composed).site,
+      };
+    });
+  }, [draft, industryRuntime, visibleRanked]);
+  const focusedChoice =
+    choices.find(({ preset }) => preset.id === focusedIds[pageIndex]) ??
+    choices[0];
+
+  useEffect(() => {
+    const updateDefaultViewport = () => {
+      setDefaultViewport(
+        window.innerWidth <= 640
+          ? "mobile"
+          : window.innerWidth <= 1100
+            ? "tablet"
+            : "desktop",
+      );
+    };
+    updateDefaultViewport();
+    window.addEventListener("resize", updateDefaultViewport);
+    return () => window.removeEventListener("resize", updateDefaultViewport);
+  }, []);
 
   useEffect(() => {
     if (!expandedId) return;
@@ -185,9 +237,29 @@ export function FirstBuildReview({
         ok?: boolean;
         message?: string;
         error?: string;
+        code?: string;
         draft?: DraftRecord;
         gate?: CompositionGateReport;
       };
+      if (response.status === 409 || payload.code === "REVISION_CONFLICT") {
+        const query = new URLSearchParams({ workspaceId, siteId });
+        const latestResponse = await fetch("/api/drafts?" + query, {
+          headers: { Authorization: "Bearer " + session.access_token },
+          cache: "no-store",
+        });
+        const latestPayload = (await latestResponse.json()) as {
+          draft?: DraftRecord;
+        };
+        if (latestResponse.ok && latestPayload.draft) {
+          setDraft({
+            ...latestPayload.draft,
+            snapshot: siteSchema.parse(latestPayload.draft.snapshot),
+          });
+        }
+        throw new Error(
+          "This website changed in another session. We reloaded the latest version—review the direction, then try again.",
+        );
+      }
       if (payload.draft) {
         setDraft({
           ...payload.draft,
@@ -196,15 +268,8 @@ export function FirstBuildReview({
       }
       if (payload.gate) setGate(payload.gate);
       if (!response.ok || !payload.ok) {
-        const diagnostic = payload.gate?.issues
-          .filter((issue) => issue.severity === "error")
-          .map((issue) => issue.message)
-          .join(" ");
         throw new Error(
-          payload.message ??
-            diagnostic ??
-            payload.error ??
-            "This design did not pass the premium gate.",
+          selectionFailureMessage(response.status, payload.code, payload.gate),
         );
       }
       onComplete();
@@ -219,227 +284,532 @@ export function FirstBuildReview({
     }
   }
 
-  if (!draft) {
+  if (!draft)
     return (
-      <main className={styles.shell}>
-        <div className={styles.header}>
-          <span>MiCirql dental design review</span>
-          <h1>Preparing your certified Top 20.</h1>
-          <p>
-            {error ||
-              "Loading the factual scaffold and ranked dental compositions…"}
-          </p>
-        </div>
-      </main>
+      <ReviewStatus
+        alert={Boolean(error)}
+        kicker="Certified design review"
+        message={
+          error || "Loading the factual scaffold and ranked design directions…"
+        }
+        title="Preparing your industry-specific designs."
+      />
+    );
+
+  if (!industryRuntime || ordered.length !== reviewCount) {
+    return (
+      <ReviewStatus
+        kicker="Industry pack status"
+        message="MiCirql will not fill this review with another industry’s designs, cross-industry layouts or simple recolors. This brief can continue when its own component pack has passed certification."
+        title="This industry pack is not certified yet."
+      />
     );
   }
 
-  if (ordered.length !== DESIGN_REVIEW_COUNT) {
-    return (
-      <main className={styles.shell}>
-        <div className={styles.header}>
-          <span>Industry pack status</span>
-          <h1>Industry pack not yet certified.</h1>
-          <p>
-            MiCirql will not fill this review with dental designs,
-            cross-industry layouts, or simple recolors. This brief can continue
-            when its own component pack has passed certification.
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const focusedRank = focusedChoice
+    ? ordered.findIndex(({ preset }) => preset.id === focusedChoice.preset.id) +
+      1
+    : 0;
+  const focusedViewport = focusedChoice
+    ? (viewports[focusedChoice.preset.id] ?? defaultViewport)
+    : defaultViewport;
+  const focusedPreviewPath = focusedChoice
+    ? (previewPaths[focusedChoice.preset.id] ??
+      focusedChoice.site.pages[0]?.path ??
+      "/")
+    : "/";
+  const expanded = expandedId === focusedChoice?.preset.id;
 
   return (
     <main className={styles.shell}>
-      <header className={styles.header}>
-        <span>MiCirql flagship dental · 20 certified compositions</span>
-        <h1>Choose the structure before content is generated.</h1>
-        <p>
-          Four ranked previews are mounted at a time. Every option stays inside
-          the dental pack, preserves your business facts and supplied brand
-          assets, and uses a materially different composition.
-        </p>
-        {qualityWarnings?.length ? (
-          <div className={styles.warning}>
-            <strong>Review note</strong>
-            <div>{qualityWarnings.join(" ")}</div>
+      <div className={styles.frame}>
+        <header
+          aria-hidden={expandedId ? true : undefined}
+          className={styles.productHeader}
+          inert={expandedId ? true : undefined}
+        >
+          <ProductBrand />
+          <span className={styles.draftStatus}>Design review</span>
+        </header>
+
+        <section
+          aria-hidden={expandedId ? true : undefined}
+          className={styles.intro}
+          data-design-review-intro
+          inert={expandedId ? true : undefined}
+        >
+          <span className={styles.eyebrow}>
+            Certified {industryRuntime.pack.label} · Step 2 of 3
+          </span>
+          <h1>
+            Choose the structure that feels right for {draft.snapshot.name}.
+          </h1>
+          <p>
+            MiCirql ranked {reviewCount} certified directions using the goals,
+            required capabilities and visual preferences in the saved brief. The
+            ranking is a starting point—you can choose any direction.
+          </p>
+          <div className={styles.reviewFacts} aria-label="Review safeguards">
+            <span>
+              <strong>{reviewCount}</strong> certified directions
+            </span>
+            <span>
+              <strong>{DESIGNS_PER_PAGE}</strong> directions per group
+            </span>
+            <span>
+              <strong>Exact</strong> facts &amp; brand
+            </span>
           </div>
-        ) : null}
-      </header>
+          <ol
+            className={styles.progress}
+            aria-label="Website creation progress"
+          >
+            <li className={styles.completeStep}>
+              <span aria-hidden="true">✓</span>
+              <strong>Business brief</strong>
+            </li>
+            <li className={styles.currentStep} aria-current="step">
+              <span>02</span>
+              <strong>Choose direction</strong>
+            </li>
+            <li>
+              <span>03</span>
+              <strong>Edit &amp; publish</strong>
+            </li>
+          </ol>
+          {qualityWarnings?.length ? (
+            <div className={styles.warning} role="status">
+              <strong>Brief review note</strong>
+              <span>{qualityWarnings.join(" ")}</span>
+            </div>
+          ) : null}
+        </section>
 
-      <nav className={styles.pagination} aria-label="Design review pages">
-        <button
-          type="button"
-          disabled={pageIndex === 0 || Boolean(savingId)}
-          onClick={() => setPageIndex((value) => Math.max(0, value - 1))}
-        >
-          ← Previous four
-        </button>
-        <div>
-          {Array.from({ length: pageCount }, (_, index) => (
-            <button
-              type="button"
-              key={index}
-              disabled={Boolean(savingId)}
-              aria-current={index === pageIndex ? "page" : undefined}
-              className={index === pageIndex ? styles.activePage : undefined}
-              onClick={() => setPageIndex(index)}
+        <div className={styles.reviewBody} aria-busy={Boolean(savingId)}>
+          {savingId ? (
+            <div
+              className={styles.selectionStatus}
+              role="status"
+              aria-live="polite"
             >
-              {index * DESIGNS_PER_PAGE + 1}–
-              {Math.min((index + 1) * DESIGNS_PER_PAGE, DESIGN_REVIEW_COUNT)}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          disabled={pageIndex >= pageCount - 1 || Boolean(savingId)}
-          onClick={() =>
-            setPageIndex((value) => Math.min(pageCount - 1, value + 1))
-          }
-        >
-          Next four →
-        </button>
-      </nav>
-
-      <section className={styles.grid}>
-        {choices.map(({ preset, reasons, site }, visibleIndex) => {
-          const rank = pageIndex * DESIGNS_PER_PAGE + visibleIndex + 1;
-          const viewport = viewports[preset.id] ?? "desktop";
-          const expanded = expandedId === preset.id;
-          return (
-            <article
-              className={`${styles.card}${expanded ? ` ${styles.expandedCard}` : ""}`}
-              key={preset.id}
-              ref={expanded ? expandedCardRef : undefined}
-              role={expanded ? "dialog" : undefined}
-              aria-modal={expanded ? true : undefined}
-              aria-labelledby={
-                expanded ? `design-title-${preset.id}` : undefined
-              }
-              aria-describedby={
-                expanded ? `design-description-${preset.id}` : undefined
-              }
-            >
-              <div className={styles.cardTop}>
-                <span className={styles.badge}>
-                  {rank === 1 ? "Rank 1 · Recommended" : "Rank " + rank}
+              <span className={styles.statusSpinner} aria-hidden="true" />
+              <div>
+                <strong>Preparing the selected direction</strong>
+                <span>
+                  Adding approved copy and imagery, then running quality checks.
+                  Nothing is published yet.
                 </span>
-                <strong id={`design-title-${preset.id}`}>{preset.name}</strong>
-                <small id={`design-description-${preset.id}`}>
-                  {preset.description}
-                </small>
-                <div
-                  className={styles.signature}
-                  aria-label={`${preset.theme.family} design system, ${preset.typographyStrategy} typography, ${preset.theme.brand.density} density`}
-                >
-                  <span
-                    className={styles.typeSample}
-                    style={{
-                      fontFamily: preset.theme.brand.typography.display,
-                    }}
-                  >
-                    Aa
-                  </span>
-                  <span>{preset.theme.family.replace(/-/g, " ")}</span>
-                  <span>{preset.typographyStrategy.replace(/-/g, " ")}</span>
-                  <span>{preset.theme.brand.density}</span>
-                  <span className={styles.swatches} aria-hidden="true">
-                    {[
-                      preset.theme.brand.colors.primary,
-                      preset.theme.brand.colors.secondary,
-                      preset.theme.brand.colors.accent,
-                      preset.theme.brand.colors.background,
-                    ].map((color) => (
-                      <i key={color} style={{ backgroundColor: color }} />
-                    ))}
-                  </span>
-                </div>
-                <small className={styles.fit}>
-                  {reasons.slice(0, 2).join(" · ")}
-                </small>
               </div>
-              <div className={styles.preview}>
-                <div className={styles.previewToolbar}>
-                  <div
-                    role="group"
-                    aria-label={`Preview ${preset.name} at a device size`}
-                  >
-                    {(["mobile", "tablet", "desktop"] as const).map(
-                      (nextViewport) => (
+            </div>
+          ) : null}
+          {gate && !gate.passed ? (
+            <section className={styles.error} role="alert">
+              <strong>This direction needs another quality pass.</strong>
+              <p>
+                Nothing was published. You can retry this direction or choose a
+                different one.
+              </p>
+            </section>
+          ) : null}
+          {error ? (
+            <div className={styles.error} role="alert">
+              {error}
+            </div>
+          ) : null}
+
+          <div
+            aria-hidden={expanded ? true : undefined}
+            className={styles.comparisonControls}
+            inert={expanded ? true : undefined}
+          >
+            <div className={styles.comparisonHeading}>
+              <div>
+                <span>Compare certified directions</span>
+                <strong>Choose one to inspect at full size</strong>
+              </div>
+              <p>
+                Rank measures brief fit, not design quality. Your approved
+                facts, navigation and brand inputs stay fixed in every option.
+              </p>
+            </div>
+
+            <ReviewPagination
+              ariaLabel="Design review pages"
+              disabled={Boolean(savingId)}
+              pageCount={pageCount}
+              pageIndex={pageIndex}
+              reviewCount={reviewCount}
+              onPageChange={setPageIndex}
+            />
+          </div>
+
+          {focusedChoice ? (
+            <section
+              aria-label={`Ranked ${industryRuntime.pack.label} design directions`}
+              className={styles.comparisonWorkspace}
+            >
+              <aside
+                aria-hidden={expanded ? true : undefined}
+                className={styles.directionRail}
+                inert={expanded ? true : undefined}
+              >
+                <div className={styles.railHeading}>
+                  <span>
+                    Ranks {pageIndex * DESIGNS_PER_PAGE + 1}–
+                    {Math.min((pageIndex + 1) * DESIGNS_PER_PAGE, reviewCount)}
+                  </span>
+                  <strong>Directions in this group</strong>
+                </div>
+                <ol className={styles.directionList}>
+                  {choices.map(({ preset, site }, visibleIndex) => {
+                    const rank =
+                      pageIndex * DESIGNS_PER_PAGE + visibleIndex + 1;
+                    const active = preset.id === focusedChoice.preset.id;
+                    return (
+                      <li key={preset.id}>
                         <button
-                          type="button"
-                          key={nextViewport}
-                          aria-pressed={viewport === nextViewport}
-                          className={
-                            viewport === nextViewport
-                              ? styles.activeViewport
-                              : undefined
-                          }
+                          aria-controls="focused-design-preview"
+                          aria-pressed={active}
+                          className={`${styles.directionOption} ${
+                            active ? styles.activeDirection : ""
+                          }`}
+                          data-candidate-id={preset.id}
+                          data-candidate-rank={rank}
+                          disabled={Boolean(savingId)}
                           onClick={() =>
-                            setViewports((current) => ({
+                            setFocusedIds((current) => ({
                               ...current,
-                              [preset.id]: nextViewport,
+                              [pageIndex]: preset.id,
                             }))
                           }
+                          type="button"
                         >
-                          {nextViewport}
+                          <span className={styles.optionRank}>
+                            {rank === 1 ? "Recommended" : `Rank ${rank}`}
+                          </span>
+                          <strong>{preset.name}</strong>
+                          <span className={styles.optionDescription}>
+                            {preset.description}
+                          </span>
+                          <span className={styles.optionMeta}>
+                            <span>{site.theme.family.replace(/-/g, " ")}</span>
+                            <span>{site.theme.brand.density}</span>
+                            <span
+                              className={styles.optionSwatches}
+                              aria-hidden="true"
+                            >
+                              {[
+                                site.theme.brand.colors.primary,
+                                site.theme.brand.colors.secondary,
+                                site.theme.brand.colors.accent,
+                              ].map((color) => (
+                                <i
+                                  key={color}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </span>
+                          </span>
                         </button>
-                      ),
-                    )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </aside>
+
+              {expanded ? (
+                <div
+                  aria-hidden="true"
+                  className={styles.modalBackdrop}
+                  onMouseDown={() => setExpandedId(undefined)}
+                />
+              ) : null}
+
+              <article
+                aria-describedby={`design-description-${focusedChoice.preset.id}`}
+                aria-labelledby={`design-title-${focusedChoice.preset.id}`}
+                aria-modal={expanded ? true : undefined}
+                className={`${styles.focusedPanel} ${
+                  focusedRank === 1 ? styles.recommendedPanel : ""
+                } ${expanded ? styles.expandedPanel : ""}`}
+                data-active-candidate-id={focusedChoice.preset.id}
+                id="focused-design-preview"
+                ref={expanded ? expandedCardRef : undefined}
+                role={expanded ? "dialog" : undefined}
+              >
+                <header className={styles.focusedHeader}>
+                  <div className={styles.focusedTitle}>
+                    <span className={styles.badge}>
+                      {focusedRank === 1
+                        ? "Recommended for your brief"
+                        : `Brief fit · Rank ${focusedRank}`}
+                    </span>
+                    <div>
+                      <h2 id={`design-title-${focusedChoice.preset.id}`}>
+                        {focusedChoice.preset.name}
+                      </h2>
+                      <p id={`design-description-${focusedChoice.preset.id}`}>
+                        {focusedChoice.preset.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.fitPanel}>
+                    <strong>Why MiCirql recommends it</strong>
+                    <ul>
+                      {recommendationReasons(focusedChoice.reasons).map(
+                        (reason) => (
+                          <li key={reason}>{reason}</li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+                  <div
+                    className={styles.signature}
+                    aria-label={`${focusedChoice.site.theme.family} design system, ${focusedChoice.preset.typographyStrategy} typography, ${focusedChoice.site.theme.brand.density} density`}
+                  >
+                    <span
+                      className={styles.typeSample}
+                      style={{
+                        fontFamily:
+                          focusedChoice.site.theme.brand.typography.display,
+                      }}
+                    >
+                      Aa
+                    </span>
+                    <span>
+                      {focusedChoice.site.theme.family.replace(/-/g, " ")}
+                    </span>
+                    <span>
+                      {focusedChoice.preset.typographyStrategy.replace(
+                        /-/g,
+                        " ",
+                      )}
+                    </span>
+                    <span>{focusedChoice.site.theme.brand.density}</span>
+                    <span>
+                      {focusedChoice.preset.imageStrategy.replace(/-/g, " ")}
+                    </span>
+                  </div>
+                </header>
+
+                <div className={styles.preview}>
+                  <div className={styles.previewToolbar}>
+                    <label className={styles.pagePicker}>
+                      <span>Preview page</span>
+                      <select
+                        aria-label={`Preview page for ${focusedChoice.preset.name}`}
+                        disabled={Boolean(savingId)}
+                        value={focusedPreviewPath}
+                        onChange={(event) =>
+                          setPreviewPaths((current) => ({
+                            ...current,
+                            [focusedChoice.preset.id]: event.target.value,
+                          }))
+                        }
+                      >
+                        {focusedChoice.site.pages.map((page) => (
+                          <option key={page.id} value={page.path}>
+                            {page.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div
+                      className={styles.deviceControls}
+                      role="group"
+                      aria-label={`Preview ${focusedChoice.preset.name} at a device size`}
+                    >
+                      {(["mobile", "tablet", "desktop"] as const).map(
+                        (nextViewport) => (
+                          <button
+                            aria-label={`${sentenceCase(nextViewport)} preview`}
+                            aria-pressed={focusedViewport === nextViewport}
+                            className={
+                              focusedViewport === nextViewport
+                                ? styles.activeViewport
+                                : undefined
+                            }
+                            disabled={Boolean(savingId)}
+                            key={nextViewport}
+                            onClick={() =>
+                              setViewports((current) => ({
+                                ...current,
+                                [focusedChoice.preset.id]: nextViewport,
+                              }))
+                            }
+                            type="button"
+                          >
+                            {sentenceCase(nextViewport)}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                    <button
+                      aria-expanded={expanded}
+                      className={styles.fullPreviewButton}
+                      data-full-preview-close={expanded ? "true" : undefined}
+                      disabled={Boolean(savingId)}
+                      onClick={() =>
+                        setExpandedId(
+                          expanded ? undefined : focusedChoice.preset.id,
+                        )
+                      }
+                      type="button"
+                    >
+                      {expanded ? "Close preview" : "Open full preview"}
+                    </button>
+                  </div>
+                  <div
+                    aria-label={`Scrollable website preview for ${focusedChoice.preset.name}`}
+                    className={styles.previewCanvas}
+                    role="region"
+                    tabIndex={0}
+                  >
+                    <RendererPreview
+                      onSelectSection={() => {}}
+                      path={focusedPreviewPath}
+                      reviewMode
+                      site={focusedChoice.site}
+                      viewport={focusedViewport}
+                    />
+                  </div>
+                </div>
+
+                <footer className={styles.actions}>
+                  <div>
+                    <strong>Use {focusedChoice.preset.name}</strong>
+                    <span>
+                      Exact facts, navigation and supplied brand assets remain
+                      unchanged. Nothing is published yet.
+                    </span>
                   </div>
                   <button
+                    disabled={Boolean(savingId)}
+                    onClick={() => void choose(focusedChoice.preset.id)}
                     type="button"
-                    aria-expanded={expanded}
-                    data-full-preview-close={expanded ? "true" : undefined}
-                    onClick={() =>
-                      setExpandedId(expanded ? undefined : preset.id)
-                    }
                   >
-                    {expanded ? "Close full preview" : "Full preview"}
+                    {savingId === focusedChoice.preset.id
+                      ? "Building your website…"
+                      : focusedRank === 1
+                        ? "Choose recommended direction"
+                        : "Use this direction"}
+                    <span aria-hidden="true">→</span>
                   </button>
-                </div>
-                <div className={styles.previewCanvas}>
-                  <RendererPreview
-                    site={site}
-                    path={site.pages[0]?.path ?? "/"}
-                    viewport={viewport}
-                    onSelectSection={() => {}}
-                  />
-                </div>
-              </div>
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  disabled={Boolean(savingId)}
-                  onClick={() => void choose(preset.id)}
-                >
-                  {savingId === preset.id
-                    ? "Generating content and imagery…"
-                    : rank === 1
-                      ? "Select recommended design"
-                      : "Select this design"}
-                </button>
-              </div>
-            </article>
-          );
-        })}
-      </section>
-
-      <div className={styles.reviewRange}>
-        Showing ranks {pageIndex * DESIGNS_PER_PAGE + 1}–
-        {Math.min((pageIndex + 1) * DESIGNS_PER_PAGE, DESIGN_REVIEW_COUNT)} of{" "}
-        {DESIGN_REVIEW_COUNT}
-      </div>
-      {gate && !gate.passed ? (
-        <div className={styles.error}>
-          <strong>Premium gate blocked editor entry.</strong> Score {gate.score}
-          /100. Resolve the diagnostic below and retry this selection.
+                </footer>
+              </article>
+            </section>
+          ) : null}
         </div>
-      ) : null}
-      {error ? <div className={styles.error}>{error}</div> : null}
+      </div>
     </main>
   );
+}
+
+function ReviewPagination({
+  ariaLabel,
+  disabled,
+  pageCount,
+  pageIndex,
+  reviewCount,
+  onPageChange,
+}: {
+  ariaLabel: string;
+  disabled: boolean;
+  pageCount: number;
+  pageIndex: number;
+  reviewCount: number;
+  onPageChange(index: number): void;
+}) {
+  return (
+    <nav className={styles.pagination} aria-label={ariaLabel}>
+      <button
+        disabled={pageIndex === 0 || disabled}
+        onClick={() => onPageChange(Math.max(0, pageIndex - 1))}
+        type="button"
+      >
+        <span aria-hidden="true">←</span> Previous
+      </button>
+      <div>
+        {Array.from({ length: pageCount }, (_, index) => (
+          <button
+            aria-current={index === pageIndex ? "page" : undefined}
+            aria-label={`Show design ranks ${index * DESIGNS_PER_PAGE + 1} to ${Math.min((index + 1) * DESIGNS_PER_PAGE, reviewCount)}`}
+            className={index === pageIndex ? styles.activePage : undefined}
+            disabled={disabled}
+            key={index}
+            onClick={() => onPageChange(index)}
+            type="button"
+          >
+            {index * DESIGNS_PER_PAGE + 1}–
+            {Math.min((index + 1) * DESIGNS_PER_PAGE, reviewCount)}
+          </button>
+        ))}
+      </div>
+      <button
+        disabled={pageIndex >= pageCount - 1 || disabled}
+        onClick={() => onPageChange(Math.min(pageCount - 1, pageIndex + 1))}
+        type="button"
+      >
+        Next <span aria-hidden="true">→</span>
+      </button>
+    </nav>
+  );
+}
+
+function ReviewStatus({
+  alert,
+  kicker,
+  message,
+  title,
+}: {
+  alert?: boolean;
+  kicker: string;
+  message: string;
+  title: string;
+}) {
+  return (
+    <main className={styles.shell}>
+      <div className={styles.statusFrame}>
+        <header className={styles.productHeader}>
+          <ProductBrand />
+          <span className={styles.draftStatus}>Design review</span>
+        </header>
+        <section
+          className={styles.statusCard}
+          role={alert ? "alert" : "status"}
+        >
+          <span className={styles.eyebrow}>{kicker}</span>
+          <h1>{title}</h1>
+          <p>{message}</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function recommendationReasons(reasons: string[]) {
+  const useful = reasons.filter((reason) => !/^Certified\b/i.test(reason));
+  return (useful.length ? useful : reasons).slice(0, 3);
+}
+
+function sentenceCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function selectionFailureMessage(
+  status: number,
+  code?: string,
+  gate?: CompositionGateReport,
+) {
+  if (status === 401)
+    return "Your session ended before the direction could be saved. Sign in again, then retry.";
+  if (status === 403)
+    return "This website could not be opened with the current account. Return to projects and open it again.";
+  if (code === "PREMIUM_GATE_FAILED" || (gate && !gate.passed))
+    return "MiCirql could not complete the quality checks for this direction. Nothing was published; retry or choose another direction.";
+  if (status >= 500)
+    return "MiCirql could not finish this direction right now. Your draft is safe; please retry.";
+  return "This direction could not be prepared. Your draft is safe; retry or choose another direction.";
 }
 
 function orderFromDraft(ranked: RankedPreset[], site?: Site): RankedPreset[] {

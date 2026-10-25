@@ -19,9 +19,10 @@ import {
   type SectionFamily,
   type SectionVariant,
 } from "@micirql/sections";
+import type { IndustryPackCandidate } from "./industry-packs/types";
 
 export const DESIGN_REVIEW_COUNT = 20;
-export const DENTAL_CATALOG_VERSION = "dental-flagship-2026.10.03";
+export const DENTAL_CATALOG_VERSION = "dental-flagship-2026.10.14";
 export const DENTAL_SUBTYPE = "dental" as const;
 export const DENTAL_REQUIRED_PAGE_PATHS = [
   "/",
@@ -34,27 +35,19 @@ export const DENTAL_REQUIRED_ACTIONS = [
   "lead.create",
   "appointment.request",
 ] as const;
+const DENTAL_OPTIONAL_EVIDENCE_FAMILIES: ReadonlySet<string> = new Set([
+  "testimonials",
+  "gallery",
+  "team",
+] satisfies readonly SectionFamily[]);
 
-export type IndustryDesignPreset = {
-  id: string;
-  catalogVersion: string;
-  recipeId: string;
-  name: string;
-  description: string;
+export type IndustryDesignPreset = Omit<
+  IndustryPackCandidate,
+  "domain" | "subtype" | "archetype"
+> & {
   domain: "clinic";
   subtype: typeof DENTAL_SUBTYPE;
   archetype: Extract<WebsiteArchetype, "healthcare-clinic">;
-  theme: ThemeConfig;
-  variants: Record<SectionFamily, SectionVariant>;
-  sectionOrder: SectionFamily[];
-  paletteStrategy: PaletteStrategy;
-  typographyStrategy: TypographyStrategy;
-  imageStrategy: ImageStrategy;
-  styleTags: string[];
-  rankSeed: number;
-  requiredPagePaths: readonly string[];
-  requiredActions: readonly string[];
-  gate: CompositionGateReport;
 };
 
 type CompositionRecipe = {
@@ -70,7 +63,7 @@ type CompositionRecipe = {
   motion: BrandTokens["motion"];
   imageStrategy: ImageStrategy;
   styleTags: string[];
-  variant: Extract<SectionVariant, 1 | 2>;
+  variants: Record<SectionFamily, SectionVariant>;
   sectionOrder: SectionFamily[];
 };
 
@@ -184,7 +177,7 @@ const TYPOGRAPHY: Record<TypographyStrategy, BrandTokens["typography"]> = {
     ui: "Verdana, Segoe UI, sans-serif",
   },
   "high-impact-display": {
-    display: "Impact, Haettenschweiler, Arial Narrow Bold, sans-serif",
+    display: "Bahnschrift, Aptos Display, Segoe UI, sans-serif",
     body: "Aptos, Segoe UI, Arial, sans-serif",
     ui: "Aptos, Segoe UI, Arial, sans-serif",
   },
@@ -247,11 +240,22 @@ const descriptions: Record<string, string> = {
 };
 
 const o = (...families: SectionFamily[]) => families;
+const v = (seed: number): Record<SectionFamily, SectionVariant> => {
+  const row = seed % 5;
+  const column = Math.floor(seed / 5);
+  return Object.fromEntries(
+    SECTION_FAMILIES.map((family, familyIndex) => [
+      family,
+      (((row + ((familyIndex % 4) + 1) * column + familyIndex * 2) % 5) +
+        1) as SectionVariant,
+    ]),
+  ) as Record<SectionFamily, SectionVariant>;
+};
 const recipe = (
   id: string,
   name: string,
   family: ThemeFamily,
-  variant: 1 | 2,
+  variants: Record<SectionFamily, SectionVariant>,
   paletteStrategy: PaletteStrategy,
   typographyStrategy: TypographyStrategy,
   density: BrandTokens["density"],
@@ -276,16 +280,51 @@ const recipe = (
   motion,
   imageStrategy,
   styleTags,
-  variant,
+  variants,
   sectionOrder,
 });
+
+const DENTAL_CONVERSION_FAMILIES: ReadonlySet<SectionFamily> = new Set([
+  "services",
+  "features",
+  "process",
+  "about",
+  "cta",
+  "contact",
+]);
+
+function visualIdentityForRecipe(item: CompositionRecipe) {
+  const visibleSequence = item.sectionOrder.filter(
+    (family) =>
+      family !== "navbar" &&
+      family !== "footer" &&
+      !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(family),
+  );
+  return {
+    id: `${DENTAL_SUBTYPE}-${item.id}-visual-v1`,
+    visualThesis: item.description,
+    heroComposition: `hero-variant-${item.variants.hero}`,
+    openingRhythm: visibleSequence.slice(0, 4),
+    conversionJourney: item.sectionOrder.filter((family) =>
+      DENTAL_CONVERSION_FAMILIES.has(family),
+    ),
+    surfaceLanguage: [
+      `theme:${item.family}`,
+      `shape:${item.shape}`,
+      `density:${item.density}`,
+      `motion:${item.motion}`,
+      ...item.modifiers.map((modifier) => `modifier:${modifier}`),
+    ],
+    signatureMotifs: item.styleTags.map((tag) => tag.trim().toLowerCase()),
+  };
+}
 
 export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
   recipe(
     "precision",
     "Precision",
     "corporate",
-    1,
+    v(0),
     "light-corporate",
     "corporate-sans",
     "compact",
@@ -310,7 +349,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "calm-clarity",
     "Calm Clarity",
     "minimalist",
-    1,
+    v(1),
     "soft-tint",
     "humanist-sans",
     "comfortable",
@@ -335,7 +374,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "editorial-authority",
     "Editorial Authority",
     "editorial",
-    1,
+    v(2),
     "editorial",
     "editorial-serif",
     "spacious",
@@ -360,7 +399,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "quiet-luxury",
     "Quiet Luxury",
     "luxury",
-    1,
+    v(3),
     "dark-premium",
     "luxury-serif",
     "spacious",
@@ -385,7 +424,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "modern-assurance",
     "Modern Assurance",
     "glass",
-    1,
+    v(4),
     "soft-tint",
     "geometric-modern",
     "comfortable",
@@ -411,7 +450,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "human-connection",
     "Human Connection",
     "organic",
-    1,
+    v(5),
     "soft-tint",
     "friendly-rounded",
     "comfortable",
@@ -437,7 +476,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "future-ready",
     "Future Ready",
     "futuristic",
-    1,
+    v(6),
     "brand-heavy",
     "technical",
     "comfortable",
@@ -462,7 +501,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "story-led",
     "Story Led",
     "cinematic",
-    1,
+    v(7),
     "dark-premium",
     "high-impact-display",
     "spacious",
@@ -487,7 +526,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "bold-momentum",
     "Bold Momentum",
     "maximalist",
-    1,
+    v(8),
     "color-block",
     "high-impact-display",
     "comfortable",
@@ -513,7 +552,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "local-character",
     "Local Character",
     "playful",
-    1,
+    v(9),
     "color-block",
     "friendly-rounded",
     "comfortable",
@@ -539,7 +578,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "structured-confidence",
     "Structured Confidence",
     "corporate",
-    2,
+    v(10),
     "brand-heavy",
     "corporate-sans",
     "comfortable",
@@ -564,7 +603,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "clear-path",
     "Clear Path",
     "minimalist",
-    2,
+    v(11),
     "light-corporate",
     "geometric-modern",
     "compact",
@@ -589,7 +628,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "field-journal",
     "Field Journal",
     "editorial",
-    2,
+    v(12),
     "brand-heavy",
     "humanist-sans",
     "comfortable",
@@ -615,7 +654,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "premium-welcome",
     "Premium Welcome",
     "luxury",
-    2,
+    v(13),
     "editorial",
     "editorial-serif",
     "comfortable",
@@ -641,7 +680,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "contemporary-grid",
     "Contemporary Grid",
     "glass",
-    2,
+    v(14),
     "color-block",
     "corporate-sans",
     "compact",
@@ -666,7 +705,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "warm-authority",
     "Warm Authority",
     "organic",
-    2,
+    v(15),
     "editorial",
     "editorial-serif",
     "spacious",
@@ -691,7 +730,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "evidence-first",
     "Evidence First",
     "futuristic",
-    2,
+    v(16),
     "light-corporate",
     "corporate-sans",
     "compact",
@@ -717,7 +756,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "immersive-narrative",
     "Immersive Narrative",
     "cinematic",
-    2,
+    v(17),
     "brand-heavy",
     "editorial-serif",
     "spacious",
@@ -743,7 +782,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "vibrant-practice",
     "Vibrant Practice",
     "maximalist",
-    2,
+    v(18),
     "brand-heavy",
     "geometric-modern",
     "spacious",
@@ -769,7 +808,7 @@ export const COMPOSITION_RECIPES: readonly CompositionRecipe[] = [
     "gentle-confidence",
     "Gentle Confidence",
     "playful",
-    2,
+    v(19),
     "soft-tint",
     "humanist-sans",
     "spacious",
@@ -803,13 +842,14 @@ export function listIndustryDesignPresets(
         id: "clinic-dental-" + item.id,
         catalogVersion: DENTAL_CATALOG_VERSION,
         recipeId: item.id,
+        visualIdentity: visualIdentityForRecipe(item),
         name: "Dental · " + item.name,
         description: item.description,
         domain: "clinic" as const,
         subtype: DENTAL_SUBTYPE,
         archetype: "healthcare-clinic" as const,
         theme: themeFor(item),
-        variants: variantsFor(item.variant),
+        variants: { ...item.variants },
         sectionOrder: [...item.sectionOrder],
         paletteStrategy: item.paletteStrategy,
         typographyStrategy: item.typographyStrategy,
@@ -827,7 +867,10 @@ export function listIndustryDesignPresets(
   return candidates;
 }
 
-export const INDUSTRY_DESIGN_PRESETS = listIndustryDesignPresets("clinic");
+export const INDUSTRY_DESIGN_PRESETS = listIndustryDesignPresets(
+  "clinic",
+  DENTAL_SUBTYPE,
+);
 
 export function compositionIdentityForPreset(
   candidate: IndustryDesignPreset,
@@ -912,6 +955,20 @@ export function validateCompositionCandidates(
     issues.push("Candidate IDs must be unique.");
   if (new Set(candidates.map(compositionSignature)).size !== candidates.length)
     issues.push("Composition signatures must be unique.");
+  if (
+    new Set(candidates.map(compositionStructuralSignature)).size !==
+    candidates.length
+  )
+    issues.push(
+      "Composition structures must remain unique without relying on theme-prefixed component IDs.",
+    );
+  if (
+    new Set(candidates.map(compositionAboveFoldSignature)).size !==
+    candidates.length
+  )
+    issues.push(
+      "Above-fold compositions must remain unique without relying on palette or typography tokens.",
+    );
   for (const candidate of candidates) {
     const identity = compositionIdentityForPreset(candidate);
     const order = candidate.sectionOrder;
@@ -950,8 +1007,16 @@ export function validateCompositionCandidates(
           uncertified.map((item) => item.componentId).join(", ") +
           ".",
       );
+    const layoutVariants = new Set(
+      SECTION_FAMILIES.map((family) => candidate.variants[family]),
+    );
+    if (layoutVariants.size < 2)
+      issues.push(
+        candidate.id +
+          " must mix certified layout variants per section instead of applying one global variant.",
+      );
   }
-  const depths = dentalComponentDepth(candidates);
+  const catalogDepths = dentalComponentDepth(candidates);
   const minimums: Record<SectionFamily, number> = {
     navbar: 12,
     hero: 20,
@@ -967,14 +1032,23 @@ export function validateCompositionCandidates(
     footer: 12,
   };
   for (const family of SECTION_FAMILIES)
-    if (depths[family] < minimums[family])
+    if (catalogDepths[family] < minimums[family])
       issues.push(
         family +
-          " library depth is " +
-          depths[family] +
+          " certified catalog depth is " +
+          catalogDepths[family] +
           "; at least " +
           minimums[family] +
           " certified components are required.",
+      );
+  const structuralDepths = dentalStructuralDepth(candidates);
+  for (const family of SECTION_FAMILIES)
+    if (structuralDepths[family] < 5)
+      issues.push(
+        family +
+          " structural depth is " +
+          structuralDepths[family] +
+          "; all five certified renderer layouts must be represented.",
       );
   for (let left = 0; left < candidates.length; left += 1) {
     for (let right = left + 1; right < candidates.length; right += 1) {
@@ -1027,17 +1101,95 @@ export function dentalComponentDepth(
   ) as Record<SectionFamily, number>;
 }
 
+/**
+ * Counts renderer/layout variants while deliberately ignoring theme-prefixed
+ * aliases. This prevents ten differently named theme entries from being
+ * reported as ten independent structures when they share one layout.
+ */
+export function dentalStructuralDepth(
+  candidates = INDUSTRY_DESIGN_PRESETS,
+): Record<SectionFamily, number> {
+  return Object.fromEntries(
+    SECTION_FAMILIES.map((family) => [
+      family,
+      new Set(candidates.map((candidate) => candidate.variants[family])).size,
+    ]),
+  ) as Record<SectionFamily, number>;
+}
+
+export function compositionStructuralSignature(
+  value: IndustryDesignPreset | CompositionIdentity,
+): string {
+  const identity =
+    "theme" in value ? compositionIdentityForPreset(value) : value;
+  return JSON.stringify({
+    sectionOrder: identity.sectionOrder.filter(
+      (family) => !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(family),
+    ),
+    layouts: identity.components
+      .filter(
+        (component) => !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(component.family),
+      )
+      .map((component) => ({
+        family: component.family,
+        variant: componentLayoutVariant(component.componentId),
+      })),
+  });
+}
+
+/**
+ * Describes the visitor's first impression without palette or font tokens.
+ * Hidden evidence families and theme labels are deliberately excluded so this
+ * gate cannot pass on metadata or sections visitors cannot see.
+ */
+export function compositionAboveFoldSignature(
+  value: IndustryDesignPreset | CompositionIdentity,
+): string {
+  const identity =
+    "theme" in value ? compositionIdentityForPreset(value) : value;
+  const layouts = new Map(
+    identity.components.map((component) => [
+      component.family,
+      componentLayoutVariant(component.componentId),
+    ]),
+  );
+  const openingSequence = identity.sectionOrder
+    .filter(
+      (family) =>
+        family !== "navbar" &&
+        family !== "footer" &&
+        !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(family),
+    )
+    .slice(0, 4);
+  return JSON.stringify({
+    navbar: layouts.get("navbar"),
+    hero: layouts.get("hero"),
+    openingSequence,
+    openingLayouts: openingSequence.map((family) => layouts.get(family)),
+  });
+}
+
 export function compareCompositionIdentities(
   left: CompositionIdentity,
   right: CompositionIdentity,
 ) {
+  const visibleOrder = (identity: CompositionIdentity) =>
+    identity.sectionOrder.filter(
+      (family) => !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(family),
+    );
   const orderDiffers =
-    JSON.stringify(left.sectionOrder) !== JSON.stringify(right.sectionOrder);
+    JSON.stringify(visibleOrder(left)) !== JSON.stringify(visibleOrder(right));
   const rightComponents = new Map(
-    right.components.map((item) => [item.family, item.componentId]),
+    right.components.map((item) => [
+      item.family,
+      componentLayoutVariant(item.componentId),
+    ]),
   );
   const componentDifferences = left.components.filter(
-    (item) => rightComponents.get(item.family) !== item.componentId,
+    (item) =>
+      !DENTAL_OPTIONAL_EVIDENCE_FAMILIES.has(item.family) &&
+      rightComponents.get(item.family) !==
+        componentLayoutVariant(item.componentId),
   ).length;
   const visualValues = [
     left.designSystem !== right.designSystem,
@@ -1054,18 +1206,28 @@ export function compareCompositionIdentities(
     visualValues.filter(Boolean).length;
   const structuralDifference = orderDiffers || componentDifferences >= 2;
   const visualDifference = visualValues.some(Boolean);
+  const aboveFoldDifference =
+    compositionAboveFoldSignature(left) !==
+    compositionAboveFoldSignature(right);
   return {
     differingDimensions,
     componentDifferences,
     structuralDifference,
     visualDifference,
+    aboveFoldDifference,
     materiallyDifferent:
-      differingDimensions >= 4 && structuralDifference && visualDifference,
+      differingDimensions >= 4 &&
+      structuralDifference &&
+      visualDifference &&
+      aboveFoldDifference,
   };
 }
 
+function componentLayoutVariant(componentId: string): string {
+  return componentId.match(/-(\d{3})$/)?.[1] ?? "unknown";
+}
+
 export function isDentalSubtype(value?: string | null): boolean {
-  if (!value?.trim()) return true;
   return isExplicitDentalSubtype(value);
 }
 
@@ -1076,14 +1238,6 @@ export function isExplicitDentalSubtype(value?: string | null): boolean {
       value,
     ),
   );
-}
-
-function variantsFor(
-  variant: Extract<SectionVariant, 1 | 2>,
-): Record<SectionFamily, SectionVariant> {
-  return Object.fromEntries(
-    SECTION_FAMILIES.map((family) => [family, variant]),
-  ) as Record<SectionFamily, SectionVariant>;
 }
 
 function themeFor(item: CompositionRecipe): ThemeConfig {

@@ -52,17 +52,22 @@ export type UploadGateway = {
     fileName: string;
     contentType: string;
     bytes: number;
+    kind?: "image" | "logo";
   }): Promise<{
     uploadId: string;
     assetId: string;
     uploadUrl: string;
     headers: Record<string, string>;
     expiresAt: string;
+    bodyFormat?: "raw" | "multipart";
   }>;
   finalize(args: {
     principal: UploadPrincipal;
     uploadId: string;
+    siteId?: string;
     name?: string;
+    alt?: string;
+    kind?: "image" | "logo";
   }): Promise<AssetRecord>;
 };
 

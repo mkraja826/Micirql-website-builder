@@ -7,12 +7,16 @@ import {
   type Site,
 } from "@micirql/schema";
 import { seedSectionCatalog, type SectionFamily } from "@micirql/sections";
-import { applyIndustryPreset } from "../apps/builder/app/apply-industry-preset";
+import {
+  DENTAL_HERO_ASSETS_BY_IMAGE_STRATEGY,
+  applyIndustryPreset,
+} from "../apps/builder/app/apply-industry-preset";
 import { POST as renderPreview } from "../apps/builder/app/api/preview/route";
 import { demoAssetById } from "../apps/builder/app/demo-assets";
 import {
   DENTAL_CATALOG_VERSION,
   DESIGN_REVIEW_COUNT,
+  compositionAboveFoldSignature,
   compositionIdentityForPreset,
   listIndustryDesignPresets,
   type IndustryDesignPreset,
@@ -46,6 +50,13 @@ const compositions =
     ? allCompositions.slice(0, 1)
     : allCompositions;
 
+const readableDisplayCandidateIds = new Set([
+  "clinic-dental-modern-assurance",
+  "clinic-dental-contemporary-grid",
+  "clinic-dental-immersive-narrative",
+]);
+const visualEvidenceWidths = new Set([390, 768, 1440]);
+
 test.describe("certified dental compositions: rendered premium gate", () => {
   test.describe.configure({ mode: "parallel" });
 
@@ -59,6 +70,8 @@ test.describe("certified dental compositions: rendered premium gate", () => {
       imageStrategy: IndustryDesignPreset["imageStrategy"];
       sectionOrder: string;
       geometry: string;
+      structuralGeometry: string;
+      aboveFold: string;
       palette: string;
       typography: string;
       heroMedia: string;
@@ -66,6 +79,10 @@ test.describe("certified dental compositions: rendered premium gate", () => {
 
     for (const preset of presets) {
       const candidate = siteSchema.parse(applyIndustryPreset(scaffold, preset));
+      if (!candidate.generation) {
+        throw new Error("The generated Dental candidate is missing metadata.");
+      }
+      candidate.generation.selectedCandidateId = preset.id;
       const storedHero = candidate.pages[0]?.sections.find((section) =>
         section.component.componentId.includes("-HERO-"),
       );
@@ -79,6 +96,10 @@ test.describe("certified dental compositions: rendered premium gate", () => {
       expect(storedImage?.sourceReference).toMatch(
         /^https:\/\/www\.pexels\.com\/photo\//,
       );
+      expect(
+        DENTAL_HERO_ASSETS_BY_IMAGE_STRATEGY[preset.imageStrategy],
+        `${preset.id} must use media assigned to its approved imagery direction`,
+      ).toContain(storedImage?.assetId);
       const response = await renderPreview(
         new Request("https://builder.micirql.test/api/preview", {
           method: "POST",
@@ -93,6 +114,7 @@ test.describe("certified dental compositions: rendered premium gate", () => {
 
       const payload = (await response.json()) as ActualPreviewPayload;
       expect(payload.ok).toBeTruthy();
+      expect(payload.candidateId).toBe(preset.id);
       expect(payload.sections).toHaveLength(12);
       const sections = payload.sections ?? [];
       const sectionFamilies = sections.map((section) => {
@@ -118,6 +140,13 @@ test.describe("certified dental compositions: rendered premium gate", () => {
             version: section.componentVersion,
           })),
         ),
+        structuralGeometry: JSON.stringify(
+          sections.map((section, index) => ({
+            family: sectionFamilies[index],
+            variant: section.componentId.match(/-(\d{3})$/)?.[1] ?? "unknown",
+          })),
+        ),
+        aboveFold: compositionAboveFoldSignature(preset),
         palette: JSON.stringify(
           Object.entries(themeStyle)
             .filter(([key]) => key.startsWith("--mi-color-"))
@@ -150,6 +179,19 @@ test.describe("certified dental compositions: rendered premium gate", () => {
 
     expect(rendered).toHaveLength(DESIGN_REVIEW_COUNT);
     expect(
+      new Set(rendered.map(({ aboveFold }) => aboveFold)).size,
+      "all 20 candidates must have a distinct above-fold composition without palette or font tokens",
+    ).toBe(DESIGN_REVIEW_COUNT);
+    for (const candidate of rendered) {
+      const layouts = JSON.parse(candidate.structuralGeometry) as Array<{
+        variant: string;
+      }>;
+      expect(
+        new Set(layouts.map(({ variant }) => variant)).size,
+        `${candidate.id} must choose renderer layouts per section instead of globally`,
+      ).toBeGreaterThan(1);
+    }
+    expect(
       new Set(
         rendered.map(({ geometry, palette, typography }) =>
           JSON.stringify({ geometry, palette, typography }),
@@ -178,26 +220,32 @@ test.describe("certified dental compositions: rendered premium gate", () => {
       }
     }
 
-    const mediaByStrategy = new Map<string, string>();
+    const mediaByStrategy = new Map<string, Set<string>>();
     for (const candidate of rendered) {
       expect(
         candidate.heroMedia,
         `${candidate.id} must render licensed dental media in the hero`,
       ).not.toBe("");
-      const existing = mediaByStrategy.get(candidate.imageStrategy);
-      if (existing) {
-        expect(
-          candidate.heroMedia,
-          `${candidate.imageStrategy} must resolve deterministically`,
-        ).toBe(existing);
-      } else {
-        mediaByStrategy.set(candidate.imageStrategy, candidate.heroMedia);
-      }
+      const strategyMedia =
+        mediaByStrategy.get(candidate.imageStrategy) ?? new Set<string>();
+      strategyMedia.add(candidate.heroMedia);
+      mediaByStrategy.set(candidate.imageStrategy, strategyMedia);
     }
     expect(
-      new Set(mediaByStrategy.values()).size,
-      "each approved image strategy must create a visibly different hero-media direction",
-    ).toBe(mediaByStrategy.size);
+      new Set(rendered.map((candidate) => candidate.heroMedia)).size,
+      "each Top-20 candidate must open with a distinct licensed hero asset",
+    ).toBe(DESIGN_REVIEW_COUNT);
+    for (const [strategy, assets] of mediaByStrategy) {
+      const strategyCount = rendered.filter(
+        (candidate) => candidate.imageStrategy === strategy,
+      ).length;
+      if (strategyCount > 1) {
+        expect(
+          assets.size,
+          `${strategy} candidates must rotate through distinct licensed assets`,
+        ).toBeGreaterThan(1);
+      }
+    }
   });
 
   test("the rendered dental appointment form submits through the production gateway contract", async ({
@@ -300,6 +348,12 @@ test.describe("certified dental compositions: rendered premium gate", () => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     const signatures: string[] = [];
+    const aboveFoldBySystem: Array<{
+      id: string;
+      designSystem: string;
+      heroVariant: string;
+      signature: string;
+    }> = [];
 
     for (const composition of allCompositions) {
       const componentByFamily = Object.fromEntries(
@@ -335,17 +389,34 @@ test.describe("certified dental compositions: rendered premium gate", () => {
           const headingStyle = getComputedStyle(heading);
           const mediaStyle = getComputedStyle(media);
           const surfaceStyle = getComputedStyle(surface);
+          const headingRect = heading.getBoundingClientRect();
+          const mediaRect = media.getBoundingClientRect();
           return {
             columns: layoutStyle.gridTemplateColumns,
+            areas: layoutStyle.gridTemplateAreas,
             align: layoutStyle.alignItems,
+            justify: layoutStyle.justifyItems,
             headingFamily: headingStyle.fontFamily,
             headingWeight: headingStyle.fontWeight,
             headingSize: headingStyle.fontSize,
             headingLeading: headingStyle.lineHeight,
             headingTransform: headingStyle.textTransform,
+            headingAlign: headingStyle.textAlign,
+            headingGeometry: [
+              Math.round(headingRect.x),
+              Math.round(headingRect.y),
+              Math.round(headingRect.width),
+              Math.round(headingRect.height),
+            ].join("x"),
             mediaOrder: mediaStyle.order,
             mediaRadius: mediaStyle.borderRadius,
             mediaShadow: mediaStyle.boxShadow,
+            mediaGeometry: [
+              Math.round(mediaRect.x),
+              Math.round(mediaRect.y),
+              Math.round(mediaRect.width),
+              Math.round(mediaRect.height),
+            ].join("x"),
             surfaceBackground: surfaceStyle.backgroundImage,
           };
         });
@@ -378,16 +449,59 @@ test.describe("certified dental compositions: rendered premium gate", () => {
         });
 
       signatures.push(JSON.stringify({ hero, services }));
+      aboveFoldBySystem.push({
+        id: composition.id,
+        designSystem: composition.identity.designSystem,
+        heroVariant: heroId.match(/-(\d{3})$/)?.[1] ?? "unknown",
+        signature: JSON.stringify({
+          columns: hero.columns,
+          areas: hero.areas,
+          align: hero.align,
+          justify: hero.justify,
+          headingSize: hero.headingSize,
+          headingLeading: hero.headingLeading,
+          headingTransform: hero.headingTransform,
+          headingAlign: hero.headingAlign,
+          headingGeometry: hero.headingGeometry,
+          mediaOrder: hero.mediaOrder,
+          mediaRadius: hero.mediaRadius,
+          mediaShadow: hero.mediaShadow,
+          mediaGeometry: hero.mediaGeometry,
+          surfaceBackground: hero.surfaceBackground,
+        }),
+      });
     }
 
     expect(
       new Set(signatures).size,
       "each certified candidate must render a distinct visual signature",
     ).toBe(DESIGN_REVIEW_COUNT);
+
+    const systems = Map.groupBy(
+      aboveFoldBySystem,
+      ({ designSystem }) => designSystem,
+    );
+    expect(systems.size).toBe(10);
+    for (const [designSystem, pair] of systems) {
+      expect(
+        pair,
+        `${designSystem} must expose two dental directions`,
+      ).toHaveLength(2);
+      expect(
+        new Set(pair.map(({ heroVariant }) => heroVariant)).size,
+        `${designSystem} must change the hero renderer layout, not only tokens`,
+      ).toBe(2);
+      expect(
+        new Set(pair.map(({ signature }) => signature)).size,
+        `${designSystem} must produce perceptibly different above-fold geometry`,
+      ).toBe(2);
+    }
   });
 
   for (const composition of compositions) {
-    test(`${composition.id} across all premium viewports`, async ({ page }) => {
+    test(`${composition.id} across all premium viewports`, async ({
+      page,
+    }, testInfo) => {
       test.setTimeout(180_000);
       await page.setViewportSize(premiumViewports[0]);
       await mountComposition(page, composition.identity);
@@ -455,6 +569,13 @@ test.describe("certified dental compositions: rendered premium gate", () => {
               )
               .map(describeElement);
 
+            const heroHeading = document.querySelector<HTMLElement>(
+              '[data-section-family="hero"] h1',
+            );
+            const heroHeadingStyle = heroHeading
+              ? getComputedStyle(heroHeading)
+              : undefined;
+
             return {
               overflowPx: Math.max(
                 0,
@@ -465,9 +586,21 @@ test.describe("certified dental compositions: rendered premium gate", () => {
               clippedControls,
               collidingControls,
               overflowingHeadings,
+              heroTypography: heroHeadingStyle
+                ? {
+                    fontSize: Number.parseFloat(heroHeadingStyle.fontSize),
+                    lineHeight: Number.parseFloat(heroHeadingStyle.lineHeight),
+                    fontWeight: Number.parseInt(
+                      heroHeadingStyle.fontWeight,
+                      10,
+                    ),
+                    textTransform: heroHeadingStyle.textTransform,
+                  }
+                : undefined,
             };
 
             function isVisible(element: HTMLElement) {
+              if (element.closest('[aria-hidden="true"]')) return false;
               const style = getComputedStyle(element);
               const rect = element.getBoundingClientRect();
               return (
@@ -550,8 +683,42 @@ test.describe("certified dental compositions: rendered premium gate", () => {
             `clipped or overflowing headings: ${JSON.stringify(geometry.overflowingHeadings)}`,
           ).toEqual([]);
 
+          if (readableDisplayCandidateIds.has(composition.id)) {
+            expect(geometry.heroTypography).toBeDefined();
+            expect(
+              geometry.heroTypography?.fontWeight,
+              "reviewed Dental display headings must use a readable, moderate weight",
+            ).toBeLessThanOrEqual(700);
+            expect(
+              (geometry.heroTypography?.lineHeight ?? 0) /
+                (geometry.heroTypography?.fontSize ?? 1),
+              "reviewed Dental display headings must keep open line spacing",
+            ).toBeGreaterThanOrEqual(0.98);
+            expect(
+              geometry.heroTypography?.fontSize,
+              "reviewed Dental display headings must not become billboard-sized",
+            ).toBeLessThanOrEqual(72.1);
+            expect(
+              geometry.heroTypography?.textTransform,
+              "reviewed Dental display headings must preserve readable case",
+            ).toBe("none");
+          }
+
           await verifyDocumentSemantics(page);
           await verifyAutomatedAccessibility(page);
+
+          if (
+            readableDisplayCandidateIds.has(composition.id) &&
+            visualEvidenceWidths.has(viewport.width)
+          ) {
+            await page.screenshot({
+              path: testInfo.outputPath(
+                `${composition.id}-${viewport.width}x${viewport.height}.png`,
+              ),
+              fullPage: true,
+              animations: "disabled",
+            });
+          }
         });
       }
     });
@@ -926,6 +1093,7 @@ type ActualPreviewPayload = {
   siteId?: string;
   pageId?: string;
   theme?: string;
+  candidateId?: string;
   themeStyle?: Record<string, string>;
   sections?: Array<{
     id: string;

@@ -21,6 +21,7 @@ import {
   createStaticRendererRegistry,
   type FunctionBindingResolver,
   type RendererRegistry,
+  type ResolvedBrandMark,
 } from "@micirql/renderer";
 import { siteVersionSchema } from "@micirql/schema";
 import {
@@ -28,6 +29,10 @@ import {
   seedSectionRegistryEntries,
 } from "@micirql/sections";
 import { nativeFunctionCatalog } from "@micirql/functions";
+import {
+  resolveBrandMarkForSite,
+  resolvePersistedBrandMarkForSite,
+} from "./render-brand-mark";
 
 export type PublishRuntime = {
   publish(
@@ -46,6 +51,11 @@ export type ProductionPublishBindings = {
   domains?: DomainActivator;
   cache?: PublishCache;
   liveUrls?: LiveUrlResolver;
+  brandMarks?: {
+    resolve(
+      site: Parameters<typeof resolveBrandMarkForSite>[0],
+    ): Promise<ResolvedBrandMark | undefined>;
+  };
 };
 
 let runtime: PublishRuntime | undefined;
@@ -75,6 +85,9 @@ export function configureProductionPublishRuntime(
     registry: bindings.registry,
     functions: bindings.functions,
     liveUrls,
+    brandMarks: bindings.brandMarks ?? {
+      resolve: resolvePersistedBrandMarkForSite,
+    },
     ...(bindings.domains ? { domains: bindings.domains } : {}),
     ...(bindings.cache ? { cache: bindings.cache } : {}),
   });
@@ -110,6 +123,7 @@ function createSupabaseRestPublishRuntime(): PublishRuntime | undefined {
     functions,
     hasher,
     versionIds: createVersionIdFactory(),
+    brandMarks: { resolve: resolvePersistedBrandMarkForSite },
   };
 
   return {

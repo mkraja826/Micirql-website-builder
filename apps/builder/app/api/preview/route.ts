@@ -12,7 +12,12 @@ import {
   type SectionFamily,
 } from "@micirql/sections";
 import { demoAssetById } from "../../demo-assets";
+import {
+  resolveBrandMarkForSite,
+  resolvePersistedBrandMarkForSite,
+} from "../../render-brand-mark";
 import { nativeFunctionCatalog } from "@micirql/functions";
+import { authorizeSavedSite, PublishApiError } from "../publish/authorization";
 
 const previewEntries = seedSectionRegistryEntries.map((entry) => ({
   ...entry,
@@ -66,6 +71,7 @@ export async function POST(request: Request) {
 
     const site = bridgeLegacyPreviewComponents(parsed.data);
     const path = typeof body.path === "string" ? body.path : "/";
+    const brandMark = await resolvePreviewBrandMark(request, site);
     const prepared = await preparePage({
       site,
       path,
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
       registry,
       functions,
       mode: "preview",
+      ...(brandMark ? { brandMark } : {}),
     });
     if (!prepared.ok)
       return Response.json(
@@ -85,6 +92,10 @@ export async function POST(request: Request) {
       pageId: prepared.value.page.id,
       siteId: prepared.value.site.siteId,
       theme: prepared.value.site.theme.family,
+      domain: prepared.value.site.domain,
+      subtype: prepared.value.site.subtype || undefined,
+      candidateId:
+        prepared.value.site.generation?.selectedCandidateId || undefined,
       themeStyle: prepared.value.themeStyle,
       sections: prepared.value.sections.map(
         ({ section, component, props }) => ({
@@ -97,6 +108,15 @@ export async function POST(request: Request) {
       seo: prepared.value.seo,
     });
   } catch (error) {
+    if (error instanceof PublishApiError) {
+      return Response.json(
+        {
+          ok: false,
+          issues: [{ code: error.code, message: error.message }],
+        },
+        { status: error.status },
+      );
+    }
     return Response.json(
       {
         ok: false,
@@ -113,6 +133,31 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+async function resolvePreviewBrandMark(request: Request, site: Site) {
+  if (!site.theme.brand.logoAssetId?.trim()) return undefined;
+
+  // Global curated assets contain no tenant-owned data and are safe to resolve
+  // before authentication. Workspace assets require an owned saved draft.
+  const publicBrandMark = await resolveBrandMarkForSite(site);
+  if (publicBrandMark) return publicBrandMark;
+
+  if (process.env.NODE_ENV !== "production") {
+    const developmentBrandMark = await resolveBrandMarkForSite(site, {
+      allowWorkspaceLocalLookup: true,
+    });
+    if (developmentBrandMark) return developmentBrandMark;
+  }
+
+  await authorizeSavedSite(
+    request as Parameters<typeof authorizeSavedSite>[0],
+    {
+      workspaceId: site.workspaceId,
+      siteId: site.siteId,
+    },
+  );
+  return resolvePersistedBrandMarkForSite(site);
 }
 
 function bridgeLegacyPreviewComponents(site: Site): Site {
@@ -159,12 +204,23 @@ function normalizeProps(props: Record<string, unknown>) {
     "Untitled section";
   const description = stringValue(props.description) ?? stringValue(props.body);
   const image = resolveImage(props.image);
+  const items = Array.isArray(props.items)
+    ? props.items.map((item) => normalizeItemImage(item))
+    : props.items;
   return {
     ...props,
     title,
     ...(description ? { description } : {}),
     ...(image ? { image } : {}),
+    ...(Array.isArray(items) ? { items } : {}),
   };
+}
+
+function normalizeItemImage(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const item = value as Record<string, unknown>;
+  const image = resolveImage(item.image);
+  return image ? { ...item, image } : item;
 }
 
 function resolveImage(
@@ -172,20 +228,37 @@ function resolveImage(
 ):
   | { src: string; alt: string; focalPoint?: { x: number; y: number } }
   | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return { src: value.trim(), alt: "" };
+  }
   if (!value || typeof value !== "object") return undefined;
   const record = value as {
     assetId?: unknown;
+    src?: unknown;
+    originalUrl?: unknown;
     alt?: unknown;
     focalPoint?: unknown;
   };
-  if (typeof record.assetId !== "string") return undefined;
-  const asset = demoAssetById(record.assetId);
-  if (!asset) return undefined;
-  const focalPoint = point(record.focalPoint) ?? asset.focalPoint;
+  const asset =
+    typeof record.assetId === "string"
+      ? demoAssetById(record.assetId)
+      : undefined;
+  const source =
+    asset?.originalUrl ??
+    (typeof record.src === "string" && record.src.trim()
+      ? record.src.trim()
+      : typeof record.originalUrl === "string" && record.originalUrl.trim()
+        ? record.originalUrl.trim()
+        : undefined);
+  if (!source) return undefined;
+  const focalPoint = point(record.focalPoint) ?? asset?.focalPoint;
   return {
-    src: asset.originalUrl,
-    alt: typeof record.alt === "string" ? record.alt : asset.alt,
-    focalPoint,
+    src: source,
+    alt:
+      typeof record.alt === "string"
+        ? record.alt
+        : (asset?.alt ?? "Website image"),
+    ...(focalPoint ? { focalPoint } : {}),
   };
 }
 

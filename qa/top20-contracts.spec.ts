@@ -1,12 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { getDomainPack } from "@micirql/domains";
-import {
-  SCHEMA_VERSION,
-  siteSchema,
-  type CompositionIdentity,
-  type Site,
-} from "@micirql/schema";
+import { SCHEMA_VERSION, siteSchema, type Site } from "@micirql/schema";
 import type { SectionFamily } from "@micirql/sections";
 import {
   createEditorHistory,
@@ -16,11 +11,11 @@ import {
   undoEditor,
 } from "@micirql/workspace";
 import {
-  DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY,
   applyCertifiedDentalMedia,
   applyIndustryPreset,
   certifiedDentalMediaIssues,
 } from "../apps/builder/app/apply-industry-preset";
+import { demoAssetById } from "../apps/builder/app/demo-assets";
 import {
   DENTAL_HERO_COPY_LIMITS,
   createDentalStructuralScaffold,
@@ -35,8 +30,12 @@ import {
 import {
   DENTAL_CATALOG_VERSION,
   DESIGN_REVIEW_COUNT,
+  compareCompositionIdentities,
+  compositionAboveFoldSignature,
   compositionIdentityForPreset,
   compositionSignature,
+  compositionStructuralSignature,
+  dentalStructuralDepth,
   listIndustryDesignPresets,
   validateCompositionCandidates,
   type IndustryDesignPreset,
@@ -44,6 +43,11 @@ import {
 import { resolveOnboardingStatus } from "../apps/builder/app/onboarding-status";
 import { rankPresets } from "../apps/builder/app/preset-ranking";
 import { normalizeServiceInput } from "../apps/builder/app/service-normalization";
+import {
+  applyDentalVisitorContentHygiene,
+  containsAuthoringInstruction,
+  dentalVisitorContentIssues,
+} from "../apps/builder/app/dental-content-hygiene";
 import { parseProviderJson } from "../supabase/functions/ai-gateway/json";
 
 const requiredDentalFamilies = [
@@ -94,7 +98,7 @@ test.describe("flagship dental Top-20 contracts", () => {
     expect(mergeContentSource).not.toMatch(/\bnext\.seoBlueprint\b/);
     expect(mergeContentSource).toContain("page.seo.title =");
     expect(mergeContentSource).toContain("section.props =");
-    expect(gateway).toContain("type Provider = 'nvidia'");
+    expect(gateway).toMatch(/type Provider = ["']nvidia["']/);
     expect(gateway).toContain("enable_thinking: false");
     expect(gateway).not.toContain("GEMINI_API_KEY");
     expect(gateway).not.toContain("callGemini");
@@ -134,6 +138,15 @@ test.describe("flagship dental Top-20 contracts", () => {
       20,
     );
     expect(new Set(identities.map(compositionSignature)).size).toBe(20);
+    expect(new Set(identities.map(compositionStructuralSignature)).size).toBe(
+      20,
+    );
+    expect(new Set(identities.map(compositionAboveFoldSignature)).size).toBe(
+      20,
+    );
+    expect(dentalStructuralDepth(presets)).toEqual(
+      Object.fromEntries(requiredDentalFamilies.map((family) => [family, 5])),
+    );
 
     for (const [index, identity] of identities.entries()) {
       const preset = presets[index];
@@ -145,6 +158,10 @@ test.describe("flagship dental Top-20 contracts", () => {
       expect(identity.subtype).toBe("dental");
       expect(identity.catalogVersion).toBe(DENTAL_CATALOG_VERSION);
       expect(identity.archetype).toBe("healthcare-clinic");
+      expect(
+        new Set(preset?.variants ? Object.values(preset.variants) : []).size,
+        `${preset?.id} must choose layouts per section instead of globally`,
+      ).toBeGreaterThan(1);
     }
   });
 
@@ -166,7 +183,7 @@ test.describe("flagship dental Top-20 contracts", () => {
 
     expect(title).toBe("Anil dental care");
     expect(title.length).toBeLessThanOrEqual(DENTAL_HERO_COPY_LIMITS.title);
-    expect(description).toContain(service);
+    expect(description).toContain("Crowns, Root Canal, and Teeth Alignment");
     expect(description.length).toBeLessThanOrEqual(
       DENTAL_HERO_COPY_LIMITS.description,
     );
@@ -180,6 +197,313 @@ test.describe("flagship dental Top-20 contracts", () => {
       expect(candidateHero?.props.title, preset.id).toBe(title);
       expect(candidateHero?.props.description, preset.id).toBe(description);
     }
+
+    const serviceSections = scaffold.pages.flatMap((page) =>
+      page.sections.filter((section) =>
+        section.component.componentId.startsWith("services."),
+      ),
+    );
+    for (const section of serviceSections) {
+      expect(
+        (section.props.items as Array<{ title: string }>).map(
+          (item) => item.title,
+        ),
+      ).toEqual(["Crowns", "Root Canal", "Teeth Alignment", "Teeth Whitening"]);
+    }
+  });
+
+  test("generates useful dental depth and licensed supporting media on every page", () => {
+    const scaffold = createDentalStructuralScaffold(pearlDentalFixture(), {
+      businessName: "Mamatha Dental Care",
+      location: "Haliya, Telangana",
+      services: ["Dental implants", "Crowns", "Dentures", "Root canal"],
+      goals: ["Request appointments"],
+      languages: ["en"],
+      notes: "Best dental care within budget.",
+    });
+    const generated = applyIndustryPreset(
+      scaffold,
+      dentalPresets().find(
+        (preset) => preset.recipeId === "contemporary-grid",
+      )!,
+    );
+
+    for (const page of generated.pages) {
+      const visible = page.sections.filter((section) => !section.hidden);
+      const images = visible.flatMap((section) => {
+        const topLevel =
+          section.props.image && typeof section.props.image === "object"
+            ? [section.props.image]
+            : [];
+        const itemImages = Array.isArray(section.props.items)
+          ? section.props.items.flatMap((item) =>
+              item &&
+              typeof item === "object" &&
+              !Array.isArray(item) &&
+              "image" in item
+                ? [(item as Record<string, unknown>).image]
+                : [],
+            )
+          : [];
+        return [...topLevel, ...itemImages];
+      });
+      expect(
+        images.length,
+        `${page.path} needs more than a lone hero image`,
+      ).toBeGreaterThanOrEqual(4);
+      expect(
+        new Set(
+          images.map((image) =>
+            String((image as { assetId?: string } | undefined)?.assetId),
+          ),
+        ).size,
+        `${page.path} should not repeat its supporting media`,
+      ).toBe(images.length);
+    }
+
+    const serviceItems = generated.pages
+      .flatMap((page) => page.sections)
+      .filter((section) => section.component.componentId.includes("-SERV-"))
+      .flatMap(
+        (section) => section.props.items as Array<Record<string, unknown>>,
+      );
+    expect(serviceItems).not.toHaveLength(0);
+    expect(
+      new Set(serviceItems.map((item) => String(item.description))).size,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      serviceItems.every(
+        (item) =>
+          String(item.description).length >= 120 &&
+          typeof (item.image as { assetId?: unknown } | undefined)?.assetId ===
+            "string",
+      ),
+    ).toBeTruthy();
+    const heroAssetIds = new Set(
+      generated.pages.flatMap((page) =>
+        page.sections
+          .filter((section) => section.component.componentId.includes("-HERO-"))
+          .flatMap((section) => {
+            const assetId = (section.props.image as { assetId?: unknown })
+              ?.assetId;
+            return typeof assetId === "string" ? [assetId] : [];
+          }),
+      ),
+    );
+    const supportingAssetIds = generated.pages.flatMap((page) =>
+      page.sections
+        .filter(
+          (section) =>
+            !section.hidden &&
+            /-(?:ABOUT|FEAT|SERV)-/.test(section.component.componentId),
+        )
+        .flatMap((section) =>
+          Array.isArray(section.props.items)
+            ? section.props.items.flatMap((item) => {
+                if (!item || typeof item !== "object" || Array.isArray(item)) {
+                  return [];
+                }
+                const assetId = (
+                  (item as Record<string, unknown>).image as
+                    { assetId?: unknown } | undefined
+                )?.assetId;
+                return typeof assetId === "string" ? [assetId] : [];
+              })
+            : [],
+        ),
+    );
+    expect(
+      supportingAssetIds.filter((assetId) => heroAssetIds.has(assetId)),
+      "site heroes must not be recycled as supporting cards",
+    ).toEqual([]);
+    const supportingUseCounts = supportingAssetIds.reduce(
+      (counts, assetId) => counts.set(assetId, (counts.get(assetId) ?? 0) + 1),
+      new Map<string, number>(),
+    );
+    expect(Math.max(...supportingUseCounts.values())).toBeLessThanOrEqual(2);
+    expect(
+      supportingAssetIds.some((assetId) =>
+        demoAssetById(assetId)?.tags.includes("people"),
+      ),
+      "the generated story needs licensed human consultation imagery",
+    ).toBeTruthy();
+    expect(certifiedDentalMediaIssues(generated)).toEqual([]);
+  });
+
+  test("only exposes a Doctors page when verified clinician data exists", () => {
+    const brief = {
+      businessName: "Radhika Dental",
+      location: "Hyderabad, Telangana",
+      services: ["Dental implants", "Root canal treatment"],
+      goals: ["Request appointments"],
+      languages: ["en"],
+    };
+    const withoutClinicians = createDentalStructuralScaffold(
+      pearlDentalFixture(),
+      brief,
+    );
+    expect(
+      withoutClinicians.pages.some((page) => page.path === "/doctors"),
+    ).toBeFalsy();
+    expect(
+      withoutClinicians.navigation.some((item) => item.href === "/doctors"),
+    ).toBeFalsy();
+
+    const withClinicians = createDentalStructuralScaffold(
+      pearlDentalFixture(),
+      {
+        ...brief,
+        clinicians: [
+          {
+            name: "Dr. Radhika Rao",
+            role: "Dentist",
+            credentials: "BDS",
+            biography: "Provides general dental consultations.",
+          },
+        ],
+      },
+    );
+    const doctorsPage = withClinicians.pages.find(
+      (page) => page.path === "/doctors",
+    );
+    const team = doctorsPage?.sections.find((section) =>
+      /(?:-TEAM-|^team\.)/i.test(section.component.componentId),
+    );
+    expect(doctorsPage).toBeDefined();
+    expect(
+      withClinicians.navigation.some((item) => item.href === "/doctors"),
+    ).toBeTruthy();
+    expect(team?.hidden).toBeFalsy();
+    expect(team?.props.items).toEqual([
+      expect.objectContaining({
+        name: "Dr. Radhika Rao",
+        eyebrow: "Dentist",
+        description: "Dentist · BDS · Provides general dental consultations.",
+      }),
+    ]);
+  });
+
+  test("hides unsupported evidence sections and removes authoring instructions", () => {
+    const scaffold = createDentalStructuralScaffold(pearlDentalFixture(), {
+      businessName: "Anil Dental Care",
+      location: "Hyderabad, Telangana",
+      services: ["Crowns Root Canal Teeth Whitening"],
+      goals: ["Request appointments"],
+      languages: ["en"],
+    });
+    const optional = scaffold.pages.flatMap((page) =>
+      page.sections.filter((section) =>
+        /(?:-TEST-|-GALL-|-TEAM-|^(?:testimonials|gallery|team)\.)/i.test(
+          section.component.componentId,
+        ),
+      ),
+    );
+
+    expect(optional.length).toBeGreaterThan(0);
+    expect(optional.every((section) => section.hidden)).toBeTruthy();
+    expect(
+      optional.every(
+        (section) =>
+          Array.isArray(section.props.items) && !section.props.items.length,
+      ),
+    ).toBeTruthy();
+    expect(containsAuthoringInstruction(scaffold)).toBeFalsy();
+    expect(dentalVisitorContentIssues(scaffold)).toEqual([]);
+  });
+
+  test("replaces repeated visible dental headings while preserving the page hero", () => {
+    const source = createDentalStructuralScaffold(pearlDentalFixture(), {
+      businessName: "Radhika Dental",
+      location: "Hyderabad, Telangana",
+      services: ["Dental Implants", "Root Canal"],
+      goals: ["Request appointments"],
+      languages: ["en"],
+    });
+    const servicesPage = source.pages.find((page) => page.path === "/services");
+    const hero = servicesPage?.sections.find((section) =>
+      /(?:-HERO-|^hero\.)/i.test(section.component.componentId),
+    );
+    const services = servicesPage?.sections.find((section) =>
+      /(?:-SERV-|^services\.)/i.test(section.component.componentId),
+    );
+    expect(hero).toBeDefined();
+    expect(services).toBeDefined();
+    hero!.props.title = "Explore dental services";
+    hero!.props.description =
+      "Explore Dental Implants and Root Canal from Radhika Dental, then request an appointment to discuss suitable care pathways, alternatives, timing and follow-up before making a decision…";
+    services!.props.title = "  Explore Dental services  ";
+
+    const result = applyDentalVisitorContentHygiene(source);
+    const cleanedPage = result.site.pages.find(
+      (page) => page.path === "/services",
+    )!;
+    const cleanedHero = cleanedPage.sections.find(
+      (section) => section.id === hero!.id,
+    )!;
+    const cleanedServices = cleanedPage.sections.find(
+      (section) => section.id === services!.id,
+    )!;
+    const visibleHeadings = cleanedPage.sections
+      .filter(
+        (section) =>
+          !section.hidden &&
+          !/(?:-NAV-|-FOOT-|^(?:navbar|footer)\.)/i.test(
+            section.component.componentId,
+          ),
+      )
+      .flatMap((section) => {
+        const heading = section.props.title ?? section.props.heading;
+        return typeof heading === "string" && heading.trim()
+          ? [heading.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ")]
+          : [];
+      });
+
+    expect(cleanedHero.props.title).toBe("Explore dental services");
+    expect(cleanedHero.props.description).toBe(
+      "Review Dental Implants and Root Canal and request an appointment with Radhika Dental.",
+    );
+    expect(String(cleanedHero.props.description)).not.toMatch(/…$/);
+    expect(String(cleanedHero.props.description).length).toBeLessThanOrEqual(
+      150,
+    );
+    expect(cleanedServices.props.title).toBe("Dental care options");
+    expect(new Set(visibleHeadings).size).toBe(visibleHeadings.length);
+    expect(
+      validateSelectedDraft(result.site).issues.filter(
+        (issue) => issue.code === "DUPLICATE_SECTION_HEADING",
+      ),
+    ).toEqual([]);
+  });
+
+  test("keeps supplied evidence available but suppresses empty evidence", () => {
+    const source = createDentalStructuralScaffold(pearlDentalFixture(), {
+      businessName: "Pearl Dental Studio",
+      location: "Hyderabad, Telangana",
+      services: ["Dental Implants", "Root Canal"],
+      goals: ["Request appointments"],
+      languages: ["en"],
+    });
+    const team = source.pages
+      .flatMap((page) => page.sections)
+      .find((section) =>
+        /(?:-TEAM-|^team\.)/i.test(section.component.componentId),
+      );
+    expect(team).toBeDefined();
+    team!.hidden = false;
+    team!.props = {
+      title: "Dental team",
+      items: [{ title: "Dr. Mira Rao", description: "BDS" }],
+    };
+
+    const result = applyDentalVisitorContentHygiene(source);
+    const preserved = result.site.pages
+      .flatMap((page) => page.sections)
+      .find((section) => section.id === team!.id);
+    expect(preserved?.hidden).toBeFalsy();
+    expect(preserved?.props.items).toEqual([
+      { title: "Dr. Mira Rao", description: "BDS" },
+    ]);
+    expect(dentalVisitorContentIssues(result.site)).toEqual([]);
   });
 
   test("normalizes delimiter-free dental services without inventing facts", () => {
@@ -188,17 +512,18 @@ test.describe("flagship dental Top-20 contracts", () => {
         "Crowns Root Canal Teeth Alignment Teeth Whitening",
         { industry: "Dental Clinic", subindustry: "dental" },
       ),
-    ).toEqual([
-      "Crowns",
-      "Root Canal",
-      "Teeth Alignment",
-      "Teeth Whitening",
-    ]);
+    ).toEqual(["Crowns", "Root Canal", "Teeth Alignment", "Teeth Whitening"]);
     expect(
       normalizeServiceInput("Crowns; Root Canal\nTeeth Whitening", {
         industry: "Dental Clinic",
       }),
     ).toEqual(["Crowns", "Root Canal", "Teeth Whitening"]);
+    expect(
+      normalizeServiceInput(["Crowns and bridges"], {
+        industry: "Dental Clinic",
+        subindustry: "dental",
+      }),
+    ).toEqual(["Crowns and bridges"]);
     expect(
       normalizeServiceInput("Tooth Extractions Crowns", {
         subindustry: "dental",
@@ -233,16 +558,20 @@ test.describe("flagship dental Top-20 contracts", () => {
         const pair = `${left.id} versus ${right.id}`;
 
         expect(
-          difference.dimensions,
+          difference.differingDimensions,
           `${pair} must differ across at least four composition-identity dimensions`,
         ).toBeGreaterThanOrEqual(4);
         expect(
-          difference.structural,
+          difference.structuralDifference,
           `${pair} must change section sequence or at least two major components`,
         ).toBeTruthy();
         expect(
-          difference.visual,
+          difference.visualDifference,
           `${pair} must change at least one visual-system dimension`,
+        ).toBeTruthy();
+        expect(
+          difference.aboveFoldDifference,
+          `${pair} must not rely on palette or typography alone above the fold`,
         ).toBeTruthy();
       }
     }
@@ -402,6 +731,7 @@ test.describe("flagship dental Top-20 contracts", () => {
     expect(listIndustryDesignPresets("clinic", "dermatology")).toEqual([]);
     expect(listIndustryDesignPresets("clinic", "restaurant")).toEqual([]);
     expect(listIndustryDesignPresets("clinic", "aesthetic clinic")).toEqual([]);
+    expect(listIndustryDesignPresets("clinic")).toEqual([]);
     expect(listIndustryDesignPresets("clinic", "orthodontics")).toHaveLength(
       DESIGN_REVIEW_COUNT,
     );
@@ -426,6 +756,12 @@ test.describe("flagship dental Top-20 contracts", () => {
         domain: "clinic" as const,
         industry: "Dental clinic",
         subindustry: "Restaurant hospitality",
+        goals: ["book appointments"],
+        style_tags: ["professional"],
+      },
+      {
+        domain: "clinic" as const,
+        industry: "Healthcare clinic",
         goals: ["book appointments"],
         style_tags: ["professional"],
       },
@@ -487,7 +823,9 @@ test.describe("flagship dental Top-20 contracts", () => {
   test("selection preserves facts and protects the factual SEO blueprint", () => {
     const source = pearlDentalFixture();
     const preset = dentalPresets()[0]!;
-    const selected = applySelectedDentalCandidate(source, preset);
+    const selected = applyDentalVisitorContentHygiene(
+      applySelectedDentalCandidate(source, preset),
+    ).site;
     const gate = validateSelectedDraft(
       selected,
       selectedCandidateStructureIssues(selected, preset),
@@ -539,12 +877,23 @@ test.describe("flagship dental Top-20 contracts", () => {
     const mediaHero = withMedia.pages[0]!.sections.find((section) =>
       section.component.componentId.includes("-HERO-"),
     )!;
-    expect((mediaHero.props.image as { assetId?: string }).assetId).toBe(
-      DENTAL_HERO_ASSET_BY_IMAGE_STRATEGY[preset.imageStrategy],
+    const mediaAssetId = (mediaHero.props.image as { assetId?: string })
+      .assetId;
+    const mediaAsset = demoAssetById(mediaAssetId);
+    expect(mediaAssetId).toMatch(/^mi-dental-/);
+    expect(mediaAsset?.license).toBe("licensed");
+    expect(mediaAsset?.sourceReference).toMatch(
+      /^https:\/\/www\.pexels\.com\/photo\//,
     );
     expect({ ...mediaHero.props, image: initialImage }).toEqual(
       selectedHero.props,
     );
+
+    const deterministicMedia = applyCertifiedDentalMedia(selected, preset);
+    const deterministicHero = deterministicMedia.pages[0]!.sections.find(
+      (section) => section.component.componentId.includes("-HERO-"),
+    )!;
+    expect(deterministicHero.props.image).toEqual(mediaHero.props.image);
 
     const requiredHeroAssets = withMedia.pages
       .filter((page) =>
@@ -558,7 +907,9 @@ test.describe("flagship dental Top-20 contracts", () => {
         ),
       )
       .map((hero) =>
-        String((hero?.props.image as { assetId?: string } | undefined)?.assetId),
+        String(
+          (hero?.props.image as { assetId?: string } | undefined)?.assetId,
+        ),
       );
     expect(requiredHeroAssets).toHaveLength(5);
     expect(new Set(requiredHeroAssets).size).toBe(5);
@@ -569,9 +920,7 @@ test.describe("flagship dental Top-20 contracts", () => {
       section.component.componentId.includes("-HERO-"),
     )!.props.image;
     for (const page of repeatedMedia.pages.filter((page) =>
-      ["/", "/services", "/doctors", "/about", "/contact"].includes(
-        page.path,
-      ),
+      ["/", "/services", "/doctors", "/about", "/contact"].includes(page.path),
     )) {
       page.sections.find((section) =>
         section.component.componentId.includes("-HERO-"),
@@ -585,60 +934,6 @@ test.describe("flagship dental Top-20 contracts", () => {
 
 function dentalPresets(): IndustryDesignPreset[] {
   return listIndustryDesignPresets("clinic", "dental");
-}
-
-function compareCompositionIdentities(
-  left: CompositionIdentity,
-  right: CompositionIdentity,
-): { dimensions: number; structural: boolean; visual: boolean } {
-  const leftComponents = new Map(
-    left.components.map((component) => [
-      component.family,
-      `${component.componentId}@${component.version}`,
-    ]),
-  );
-  const rightComponents = new Map(
-    right.components.map((component) => [
-      component.family,
-      `${component.componentId}@${component.version}`,
-    ]),
-  );
-  const componentFamilies = new Set([
-    ...leftComponents.keys(),
-    ...rightComponents.keys(),
-  ]);
-  const changedComponentCount = [...componentFamilies].filter(
-    (family) => leftComponents.get(family) !== rightComponents.get(family),
-  ).length;
-  const sectionOrderChanged =
-    JSON.stringify(left.sectionOrder) !== JSON.stringify(right.sectionOrder);
-  const componentsChanged = changedComponentCount > 0;
-  const modifiersChanged =
-    JSON.stringify(left.modifiers) !== JSON.stringify(right.modifiers);
-  const visualChanges = [
-    left.designSystem !== right.designSystem,
-    modifiersChanged,
-    left.paletteStrategy !== right.paletteStrategy,
-    left.typographyStrategy !== right.typographyStrategy,
-    left.density !== right.density,
-    left.imageStrategy !== right.imageStrategy,
-    left.motionStrategy !== right.motionStrategy,
-  ];
-  const identityChanges = [
-    left.archetype !== right.archetype,
-    left.domain !== right.domain,
-    left.subtype !== right.subtype,
-    left.recipeId !== right.recipeId,
-    sectionOrderChanged,
-    componentsChanged,
-    ...visualChanges,
-  ];
-
-  return {
-    dimensions: identityChanges.filter(Boolean).length,
-    structural: sectionOrderChanged || changedComponentCount >= 2,
-    visual: visualChanges.some(Boolean),
-  };
 }
 
 function pearlDentalFixture(): Site {

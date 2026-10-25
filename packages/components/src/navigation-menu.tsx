@@ -84,6 +84,13 @@ export function NavigationMenu({
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        className="mi-nav-menu__backdrop"
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={() => setOpen(false)}
+      />
     </nav>
   );
 }

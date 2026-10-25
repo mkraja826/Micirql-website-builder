@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SupabaseSession } from "./auth-client";
 import { OnboardingGate } from "./onboarding-gate";
+import { ProductBrand } from "./product-brand";
 import styles from "./project-dashboard.module.css";
 
 type Project = {
@@ -18,6 +19,36 @@ type Project = {
 
 type NameDialog = { mode: "create" } | { mode: "rename"; project: Project };
 
+const dateFormatter = new Intl.DateTimeFormat("en", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+function formatProjectDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Recently" : dateFormatter.format(date);
+}
+
+function projectDomain(project: Project) {
+  if (!project.hostname) return "Domain not connected";
+  return project.hostname.status === "active"
+    ? project.hostname.hostname
+    : `${project.hostname.hostname} · setup pending`;
+}
+
+function projectInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/u)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0])
+    .join("");
+
+  return initials.toLocaleUpperCase("en") || "M";
+}
+
 export function ProjectDashboard({ session }: { session: SupabaseSession }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +61,14 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
   const [archiveTarget, setArchiveTarget] = useState<Project | null>(null);
   const [archivePending, setArchivePending] = useState(false);
   const [archiveError, setArchiveError] = useState("");
+  const [actionPending, setActionPending] = useState("");
+  const [notice, setNotice] = useState("");
   const createButtonRef = useRef<HTMLButtonElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
-  async function load() {
-    setLoading(true);
+  async function load(options?: { silent?: boolean }) {
+    if (!options?.silent) setLoading(true);
     try {
       const response = await fetch("/api/projects", { cache: "no-store" });
       const payload = await response.json();
@@ -51,7 +84,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
           : "Could not load projects.",
       );
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }
 
@@ -67,6 +100,15 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
     });
     return () => cancelAnimationFrame(frame);
   }, [nameDialog]);
+
+  useEffect(() => {
+    if (!nameDialog && !archiveTarget) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [archiveTarget, nameDialog]);
 
   useEffect(() => {
     if (nameDialog || archiveTarget || open) return;
@@ -110,6 +152,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
     setArchiveTarget(null);
     setNameValue("Untitled website");
     setNameError("");
+    setNotice("");
     setNameDialog({ mode: "create" });
   }
 
@@ -118,6 +161,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
     setArchiveTarget(null);
     setNameValue(project.name);
     setNameError("");
+    setNotice("");
     setNameDialog({ mode: "rename", project });
   }
 
@@ -171,7 +215,10 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
         name,
       });
       if (mutationError) setNameError(mutationError);
-      else setNameDialog(null);
+      else {
+        setNameDialog(null);
+        setNotice(`Renamed website to ${name}.`);
+      }
     } catch (submitError) {
       setNameError(
         submitError instanceof Error
@@ -184,26 +231,42 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
   }
 
   async function duplicate(project: Project) {
-    const response = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        action: "duplicate",
-        workspaceId: project.workspace_id,
-        siteId: project.id,
-        name: `${project.name} Copy`,
-      }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      setError(payload.error ?? "Duplicate failed.");
-      return;
+    const pendingKey = `duplicate:${project.id}`;
+    if (actionPending) return;
+    setActionPending(pendingKey);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "duplicate",
+          workspaceId: project.workspace_id,
+          siteId: project.id,
+          name: `${project.name} Copy`,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Could not duplicate this website.");
+      }
+      await load({ silent: true });
+      setNotice(`${project.name} was duplicated.`);
+    } catch (duplicateError) {
+      setError(
+        duplicateError instanceof Error
+          ? duplicateError.message
+          : "Could not duplicate this website.",
+      );
+    } finally {
+      setActionPending("");
     }
-    await load();
   }
 
   async function confirmArchive() {
     if (!archiveTarget || archivePending) return;
+    const archivedName = archiveTarget.name;
     setArchivePending(true);
     setArchiveError("");
     const mutationError = await mutate({
@@ -212,7 +275,10 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
     });
     setArchivePending(false);
     if (mutationError) setArchiveError(mutationError);
-    else setArchiveTarget(null);
+    else {
+      setArchiveTarget(null);
+      setNotice(`${archivedName} was archived.`);
+    }
   }
 
   async function mutate(body: Record<string, unknown>) {
@@ -228,7 +294,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
         setError(message);
         return message;
       }
-      await load();
+      await load({ silent: true });
       return null;
     } catch (mutationError) {
       const message =
@@ -244,6 +310,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
     rememberDialogTrigger();
     setNameDialog(null);
     setArchiveError("");
+    setNotice("");
     setArchiveTarget(project);
   }
 
@@ -268,80 +335,289 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
         className={styles.shell}
         inert={nameDialog || archiveTarget ? true : undefined}
       >
-        <header className={styles.header}>
-          <div>
-            <span>MiCirql</span>
-            <h1>Your websites</h1>
-            <p>Create, manage and publish every site from one workspace.</p>
-          </div>
-          <button onClick={requestCreate} ref={createButtonRef}>
-            + New website
-          </button>
-        </header>
+        <div className={styles.frame}>
+          <header className={styles.productHeader}>
+            <ProductBrand />
+            <span className={styles.productArea}>Project home</span>
+          </header>
 
-        {error ? <div className={styles.error}>{error}</div> : null}
+          <section className={styles.intro} aria-labelledby="dashboard-title">
+            <div className={styles.introCopy}>
+              <span className={styles.eyebrow}>Project dashboard</span>
+              <h1 id="dashboard-title">Build and manage your websites.</h1>
+              <p>
+                Continue an existing project or start a new business website.
+                Every project keeps its own brief, design direction and draft.
+              </p>
+            </div>
+            <button
+              className={styles.createButton}
+              onClick={requestCreate}
+              ref={createButtonRef}
+              type="button"
+            >
+              <span aria-hidden="true">+</span> New website
+            </button>
+            <dl className={styles.summary} aria-label="Workspace summary">
+              <div>
+                <dt>Websites</dt>
+                <dd>{loading ? "—" : projects.length}</dd>
+              </div>
+              <div>
+                <dt>Published</dt>
+                <dd>
+                  {loading
+                    ? "—"
+                    : projects.filter((project) =>
+                        Boolean(project.published_version_id),
+                      ).length}
+                </dd>
+              </div>
+              <div>
+                <dt>In progress</dt>
+                <dd>
+                  {loading
+                    ? "—"
+                    : projects.filter(
+                        (project) => !project.published_version_id,
+                      ).length}
+                </dd>
+              </div>
+            </dl>
+          </section>
 
-        {loading ? (
-          <div className={styles.empty}>Loading projects…</div>
-        ) : projects.length ? (
-          <section className={styles.grid}>
-            {projects.map((project) => (
-              <article className={styles.card} key={project.id}>
-                <div className={styles.preview}>
-                  <span>{project.name.slice(0, 1).toUpperCase()}</span>
+          <div className={styles.dashboardBody}>
+            <div className={styles.announcements} aria-live="polite">
+              {error ? (
+                <div className={styles.error} role="alert">
+                  <div>
+                    <strong>We couldn’t update your projects.</strong>
+                    <span>{error}</span>
+                  </div>
+                  <button onClick={() => void load()} type="button">
+                    Try again
+                  </button>
                 </div>
-                <div className={styles.body}>
-                  <div className={styles.top}>
-                    <h2>{project.name}</h2>
-                    <span
-                      className={
-                        project.published_version_id
-                          ? styles.live
-                          : styles.draft
-                      }
-                    >
-                      {project.published_version_id ? "Published" : "Draft"}
+              ) : null}
+              {notice ? (
+                <div className={styles.notice} role="status">
+                  {notice}
+                </div>
+              ) : null}
+            </div>
+
+            {loading ? (
+              <section
+                aria-label="Loading websites"
+                className={styles.loadingState}
+                role="status"
+              >
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <span className={styles.sectionEyebrow}>
+                      Your workspace
                     </span>
+                    <h2>Loading websites…</h2>
+                  </div>
+                </div>
+                <div className={styles.grid} aria-hidden="true">
+                  {[0, 1, 2].map((item) => (
+                    <div className={styles.skeletonCard} key={item}>
+                      <div className={styles.skeletonPreview} />
+                      <div className={styles.skeletonLines}>
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : error && !projects.length ? (
+              <section className={styles.loadFailure}>
+                <div className={styles.stateMark} aria-hidden="true">
+                  !
+                </div>
+                <span className={styles.sectionEyebrow}>
+                  Projects unavailable
+                </span>
+                <h2>Your websites could not be loaded.</h2>
+                <p>
+                  Your projects are still safe. Check your connection and try
+                  loading this workspace again.
+                </p>
+                <button onClick={() => void load()} type="button">
+                  Reload projects
+                </button>
+              </section>
+            ) : projects.length ? (
+              <section aria-labelledby="project-list-title">
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <span className={styles.sectionEyebrow}>
+                      Your workspace
+                    </span>
+                    <h2 id="project-list-title">All websites</h2>
                   </div>
                   <p>
-                    {project.hostname?.hostname ?? "No custom domain"}
-                    {project.hostname ? ` · ${project.hostname.status}` : ""}
+                    {projects.length} active{" "}
+                    {projects.length === 1 ? "project" : "projects"}
                   </p>
-                  <small>
-                    Updated {new Date(project.updated_at).toLocaleDateString()}{" "}
-                    · rev {project.draft?.revision ?? 0}
-                  </small>
-                  <div className={styles.actions}>
-                    <button onClick={() => setOpen(project)}>
-                      Open editor
-                    </button>
-                    <button onClick={() => requestRename(project)}>
-                      Rename
-                    </button>
-                    <button onClick={() => void duplicate(project)}>
-                      Duplicate
-                    </button>
-                    <button onClick={() => requestArchive(project)}>
-                      Archive
-                    </button>
+                </div>
+                <div className={styles.grid}>
+                  {projects.map((project) => {
+                    const duplicatePending =
+                      actionPending === `duplicate:${project.id}`;
+                    const cardBusy = Boolean(actionPending);
+                    const titleId = `project-${project.id}-title`;
+                    const published = Boolean(project.published_version_id);
+                    return (
+                      <article
+                        aria-labelledby={titleId}
+                        className={styles.card}
+                        key={project.id}
+                      >
+                        <div
+                          aria-label={`${project.name} project facts`}
+                          className={`${styles.projectCover} ${published ? styles.projectCoverPublished : styles.projectCoverDraft}`}
+                          role="group"
+                        >
+                          <div className={styles.coverTopline}>
+                            <span>MiCirql website project</span>
+                          </div>
+                          <div className={styles.coverIdentity}>
+                            <span
+                              aria-hidden="true"
+                              className={styles.coverMonogram}
+                            >
+                              {projectInitials(project.name)}
+                            </span>
+                            <div>
+                              <strong>{project.name}</strong>
+                              <span>{projectDomain(project)}</span>
+                            </div>
+                          </div>
+                          <div className={styles.coverFooter}>
+                            <span>
+                              {project.draft
+                                ? `Saved draft · Revision ${project.draft.revision}`
+                                : "No saved draft yet"}
+                            </span>
+                            <span className={styles.coverPreviewNote}>
+                              Real preview in editor
+                            </span>
+                          </div>
+                        </div>
+                        <div className={styles.cardBody}>
+                          <div className={styles.cardHeading}>
+                            <div>
+                              <span
+                                className={
+                                  published ? styles.live : styles.draft
+                                }
+                              >
+                                {published ? "Published" : "Draft"}
+                              </span>
+                              <h3 id={titleId}>{project.name}</h3>
+                            </div>
+                          </div>
+                          <p className={styles.domain}>
+                            {projectDomain(project)}
+                          </p>
+                          <dl className={styles.projectMeta}>
+                            <div>
+                              <dt>Last edited</dt>
+                              <dd>
+                                <time dateTime={project.updated_at}>
+                                  {formatProjectDate(project.updated_at)}
+                                </time>
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>Draft revision</dt>
+                              <dd>{project.draft?.revision ?? 0}</dd>
+                            </div>
+                          </dl>
+                          <div className={styles.actions}>
+                            <button
+                              aria-label={`Open ${project.name} in editor`}
+                              className={styles.openButton}
+                              disabled={cardBusy}
+                              onClick={() => setOpen(project)}
+                              type="button"
+                            >
+                              Open editor <span aria-hidden="true">→</span>
+                            </button>
+                            <div className={styles.secondaryActions}>
+                              <button
+                                aria-label={`Rename ${project.name}`}
+                                disabled={cardBusy}
+                                onClick={() => requestRename(project)}
+                                type="button"
+                              >
+                                Rename
+                              </button>
+                              <button
+                                aria-label={`Duplicate ${project.name}`}
+                                disabled={cardBusy}
+                                onClick={() => void duplicate(project)}
+                                type="button"
+                              >
+                                {duplicatePending
+                                  ? "Duplicating…"
+                                  : "Duplicate"}
+                              </button>
+                              <button
+                                aria-label={`Archive ${project.name}`}
+                                disabled={cardBusy}
+                                onClick={() => requestArchive(project)}
+                                type="button"
+                              >
+                                Archive
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <section className={styles.empty}>
+                <div className={styles.emptyVisual} aria-hidden="true">
+                  <div className={styles.emptyBrowserBar}>
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                  <div className={styles.emptyCanvas}>
+                    <span />
+                    <strong />
+                    <strong />
+                    <i />
                   </div>
                 </div>
-              </article>
-            ))}
-          </section>
-        ) : (
-          <div className={styles.empty}>
-            <h2>No websites yet</h2>
-            <p>
-              Create your first website to start the business discovery flow.
-            </p>
-            <button onClick={requestCreate}>Create website</button>
+                <div className={styles.emptyCopy}>
+                  <span className={styles.sectionEyebrow}>Start here</span>
+                  <h2>Create your first business website.</h2>
+                  <p>
+                    Begin with a focused business brief, compare certified
+                    design directions and continue in the visual editor.
+                  </p>
+                  <button onClick={requestCreate} type="button">
+                    Create your first website
+                  </button>
+                </div>
+              </section>
+            )}
           </div>
-        )}
+        </div>
       </main>
 
       {nameDialog ? (
         <div
+          aria-label="Website dialog"
           className={styles.modalBackdrop}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeNameDialog();
@@ -359,6 +635,11 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
             onSubmit={(event) => void submitName(event)}
             role="dialog"
           >
+            <span className={styles.modalEyebrow}>
+              {nameDialog.mode === "create"
+                ? "New project"
+                : "Project settings"}
+            </span>
             <h2 id="website-name-title">
               {nameDialog.mode === "create"
                 ? "Create a website"
@@ -395,7 +676,11 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
               >
                 Cancel
               </button>
-              <button disabled={namePending} type="submit">
+              <button
+                className={styles.primaryButton}
+                disabled={namePending}
+                type="submit"
+              >
                 {namePending
                   ? nameDialog.mode === "create"
                     ? "Creating…"
@@ -411,6 +696,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
 
       {archiveTarget ? (
         <div
+          aria-label="Archive confirmation"
           className={styles.modalBackdrop}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !archivePending) {
@@ -431,6 +717,7 @@ export function ProjectDashboard({ session }: { session: SupabaseSession }) {
             }}
             role="dialog"
           >
+            <span className={styles.modalEyebrow}>Project settings</span>
             <h2 id="archive-title">Archive {archiveTarget.name}?</h2>
             <p id="archive-description">
               This website will be removed from your active project list.

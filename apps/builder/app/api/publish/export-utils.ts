@@ -3,6 +3,7 @@ import type { AssetRecord } from "@micirql/assets";
 import {
   registeredPublicFunctionsOrigin,
   selectPublicFormBinding,
+  type ResolvedBrandMark,
 } from "@micirql/renderer";
 import { demoAssetById } from "../../demo-assets";
 import type { ExportablePublishedVersion } from "./published-version";
@@ -90,6 +91,7 @@ export function buildPortableExport(
 export async function buildStaticProject(input: {
   published: ExportablePublishedVersion;
   requestOrigin: string;
+  brandMark?: ResolvedBrandMark;
   publicFunctionsOrigin?: string;
   allowedAssetHosts?: string[];
   generatedAt?: string;
@@ -102,7 +104,11 @@ export async function buildStaticProject(input: {
   // Fetch from the immutable source snapshot so a short-lived signed asset URL can
   // be consumed without ever being written into either export manifest.
   const assets = await resolveAssets(
-    collectAssetReferences(input.published.snapshot),
+    hydrateBrandMarkReference(
+      collectAssetReferences(input.published.snapshot),
+      input.published.snapshot,
+      input.brandMark,
+    ),
     {
       requestOrigin: input.requestOrigin,
       allowedAssetHosts: input.allowedAssetHosts ?? [],
@@ -129,6 +135,7 @@ export async function buildStaticProject(input: {
           versionId: portable.immutableVersion.versionId,
           snapshotHash: portable.immutableVersion.snapshotHash,
           assetMap,
+          ...(input.brandMark ? { brandMark: input.brandMark } : {}),
           ...(actionOrigin ? { actionOrigin } : {}),
         }),
       ),
@@ -168,6 +175,28 @@ export async function buildStaticProject(input: {
     ...assets.map((asset) => ({ path: asset.localPath, bytes: asset.bytes })),
   );
   return files;
+}
+
+function hydrateBrandMarkReference(
+  references: ExportAssetReference[],
+  site: Site,
+  brandMark: ResolvedBrandMark | undefined,
+): ExportAssetReference[] {
+  const logoAssetId =
+    site.theme.brand.logoAssetId ?? site.generation?.brandInput?.logoAssetId;
+  if (!logoAssetId || !brandMark || brandMark.assetId !== logoAssetId) {
+    return references;
+  }
+
+  return references.map((reference) =>
+    reference.assetId === logoAssetId
+      ? {
+          ...reference,
+          sourceUrl: brandMark.src,
+          ...(brandMark.alt ? { alt: brandMark.alt } : {}),
+        }
+      : reference,
+  );
 }
 
 export function createStoredZip(files: StaticProjectFile[]): Uint8Array {
@@ -524,6 +553,7 @@ function renderStaticPage(input: {
   versionId: string;
   snapshotHash: string;
   assetMap: Map<string, string>;
+  brandMark?: ResolvedBrandMark;
   actionOrigin?: string;
 }): string {
   const prefix = assetPrefix(input.page);
@@ -541,11 +571,18 @@ function renderStaticPage(input: {
         index,
         input.site,
         pageAssetMap,
+        input.brandMark,
         input.actionOrigin,
       ),
     )
     .join("\n");
   const canonical = input.page.seo.canonicalPath;
+  const subtypeAttribute = input.site.subtype
+    ? ` data-mi-subtype="${escapeAttribute(input.site.subtype)}"`
+    : "";
+  const candidateAttribute = input.site.generation?.selectedCandidateId
+    ? ` data-mi-candidate="${escapeAttribute(input.site.generation.selectedCandidateId)}"`
+    : "";
   return `<!doctype html>
 <html lang="${escapeAttribute(input.site.seoBlueprint.languages[0] ?? "en")}">
 <head>
@@ -560,7 +597,7 @@ function renderStaticPage(input: {
   <link rel="stylesheet" href="${prefix}assets/site.css">
   <script src="${prefix}assets/site.js" defer></script>
 </head>
-<body data-mi-site="${escapeAttribute(input.site.siteId)}" data-mi-version="${escapeAttribute(input.versionId)}" data-mi-theme="${escapeAttribute(input.site.theme.family)}" data-mi-density="${escapeAttribute(input.site.theme.brand.density)}" data-mi-shape="${escapeAttribute(input.site.theme.brand.shape)}" data-mi-motion="${escapeAttribute(input.site.theme.brand.motion)}">
+<body data-mi-site="${escapeAttribute(input.site.siteId)}" data-mi-version="${escapeAttribute(input.versionId)}" data-mi-theme="${escapeAttribute(input.site.theme.family)}" data-mi-domain="${escapeAttribute(input.site.domain)}"${subtypeAttribute}${candidateAttribute} data-mi-density="${escapeAttribute(input.site.theme.brand.density)}" data-mi-shape="${escapeAttribute(input.site.theme.brand.shape)}" data-mi-motion="${escapeAttribute(input.site.theme.brand.motion)}">
 ${sections}
 </body>
 </html>`;
@@ -571,6 +608,7 @@ function renderSection(
   index: number,
   site: Site,
   assetMap: Map<string, string>,
+  brandMark?: ResolvedBrandMark,
   actionOrigin?: string,
 ): string {
   const family = sectionFamily(section.component.componentId);
@@ -595,23 +633,54 @@ function renderSection(
           href: itemHref(item) ?? "/",
         }))
       : site.navigation;
-    return `<header class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-navbar"><a class="mi-brand" href="/">${escapeHtml(title)}</a><button class="mi-menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open primary navigation"><span>Menu</span><span class="mi-menu-icon" aria-hidden="true"></span></button><nav id="site-menu" class="mi-nav" aria-label="Primary">${navItems.map((item) => `<a href="${safeHref(item.href)}">${escapeHtml(item.label)}</a>`).join("")}</nav>${renderAction(props.primaryAction)}</div></header>`;
+    return `<header class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-navbar"><a class="mi-brand" href="/" aria-label="${escapeAttribute(`${site.name} home`)}">${staticBrandContents(site, title, assetMap, brandMark, true)}</a><button class="mi-menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open primary navigation"><span>Menu</span><span class="mi-menu-icon" aria-hidden="true"></span></button><nav id="site-menu" class="mi-nav" aria-label="Primary">${navItems.map((item) => `<a href="${safeHref(item.href)}">${escapeHtml(item.label)}</a>`).join("")}</nav><button class="mi-nav-backdrop" type="button" tabindex="-1" aria-hidden="true"></button>${renderAction(props.primaryAction)}</div></header>`;
   }
   if (family === "footer") {
     const links = list(props.footerLinks);
-    return `<footer class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-footer mi-section__composition"><div><strong>${escapeHtml(title)}</strong>${description ? `<p>${escapeHtml(description)}</p>` : ""}</div><nav aria-label="Footer">${links.map((item) => `<a href="${safeHref(itemHref(item) ?? "/")}">${escapeHtml(itemTitle(item))}</a>`).join("")}</nav></div></footer>`;
+    const copyright = value(props.copyright);
+    return `<footer class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-footer mi-section__composition"><div><a class="mi-brand mi-brand--footer" href="/" aria-label="${escapeAttribute(`${site.name} home`)}">${staticBrandContents(site, title, assetMap, brandMark, false)}</a>${description ? `<p>${escapeHtml(description)}</p>` : ""}</div><nav aria-label="Footer">${links.map((item) => `<a href="${safeHref(itemHref(item) ?? "/")}">${escapeHtml(itemTitle(item))}</a>`).join("")}</nav>${copyright ? `<p class="mi-footer__copyright">${escapeHtml(copyright)}</p>` : ""}</div></footer>`;
   }
 
   const heading = `<div class="mi-heading">${value(props.eyebrow) ? `<p class="mi-eyebrow">${escapeHtml(value(props.eyebrow)!)}</p>` : ""}<${family === "hero" ? "h1" : "h2"}>${escapeHtml(title)}</${family === "hero" ? "h1" : "h2"}>${description ? `<p>${escapeHtml(description)}</p>` : ""}${renderActions(props)}</div>`;
   const media = image
     ? `<figure class="mi-media"><img src="${escapeAttribute(image)}" alt="${escapeAttribute(imageAlt(props.image))}"></figure>`
     : "";
-  const cards = items.length
-    ? `<div class="mi-grid">${items.map((item) => `<article class="mi-card">${imageFor(item.image, assetMap) ? `<img src="${escapeAttribute(imageFor(item.image, assetMap)!)}" alt="${escapeAttribute(itemTitle(item))}">` : ""}<h3>${escapeHtml(itemTitle(item))}</h3>${itemDescription(item) ? `<p>${escapeHtml(itemDescription(item)!)}</p>` : ""}</article>`).join("")}</div>`
+  const content = items.length
+    ? family === "gallery"
+      ? renderGallery(items, assetMap)
+      : renderCards(items, assetMap)
     : "";
   const form =
     family === "contact" ? renderForm(section, site.siteId, actionOrigin) : "";
-  return `<section class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-section__composition${family === "hero" ? " mi-split" : ""}">${heading}${media}${cards}${form}</div></section>`;
+  return `<section class="${classes}" ${identityAttributes} id="section-${index + 1}"><div class="mi-container mi-section__composition${family === "hero" ? " mi-split" : ""}">${heading}${media}${content}${form}</div></section>`;
+}
+
+function staticBrandContents(
+  site: Site,
+  fallbackTitle: string,
+  assetMap: Map<string, string>,
+  brandMark?: ResolvedBrandMark,
+  eager = false,
+): string {
+  const logoAssetId =
+    site.theme.brand.logoAssetId ?? site.generation?.brandInput?.logoAssetId;
+  if (!logoAssetId) return escapeHtml(fallbackTitle);
+
+  const source = assetMap.get(`asset:${logoAssetId}`);
+  if (!source) {
+    throw new PublishApiError(
+      503,
+      "BRAND_LOGO_UNRESOLVED",
+      `Supplied logo ${logoAssetId} is unavailable to the static renderer.`,
+    );
+  }
+
+  const resolved = brandMark?.assetId === logoAssetId ? brandMark : undefined;
+  const alt = resolved?.alt || `${site.name} logo`;
+  const dimensions = resolved
+    ? ` width="${resolved.width}" height="${resolved.height}" style="aspect-ratio:${resolved.width} / ${resolved.height}"`
+    : "";
+  return `<img class="mi-brand__logo" src="${escapeAttribute(source)}" alt="${escapeAttribute(alt)}"${dimensions} loading="${eager ? "eager" : "lazy"}" decoding="async" data-mi-image-field="brandMark" data-mi-logo-asset-id="${escapeAttribute(logoAssetId)}">`;
 }
 
 function renderForm(
@@ -675,7 +744,7 @@ function staticActionFields(actionId: string): string {
 
 function staticSubmitLabel(actionId: string): string {
   if (actionId === "appointment.request") return "Request appointment";
-  if (actionId === "reservation.request") return "Request reservation";
+  if (actionId === "reservation.request") return "Request a table";
   if (actionId === "quote.request") return "Request quote";
   if (actionId === "newsletter.subscribe") return "Subscribe";
   if (actionId === "property.enquiry") return "Send property enquiry";
@@ -777,6 +846,7 @@ function sectionVariant(componentId: string): number {
 function staticCss(site: Site): string {
   const colors = site.theme.brand.colors;
   const tokens = staticThemeTokens(site);
+  const industryCss = staticIndustryCss(site);
   return `:root{
   --mi-color-primary:${cssColor(colors.primary, "#155e75")};
   --mi-color-primary-contrast:${contrastForCss(colors.primary)};
@@ -819,24 +889,33 @@ img{max-width:100%}
 .mi-section:nth-child(even):not(.mi-section--navbar){background:var(--mi-color-surface-elevated)}
 .mi-section--navbar{padding:0;border-bottom:var(--mi-border-width) solid var(--mi-color-border);background:var(--mi-color-surface);position:relative;z-index:100;overflow:visible}
 .mi-navbar{min-height:4.75rem;display:flex;align-items:center;gap:1rem}
-.mi-brand{margin-right:auto;color:var(--mi-color-text);font:700 1.1rem/1.1 var(--mi-font-display),sans-serif;text-decoration:none}
+.mi-brand{min-width:0;min-height:44px;max-width:min(13rem,100%);margin-right:auto;display:inline-flex;align-items:center;color:var(--mi-color-text);font:700 1.1rem/1.1 var(--mi-font-display),sans-serif;text-decoration:none}
+.mi-brand__logo{display:block;width:auto;height:auto;max-width:100%;max-height:3rem;object-fit:contain;object-position:center}
+.mi-brand--footer{margin:0;max-width:min(15rem,100%)}
+.mi-brand--footer .mi-brand__logo{max-height:4rem}
 .mi-nav{display:flex;align-items:center;gap:1rem}
 .mi-nav a,.mi-footer a{min-width:44px;min-height:44px;display:inline-flex;align-items:center;color:var(--mi-color-text-muted);text-decoration-thickness:.08em;text-underline-offset:.25em}
 .mi-menu-toggle{display:none;min-width:44px;min-height:44px;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-control);background:var(--mi-color-surface);color:var(--mi-color-text);font:var(--mi-control-weight) .9rem/1 var(--mi-font-ui),sans-serif;padding:.6rem .9rem;gap:.5rem;cursor:pointer}
+.mi-nav-backdrop{display:none}
 .mi-menu-toggle:focus-visible,.mi-nav a:focus-visible{outline:3px solid var(--mi-color-primary);outline-offset:3px}
 .mi-menu-icon,.mi-menu-icon::before,.mi-menu-icon::after{display:block;width:1rem;height:2px;border-radius:999px;background:currentColor;content:"";transition:transform var(--mi-motion-fast) ease,top var(--mi-motion-fast) ease,background-color var(--mi-motion-fast) ease}.mi-menu-icon{position:relative}.mi-menu-icon::before,.mi-menu-icon::after{position:absolute;left:0}.mi-menu-icon::before{top:-.32rem}.mi-menu-icon::after{top:.32rem}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon{background:transparent}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon::before{top:0;transform:rotate(45deg)}.mi-menu-toggle[aria-expanded="true"] .mi-menu-icon::after{top:0;transform:rotate(-45deg)}
 .mi-section__composition{position:relative}
 .mi-heading{max-width:45rem}
 .mi-heading>p{max-width:65ch;color:var(--mi-color-text-muted)}
 .mi-eyebrow{width:max-content;max-width:100%;margin:0;text-transform:uppercase;letter-spacing:.14em;font:800 .78rem/1.2 var(--mi-font-ui),sans-serif;color:var(--mi-color-primary)}
-h1,h2,h3{max-width:100%;font-family:var(--mi-font-display),sans-serif;line-height:1.02;letter-spacing:var(--mi-display-tracking);overflow-wrap:break-word;text-wrap:balance}
-h1{font-size:clamp(2.7rem,8vw,5.6rem);margin:.25em 0}
+h1,h2,h3{max-width:100%;font-family:var(--mi-font-display),sans-serif;overflow-wrap:break-word;text-wrap:balance}
+h1{font-size:clamp(2.7rem,8vw,5.6rem);font-weight:var(--mi-display-weight);line-height:var(--mi-display-leading);letter-spacing:var(--mi-display-tracking);margin:.25em 0}
+h2,h3{font-weight:var(--mi-heading-weight);line-height:var(--mi-heading-leading);letter-spacing:var(--mi-heading-tracking)}
 h2{font-size:clamp(2rem,5vw,3.6rem);margin:.25em 0 .45em}
 h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-split{display:grid;gap:clamp(1.5rem,5vw,4rem);align-items:center}.mi-split>*{min-width:0}
 .mi-grid{display:grid;gap:1rem;margin-top:2.5rem}
+.mi-item-groups{display:grid;gap:clamp(2rem,5vw,4rem);margin-top:2.5rem}.mi-item-group{min-width:0}.mi-item-group>.mi-grid{margin-top:1rem}
+.mi-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2.5rem}.mi-gallery__item{min-width:0;margin:0;overflow:hidden;border-radius:var(--mi-radius-card);background:var(--mi-color-secondary)}.mi-gallery__item img{display:block;width:100%;height:100%;aspect-ratio:1/1;object-fit:cover}
 .mi-card{min-width:0;padding:1.4rem;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-card);background:var(--mi-color-surface);box-shadow:var(--mi-shadow-card)}
+.mi-card h3{font-size:clamp(1.125rem,1.5vw,1.35rem);font-weight:600;line-height:1.22;letter-spacing:-.01em}
 .mi-card p{color:var(--mi-color-text-muted)}
+.mi-card .mi-card__meta{margin:.45rem 0 0;color:var(--mi-color-text);font-family:var(--mi-font-ui),system-ui,sans-serif;font-size:.875rem;font-weight:700;line-height:1.35;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .mi-card img,.mi-media img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--mi-image-radius)}
 .mi-media{margin:2rem 0;border-radius:var(--mi-image-radius);overflow:hidden;box-shadow:var(--mi-shadow-card)}
 .mi-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.5rem}
@@ -854,12 +933,15 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-form__honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .mi-footer{display:grid;gap:2rem}
 .mi-footer nav{display:flex;flex-wrap:wrap;gap:1rem}
+.mi-footer__copyright{grid-column:1/-1;margin:0;color:var(--mi-color-text-muted);font-size:.9rem}
+
+${industryCss}
 
 /* Structural variant two changes the exported composition, not only its color. */
 @media(min-width:48rem){
   .mi-split{grid-template-columns:1fr 1fr}
   .mi-section-theme[data-section-family="contact"] .mi-section__composition{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(1.5rem,5vw,4rem);align-items:center}
-  .mi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mi-grid,.mi-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
   .mi-footer{grid-template-columns:1fr auto}
   .mi-section-variant--2[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,1.12fr) minmax(18rem,.88fr)}
   .mi-section-variant--2[data-section-family="hero"] .mi-media{order:-1}
@@ -903,7 +985,8 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-section-theme--glass .mi-card,.mi-section-theme--glass .mi-form{border:1px solid color-mix(in srgb,var(--mi-color-border) 66%,transparent);background:color-mix(in srgb,var(--mi-color-surface-elevated) 78%,transparent);box-shadow:var(--mi-shadow-card);backdrop-filter:blur(var(--mi-backdrop-blur))}
 .mi-section-theme--glass .mi-form{padding:1.5rem;border-radius:var(--mi-radius-card)}
 .mi-section-theme--glass[data-section-family="hero"] .mi-media{transform:perspective(70rem) rotateY(-3deg) rotateX(1deg)}
-.mi-section-theme--maximalist h1{font-size:clamp(3rem,8vw,6rem);font-weight:900;line-height:.86;letter-spacing:-.055em}
+.mi-section-theme--maximalist h1{font-size:clamp(3rem,8vw,6rem);font-weight:700;line-height:.98;letter-spacing:-.025em}
+.mi-section-theme--maximalist h2,.mi-section-theme--maximalist h3,.mi-section-theme--cinematic h2,.mi-section-theme--cinematic h3{font-family:var(--mi-font-ui),sans-serif;font-weight:650;line-height:1.1;letter-spacing:-.02em}
 .mi-section-theme--maximalist .mi-card{border:2px solid var(--mi-color-text);background:var(--mi-color-surface-elevated);box-shadow:.55rem .55rem 0 color-mix(in srgb,var(--mi-color-accent) 76%,var(--mi-color-text))}
 .mi-section-theme--maximalist .mi-action--primary{border:2px solid var(--mi-color-text);box-shadow:.3rem .3rem 0 var(--mi-color-text)}
 .mi-section-theme--maximalist[data-section-family="hero"]{background:linear-gradient(135deg,color-mix(in srgb,var(--mi-color-accent) 24%,transparent) 0 30%,transparent 30%),var(--mi-color-surface)}
@@ -927,12 +1010,12 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-section__composition{min-height:min(52rem,92svh);display:grid;grid-template-columns:1fr;grid-template-areas:"cinema";align-items:end}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-section__composition>*{grid-area:cinema}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-heading{z-index:2;width:min(100% - 2rem,72rem);max-width:none;margin-inline:auto;padding-block:clamp(4rem,10vw,8rem)}
-.mi-section-theme--cinematic[data-section-family="hero"] .mi-heading>*{max-width:48rem}
+.mi-section-theme--cinematic[data-section-family="hero"] .mi-heading>*{max-width:56rem}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-heading>p{color:#d8e3e3}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-media{position:relative;min-height:inherit;margin:0;border-radius:0;box-shadow:none}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-media::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgb(3 14 18/.92),rgb(3 14 18/.52) 56%,rgb(3 14 18/.18))}
 .mi-section-theme--cinematic[data-section-family="hero"] .mi-media img{width:100%;height:100%;min-height:inherit;aspect-ratio:auto;border-radius:0}
-.mi-section-theme--cinematic h1{font-size:clamp(3.2rem,10vw,8rem);line-height:.88;text-transform:uppercase}
+.mi-section-theme--cinematic h1{font-size:clamp(2.5rem,4.6vw,4.25rem);font-weight:650;line-height:1.02;letter-spacing:-.025em;text-transform:none}
 .mi-section-theme--cinematic .mi-card{border:0;border-radius:0;background:transparent;box-shadow:none}
 
 @media(min-width:48rem) and (max-width:71.99rem){h1{max-width:100%;font-size:clamp(3rem,6vw,4.25rem);overflow-wrap:break-word}.mi-section-variant--2:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) h2{font-size:clamp(1.65rem,3.6vw,2.25rem)}}
@@ -947,8 +1030,10 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
   .mi-menu-toggle{display:inline-flex;align-items:center}
   .mi-menu-toggle{grid-area:toggle}
   .mi-navbar>.mi-action{grid-area:cta;max-width:30vw}
-  .mi-nav{display:none;position:absolute;z-index:30;top:calc(100% + .5rem);left:1rem;flex-direction:column;align-items:stretch;width:min(18rem,calc(100vw - 2rem));padding:.4rem;background:var(--mi-color-surface);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);box-shadow:var(--mi-shadow-card)}
+  .mi-menu-toggle{position:relative;z-index:32}
+  .mi-nav{display:none;position:absolute;z-index:31;top:calc(100% + .5rem);left:1rem;flex-direction:column;align-items:stretch;width:min(24rem,calc(100vw - 2rem));padding:.4rem;background:var(--mi-color-surface);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);box-shadow:var(--mi-shadow-card)}
   .mi-nav[data-open="true"]{display:flex}
+  .mi-menu-toggle[aria-expanded="true"]~.mi-nav-backdrop{position:fixed;z-index:30;inset:0;display:block;width:100vw;height:100vh;margin:0;padding:0;border:0;border-radius:0;background:rgb(7 23 28/.42);backdrop-filter:blur(2px);cursor:default}
   .mi-nav a{padding:.55rem .7rem;border-radius:calc(var(--mi-radius-control) * .7)}
 }
 @media(max-width:47.99rem){
@@ -961,8 +1046,97 @@ h3{font-size:1.25rem;margin:.2em 0 .55em}
   .mi-section-theme--cinematic[data-section-family="hero"] .mi-heading{padding-block:3.5rem}
   .mi-section-theme--cinematic h1{font-size:clamp(2.7rem,14vw,4.8rem)}
 }
+.mi-section-theme>.mi-container{container-type:inline-size}
+.mi-section-theme[data-section-family="hero"]{--mi-hero-display-min:2.2rem;--mi-hero-display-fluid:4.8cqi;--mi-hero-display-max:4.5rem}
+.mi-section-theme--maximalist[data-section-family="hero"]{--mi-hero-display-min:2.4rem;--mi-hero-display-fluid:5cqi;--mi-hero-display-max:4.75rem}
+.mi-section-theme--cinematic[data-section-family="hero"]{--mi-hero-display-min:2.35rem;--mi-hero-display-fluid:4.6cqi;--mi-hero-display-max:4.25rem}
+.mi-section-theme[data-section-family="hero"] h1{max-inline-size:min(19ch,100%);font-size:clamp(var(--mi-hero-display-min),var(--mi-hero-display-fluid),var(--mi-hero-display-max));overflow-wrap:anywhere}
+.mi-section-theme[data-section-family="hero"] .mi-heading>p:not(.mi-eyebrow){max-inline-size:62ch}
+@media(max-width:63.99rem){
+  .mi-section-theme[data-section-family="hero"] .mi-section__composition,.mi-section-variant--2[data-section-family="hero"] .mi-section__composition,.mi-section-theme--editorial[data-section-family="hero"] .mi-section__composition,.mi-section-theme--luxury[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,1fr)}
+  .mi-nav[data-open="true"]{max-height:min(70svh,30rem);overflow-y:auto;overscroll-behavior:contain}
+}
+@media(max-width:47.99rem){
+  .mi-section-theme[data-section-family="hero"]{--mi-hero-display-min:2rem;--mi-hero-display-fluid:9cqi;--mi-hero-display-max:2.75rem}
+  .mi-section-theme--maximalist[data-section-family="hero"],.mi-section-theme--cinematic[data-section-family="hero"]{--mi-hero-display-min:1.85rem;--mi-hero-display-fluid:7.6cqi;--mi-hero-display-max:2.25rem}
+  .mi-section-theme--maximalist[data-section-family="hero"] h1,.mi-section-theme--cinematic[data-section-family="hero"] h1{font-family:var(--mi-font-ui),sans-serif;font-weight:600;line-height:1.08;letter-spacing:-.02em;text-transform:none}
+  .mi-section-theme--maximalist h2,.mi-section-theme--cinematic h2{font-size:clamp(1.55rem,6.4cqi,2rem);line-height:1.14}
+  .mi-section-theme--maximalist h3,.mi-section-theme--cinematic h3{font-size:clamp(1.1rem,4.8cqi,1.35rem);line-height:1.14}
+  .mi-section-theme[data-section-family="hero"] .mi-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  .mi-section-theme[data-section-family="hero"] .mi-action{width:100%}
+  .mi-section-theme--luxury[data-section-family="hero"] .mi-media{min-height:clamp(18rem,78vw,28rem)}
+}
+@media(min-width:64rem){
+  .mi-section-variant--3[data-section-family="navbar"] .mi-navbar,.mi-section-variant--5[data-section-family="navbar"] .mi-navbar{display:grid;grid-template-columns:minmax(0,1fr) auto;padding-block:.625rem}
+  .mi-section-variant--3[data-section-family="navbar"] .mi-navbar{grid-template-areas:"brand cta" "nav nav"}
+  .mi-section-variant--5[data-section-family="navbar"] .mi-navbar{grid-template-areas:"brand brand" "nav cta"}
+  .mi-section-variant--3[data-section-family="navbar"] .mi-brand,.mi-section-variant--5[data-section-family="navbar"] .mi-brand{grid-area:brand;justify-self:center;margin:0}
+  .mi-section-variant--3[data-section-family="navbar"] .mi-nav,.mi-section-variant--5[data-section-family="navbar"] .mi-nav{grid-area:nav;justify-self:start}
+  .mi-section-variant--3[data-section-family="navbar"] .mi-action,.mi-section-variant--5[data-section-family="navbar"] .mi-action{grid-area:cta}
+  .mi-section-variant--4[data-section-family="navbar"] .mi-navbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"nav brand cta"}
+  .mi-section-variant--4[data-section-family="navbar"] .mi-brand{grid-area:brand;justify-self:center;margin:0}.mi-section-variant--4[data-section-family="navbar"] .mi-nav{grid-area:nav;justify-self:start}.mi-section-variant--4[data-section-family="navbar"] .mi-action{grid-area:cta}
+
+  .mi-section-variant--3[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}.mi-section-variant--3[data-section-family="hero"] .mi-heading{max-width:56rem}.mi-section-variant--3[data-section-family="hero"] .mi-actions{justify-content:center}.mi-section-variant--3[data-section-family="hero"] .mi-media{width:min(100%,68rem)}.mi-section-variant--3[data-section-family="hero"] .mi-media img{aspect-ratio:16/7}
+  .mi-section-variant--4[data-section-family="hero"] .mi-section__composition{grid-template-columns:repeat(12,minmax(0,1fr));align-items:center}.mi-section-variant--4[data-section-family="hero"] .mi-heading{z-index:2;grid-column:1/span 7;grid-row:1;padding:clamp(1.5rem,4vw,3.5rem);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);background:color-mix(in srgb,var(--mi-color-surface) 94%,transparent);box-shadow:var(--mi-shadow-card)}.mi-section-variant--4[data-section-family="hero"] .mi-media{grid-column:6/-1;grid-row:1;min-height:32rem}.mi-section-variant--4[data-section-family="hero"] .mi-media img{height:100%;min-height:32rem}
+  .mi-section-variant--5[data-section-family="hero"] .mi-section__composition{grid-template-columns:minmax(0,1fr);grid-template-areas:"immersive-hero";align-items:end}.mi-section-variant--5[data-section-family="hero"] .mi-section__composition>*{grid-area:immersive-hero}.mi-section-variant--5[data-section-family="hero"] .mi-heading{z-index:2;width:min(42rem,calc(100% - 4rem));margin:0 0 2rem 2rem;padding:clamp(1.5rem,4vw,3rem);border-radius:var(--mi-radius-card);background:color-mix(in srgb,var(--mi-color-surface) 92%,transparent);box-shadow:var(--mi-shadow-card)}.mi-section-variant--5[data-section-family="hero"] .mi-media,.mi-section-variant--5[data-section-family="hero"] .mi-media img{width:100%;min-height:38rem}.mi-section-variant--5[data-section-family="hero"] .mi-media img{height:100%;aspect-ratio:16/9}
+
+  .mi-section-variant--3:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-heading{margin-inline:auto;text-align:center}.mi-section-variant--3:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-actions{justify-content:center}
+  .mi-section-variant--4:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-section__composition{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:clamp(2rem,5vw,5rem);align-items:start}.mi-section-variant--4:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-heading{grid-column:1/span 4;grid-row:1/span 2}.mi-section-variant--4:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) :is(.mi-grid,.mi-media){grid-column:5/-1;grid-row:1;margin-top:0}.mi-section-variant--4:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-actions{grid-column:5/-1}
+  .mi-section-variant--5:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-section__composition{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:clamp(2rem,6vw,6rem);align-items:center}.mi-section-variant--5:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0}.mi-section-variant--5:not([data-section-family="navbar"]):not([data-section-family="hero"]):not([data-section-family="contact"]):not([data-section-family="footer"]) .mi-card:first-child{grid-column:1/-1}
+
+  .mi-section-variant--3[data-section-family="contact"] .mi-section__composition{grid-template-columns:minmax(0,1fr);justify-items:center}.mi-section-variant--3[data-section-family="contact"] :is(.mi-heading,.mi-form){width:min(100%,46rem)}.mi-section-variant--4[data-section-family="contact"] .mi-section__composition{grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)}.mi-section-variant--4[data-section-family="contact"] .mi-form{padding:clamp(1.5rem,3vw,2.5rem);border:1px solid var(--mi-color-border);border-radius:var(--mi-radius-card);background:var(--mi-color-surface-elevated);box-shadow:var(--mi-shadow-card)}.mi-section-variant--5[data-section-family="contact"] .mi-section__composition{grid-template-columns:minmax(0,1.2fr) minmax(22rem,.8fr);align-items:start}
+  .mi-section-variant--3[data-section-family="footer"] .mi-footer{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}.mi-section-variant--3[data-section-family="footer"] .mi-footer nav{justify-content:center}.mi-section-variant--4[data-section-family="footer"] .mi-footer{grid-template-columns:minmax(0,2fr) minmax(14rem,1fr)}.mi-section-variant--4[data-section-family="footer"] .mi-footer nav{display:grid;justify-content:stretch}.mi-section-variant--5[data-section-family="footer"] .mi-footer{grid-template-columns:minmax(0,1fr)}.mi-section-variant--5[data-section-family="footer"] .mi-footer nav{justify-content:flex-start;padding-top:1.5rem;border-top:1px solid var(--mi-color-border)}
+}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.mi-action,.mi-form button,.mi-menu-icon,.mi-menu-icon::before,.mi-menu-icon::after{transition:none!important}}
 `;
+}
+
+function staticIndustryCss(site: Site): string {
+  if (site.domain === "restaurant" && site.subtype === "restaurant") {
+    const selector =
+      '[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]';
+    return `${selector}{--mi-restaurant-paper:color-mix(in srgb,var(--mi-color-surface) 94%,var(--mi-color-accent));--mi-restaurant-rule:color-mix(in srgb,var(--mi-color-border) 72%,var(--mi-color-text));overflow-x:clip;background:var(--mi-color-surface)}
+${selector} .mi-section{--mi-section-space:clamp(3.75rem,8vw,7.5rem);background:linear-gradient(90deg,color-mix(in srgb,var(--mi-color-accent) 5%,transparent) 1px,transparent 1px),var(--mi-color-surface);background-size:min(8vw,7rem) 100%}${selector} .mi-section:nth-child(odd):not(.mi-section--navbar){background:linear-gradient(90deg,color-mix(in srgb,var(--mi-color-accent) 5%,transparent) 1px,transparent 1px),var(--mi-restaurant-paper)}
+${selector} .mi-section--navbar{border-bottom:0}${selector} .mi-navbar{min-height:5rem;border-top:1px solid var(--mi-restaurant-rule);border-bottom:3px double var(--mi-restaurant-rule)}
+${selector} .mi-eyebrow{color:var(--mi-color-primary);font-size:.72rem;font-weight:750;line-height:1.3;letter-spacing:.15em}${selector} :is(h1,h2,h3){hyphens:none;overflow-wrap:normal;word-break:normal;text-wrap:balance}${selector} h1{max-width:13ch;font-size:clamp(2.75rem,6.6vw,4.25rem);font-weight:600;line-height:1.02;letter-spacing:-.035em}${selector} h2{max-width:18ch;font-weight:580;line-height:1.08;letter-spacing:-.025em}
+${selector} .mi-section--hero{padding-top:clamp(3rem,7vw,6.5rem)}${selector} .mi-section--hero .mi-section__composition{min-height:clamp(34rem,72vh,47rem);column-gap:clamp(2rem,6vw,7rem)}${selector} .mi-section--hero .mi-heading{z-index:1;padding-block:clamp(1.5rem,4vw,3.5rem)}${selector} .mi-section--hero .mi-media{position:relative;min-height:28rem;margin:0;border-radius:0;overflow:visible;box-shadow:none}${selector} .mi-section--hero .mi-media::before{content:"";position:absolute;inset:.8rem -.8rem -.8rem .8rem;z-index:-1;border:1px solid var(--mi-color-accent);pointer-events:none}${selector} .mi-section--hero .mi-media img{min-height:28rem;aspect-ratio:5/6;border-radius:0;object-fit:cover}
+${selector} .mi-action{border-radius:0;padding-inline:1.2rem}${selector} .mi-action--secondary{border-width:0 0 1px}${selector} .mi-section--services .mi-card{display:grid;min-height:0;grid-template-columns:minmax(0,1fr) auto;gap:.35rem clamp(1rem,4vw,3rem);padding:1.15rem 0;border:0;border-top:1px solid var(--mi-restaurant-rule);border-radius:0;background:transparent;box-shadow:none}${selector} .mi-section--services .mi-card h3{grid-column:1;margin:0;font-family:var(--mi-font-display),serif;font-size:clamp(1.05rem,2vw,1.3rem);font-weight:600}${selector} .mi-section--services .mi-card__meta{grid-column:2;grid-row:1;align-self:baseline;margin:0;white-space:nowrap;color:var(--mi-color-primary)}${selector} .mi-section--services .mi-card>p:not(.mi-card__meta){grid-column:1/-1;max-width:62ch;margin:0}${selector} .mi-section--services .mi-item-groups{margin-top:clamp(2rem,5vw,4.5rem)}${selector} .mi-section--services .mi-item-group>h3{margin:0;padding-bottom:.65rem;border-bottom:3px double var(--mi-color-text);font-family:var(--mi-font-display),serif;font-size:clamp(1.45rem,3vw,2.1rem);font-weight:580}${selector} .mi-section--services .mi-item-group>.mi-grid{margin-top:0}
+${selector} .mi-gallery{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:clamp(.65rem,1.8vw,1.5rem)}${selector} .mi-gallery__item{grid-column:auto!important;margin:0;overflow:hidden;border-radius:0}${selector} .mi-gallery__item:first-child{grid-column:1/-1!important}${selector} .mi-gallery__item img{width:100%;height:100%;aspect-ratio:4/3;border-radius:0;object-fit:cover}
+${selector} .mi-section--contact .mi-form{margin-top:0;border:1px solid var(--mi-restaurant-rule);border-top:4px solid var(--mi-color-primary);border-radius:0;background:var(--mi-color-surface);box-shadow:0 1.4rem 4rem color-mix(in srgb,var(--mi-color-text) 7%,transparent)}${selector} .mi-section--cta{border-top:3px double var(--mi-restaurant-rule);border-bottom:3px double var(--mi-restaurant-rule)}
+@media(min-width:48rem){${selector} .mi-section-variant--5.mi-section--hero .mi-section__composition{grid-template-columns:minmax(17rem,.8fr) minmax(24rem,1.2fr)!important;grid-template-areas:none!important;align-items:center}${selector} .mi-section-variant--5.mi-section--hero .mi-section__composition>*{grid-area:auto!important}${selector} .mi-section-variant--5.mi-section--hero .mi-heading{width:auto!important;margin:0!important;padding:clamp(1rem,2vw,2rem) 0!important;border-radius:0;background:transparent;box-shadow:none}${selector} .mi-section-variant--5.mi-section--hero .mi-media,${selector} .mi-section-variant--5.mi-section--hero .mi-media img{width:100%;min-height:30rem;aspect-ratio:4/3}${selector} .mi-section--services .mi-item-groups{grid-column:5/-1;grid-row:1;margin:0}${selector} .mi-section--services .mi-item-group>.mi-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(2rem,5vw,5rem)}}
+@media(max-width:47.99rem){${selector} .mi-section{--mi-section-space:clamp(3rem,14vw,4.75rem);background-size:4.5rem 100%}${selector} .mi-eyebrow{width:auto;max-width:100%;white-space:normal;overflow-wrap:anywhere}${selector} h1{max-width:100%;font-size:clamp(2.1rem,10vw,2.85rem);line-height:1.08;letter-spacing:-.025em}${selector} .mi-section-variant--5.mi-section--hero .mi-section__composition{min-height:0;grid-template-columns:minmax(0,1fr)!important;grid-template-areas:none!important}${selector} .mi-section-variant--5.mi-section--hero .mi-section__composition>*{grid-area:auto!important}${selector} .mi-section-variant--5.mi-section--hero .mi-heading{width:100%!important;margin:0!important;padding:0!important;border-radius:0;background:transparent;box-shadow:none}${selector} .mi-section--hero .mi-media,${selector} .mi-section--hero .mi-media img{min-width:0;width:100%;max-width:100%;min-height:16rem;aspect-ratio:4/3;box-sizing:border-box}${selector} .mi-section--hero .mi-media{overflow:hidden}${selector} .mi-section--hero .mi-media::before{inset:.5rem -.4rem -.5rem .4rem}${selector} .mi-gallery{grid-template-columns:1fr!important}${selector} .mi-gallery__item:nth-child(n){grid-column:1!important}${selector} .mi-section--services .mi-card__meta{max-width:8rem;white-space:normal;overflow-wrap:anywhere;text-align:right}}
+@media(max-width:22rem){${selector} .mi-section--services .mi-card{grid-template-columns:minmax(0,1fr)}${selector} .mi-section--services .mi-card__meta{grid-column:1;grid-row:auto;max-width:100%;text-align:left}}`;
+  }
+  if (site.domain !== "clinic" || site.subtype !== "physiotherapy") return "";
+
+  const subtypeSelector = '[data-mi-subtype="physiotherapy"]';
+  const candidateId = site.generation?.selectedCandidateId;
+  const candidateSelector = candidateId
+    ? `${subtypeSelector}[data-mi-candidate="${escapeCssAttributeValue(candidateId)}"]`
+    : subtypeSelector;
+
+  // The static renderer has a smaller class vocabulary than the React
+  // renderer, so this is an export-native version of the same movement-pathway
+  // grammar. The base token layer is subtype-scoped while every compositional
+  // rule is scoped to the exact selected candidate. Candidate theme, section
+  // variants and section order already live in the immutable Site snapshot, so
+  // this avoids copying the React-only candidate stylesheet into the export.
+  return `${subtypeSelector}{
+  --mi-physio-path:color-mix(in srgb,var(--mi-color-primary) 30%,var(--mi-color-border));
+  --mi-physio-warm:color-mix(in srgb,var(--mi-color-accent) 82%,var(--mi-color-surface));
+  background:color-mix(in srgb,var(--mi-color-primary) 5%,var(--mi-color-surface));
+}
+${candidateSelector} .mi-section--navbar::after{content:"";position:absolute;right:0;bottom:-.1rem;left:0;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,var(--mi-color-primary) 18% 70%,var(--mi-color-accent),transparent);opacity:.44;pointer-events:none}
+${candidateSelector} .mi-section--hero .mi-section__composition{position:relative;column-gap:clamp(2.5rem,6vw,6.5rem)}
+${candidateSelector} .mi-section--hero .mi-section__composition::before{content:"";position:absolute;z-index:-1;top:8%;left:4%;width:min(44%,33rem);aspect-ratio:1.35;border:1px solid var(--mi-physio-path);border-radius:58% 42% 55% 45%/45% 55% 45% 55%;transform:rotate(-7deg);pointer-events:none}
+${candidateSelector} .mi-section--hero h1{max-inline-size:min(17ch,100%);font-weight:650;line-height:1.1;letter-spacing:-.024em;text-transform:none;word-break:normal;overflow-wrap:normal;hyphens:none}
+${candidateSelector} .mi-section--hero .mi-media{border:1px solid color-mix(in srgb,var(--mi-color-primary) 24%,var(--mi-color-border));border-radius:58% 42% 52% 48%/44% 56% 44% 56%;box-shadow:1.1rem 1.1rem 0 color-mix(in srgb,var(--mi-color-primary) 7%,transparent),var(--mi-shadow-card)}
+${candidateSelector} :is(.mi-section--services,.mi-section--features) .mi-card{border-color:color-mix(in srgb,var(--mi-color-primary) 16%,var(--mi-color-border));background:color-mix(in srgb,var(--mi-color-surface-elevated) 94%,var(--mi-color-primary));box-shadow:0 1.25rem 3.5rem color-mix(in srgb,var(--mi-color-secondary) 8%,transparent)}
+${candidateSelector} .mi-section--process .mi-grid{position:relative;isolation:isolate}
+${candidateSelector} .mi-section--process .mi-card{border-color:var(--mi-physio-path);background:var(--mi-color-surface)}
+${candidateSelector} .mi-section--cta{background:linear-gradient(112deg,transparent 0 72%,color-mix(in srgb,var(--mi-color-accent) 14%,transparent) 72% 100%),color-mix(in srgb,var(--mi-color-primary) 7%,var(--mi-color-surface))}
+@media(min-width:48rem){${candidateSelector} :is(.mi-section--services,.mi-section--features) .mi-card:nth-child(even){margin-top:clamp(1rem,2.8vw,2.5rem)}${candidateSelector} .mi-section--process .mi-grid::before{content:"";position:absolute;z-index:-1;top:2.15rem;right:8%;left:8%;height:2px;background:repeating-linear-gradient(90deg,var(--mi-physio-path) 0 .65rem,transparent .65rem 1.15rem);pointer-events:none}}
+@media(max-width:47.99rem){${candidateSelector} .mi-section--hero .mi-section__composition::before{top:auto;bottom:1rem;left:8%;width:74%;transform:rotate(-4deg)}${candidateSelector} .mi-section--hero .mi-media{box-shadow:.55rem .55rem 0 color-mix(in srgb,var(--mi-color-primary) 7%,transparent),var(--mi-shadow-card)}}`;
 }
 
 type StaticThemeTokens = {
@@ -1323,6 +1497,58 @@ function itemDescription(item: Record<string, unknown>): string | undefined {
   return value(item.description) ?? value(item.body);
 }
 
+function renderGallery(
+  items: Record<string, unknown>[],
+  assetMap: Map<string, string>,
+): string {
+  const figures = items.flatMap((item) => {
+    const source = imageFor(item.image, assetMap);
+    if (!source) return [];
+    const alt = imageAlt(item.image) || itemTitle(item);
+    return [
+      `<figure class="mi-gallery__item"><img src="${escapeAttribute(source)}" alt="${escapeAttribute(alt)}" loading="lazy"></figure>`,
+    ];
+  });
+  return figures.length
+    ? `<div class="mi-gallery">${figures.join("")}</div>`
+    : renderCards(items, assetMap);
+}
+
+function renderCards(
+  items: Record<string, unknown>[],
+  assetMap: Map<string, string>,
+): string {
+  const renderCard = (item: Record<string, unknown>) => {
+    const image = imageFor(item.image, assetMap);
+    const meta = itemMeta(item);
+    const description = itemDescription(item);
+    return `<article class="mi-card">${image ? `<img src="${escapeAttribute(image)}" alt="${escapeAttribute(itemTitle(item))}">` : ""}<h3>${escapeHtml(itemTitle(item))}</h3>${meta ? `<p class="mi-card__meta">${escapeHtml(meta)}</p>` : ""}${description ? `<p>${escapeHtml(description)}</p>` : ""}</article>`;
+  };
+  if (!items.some((item) => itemGroup(item))) {
+    return `<div class="mi-grid">${items.map(renderCard).join("")}</div>`;
+  }
+
+  const groups: Array<{
+    label: string;
+    items: Record<string, unknown>[];
+  }> = [];
+  for (const item of items) {
+    const label = itemGroup(item) ?? "Menu";
+    const group = groups.find((entry) => entry.label === label);
+    if (group) group.items.push(item);
+    else groups.push({ label, items: [item] });
+  }
+  return `<div class="mi-item-groups">${groups.map((group) => `<section class="mi-item-group"><h3>${escapeHtml(group.label)}</h3><div class="mi-grid">${group.items.map(renderCard).join("")}</div></section>`).join("")}</div>`;
+}
+
+function itemGroup(item: Record<string, unknown>): string | undefined {
+  return value(item.group);
+}
+
+function itemMeta(item: Record<string, unknown>): string | undefined {
+  return value(item.meta);
+}
+
 function itemHref(item: Record<string, unknown>): string | undefined {
   return value(item.href) ?? value(item.url);
 }
@@ -1370,6 +1596,16 @@ function contrastForCss(value: string): string {
 function cssFont(value: string): string {
   const cleaned = value.replace(/[^a-z0-9 ,.'"-]/gi, "").trim();
   return cleaned || "system-ui";
+}
+
+function escapeCssAttributeValue(value: string): string {
+  return [...value]
+    .map((character) =>
+      /^[a-z0-9_-]$/i.test(character)
+        ? character
+        : `\\${character.codePointAt(0)!.toString(16)} `,
+    )
+    .join("");
 }
 
 function extensionFor(mediaType: string, source: string): string {

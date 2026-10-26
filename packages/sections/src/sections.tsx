@@ -9,6 +9,7 @@ type Item = {
   title: string;
   description?: string;
   group?: string;
+  groupDescription?: string;
   meta?: string;
   image?: string | ImageReference;
   href?: string;
@@ -123,14 +124,26 @@ function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
   }
 
   const groups = items.reduce<
-    Array<{ label: string; items: Array<{ item: Item; index: number }> }>
+    Array<{
+      label: string;
+      description?: { text: string; index: number };
+      items: Array<{ item: Item; index: number }>;
+    }>
   >((result, item, index) => {
     const label = item.group?.trim() || "Menu";
+    const description = item.groupDescription?.trim();
     const group = result.find((entry) => entry.label === label);
     if (group) {
       group.items.push({ item, index });
+      if (!group.description && description) {
+        group.description = { text: description, index };
+      }
     } else {
-      result.push({ label, items: [{ item, index }] });
+      result.push({
+        label,
+        ...(description ? { description: { text: description, index } } : {}),
+        items: [{ item, index }],
+      });
     }
     return result;
   }, []);
@@ -144,6 +157,18 @@ function ItemGrid({ items = [] }: Pick<UniversalSectionProps, "items">) {
               {group.label}
             </InlineField>
           </Typography>
+          {group.description ? (
+            <Typography
+              className="mi-section__item-group-description"
+              variant="body-sm"
+            >
+              <InlineField
+                path={`items.${group.description.index}.groupDescription`}
+              >
+                {group.description.text}
+              </InlineField>
+            </Typography>
+          ) : null}
           <div className="mi-section__grid">
             {group.items.map(({ item, index }) => (
               <ItemCard

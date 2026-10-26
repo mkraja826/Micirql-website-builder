@@ -20,6 +20,11 @@
 .mi-section__item-group {
   min-width: 0;
 }
+.mi-section__item-group-description {
+  max-width: 62ch;
+  margin-top: var(--mi-space-sm);
+  color: var(--mi-color-text-muted);
+}
 .mi-section__item-group > .mi-section__grid {
   margin-top: var(--mi-space-md);
 }

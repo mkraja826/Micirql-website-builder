@@ -1,8 +1,8 @@
 # Restaurant factual-reference visual review
 
-Review date: 2026-10-24  
-Fixture: Aarunya Table, a fictional internal factual-boundary fixture  
-Status: Top-20 responsive route checkpoint accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified
+Review date: 2026-10-26<br />
+Fixture: Aarunya Table, a fictional internal factual-boundary fixture<br />
+Status: variance, accessibility, logo, and cross-surface checkpoints accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified
 
 ## Decision
 
@@ -41,6 +41,10 @@ Provisional reference average: **4.6/5**. This accepts one factual reference dir
 - Added intrinsic logo dimensions, exact asset identity attributes, load priority, decoding behavior, aspect ratio, and matching header/footer sizing to static output.
 - Fixed a static-only 320 px eyebrow escape and explicitly excluded the intentional off-screen spam honeypot from geometry assertions.
 - Changed grouping from adjacent-run grouping to stable first-seen category grouping so a repeated non-contiguous category cannot create duplicate headings or React keys.
+- Restored supplied menu-category descriptions that were preserved in schema data but dropped by the grouped live and static renderers.
+- Replaced the renderer and static exporter’s brightness shortcut with WCAG relative-luminance contrast selection; corrected low-contrast Open Fire actions/eyebrow and Restaurant card indices.
+- Corrected the Restaurant reduced-motion selector so the mobile-menu icon and its pseudo-elements no longer retain transitions.
+- Scoped export-native Restaurant CSS to the exact selected candidate instead of collapsing every static export onto one generic subtype selector.
 
 ## Verified evidence
 
@@ -74,10 +78,19 @@ The live gate retains full-page 320, 390, and 1440 px screenshots for all six ro
 - The all-route gate caught and fixed an Open Fire Home hero whose centered generic variant could expand the copy outside the canvas at 1024 and 1440 px. The final candidate-scoped layout stretches the copy inside its grid track while preserving the dark fire-led direction.
 - Full-page 320 and 1440 px evidence for every candidate and route is retained under `qa-artifacts/restaurant-candidate-route-matrix` when `pnpm qa:restaurant:routes` runs with its default screenshot settings. This yields 240 retained screenshots.
 
+## Variance, accessibility, logo, and surface checkpoint — 2026-10-26
+
+- The three-brief factual variance matrix passes **60/60 generated sites and 720/720 rendered states**: 20 candidates × menu-led, arrival-led, and hosted-group briefs × six routes × 320/1440 px. It verifies fact-aware section hiding, every supplied visible fact, omitted sentinels, exact menus and prices, form ownership, phone/map/team boundaries, pinned candidate/brief navigation, exact logo identity, six unique route heroes, the 16-image pool, and responsive containment.
+- The candidate accessibility gate passes **20/20 candidates and 240/240 route/viewport scans** at 320 and 1440 px. Axe WCAG 2.2 A/AA, keyboard navigation, visible focus, mobile-menu Enter/Escape and focus return, both form journeys, 44 px controls, and reduced motion are green.
+- The Restaurant logo gate passes **21/21 tests and 200/200 candidate/logo/viewport states** for no logo, 1:1, 3:1, 6:1, and 1:2 supplied marks at 320 and 1440 px. It verifies exact intrinsic dimensions and asset IDs, header/footer identity, containment, clipping, overflow, sibling separation, mobile target size, internal-link persistence, the legacy default, and unknown-logo 404 behavior.
+- Cross-surface parity passes **2/2 gates** for all 20 candidates and all six routes. Editor preview, live preparation, portable export, and static export preserve exact candidate identity, visible content and actions, distinct reservation/general-enquiry forms, and the draft/unregistered boundary.
+- These gates found and fixed four substantive defects before acceptance: dropped category descriptions, generic static-export candidate styling, invalid reduced-motion pseudo-element scoping, and low-contrast candidate colors/actions.
+- Reproducible commands are `pnpm qa:restaurant:briefs`, `pnpm qa:restaurant:accessibility`, `pnpm qa:restaurant:logos`, and `pnpm qa:restaurant:surfaces`.
+
 ## Release boundary and next milestone
 
-Restaurant now has the 20-candidate catalog, deterministic ranking evidence, and the complete live-preview responsive route matrix. It still has no candidate-level accessibility matrix, three-brief factual variance matrix, full cross-surface preview/editor/live/static-export matrix, Restaurant-specific logo aspect-ratio matrix, recorded senior 4/5 review for every candidate, or final Dental/Physiotherapy preservation rerun. It therefore remains `Planned` and cannot be selected or published through the certified-pack flow.
+Restaurant now has the 20-candidate catalog, deterministic ranking evidence, complete live-preview responsive route matrix, three-brief variance evidence, candidate-level accessibility evidence, cross-surface parity, and the full logo aspect-ratio matrix. It still has no recorded senior 4/5 review for every candidate and no final Dental/Physiotherapy preservation rerun against this final code. It therefore remains `Planned` and cannot be selected or published through the certified-pack flow.
 
-The next milestone is the three-brief factual variance matrix and candidate-level WCAG/keyboard/reduced-motion gate, followed by cross-surface, logo-aspect-ratio, senior-review, and Dental/Physiotherapy preservation evidence. Registration remains a separate explicit decision after those gates pass.
+The next milestone is recorded per-candidate senior review followed by final Dental and Physiotherapy preservation evidence. Registry/onboarding/publish promotion remains a separate explicit decision only after those gates pass.
 
 No database migration, deployment, customer publication, or commercial release was performed.

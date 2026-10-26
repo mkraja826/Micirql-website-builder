@@ -258,7 +258,7 @@ export function createRestaurantDraftScaffold(
       seo: {
         title: truncate(
           page.path === "/"
-            ? `${facts.businessName} | Menu, visit and table requests`
+            ? `${facts.businessName} | ${facts.menu ? "Menu, visit and table requests" : "Restaurant information and table requests"}`
             : `${page.label} | ${facts.businessName}`,
           70,
         ),
@@ -437,7 +437,9 @@ function sectionFor(input: {
         props: {
           title: facts.businessName,
           verified: true,
-          description: `Menu, visit information and table-request options for ${facts.businessName}.`,
+          description: facts.menu
+            ? `Menu, visit information and table-request options for ${facts.businessName}.`
+            : `Visit information and table-request options for ${facts.businessName}.`,
           footerLinks: input.navigation,
         },
       };
@@ -540,8 +542,9 @@ function heroContent(
       ...common,
       eyebrow: suppliedFacts.join(" · ") || "Restaurant",
       title: facts.businessName,
-      description:
-        "Explore the current menu, plan your visit and send a table request. The restaurant confirms availability separately.",
+      description: facts.menu
+        ? "Explore the current menu, plan your visit and send a table request. The restaurant confirms availability separately."
+        : "Review the supplied restaurant details and send a table request. The restaurant confirms availability separately.",
       ...(facts.menu
         ? {
             secondaryAction: { label: "View menu", href: "/menu" },
@@ -808,6 +811,9 @@ function menuItems(facts: NormalizedRestaurantBrief, limit?: number) {
         .filter(Boolean)
         .join(" · "),
       group: category.name,
+      ...(category.description
+        ? { groupDescription: category.description }
+        : {}),
       ...((item.price || item.currency) && {
         meta: [item.currency, item.price].filter(Boolean).join(" "),
       }),
@@ -868,8 +874,12 @@ function pageDescription(
   facts: NormalizedRestaurantBrief,
 ) {
   const descriptions: Record<RestaurantDraftPagePath, string> = {
-    "/": `${facts.businessName}: menu and visit information with a clear way to request a table.`,
-    "/menu": `Explore the current menu from ${facts.businessName}, including prices and dietary disclosures.`,
+    "/": facts.menu
+      ? `${facts.businessName}: menu and visit information with a clear way to request a table.`
+      : `${facts.businessName}: supplied restaurant information with a clear way to request a table.`,
+    "/menu": facts.menu
+      ? `Explore the current menu from ${facts.businessName}, including supplied prices and dietary disclosures.`
+      : `Menu information for ${facts.businessName} is shown only when supplied.`,
     "/visit": `Find location, opening hours and arrival details for ${facts.businessName}.`,
     "/reservations": `Send a table request to ${facts.businessName}; submission does not confirm a reservation.`,
     "/story": `Discover the story and people behind ${facts.businessName}.`,

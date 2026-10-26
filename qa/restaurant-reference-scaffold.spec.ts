@@ -221,13 +221,23 @@ test.describe("Restaurant factual reference scaffold", () => {
         }),
       ]),
     );
+    expect(
+      (menu.props.items as Array<Record<string, unknown>>)[0],
+    ).toMatchObject({
+      group: "Small plates",
+      groupDescription: "Items supplied by the restaurant.",
+    });
 
     const liveRenderer = readFileSync(
       "packages/sections/src/sections.tsx",
       "utf8",
     );
     expect(liveRenderer).toMatch(/meta\?: string/);
+    expect(liveRenderer).toMatch(/groupDescription\?: string/);
     expect(liveRenderer).toContain('className="mi-section__card-meta"');
+    expect(liveRenderer).toContain(
+      'className="mi-section__item-group-description"',
+    );
     expect(liveRenderer).toContain("items.${index}.meta");
   });
 
@@ -434,6 +444,9 @@ test.describe("Restaurant factual reference scaffold", () => {
     const galleryImage = galleryItem.image as Record<string, unknown>;
 
     expect(menu).toContain("Small plates");
+    expect(menu).toContain(
+      '<p class="mi-item-group__description">Items supplied by the restaurant.</p>',
+    );
     expect(menu).toContain("Rice and mains");
     expect(menu).toContain("Charred corn chaat");
     expect(menu).toContain('<p class="mi-card__meta">INR 320</p>');

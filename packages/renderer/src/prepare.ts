@@ -241,11 +241,21 @@ function normalizePath(value: string): string {
 function contrastFor(color: string): string {
   const hex = color.trim().replace(/^#/, "");
   if (!/^[0-9a-fA-F]{6}$/.test(hex)) return "#ffffff";
-  const r = Number.parseInt(hex.slice(0, 2), 16);
-  const g = Number.parseInt(hex.slice(2, 4), 16);
-  const b = Number.parseInt(hex.slice(4, 6), 16);
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  return luminance > 0.55 ? "#111111" : "#ffffff";
+  const backgroundLuminance = relativeLuminance(hex);
+  const darkLuminance = relativeLuminance("111111");
+  const darkContrast = (backgroundLuminance + 0.05) / (darkLuminance + 0.05);
+  const lightContrast = 1.05 / (backgroundLuminance + 0.05);
+  return darkContrast >= lightContrast ? "#111111" : "#ffffff";
+}
+
+function relativeLuminance(hex: string): number {
+  const [red, green, blue] = [0, 2, 4].map((offset) => {
+    const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return channel <= 0.04045
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return red! * 0.2126 + green! * 0.7152 + blue! * 0.0722;
 }
 
 function normalizeBrandMark(

@@ -57,6 +57,11 @@
   --mi-r-logo-footer-fluid-height: 5.5vw;
 }
 
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
+  .mi-section__card-index {
+  color: var(--mi-r-card-index-color, var(--mi-color-text));
+}
+
 [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
     [data-mi-candidate]
   ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])
@@ -543,6 +548,12 @@
 
 [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
   [data-section-family="hero"]
+  .mi-type--eyebrow {
+  color: var(--mi-color-accent);
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-open-fire"]
+  [data-section-family="hero"]
   .mi-section__media {
   clip-path: polygon(7% 0, 100% 0, 100% 100%, 0 92%);
 }
@@ -976,6 +987,14 @@
     0 100%,
     0 0.5rem
   );
+}
+
+[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:is(
+    [data-mi-candidate="restaurant-restaurant-seasonal-journal"],
+    [data-mi-candidate="restaurant-restaurant-kitchen-pass"]
+  )
+  .mi-section__card-index {
+  color: var(--mi-color-primary);
 }
 
 /* 19 — Dual Script: equal-status paired measures with one shared price rail. */
@@ -1519,7 +1538,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
-    :is(.mi-section__card, .mi-section__action, .mi-section__media) {
+    :is(.mi-section__card, .mi-section__action, .mi-section__media),
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
+    .mi-nav-menu__icon,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
+    .mi-nav-menu__icon::before,
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate]
+    .mi-nav-menu__icon::after {
+    animation: none;
     transition: none;
   }
 }

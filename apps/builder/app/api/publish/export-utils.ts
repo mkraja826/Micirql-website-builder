@@ -910,7 +910,7 @@ h2{font-size:clamp(2rem,5vw,3.6rem);margin:.25em 0 .45em}
 h3{font-size:1.25rem;margin:.2em 0 .55em}
 .mi-split{display:grid;gap:clamp(1.5rem,5vw,4rem);align-items:center}.mi-split>*{min-width:0}
 .mi-grid{display:grid;gap:1rem;margin-top:2.5rem}
-.mi-item-groups{display:grid;gap:clamp(2rem,5vw,4rem);margin-top:2.5rem}.mi-item-group{min-width:0}.mi-item-group>.mi-grid{margin-top:1rem}
+.mi-item-groups{display:grid;gap:clamp(2rem,5vw,4rem);margin-top:2.5rem}.mi-item-group{min-width:0}.mi-item-group__description{max-width:62ch;margin:.6rem 0 0;color:var(--mi-color-text-muted)}.mi-item-group>.mi-grid{margin-top:1rem}
 .mi-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:2.5rem}.mi-gallery__item{min-width:0;margin:0;overflow:hidden;border-radius:var(--mi-radius-card);background:var(--mi-color-secondary)}.mi-gallery__item img{display:block;width:100%;height:100%;aspect-ratio:1/1;object-fit:cover}
 .mi-card{min-width:0;padding:1.4rem;border:var(--mi-border-width) solid var(--mi-color-border);border-radius:var(--mi-radius-card);background:var(--mi-color-surface);box-shadow:var(--mi-shadow-card)}
 .mi-card h3{font-size:clamp(1.125rem,1.5vw,1.35rem);font-weight:600;line-height:1.22;letter-spacing:-.01em}
@@ -1093,8 +1093,16 @@ ${industryCss}
 
 function staticIndustryCss(site: Site): string {
   if (site.domain === "restaurant" && site.subtype === "restaurant") {
-    const selector =
+    const subtypeSelector =
       '[data-mi-domain="restaurant"][data-mi-subtype="restaurant"]';
+    const candidateId = site.generation?.selectedCandidateId;
+    const selector = candidateId
+      ? `${subtypeSelector}[data-mi-candidate="${escapeCssAttributeValue(candidateId)}"]`
+      : subtypeSelector;
+    // Candidate palette, theme, section variants and section order are already
+    // embedded in the immutable Site snapshot. Scope the export-native
+    // Restaurant grammar to that exact identity so two candidate exports
+    // cannot collapse onto one generic subtype presentation contract.
     return `${selector}{--mi-restaurant-paper:color-mix(in srgb,var(--mi-color-surface) 94%,var(--mi-color-accent));--mi-restaurant-rule:color-mix(in srgb,var(--mi-color-border) 72%,var(--mi-color-text));overflow-x:clip;background:var(--mi-color-surface)}
 ${selector} .mi-section{--mi-section-space:clamp(3.75rem,8vw,7.5rem);background:linear-gradient(90deg,color-mix(in srgb,var(--mi-color-accent) 5%,transparent) 1px,transparent 1px),var(--mi-color-surface);background-size:min(8vw,7rem) 100%}${selector} .mi-section:nth-child(odd):not(.mi-section--navbar){background:linear-gradient(90deg,color-mix(in srgb,var(--mi-color-accent) 5%,transparent) 1px,transparent 1px),var(--mi-restaurant-paper)}
 ${selector} .mi-section--navbar{border-bottom:0}${selector} .mi-navbar{min-height:5rem;border-top:1px solid var(--mi-restaurant-rule);border-bottom:3px double var(--mi-restaurant-rule)}
@@ -1530,15 +1538,25 @@ function renderCards(
 
   const groups: Array<{
     label: string;
+    description?: string;
     items: Record<string, unknown>[];
   }> = [];
   for (const item of items) {
     const label = itemGroup(item) ?? "Menu";
+    const description = value(item.groupDescription);
     const group = groups.find((entry) => entry.label === label);
-    if (group) group.items.push(item);
-    else groups.push({ label, items: [item] });
+    if (group) {
+      group.items.push(item);
+      if (!group.description && description) group.description = description;
+    } else {
+      groups.push({
+        label,
+        ...(description ? { description } : {}),
+        items: [item],
+      });
+    }
   }
-  return `<div class="mi-item-groups">${groups.map((group) => `<section class="mi-item-group"><h3>${escapeHtml(group.label)}</h3><div class="mi-grid">${group.items.map(renderCard).join("")}</div></section>`).join("")}</div>`;
+  return `<div class="mi-item-groups">${groups.map((group) => `<section class="mi-item-group"><h3>${escapeHtml(group.label)}</h3>${group.description ? `<p class="mi-item-group__description">${escapeHtml(group.description)}</p>` : ""}<div class="mi-grid">${group.items.map(renderCard).join("")}</div></section>`).join("")}</div>`;
 }
 
 function itemGroup(item: Record<string, unknown>): string | undefined {
@@ -1585,12 +1603,21 @@ function cssColor(value: string, fallback: string): string {
 function contrastForCss(value: string): string {
   const hex = value.trim().replace(/^#/, "");
   if (!/^[0-9a-f]{6}$/i.test(hex)) return "#ffffff";
-  const red = Number.parseInt(hex.slice(0, 2), 16);
-  const green = Number.parseInt(hex.slice(2, 4), 16);
-  const blue = Number.parseInt(hex.slice(4, 6), 16);
-  return (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255 > 0.55
-    ? "#111111"
-    : "#ffffff";
+  const backgroundLuminance = relativeLuminanceForCss(hex);
+  const darkLuminance = relativeLuminanceForCss("111111");
+  const darkContrast = (backgroundLuminance + 0.05) / (darkLuminance + 0.05);
+  const lightContrast = 1.05 / (backgroundLuminance + 0.05);
+  return darkContrast >= lightContrast ? "#111111" : "#ffffff";
+}
+
+function relativeLuminanceForCss(hex: string): number {
+  const [red, green, blue] = [0, 2, 4].map((offset) => {
+    const channel = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return channel <= 0.04045
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return red! * 0.2126 + green! * 0.7152 + blue! * 0.0722;
 }
 
 function cssFont(value: string): string {

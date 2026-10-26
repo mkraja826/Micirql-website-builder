@@ -168,6 +168,23 @@ test.describe("Builder product chrome: authenticated business brief", () => {
       await expect(summary).toContainText("Candidate palettes");
       await expect(summary).toContainText("Real + certified library");
       await expect(
+        summary.getByText("MiCirql ranks 20 certified Dental directions.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(summary.getByText(/Dentaldirections/u)).toHaveCount(0);
+      await expect(
+        summary.getByText(
+          "This saved brief remains the factual source for this project.",
+          { exact: true },
+        ),
+      ).toHaveCount(1);
+      await expect(
+        summary.getByText("You can edit this brief before publishing.", {
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await expect(
         page.getByRole("button", {
           name: /review 20 dental directions|review 20 directions/i,
         }),

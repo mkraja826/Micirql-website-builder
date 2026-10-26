@@ -1,7 +1,9 @@
 # MiCirql product UI plan
 
-Status date: 2026-10-23  
-State: Dental and Physiotherapy certified locally; Builder product shell and truthful marketing replacement implemented locally and gated  
+Status date: 2026-10-27
+
+State: Dental and Physiotherapy certified locally; Builder product shell and truthful marketing replacement gated and pushed on their independent source branches; neither is deployed
+
 Release rule: Builder and marketing changes must not alter locked Dental output, deploy, migrate, or publish a customer site without explicit authorization
 
 ## Objective
@@ -46,8 +48,9 @@ All steps retain current API payloads, state transitions, Dental catalog compati
 Source ownership is resolved, but deployment remains deliberately unauthorized.
 The canonical MiCirql mark was recovered from the official live site, mirrored
 byte-for-byte in Builder, and reused by the local marketing replacement. The
-replacement lives on `codex/truthful-marketing-ui`, has not been pushed or
-deployed, and can be reviewed independently of Builder and generated-site routes.
+replacement lives on the pushed `codex/truthful-marketing-ui` branch and can be
+reviewed independently of Builder and generated-site routes. It has not been
+deployed.
 
 The evidence-backed audit and replacement contract are recorded in
 [`micirql-marketing-current-state-audit.md`](./micirql-marketing-current-state-audit.md).
@@ -96,7 +99,7 @@ Rules:
 
 1. The private Supabase upload adapter and durable preview/live/export re-signing path pass locally, but the production deployment configuration and an authorized remote upload-to-live/export smoke are still outstanding.
 2. Physiotherapy is locally certified, but a real customer site still needs that clinic's exact approved identity assets and verified facts; deterministic logo fixtures are not commercial approval.
-3. The local marketing replacement passes its clean build and 9/9 product-UI gate, but privacy/abuse-control decisions, production handoff, final copy approval, rollback verification, and deployment authorization remain outstanding.
+3. The marketing replacement passes its clean build and 15/15 homepage/product-portfolio UI gate, but privacy/abuse-control decisions, production handoff, final copy approval, rollback verification, and deployment authorization remain outstanding.
 4. Focused post-change Radhika Dental generated-route evidence is green, but its deterministic logo is a QA-only stand-in and it does not cover the complete authenticated dashboard-to-brief-to-saved-draft lifecycle. Commercial acceptance still needs the clinic's exact approved logo, verified business/contact/team/review facts, an authenticated saved-project run, and the authorized deployed upload-to-live/export smoke.
 
 Builder and marketing can continue through independent local release gates while
@@ -105,7 +108,7 @@ marketing source does not itself authorize a public deployment.
 
 Latest 2026-10-23 focused evidence: Radhika Dental ranks 5, 15, and 18 pass the generated-route visual gate across the truthful Home, Services, About, and Contact routes at 1440, 768, and 390 px. Each rank retains 25 PNGs covering fold/full-page states and the open mobile menu; the gate checks substantive content, human/service image balance, unique loaded images with alt text, readable H1/H2/H3 typography, zero horizontal overflow, exact header/footer logo propagation, mobile-menu containment/backdrop behavior, and the factual omission of Doctors when no verified clinician evidence exists. The route uses a QA-only logo stand-in and the real Dental scaffold, ranked preset, and production renderer, but not the full authenticated saved-project lifecycle.
 
-The **23/23** eight-width full-catalog Dental result from 2026-10-22 remains the prior baseline. After Physiotherapy registry/runtime promotion, the final 2026-10-23 full 20-candidate production rerun passes **23/23** in 7.5 minutes; evidence is retained under `C:\mi-dental-post-physio-promotion-20261023`. Physiotherapy's promoted registry/runtime architecture suite passes **39/39**, its final-code responsive matrix passes **21/21** test cases over 600 route/viewport states, the supplied-fact matrix passes 60/60 test cases over 720 states, and accessibility/logo evidence covers 240 accessibility states plus all 20 candidates. All 20 workspace packages typecheck, and the separate marketing repository passes its production build and **9/9** five-width product-UI suite. No deployment, migration, push, or customer publication is included.
+The **23/23** eight-width full-catalog Dental result from 2026-10-22 remains the prior baseline. After Physiotherapy registry/runtime promotion, the final 2026-10-23 full 20-candidate production rerun passes **23/23** in 7.5 minutes; evidence is retained under `C:\mi-dental-post-physio-promotion-20261023`. Physiotherapy's promoted registry/runtime architecture suite passes **39/39**, its final-code responsive matrix passes **21/21** test cases over 600 route/viewport states, the supplied-fact matrix passes 60/60 test cases over 720 states, and accessibility/logo evidence covers 240 accessibility states plus all 20 candidates. All 20 workspace packages typecheck, and the separate marketing repository passes its production build and **15/15** five-width homepage/product-portfolio UI suite. The source branches are pushed; no deployment, migration, or customer publication is included.
 
 ## Phase 1 checkpoint: unauthenticated shell
 
@@ -216,3 +219,13 @@ focus, 44 px internal touch targets, reduced motion, overflow/clipping, runtime
 errors, API contracts, autosave and optimistic-conflict recovery. The gate found
 and corrected low-contrast dashboard preview labels and metadata instead of
 weakening the accessibility assertion. Logo failure preserves the previous brief and offers a safe retry; publish readiness shares the server's certified gate and labels final production validation separately. The supporting upload-security/readiness contract suite passes **7/7**.
+
+## Product-truth polish checkpoint — 2026-10-27
+
+- The onboarding review now renders `Dental directions` with the required word boundary and states that the saved brief remains the project's factual source instead of promising an unavailable edit-later flow.
+- The embedded Tools panel uses the live `SEO Studio` product name while preserving the working SEO, QA, and UI/UX routes. Screenshot Studio remains omitted because its advertised direct route currently redirects to the Tools index.
+- The dedicated onboarding/editor production harness passes **17/17** at 320, 390, 768, 1024, and 1440 px, including refreshed visual baselines where the corrected copy is visible.
+- Public marketing now proves the full `structured brief → ranked review → responsive editor → readiness` journey with exact QA captures. Its `/apps/` route is a truthful portfolio for CapDent, Builder, Tools, and assisted engineering rather than an unverified marketplace.
+- The separate marketing production build and combined homepage/product-portfolio gate pass **15/15**, covering five widths, keyboard focus, mobile targets, reduced motion, WCAG checks, runtime errors, factual release states, and visual baselines.
+
+These changes update source evidence only. Restaurant remains `Planned`, and no deployment, database mutation, customer publication, or commercial release is implied.

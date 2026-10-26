@@ -972,7 +972,7 @@ export default function WorkspaceClient({
                   target="_blank"
                 >
                   <span>
-                    SEO HTML Inspector <b>Beta</b>
+                    SEO Studio <b>Beta</b>
                   </span>
                   <small>
                     Metadata, headings, canonical and indexing signals · opens

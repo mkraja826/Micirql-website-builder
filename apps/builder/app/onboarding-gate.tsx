@@ -991,7 +991,7 @@ export function OnboardingGate({
               <ol>
                 <li>We validate the supplied facts.</li>
                 <li>
-                  MiCirql ranks 20 certified {selectedPack.brief.directionLabel}
+                  MiCirql ranks 20 certified {selectedPack.brief.directionLabel}{" "}
                   directions.
                 </li>
                 <li>You choose a direction before the full build.</li>
@@ -1034,7 +1034,7 @@ export function OnboardingGate({
             </div>
             <small className={styles.submitHint}>
               {isFinalBriefStep
-                ? "You can edit this brief before publishing."
+                ? "This saved brief remains the factual source for this project."
                 : "Your answers stay in this brief as you move between sections."}
             </small>
           </aside>

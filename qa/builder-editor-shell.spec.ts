@@ -779,7 +779,7 @@ async function expectMicirqlToolsPanel(page: Page) {
 
   const expectedLinks = [
     {
-      name: /^SEO HTML Inspector/,
+      name: /^SEO Studio/,
       href: "https://tools.micirql.com/tools/seo/",
     },
     {
@@ -803,6 +803,7 @@ async function expectMicirqlToolsPanel(page: Page) {
     await expect(link).toHaveAttribute("target", "_blank");
     await expect(link).toHaveAttribute("rel", "noreferrer");
   }
+  await expect(tools.getByText(/^SEO HTML Inspector/u)).toHaveCount(0);
   await expect(
     tools.locator('a[href*="/tools/screenshots/"]'),
     "Screenshot Studio must not be linked while its route redirects",

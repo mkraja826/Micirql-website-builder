@@ -1,6 +1,6 @@
 # MiCirql industry expansion plan
 
-Status date: 2026-10-26
+Status date: 2026-10-27
 
 ## Current local release baseline
 
@@ -11,7 +11,7 @@ Status date: 2026-10-26
 - Certified packs now own a versioned design grammar as well as a content contract. Cross-industry registration rejects a reused grammar ID, an exact theme/variant/section-order clone, or a candidate whose weighted visual similarity exceeds the pack's declared threshold.
 - A production Supabase upload adapter is implemented locally. It uses the signed-in user's bearer token plus the publishable key and RLS, verifies exact site/workspace ownership, writes a private upload intent, validates the stored bytes/MIME/magic bytes/dimensions and safe SVG subset before finalization, and can recover a completed intent idempotently. Preview, static export, and live rendering now re-sign the durable private storage key server-side; deployment configuration and an authorized remote end-to-end smoke remain release blockers.
 - Physiotherapy is registered beside Dental and is selectable in onboarding. Restaurant has completed the researched 20-candidate draft-to-promotion evidence, but remains unregistered, non-actionable, and labelled `Planned` in the product pending an explicit promotion decision.
-- Builder UI/UX is owned by this repository. The truthful `micirql.com` redesign is pushed to GitHub `mkraja826/micirql-website` on `codex/truthful-marketing-ui` at `2fc1c49`; it remains undeployed. The official live MiCirql SVG mark is mirrored byte-for-byte into Builder. Product chrome remains isolated from generated-site CSS.
+- Builder UI/UX is owned by this repository. The truthful `micirql.com` redesign is pushed to GitHub `mkraja826/micirql-website` on `codex/truthful-marketing-ui` at `b4be26c`; it remains undeployed. The official live MiCirql SVG mark is mirrored byte-for-byte into Builder. Product chrome remains isolated from generated-site CSS.
 
 ## Execution checkpoint — 2026-10-23
 
@@ -64,7 +64,7 @@ Current ownership:
 | Surface                | Source in this workspace | Current state                                                                                                                                                                                                                                                   |
 | ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `builder.micirql.com`  | `apps/builder`           | Auth, dashboard, onboarding, certified design review, responsive editor, media/logo failure, and truthful publish readiness use neutral product chrome and pass 33/33; the durable private adapter is local and still needs authorized deployment verification. |
-| `micirql.com`          | Separate located repo    | Local truthful replacement on `codex/truthful-marketing-ui`; clean install, production build, form contract, exact mark, SEO, WCAG, reduced-motion, and five-width responsive gate pass 9/9; not pushed or deployed.                                            |
+| `micirql.com`          | Separate located repo    | Truthful replacement pushed on `codex/truthful-marketing-ui` at `b4be26c`; production build plus five-width homepage/product-portfolio visual, WCAG, motion, overflow, metadata, route, and form gates pass 15/15; not deployed.                                      |
 | Generated public sites | `apps/live`              | Separate wildcard/form routing; must not claim the root marketing domain.                                                                                                                                                                                       |
 | Internal documentation | `apps/docs`              | Not the public marketing site and must not be repurposed accidentally.                                                                                                                                                                                          |
 
@@ -346,7 +346,7 @@ The factual reference scaffold, 20-candidate responsive route matrix, three-brie
 
 ### Next implementation step
 
-Make the explicit local Restaurant registry/onboarding/publish promotion decision. If promotion is authorized, perform it as a separate source change and rerun the same release gates; then begin primary-source research and factual-boundary design for the next industry. No deployment, customer publishing, database mutation, or commercial release is authorized by this checkpoint.
+Make the explicit local Restaurant registry/onboarding/publish promotion decision. Promotion is not a status-label flip: the implementation must add a discriminated Restaurant facts payload, menu/visit/reservation onboarding, a certified pack adapter and runtime, production media/disclosure rules, and Restaurant-owned publish validation before it becomes selectable. The archived draft catalog must remain preserved as evidence. If promotion is authorized, perform those changes as a separate source milestone and rerun the same Restaurant, Dental, and Physiotherapy gates; then begin primary-source research and factual-boundary design for the next industry. No deployment, customer publishing, database mutation, or commercial release is authorized by this checkpoint.
 
 ## Research basis
 

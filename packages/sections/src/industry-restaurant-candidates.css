@@ -1308,6 +1308,22 @@
     filter: var(--mi-r-mobile-image-filter, none);
   }
 
+  /* Counter Signal's deliberately shallow 16:7 marquee must own the media
+   * frame as well as the image. Leaving the universal 4:3 frame in place
+   * produced an empty colour block below every mobile route hero. */
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-counter-rhythm"]
+    [data-section-family="hero"]
+    .mi-section__media {
+    aspect-ratio: var(--mi-r-mobile-hero-ratio);
+  }
+
+  [data-mi-domain="restaurant"][data-mi-subtype="restaurant"][data-mi-candidate="restaurant-restaurant-counter-rhythm"]
+    [data-section-family="hero"]
+    .mi-section__media
+    img {
+    height: 100%;
+  }
+
   [data-mi-domain="restaurant"][data-mi-subtype="restaurant"]:where(
       [data-mi-candidate]
     ):not([data-mi-candidate="restaurant-restaurant-table-story-editorial"])

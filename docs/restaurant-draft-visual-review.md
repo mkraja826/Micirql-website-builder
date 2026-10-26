@@ -2,11 +2,11 @@
 
 Review date: 2026-10-26<br />
 Fixture: Aarunya Table, a fictional internal factual-boundary fixture<br />
-Status: variance, accessibility, logo, and cross-surface checkpoints accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified
+Status: all planned draft-to-promotion evidence accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified pending an explicit promotion decision
 
 ## Decision
 
-The factual Restaurant / Restaurant reference is the common content and behavior baseline for 20 independently art-directed staging candidates. The candidates now pass the complete six-route/five-width responsive matrix, but this is not a certified pack and must not be exposed as a Builder choice yet.
+The factual Restaurant / Restaurant reference is the common content and behavior baseline for 20 independently art-directed staging candidates. The candidates now pass the complete six-route/five-width responsive matrix, per-candidate senior review, and final Dental/Physiotherapy preservation gates. This is still not a certified pack and must not be exposed as a Builder choice until an explicit registry/onboarding/publish promotion decision is made.
 
 The reference is materially different from the Dental and Physiotherapy systems. It uses a warm table-editorial grammar: moderate serif display type, double rules, menu-category rhythm, item/price alignment, square reservation actions, warm paper fields, and an editorial venue/food gallery. It does not reuse treatment cards, clinic hero geometry, movement paths, appointment language, or a clinic page sequence.
 
@@ -87,10 +87,44 @@ The live gate retains full-page 320, 390, and 1440 px screenshots for all six ro
 - These gates found and fixed four substantive defects before acceptance: dropped category descriptions, generic static-export candidate styling, invalid reduced-motion pseudo-element scoping, and low-contrast candidate colors/actions.
 - Reproducible commands are `pnpm qa:restaurant:briefs`, `pnpm qa:restaurant:accessibility`, `pnpm qa:restaurant:logos`, and `pnpm qa:restaurant:surfaces`.
 
+## Per-candidate senior review and final preservation — 2026-10-26
+
+The retained 320 and 1440 px evidence was reviewed across all six routes for every candidate. Each score uses the same 5-point senior UI/UX rubric; every category must score at least 4.0.
+
+|   # | Candidate             | Hierarchy | Typography | Menu | Imagery | Spacing | Brand fit | Conversion | Mobile | Average | Decision              |
+| --: | --------------------- | --------: | ---------: | ---: | ------: | ------: | --------: | ---------: | -----: | ------: | --------------------- |
+|  01 | Table Story Editorial |       4.6 |        4.7 |  4.7 |     4.3 |     4.2 |       4.6 |        4.8 |    4.6 |    4.56 | Pass                  |
+|  02 | Market Ledger         |       4.6 |        4.5 |  4.8 |     4.2 |     4.4 |       4.8 |        4.7 |    4.5 |    4.56 | Pass                  |
+|  03 | Courtyard Threshold   |       4.5 |        4.4 |  4.6 |     4.4 |     4.2 |       4.7 |        4.6 |    4.5 |    4.49 | Pass                  |
+|  04 | Tasting Sequence      |       4.5 |        4.6 |  4.6 |     4.3 |     4.2 |       4.6 |        4.7 |    4.7 |    4.53 | Pass                  |
+|  05 | Neighbourhood Window  |       4.5 |        4.4 |  4.7 |     4.4 |     4.3 |       4.7 |        4.7 |    4.6 |    4.54 | Pass after correction |
+|  06 | Open Fire             |       4.7 |        4.6 |  4.7 |     4.6 |     4.4 |       4.9 |        4.8 |    4.7 |    4.68 | Pass                  |
+|  07 | Seasonal Journal      |       4.6 |        4.8 |  4.7 |     4.5 |     4.3 |       4.8 |        4.7 |    4.6 |    4.63 | Pass                  |
+|  08 | Family Table          |       4.2 |        4.3 |  4.4 |     4.2 |     4.0 |       4.2 |        4.7 |    4.4 |    4.30 | Pass                  |
+|  09 | Ingredient Atlas      |       4.3 |        4.4 |  4.4 |     4.1 |     4.0 |       4.5 |        4.6 |    4.2 |    4.31 | Pass                  |
+|  10 | Counter Signal        |       4.2 |        4.2 |  4.7 |     4.4 |     4.1 |       4.5 |        4.6 |    4.3 |    4.38 | Pass after correction |
+|  11 | Night Passage         |       4.3 |        4.2 |  4.3 |     4.4 |     4.0 |       4.7 |        4.6 |    4.1 |    4.33 | Pass                  |
+|  12 | Linen and Light       |       4.3 |        4.3 |  4.5 |     4.0 |     4.1 |       4.2 |        4.7 |    4.3 |    4.30 | Pass                  |
+|  13 | Brass and Spice       |       4.4 |        4.4 |  4.5 |     4.3 |     4.0 |       4.6 |        4.7 |    4.2 |    4.39 | Pass                  |
+|  14 | Menu Poster           |       4.4 |        4.4 |  4.6 |     4.4 |     4.0 |       4.6 |        4.6 |    4.1 |    4.39 | Pass                  |
+|  15 | Reservation Concierge |       4.5 |        4.3 |  4.4 |     4.5 |     4.2 |       4.4 |        4.8 |    4.4 |    4.44 | Pass                  |
+|  16 | Terrace Air           |       4.4 |        4.3 |  4.3 |     4.6 |     4.4 |       4.5 |        4.6 |    4.5 |    4.45 | Pass                  |
+|  17 | Banquet Plan          |       4.4 |        4.2 |  4.6 |     4.2 |     4.3 |       4.4 |        4.6 |    4.4 |    4.39 | Pass                  |
+|  18 | Kitchen Pass          |       4.5 |        4.2 |  4.7 |     4.6 |     4.4 |       4.8 |        4.6 |    4.3 |    4.51 | Pass                  |
+|  19 | Dual Script           |       4.5 |        4.4 |  4.7 |     4.6 |     4.5 |       4.7 |        4.6 |    4.5 |    4.56 | Pass                  |
+|  20 | Quiet Room            |       4.5 |        4.5 |  4.5 |     4.8 |     4.3 |       4.8 |        4.4 |    4.4 |    4.53 | Pass                  |
+
+- **20/20 candidates** and **160/160 category scores** meet the 4.0 floor.
+- Neighbourhood Window was rejected for unrelated/non-local visual cues. Its candidate media pool now excludes the affected assets; the refreshed six-route evidence passed review.
+- Counter Signal was rejected because its 16:7 mobile media left a large unfilled block inside a 4:3 frame. Candidate-scoped mobile containment now fills the frame, and the refreshed 12 screenshots passed review.
+- The final Restaurant route rerun passes **20/20 candidates and 600/600 states**. The four affected brief slices pass **12/12 sites and 144/144 states**; Counter Signal accessibility passes **1/1 candidate and 12/12 scans**; full Restaurant surface parity passes **2/2**.
+- Final preservation passes **23/23 Dental tests** across the locked 20-candidate catalog and eight viewport widths, plus **21/21 Physiotherapy tests** covering all 20 candidates and **600/600 route/viewport states**.
+- The final registry/runtime, content-boundary, draft-isolation, export, and locked-catalog preservation suite passes **87/87**.
+
 ## Release boundary and next milestone
 
-Restaurant now has the 20-candidate catalog, deterministic ranking evidence, complete live-preview responsive route matrix, three-brief variance evidence, candidate-level accessibility evidence, cross-surface parity, and the full logo aspect-ratio matrix. It still has no recorded senior 4/5 review for every candidate and no final Dental/Physiotherapy preservation rerun against this final code. It therefore remains `Planned` and cannot be selected or published through the certified-pack flow.
+Restaurant now has the 20-candidate catalog, deterministic ranking evidence, complete responsive route matrix, three-brief variance evidence, candidate-level accessibility evidence, cross-surface parity, the full logo aspect-ratio matrix, recorded senior review, and fresh Dental/Physiotherapy preservation evidence. All planned draft-to-promotion gates are accepted.
 
-The next milestone is recorded per-candidate senior review followed by final Dental and Physiotherapy preservation evidence. Registry/onboarding/publish promotion remains a separate explicit decision only after those gates pass.
+Restaurant deliberately remains `Planned`, unregistered, unavailable in onboarding, and blocked from the certified publish flow. The next step is an explicit local registry/onboarding/publish promotion decision; passing the evidence does not make that product decision automatically. After that decision, the expansion program can begin research for the next industry without weakening the same gates.
 
 No database migration, deployment, customer publication, or commercial release was performed.

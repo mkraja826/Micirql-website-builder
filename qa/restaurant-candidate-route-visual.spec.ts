@@ -220,6 +220,14 @@ test.describe("Restaurant Top 20: all-route responsive matrix", () => {
               .toBeLessThanOrEqual(viewport.width <= 390 ? 6 : 5);
             if (viewport.width <= 390) {
               expect.soft(audit.undersizedControls, label).toEqual([]);
+              if (candidate.recipeId === "counter-rhythm") {
+                expect
+                  .soft(
+                    audit.heroMediaUnfilledBottomPx,
+                    `${label} shallow hero image must fill its media frame`,
+                  )
+                  .toBeLessThanOrEqual(1);
+              }
             }
 
             if (SCREENSHOT_WIDTHS.has(viewport.width)) {
@@ -555,6 +563,12 @@ async function responsiveAudit(page: Page) {
     if (!heroLayout || !heroCopy || !heroMedia) {
       throw new Error("Restaurant page is missing its hero composition");
     }
+    const heroImage = heroMedia.querySelector<HTMLElement>("img");
+    if (!heroImage) {
+      throw new Error("Restaurant page is missing its hero image");
+    }
+    const heroMediaRect = heroMedia.getBoundingClientRect();
+    const heroImageRect = heroImage.getBoundingClientRect();
     const overlapArea = (first: DOMRect, second: DOMRect) => {
       const width = Math.max(
         0,
@@ -660,6 +674,10 @@ async function responsiveAudit(page: Page) {
       heroTextProtected:
         heroOverlapArea === 0 ||
         (Number.parseInt(heroCopyStyle.zIndex, 10) >= 1 && copyHasSurface),
+      heroMediaUnfilledBottomPx: Math.max(
+        0,
+        Math.round(heroMediaRect.bottom - heroImageRect.bottom),
+      ),
       h1: {
         count: h1s.length,
         text: h1.textContent?.trim().replace(/\s+/g, " ") ?? "",

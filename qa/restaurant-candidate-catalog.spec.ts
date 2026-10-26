@@ -24,6 +24,7 @@ import { applyRestaurantDraftCandidate } from "../apps/builder/app/industry-pack
 import {
   applyRestaurantCandidateMedia,
   RESTAURANT_CANDIDATE_HOME_HERO_IDS,
+  RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS,
   restaurantCandidateMediaSelection,
 } from "../apps/builder/app/industry-packs/drafts/restaurant-candidate-media";
 import {
@@ -666,6 +667,12 @@ test.describe("Restaurant Top-20 staging catalog", () => {
           candidate.recipeId
         ],
       );
+      const selectedIds = selection.map(({ id }) => id);
+      for (const excludedId of RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS[
+        candidate.recipeId as keyof typeof RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS
+      ] ?? []) {
+        expect(selectedIds, candidate.recipeId).not.toContain(excludedId);
+      }
       homeHeroIds.push(selection[0]!.id);
     }
     expect(Object.keys(RESTAURANT_CANDIDATE_HOME_HERO_IDS)).toHaveLength(20);

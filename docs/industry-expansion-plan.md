@@ -10,7 +10,7 @@ Status date: 2026-10-26
 - The shared logo rendering contract is implemented locally for preview, editor, live rendering, publish validation, and static export. A supplied logo must resolve to the exact opaque asset ID or rendering/publishing fails with `BRAND_LOGO_UNRESOLVED`; text is used only when no logo was supplied.
 - Certified packs now own a versioned design grammar as well as a content contract. Cross-industry registration rejects a reused grammar ID, an exact theme/variant/section-order clone, or a candidate whose weighted visual similarity exceeds the pack's declared threshold.
 - A production Supabase upload adapter is implemented locally. It uses the signed-in user's bearer token plus the publishable key and RLS, verifies exact site/workspace ownership, writes a private upload intent, validates the stored bytes/MIME/magic bytes/dimensions and safe SVG subset before finalization, and can recover a completed intent idempotently. Preview, static export, and live rendering now re-sign the durable private storage key server-side; deployment configuration and an authorized remote end-to-end smoke remain release blockers.
-- Physiotherapy is registered beside Dental and is selectable in onboarding. Restaurant now has a researched draft-planning contract, but remains unregistered, non-actionable, and labelled `Planned` in the product.
+- Physiotherapy is registered beside Dental and is selectable in onboarding. Restaurant has completed the researched 20-candidate draft-to-promotion evidence, but remains unregistered, non-actionable, and labelled `Planned` in the product pending an explicit promotion decision.
 - Builder UI/UX is owned by this repository. The truthful `micirql.com` redesign is pushed to GitHub `mkraja826/micirql-website` on `codex/truthful-marketing-ui` at `2fc1c49`; it remains undeployed. The official live MiCirql SVG mark is mirrored byte-for-byte into Builder. Product chrome remains isolated from generated-site CSS.
 
 ## Execution checkpoint — 2026-10-23
@@ -322,7 +322,7 @@ The 20 independently art-directed staging candidates now exist and pass their ca
 
 A new all-route production-preview matrix covers Home, Menu, Visit, Reservations, Story, and Contact at 320, 390, 768, 1024, and 1440 px for every candidate. It caught and corrected Open Fire's out-of-canvas Home copy at 1024/1440 px. The final-code rerun passes **20/20 candidates and 600/600 responsive states**. Default runs retain 320/1440 full-page evidence for all candidate/route combinations under `qa-artifacts/restaurant-candidate-route-matrix` (240 screenshots).
 
-This checkpoint closes the candidate-catalog and full responsive route-matrix milestones. Restaurant remains unregistered and `Planned`; the subsequent gate checkpoint closes factual variance, accessibility, logo, and cross-surface parity while recorded per-candidate senior scoring and final Dental/Physiotherapy preservation remain open.
+This checkpoint closes the candidate-catalog and full responsive route-matrix milestones. Restaurant remains unregistered and `Planned`; the subsequent checkpoints close factual variance, accessibility, logo, cross-surface parity, per-candidate senior scoring, and final Dental/Physiotherapy preservation.
 
 ### Variance, accessibility, logo, and surface checkpoint — 2026-10-26
 
@@ -332,16 +332,21 @@ This checkpoint closes the candidate-catalog and full responsive route-matrix mi
 - Cross-surface parity passes **2/2 gates** across all 20 candidates and all six routes. Editor preview, live preparation, portable export, and static export preserve candidate identity, visible content/actions, separate reservation and enquiry forms, and the unregistered draft boundary.
 - These gates found and fixed dropped category descriptions, generic static-export candidate styling, invalid reduced-motion pseudo-element scoping, and low-contrast candidate actions/indices. The full 600-state route matrix was rerun after the final fixes and remains green.
 
+### Final senior review and preservation checkpoint — 2026-10-26
+
+- Senior review of the 240 retained candidate/route screenshots accepts **20/20 candidates**, with **160/160 category scores at or above 4.0** across hierarchy, typography, menu legibility, imagery, spacing, brand fit, conversion clarity, and mobile usability.
+- Neighbourhood Window was first rejected for unrelated/non-local imagery and Counter Signal for a large unfilled mobile media frame. Candidate-scoped media exclusions and mobile-frame containment corrected both defects; fresh route evidence passed re-review.
+- The final Restaurant route matrix passes **20/20 candidates and 600/600 states**. Focused affected-brief evidence passes **12/12 sites and 144/144 states**, Counter Signal accessibility passes **1/1 candidate and 12/12 scans**, and the full Restaurant cross-surface suite passes **2/2**.
+- Fresh preservation passes **23/23 Dental tests** over the locked 20-candidate catalog at eight widths and **21/21 Physiotherapy tests** covering all 20 candidates and **600/600 route/viewport states**.
+- The final registry/runtime, content-boundary, draft-isolation, export, and locked-catalog preservation suite passes **87/87**. The detailed per-candidate scorecard and corrections are recorded in the [Restaurant factual-reference visual review](restaurant-draft-visual-review.md).
+
 ### Path from draft to certification
 
-The factual reference scaffold, 20-candidate responsive route matrix, three-brief variance, accessibility, logo, and cross-surface gates are accepted. Promotion still requires:
-
-- a senior UI/UX score of at least 4/5 for hierarchy, typography, menu legibility, imagery, spacing, brand fit, reservation clarity, and mobile usability;
-- fresh Dental and Physiotherapy preservation gates before Restaurant is added to either registry or onboarding.
+The factual reference scaffold, 20-candidate responsive route matrix, three-brief variance, accessibility, logo, cross-surface, senior UI/UX, and final Dental/Physiotherapy preservation gates are accepted. Restaurant has completed its draft-to-promotion evidence but remains `Planned`: no registry entry, onboarding availability, or certified publish permission changes until an explicit local promotion decision is made.
 
 ### Next implementation step
 
-Complete and record the per-candidate senior UI/UX scorecard, then rerun the final Dental and Physiotherapy preservation suites against the same release commit. Restaurant stays `Planned` in Builder and marketing until both gates pass and an explicit registration decision is made. No deployment, customer publishing, or commercial release is authorized by this checkpoint.
+Make the explicit local Restaurant registry/onboarding/publish promotion decision. If promotion is authorized, perform it as a separate source change and rerun the same release gates; then begin primary-source research and factual-boundary design for the next industry. No deployment, customer publishing, database mutation, or commercial release is authorized by this checkpoint.
 
 ## Research basis
 

@@ -70,6 +70,33 @@ export const RESTAURANT_CANDIDATE_HOME_HERO_IDS = {
 } as const satisfies Record<string, string>;
 
 /**
+ * Candidate-specific art-direction exclusions discovered during senior visual
+ * review. The assets stay in the audited pool (and remain valid where they are
+ * an intentional candidate-owned Home hero), but they must not leak into these
+ * location-led inner-page slots where their recognisable architecture/signage
+ * conflicts with the Hyderabad reference brief.
+ */
+export const RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS = {
+  "neighbourhood-window": [
+    "mi-restaurant-plate-wall-counter",
+    "mi-restaurant-courtyard-dining",
+    "mi-restaurant-rustic-patio",
+    "mi-restaurant-dark-modern-room",
+  ],
+  "open-fire": [
+    "mi-restaurant-courtyard-dining",
+    "mi-restaurant-rustic-patio",
+    "mi-restaurant-dark-modern-room",
+  ],
+  "seasonal-journal": [
+    "mi-restaurant-courtyard-dining",
+    "mi-restaurant-rustic-patio",
+    "mi-restaurant-dark-modern-room",
+  ],
+  "counter-rhythm": ["mi-restaurant-dark-modern-room"],
+} as const satisfies Partial<Record<string, readonly string[]>>;
+
+/**
  * Returns one deterministic, route-semantic 16-image selection. The candidate
  * Home hero is unique across the Top 20; the remaining slots prefer the right
  * semantic role and fall back only within the audited pool. Each site still has
@@ -90,13 +117,19 @@ export function restaurantCandidateMediaSelection(
     );
   }
   const used = new Set<string>([homeHero.id]);
+  const excluded = new Set<string>(
+    RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS[
+      candidate.recipeId as keyof typeof RESTAURANT_CANDIDATE_MEDIA_EXCLUSIONS
+    ] ?? [],
+  );
   const take = (
     roles: readonly RestaurantDraftMediaRole[],
     label: string,
   ): AssetRecord => {
     const preferred = roles.flatMap((role) => rotatedAssets(role, offset));
     const asset = [...preferred, ...rotate(AUDITED_MEDIA, offset)].find(
-      (candidateAsset) => !used.has(candidateAsset.id),
+      (candidateAsset) =>
+        !used.has(candidateAsset.id) && !excluded.has(candidateAsset.id),
     );
     if (!asset) {
       throw new Error(

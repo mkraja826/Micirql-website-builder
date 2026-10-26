@@ -66,7 +66,7 @@ type EditorPreviewPayload = {
   issues?: Array<{ code?: string; message?: string }>;
 };
 
-test.describe("unregistered Physiotherapy cross-surface parity audit", () => {
+test.describe("certified Physiotherapy draft cross-surface preservation audit", () => {
   test("all 20 candidates preserve content and action identity from editor preview through live preparation and portable export", async () => {
     test.setTimeout(120_000);
     expect(PHYSIOTHERAPY_DRAFT_CANDIDATES).toHaveLength(20);
@@ -78,8 +78,11 @@ test.describe("unregistered Physiotherapy cross-surface parity audit", () => {
       expect(site.generation?.premiumGate.passed, candidate.id).toBe(false);
       expect(
         resolveCertifiedIndustryPackForSite(site),
-        `${candidate.id} must stay outside the certified registry`,
-      ).toBeUndefined();
+        `${candidate.id} must resolve through the certified Physiotherapy boundary`,
+      ).toMatchObject({
+        id: "clinic-physiotherapy",
+        certification: "certified",
+      });
 
       const portable = buildPortableExport(
         published(site, candidate.recipeId),
@@ -142,7 +145,7 @@ test.describe("unregistered Physiotherapy cross-surface parity audit", () => {
     }
   });
 
-  test("static export preserves identity, presentation, conversion content and actions without certifying the pack", async () => {
+  test("static export preserves identity, presentation, conversion content and actions without rewriting archived draft status", async () => {
     test.setTimeout(120_000);
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () =>
@@ -203,8 +206,9 @@ test.describe("unregistered Physiotherapy cross-surface parity audit", () => {
         }
 
         expect(staticExportBlockers(files, site)).toEqual([]);
-        // Surface parity is necessary, but does not register or certify this
-        // draft pack. Its explicit release gate must continue to fail.
+        // Physiotherapy is certified, but these archived draft fixtures retain
+        // their original unavailable status and cannot masquerade as a passed
+        // production premium review.
         expect(site.generation?.premiumGate.passed).toBe(false);
       }
     } finally {

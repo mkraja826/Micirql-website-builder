@@ -4,6 +4,7 @@ import type {
   CompositionGateIssue,
   CompositionGateReport,
   Domain,
+  IndustryFacts,
   Site,
 } from "@micirql/schema";
 import type { CertifiedIndustryPack, IndustryPackCandidate } from "../types";
@@ -40,6 +41,11 @@ export type IndustryPackScaffoldBrief = {
   goals: string[];
   languages: string[];
   notes?: string | null;
+  /**
+   * Pack-owned, discriminated facts. A runtime must validate this value before
+   * it is allowed to affect ranking or the generated Site snapshot.
+   */
+  industryFacts?: unknown;
 };
 
 export type IndustryPackRankingProfile = {
@@ -56,6 +62,7 @@ export type IndustryPackRankingProfile = {
   languages?: readonly string[] | null;
   services?: string[] | null;
   notes?: string | null;
+  industryFacts?: unknown;
 };
 
 export type IndustryPackRankedCandidate<
@@ -90,6 +97,10 @@ export type CertifiedIndustryPackRuntime<
 > = {
   readonly pack: CertifiedIndustryPack<TCandidate>;
   readonly functionPolicy: IndustryPackRuntimeFunctionPolicy;
+  industryFactsIssues(value: unknown): CompositionGateIssue[];
+  normalizeIndustryFacts(
+    value: unknown,
+  ): IndustryFacts | undefined;
   listCandidates(): TCandidate[];
   rankCandidates(
     profile: IndustryPackRankingProfile,
@@ -130,6 +141,10 @@ export type IndustryPackRuntimeImplementation<
 > = {
   pack: CertifiedIndustryPack<TCandidate>;
   functionPolicy: IndustryPackRuntimeFunctionPolicy;
+  industryFactsIssues(value: unknown): CompositionGateIssue[];
+  normalizeIndustryFacts(
+    value: unknown,
+  ): IndustryFacts | undefined;
   rankCandidates(
     profile: IndustryPackRankingProfile,
   ): IndustryPackRankedCandidate<TCandidate>[];
@@ -224,6 +239,8 @@ export function defineCertifiedIndustryPackRuntime<
   return Object.freeze({
     pack,
     functionPolicy: implementation.functionPolicy,
+    industryFactsIssues: implementation.industryFactsIssues,
+    normalizeIndustryFacts: implementation.normalizeIndustryFacts,
     listCandidates,
     rankCandidates,
     resolveCandidate,

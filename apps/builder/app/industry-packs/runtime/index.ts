@@ -1,5 +1,6 @@
 export { dentalIndustryPackRuntime } from "./dental";
 export { physiotherapyIndustryPackRuntime } from "./physiotherapy";
+export { restaurantIndustryPackRuntime } from "./restaurant";
 export {
   listCertifiedIndustryPackRuntimes,
   resolveCertifiedIndustryPackRuntime,

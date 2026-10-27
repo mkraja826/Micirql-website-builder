@@ -2,11 +2,11 @@
 
 Review date: 2026-10-26<br />
 Fixture: Aarunya Table, a fictional internal factual-boundary fixture<br />
-Status: all planned draft-to-promotion evidence accepted; Restaurant remains unregistered, unavailable in onboarding, and uncertified pending an explicit promotion decision
+Status: historical draft-to-promotion evidence accepted; promoted locally on 2026-10-27 as `restaurant-flagship-2026.10.27`; no deployment or customer publication
 
 ## Decision
 
-The factual Restaurant / Restaurant reference is the common content and behavior baseline for 20 independently art-directed staging candidates. The candidates now pass the complete six-route/five-width responsive matrix, per-candidate senior review, and final Dental/Physiotherapy preservation gates. This is still not a certified pack and must not be exposed as a Builder choice until an explicit registry/onboarding/publish promotion decision is made.
+The factual Restaurant / Restaurant reference is the common content and behavior baseline for 20 independently art-directed staging candidates. The candidates passed the complete six-route/five-width responsive matrix, per-candidate senior review, and final Dental/Physiotherapy preservation gates. At this review's 2026-10-26 cutoff, the archived draft deliberately remained unavailable pending a separate promotion decision. That decision was implemented locally on 2026-10-27 through a new certified adapter and runtime; the dated evidence and historical draft metadata remain unchanged.
 
 The reference is materially different from the Dental and Physiotherapy systems. It uses a warm table-editorial grammar: moderate serif display type, double rules, menu-category rhythm, item/price alignment, square reservation actions, warm paper fields, and an editorial venue/food gallery. It does not reuse treatment cards, clinic hero geometry, movement paths, appointment language, or a clinic page sequence.
 
@@ -26,7 +26,7 @@ The review covered the production live renderer and the generated portable stati
 | Mobile usability           | 4.6/5 | 320/390 px states have no horizontal escape, hero overlap, clipped content, or undersized controls. Menu prices wrap safely and the keyboard menu closes with focus returned.                                                                         |
 | Cross-industry distinction | 4.8/5 | The composition, vocabulary, palette, menu system, imagery roles, and conversion model read as hospitality rather than Dental or Physiotherapy.                                                                                                       |
 
-Provisional reference average: **4.6/5**. This accepts one factual reference direction only; it does not score or certify the required 20-candidate catalog.
+Historical reference average: **4.6/5**. This score accepted one factual reference direction only; the later per-candidate gate and separate promotion milestone supplied the evidence needed for local catalog certification.
 
 ## What the visual review found and fixed
 
@@ -121,10 +121,12 @@ The retained 320 and 1440 px evidence was reviewed across all six routes for eve
 - Final preservation passes **23/23 Dental tests** across the locked 20-candidate catalog and eight viewport widths, plus **21/21 Physiotherapy tests** covering all 20 candidates and **600/600 route/viewport states**.
 - The final registry/runtime, content-boundary, draft-isolation, export, and locked-catalog preservation suite passes **87/87**.
 
-## Release boundary and next milestone
+## Promotion addendum and release boundary — 2026-10-27
 
-Restaurant now has the 20-candidate catalog, deterministic ranking evidence, complete responsive route matrix, three-brief variance evidence, candidate-level accessibility evidence, cross-surface parity, the full logo aspect-ratio matrix, recorded senior review, and fresh Dental/Physiotherapy preservation evidence. All planned draft-to-promotion gates are accepted.
+Restaurant has the 20-candidate catalog, deterministic ranking evidence, complete responsive route matrix, three-brief variance evidence, candidate-level accessibility evidence, cross-surface parity, the full logo aspect-ratio matrix, recorded senior review, and fresh Dental/Physiotherapy preservation evidence. All planned draft-to-promotion gates were accepted before the status change.
 
-Restaurant deliberately remains `Planned`, unregistered, unavailable in onboarding, and blocked from the certified publish flow. The next step is an explicit local registry/onboarding/publish promotion decision; passing the evidence does not make that product decision automatically. After that decision, the expansion program can begin research for the next industry without weakening the same gates.
+The separate production milestone registers catalog `restaurant-flagship-2026.10.27`, exposes Restaurant as a certified onboarding choice, and routes ranking, scaffold creation, selection, media, factual validation, and publish readiness through the Restaurant runtime. Normalized `restaurant-facts-v1` evidence remains in the Site snapshot so reloads preserve ranking inputs and the publish gate can compare visible menu, visit, contact, story, and reservation content with the approved brief. Generic content enrichment is an explicit curated no-op for this pack, preventing a service label such as “Dine-in” from replacing a verified menu item while retaining its price or disclosures.
 
-No database migration, deployment, customer publication, or commercial release was performed.
+The archived draft catalog remains `draft-unregistered`, and historical fixtures keep `packStatus: unavailable`; certification is implemented by the separate production adapter rather than rewriting evidence. The certified runtime currently allows only the registered audited Restaurant image library, keeps every illustrative image visibly disclosed, and rejects arbitrary external URLs, missing catalog IDs, and unverified merchant IDs. These images are not merchant identity or dish proof. A customer launch therefore needs approved business facts, exact identity assets, explicit acceptance of the disclosed illustrative library or a future ownership/license-verified merchant-media path, an authenticated saved-project run, authorized deployment verification, and release approval.
+
+Restaurant / Cafe is the next planned research target and must earn its own anatomy, conversion journey, design grammar, palette, imagery and responsive evidence. A forward security migration was added locally to make draft writes service-role-only, but it was not applied to any database; no deployment, customer publication, or commercial release was performed.

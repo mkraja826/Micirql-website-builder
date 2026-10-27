@@ -5,9 +5,11 @@ import {
 } from "../apps/builder/app/industry-design-preset-data";
 import {
   PHYSIOTHERAPY_CATALOG_VERSION,
+  RESTAURANT_CATALOG_VERSION,
   dentalIndustryPack,
   listCertifiedIndustryPacks,
   physiotherapyIndustryPack,
+  restaurantIndustryPack,
   resolveCertifiedIndustryPack,
   resolveCertifiedIndustryPackById,
   resolveCertifiedIndustryPackByCandidateId,
@@ -41,7 +43,7 @@ const DENTAL_CANDIDATE_IDS = [
 ] as const;
 
 test.describe("certified industry-pack registry", () => {
-  test("preserves Dental and registers the independently certified Physiotherapy catalog", () => {
+  test("preserves Dental and registers independently certified Physiotherapy and Restaurant catalogs", () => {
     const registered = listCertifiedIndustryPacks();
     const legacyCandidates = listIndustryDesignPresets("clinic", "dental");
     const registryCandidates = dentalIndustryPack.listCandidates();
@@ -49,6 +51,7 @@ test.describe("certified industry-pack registry", () => {
     expect(registered).toEqual([
       dentalIndustryPack,
       physiotherapyIndustryPack,
+      restaurantIndustryPack,
     ]);
     expect(dentalIndustryPack.id).toBe("clinic-dental");
     expect(dentalIndustryPack.catalogVersion).toBe(
@@ -98,6 +101,33 @@ test.describe("certified industry-pack registry", () => {
       "/about",
       "/contact",
     ]);
+
+    const restaurantCandidates = restaurantIndustryPack.listCandidates();
+    expect(restaurantIndustryPack.catalogVersion).toBe(
+      RESTAURANT_CATALOG_VERSION,
+    );
+    expect(restaurantIndustryPack.reviewCount).toBe(20);
+    expect(restaurantCandidates).toHaveLength(20);
+    expect(
+      restaurantCandidates.every(
+        (candidate) =>
+          candidate.catalogVersion === RESTAURANT_CATALOG_VERSION &&
+          candidate.domain === "restaurant" &&
+          candidate.subtype === "restaurant" &&
+          candidate.gate.passed &&
+          candidate.candidateStatus === "certified",
+      ),
+    ).toBe(true);
+    expect(
+      restaurantIndustryPack.listPageBlueprints().map((page) => page.path),
+    ).toEqual([
+      "/",
+      "/menu",
+      "/visit",
+      "/reservations",
+      "/story",
+      "/contact",
+    ]);
   });
 
   test("resolves only briefs inside the certified dental boundary", () => {
@@ -142,6 +172,13 @@ test.describe("certified industry-pack registry", () => {
         subindustry: "Cafe",
       }),
     ).toBeUndefined();
+    expect(
+      resolveCertifiedIndustryPack({
+        domain: "restaurant",
+        industry: "Restaurant",
+        subindustry: "Restaurant",
+      }),
+    ).toBe(restaurantIndustryPack);
   });
 
   test("keeps site, catalog and candidate lookups isolated", () => {
@@ -172,6 +209,9 @@ test.describe("certified industry-pack registry", () => {
     expect(resolveCertifiedIndustryPackById("clinic-physiotherapy")).toBe(
       physiotherapyIndustryPack,
     );
+    expect(resolveCertifiedIndustryPackById("restaurant-restaurant")).toBe(
+      restaurantIndustryPack,
+    );
     expect(
       resolveCertifiedIndustryPackByCatalogVersion(
         PHYSIOTHERAPY_CATALOG_VERSION,
@@ -182,6 +222,16 @@ test.describe("certified industry-pack registry", () => {
         "clinic-physiotherapy-movement-pathway",
       ),
     ).toBe(physiotherapyIndustryPack);
+    expect(
+      resolveCertifiedIndustryPackByCatalogVersion(
+        RESTAURANT_CATALOG_VERSION,
+      ),
+    ).toBe(restaurantIndustryPack);
+    expect(
+      resolveCertifiedIndustryPackByCandidateId(
+        "restaurant-restaurant-table-story-editorial",
+      ),
+    ).toBe(restaurantIndustryPack);
     expect(
       resolveCertifiedIndustryPackByCatalogVersion("restaurant-draft-v1"),
     ).toBeUndefined();
@@ -250,6 +300,19 @@ test.describe("certified industry-pack registry", () => {
       physiotherapyRanked.every(
         (item) => item.preset.subtype === "physiotherapy",
       ),
+    ).toBe(true);
+
+    const restaurantRanked = rankPresets({
+      domain: "restaurant",
+      industry: "Restaurant",
+      subindustry: "Restaurant",
+      location: "Hyderabad, Telangana",
+      services: ["Dine-in"],
+      goals: ["Request reservations"],
+    });
+    expect(restaurantRanked).toHaveLength(20);
+    expect(
+      restaurantRanked.every((item) => item.preset.subtype === "restaurant"),
     ).toBe(true);
   });
 });

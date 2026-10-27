@@ -407,8 +407,14 @@ function hasCompleteCurrentMenu(
       (item) =>
         Boolean(norm(item.name)) &&
         Boolean(norm(item.price)) &&
-        Boolean(norm(item.currency)),
+        (Boolean(norm(item.currency)) || hasCurrencyMarker(item.price)),
     )
+  );
+}
+
+function hasCurrencyMarker(value: unknown): boolean {
+  return /(?:₹|\$|€|£|¥|\b(?:INR|USD|EUR|GBP|JPY|AUD|CAD|SGD)\b)/i.test(
+    typeof value === "string" ? value : "",
   );
 }
 

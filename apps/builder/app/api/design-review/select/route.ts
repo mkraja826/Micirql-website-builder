@@ -43,6 +43,31 @@ const PRE_CONTENT_BLOCKERS = new Set([
   "CANDIDATE_COMPONENT_MISMATCH",
   "CANDIDATE_SECTION_ORDER_MISMATCH",
   "PHYSIOTHERAPY_PAGE_ANATOMY_UNKNOWN",
+  "RESTAURANT_PAGE_ANATOMY_UNKNOWN",
+  "RESTAURANT_PAGE_SET_MISMATCH",
+  "RESTAURANT_PAGE_ANATOMY_MISMATCH",
+  "RESTAURANT_CANDIDATE_REQUIRED_FACT_MISSING",
+  "RESTAURANT_FACTS_REQUIRED",
+  "RESTAURANT_FACTS_VERSION_UNSUPPORTED",
+  "RESTAURANT_BUSINESS_NAME_REQUIRED",
+  "RESTAURANT_CUISINE_REQUIRED",
+  "RESTAURANT_SERVICE_MODE_REQUIRED",
+  "RESTAURANT_ADDRESS_REQUIRED",
+  "RESTAURANT_OPENING_HOURS_REQUIRED",
+  "RESTAURANT_RESERVATION_POLICY_REQUIRED",
+  "RESTAURANT_STORY_REQUIRED",
+  "RESTAURANT_CURRENT_MENU_REQUIRED",
+  "RESTAURANT_MENU_DESCRIPTION_REQUIRED",
+  "RESTAURANT_MENU_PRICE_REQUIRED",
+  "RESTAURANT_MENU_CURRENCY_REQUIRED",
+  "RESTAURANT_MAP_URL_REQUIRED",
+  "RESTAURANT_MAP_URL_INVALID",
+  "RESTAURANT_CONTACT_REQUIRED",
+  "RESTAURANT_PHONE_INVALID",
+  "RESTAURANT_EMAIL_INVALID",
+  "RESTAURANT_PAGE_ID_DUPLICATE",
+  "RESTAURANT_SECTION_ID_DUPLICATE",
+  "RESTAURANT_SUPPLIED_FACTS_CHANGED",
 ]);
 
 type OnboardingProfile = {
@@ -110,11 +135,13 @@ export async function POST(request: NextRequest) {
       input.candidateId,
     );
     const industryPack = industryRuntime.pack;
-    const rankedCandidates = industryRuntime
-      .rankCandidates(profileBrief(profile))
-      .map(
-      (item) => item.candidate,
+    const brief = profileBrief(
+      profile,
+      current.snapshot.generation?.industryFacts,
     );
+    const rankedCandidates = industryRuntime
+      .rankCandidates(brief)
+      .map((item) => item.candidate);
     assertCandidateSetMatchesCatalog(current, rankedCandidates);
     if (
       current.snapshot.generation?.catalogVersion !==
@@ -197,7 +224,6 @@ export async function POST(request: NextRequest) {
     });
 
     const pipelineIssues: CompositionGateIssue[] = [];
-    const brief = profileBrief(profile);
     const contentResult = await invokeFunction(
       url,
       headers,
@@ -495,10 +521,19 @@ function assertCertifiedPackContext(
       `Generate the certified ${industryRuntime.pack.label} design review before selecting a design.`,
     );
   }
+  const industryFactIssues = industryRuntime.industryFactsIssues(
+    generation.industryFacts,
+  );
+  if (industryFactIssues.length) {
+    throw selectionError(
+      409,
+      "INDUSTRY_FACTS_MISSING_OR_INVALID",
+      industryFactIssues.map((issue) => issue.message).join(" "),
+    );
+  }
   if (
     generation.candidateIds.length !== industryRuntime.pack.reviewCount ||
-    new Set(generation.candidateIds).size !==
-      industryRuntime.pack.reviewCount
+    new Set(generation.candidateIds).size !== industryRuntime.pack.reviewCount
   ) {
     throw selectionError(
       409,
@@ -626,7 +661,7 @@ async function reloadSelectedDraft(
   return draft;
 }
 
-function profileBrief(profile: OnboardingProfile) {
+function profileBrief(profile: OnboardingProfile, industryFacts?: unknown) {
   const industry = string(profile.industry);
   const subindustry = optionalString(profile.subindustry);
   return {
@@ -645,6 +680,7 @@ function profileBrief(profile: OnboardingProfile) {
       ? stringArray(profile.languages)
       : ["en"],
     notes: optionalString(profile.notes),
+    industryFacts,
   };
 }
 

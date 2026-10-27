@@ -63,6 +63,16 @@ export const brandProvenanceSchema = z.object({
   }).default({}),
 });
 
+/**
+ * Pack-owned factual input retained with the generated snapshot. Keeping the
+ * discriminant and normalized public facts in the snapshot lets selection and
+ * publish validation use the same evidence without requiring a pack-specific
+ * database column.
+ */
+export const industryFactsSchema = z
+  .object({ kind: z.string().min(1) })
+  .passthrough();
+
 export const compositionComponentSchema = z.object({
   family: z.string().min(1),
   componentId: z.string().min(1),
@@ -122,6 +132,7 @@ export const generationMetadataSchema = z.object({
   selectedCandidateId: z.string().min(1).optional(),
   brandInput: brandInputSchema.optional(),
   brandProvenance: brandProvenanceSchema.optional(),
+  industryFacts: industryFactsSchema.optional(),
   premiumGate: compositionGateReportSchema.optional(),
 });
 
@@ -131,6 +142,7 @@ export type TypographyStrategy = z.infer<typeof typographyStrategySchema>;
 export type ImageStrategy = z.infer<typeof imageStrategySchema>;
 export type BrandInput = z.infer<typeof brandInputSchema>;
 export type BrandProvenance = z.infer<typeof brandProvenanceSchema>;
+export type IndustryFacts = z.infer<typeof industryFactsSchema>;
 export type CompositionIdentity = z.infer<typeof compositionIdentitySchema>;
 export type CompositionGateIssue = z.infer<typeof compositionGateIssueSchema>;
 export type CompositionGateReport = z.infer<typeof compositionGateReportSchema>;

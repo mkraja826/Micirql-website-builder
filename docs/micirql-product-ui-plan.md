@@ -2,7 +2,7 @@
 
 Status date: 2026-10-27
 
-State: Dental and Physiotherapy certified locally; Builder product shell and truthful marketing replacement gated and pushed on their independent source branches; neither is deployed
+State: Dental, Physiotherapy, and Restaurant are certified locally; the Builder product shell and the pre-Restaurant truthful marketing replacement were gated and pushed on their independent source branches, while the Restaurant marketing-status update remains pending; neither surface is deployed
 
 Release rule: Builder and marketing changes must not alter locked Dental output, deploy, migrate, or publish a customer site without explicit authorization
 
@@ -36,7 +36,7 @@ It must not own generated-site heroes, cards, section sequences, imagery, palett
 
 1. **Test harness and baselines (passed locally)** — production-build QA covers sign-in, account creation, dashboard management, the real authenticated dashboard-to-onboarding path, certified design review, responsive editor, optimistic conflict handling, actionable logo-upload failure, truthful publish readiness, and archived Physiotherapy draft compatibility at 320/390/768/1024/1440 with overflow, focus, keyboard, touch-target, accessibility, reduced-motion, runtime-error, truthful-status, and screenshot gates.
 2. **Auth and dashboard (passed locally)** — duplicated visual treatment is replaced by the shared MiCirql mark, truthful workspace summary, project cards, accessible project actions/dialog behavior, and deterministic loading/empty/recoverable-error coverage without changing auth/session or project APIs.
-3. **Pack-driven onboarding (passed)** — universal business/brand facts are separated from pack-owned wording; Dental and Physiotherapy are independently actionable certified packs, Restaurant is visibly `Planned`, pack switching clears cross-industry inputs, and the certified registry remains authoritative.
+3. **Pack-driven onboarding (passed)** — universal business/brand facts are separated from pack-owned wording; Dental, Physiotherapy, and Restaurant are independently actionable certified packs, pack switching clears cross-industry inputs, Restaurant retains its normalized menu/visit/contact/story/reservation facts in the Site snapshot, and the certified registry remains authoritative.
 4. **Certified design review (passed)** — explains that order is brief fit rather than quality, preserves all 20 Dental IDs/order, supports responsive comparison and full preview, and displays factual pack/certification readiness.
 5. **Editor shell (passed locally)** — a five-item mobile action bar, progressive `More` menu, responsive canvas/inspector, explicit saved/conflict states, exact same-project identity, and recoverable media/logo failure states replace the dense legacy shell.
 6. **Publish readiness (passed locally)** — the editor uses the same certified release assessment as the publish API, distinguishes draft evidence from final production checks, and never implies that passing the screen has deployed a site.
@@ -57,7 +57,7 @@ The evidence-backed audit and replacement contract are recorded in
 
 Recommended public journey:
 
-`Evidence-led proposition → what MiCirql builds → certified Dental example → certified Physiotherapy status → real Builder workflow → editing/publishing capabilities → truthful industry roadmap → FAQ → start building`
+`Evidence-led proposition → what MiCirql builds → certified Dental, Physiotherapy, and Restaurant proof → real Builder workflow → editing/publishing capabilities → truthful industry roadmap → FAQ → start building`
 
 Rules:
 
@@ -92,6 +92,7 @@ Rules:
 - Dental catalog version, 20 IDs/order, selection behavior, screenshots, live rendering, export, and action semantics remain unchanged;
 - Dental Doctors navigation and `/doctors` remain evidence-driven: the scaffold/generator, design-selection server validation, certified publish gate, publish-readiness UI, and Pages Manager all omit the route when no visible verified clinician record exists and require it only when factual clinician evidence is present;
 - Physiotherapy remains registered at `physiotherapy-flagship-2026.10.23`; its archived draft route remains unavailable evidence rather than a second runtime;
+- Restaurant is registered at `restaurant-flagship-2026.10.27` with 20 candidates, six pack-owned routes, a Site-snapshot factual manifest, curated no-op generic enrichment, and Restaurant-owned fact-immutability and publish gates; its archived draft catalog remains unavailable historical evidence rather than a second runtime;
 - Builder/marketing releases are independent and reversible;
 - no UI milestone performs a database migration, production deployment, or customer publication automatically.
 
@@ -99,8 +100,9 @@ Rules:
 
 1. The private Supabase upload adapter and durable preview/live/export re-signing path pass locally, but the production deployment configuration and an authorized remote upload-to-live/export smoke are still outstanding.
 2. Physiotherapy is locally certified, but a real customer site still needs that clinic's exact approved identity assets and verified facts; deterministic logo fixtures are not commercial approval.
-3. The marketing replacement passes its clean build and 15/15 homepage/product-portfolio UI gate, but privacy/abuse-control decisions, production handoff, final copy approval, rollback verification, and deployment authorization remain outstanding.
+3. The pre-Restaurant marketing replacement passes its clean build and 15/15 homepage/product-portfolio UI gate. Its read-only release manifest and proof must now be updated for the local Restaurant promotion and rerun before any push or deployment; privacy/abuse-control decisions, production handoff, final copy approval, rollback verification, and deployment authorization also remain outstanding.
 4. Focused post-change Radhika Dental generated-route evidence is green, but its deterministic logo is a QA-only stand-in and it does not cover the complete authenticated dashboard-to-brief-to-saved-draft lifecycle. Commercial acceptance still needs the clinic's exact approved logo, verified business/contact/team/review facts, an authenticated saved-project run, and the authorized deployed upload-to-live/export smoke.
+5. Restaurant certification is local source/runtime evidence, not merchant approval. A customer site still needs verified merchant facts, exact identity assets, approved or explicitly accepted disclosed media, an authenticated saved-project lifecycle, authorized deployment verification, and release approval.
 
 Builder and marketing can continue through independent local release gates while
 deployment-verification and production-handoff blockers are resolved. Locating and validating the
@@ -145,9 +147,8 @@ of inheriting the Builder's dark root colors into a white card. The checkpoint
 replaces the Dental-era internal form with a neutral MiCirql business brief:
 
 - a truthful three-stage journey (`Business brief → Choose direction → Edit & publish`);
-- keyboard-accessible certified choices for Dental and Physiotherapy, plus a
-  noninteractive `Planned` Restaurant card that cannot start generation;
-- universal business facts plus pack-owned focus wording;
+- keyboard-accessible certified choices for Dental, Physiotherapy, and Restaurant;
+- universal business facts plus pack-owned focus wording; Restaurant requires cuisine, service mode, current HTML menu, location, opening hours, table-request policy, and approved story, with optional contact, directions, access, parking, transit, and disclosed-media inputs;
 - an optional enrichment disclosure for verified trust facts, approved opening
   hours, and the real-photo/certified-library image plan so richer output can be
   requested without inventing claims;
@@ -228,4 +229,15 @@ weakening the accessibility assertion. Logo failure preserves the previous brief
 - Public marketing now proves the full `structured brief → ranked review → responsive editor → readiness` journey with exact QA captures. Its `/apps/` route is a truthful portfolio for CapDent, Builder, Tools, and assisted engineering rather than an unverified marketplace.
 - The separate marketing production build and combined homepage/product-portfolio gate pass **15/15**, covering five widths, keyboard focus, mobile targets, reduced motion, WCAG checks, runtime errors, factual release states, and visual baselines.
 
-These changes update source evidence only. Restaurant remains `Planned`, and no deployment, database mutation, customer publication, or commercial release is implied.
+The five bullets and 15/15 marketing result above preserve the pre-Restaurant product-truth checkpoint. At that checkpoint Restaurant still appeared as `Planned` in the separate marketing source.
+
+## Restaurant local-promotion addendum — 2026-10-27
+
+- Builder now registers `restaurant-flagship-2026.10.27` as the third locally certified pack, with 20 candidates and Home, Menu, Visit, Reservations, Story, and Contact routes.
+- Restaurant onboarding writes normalized `restaurant-facts-v1` evidence into the Site snapshot; reload, ranking, selection, and publish validation therefore share the same supplied business facts without a database migration.
+- Generic content enrichment is a curated no-op for Restaurant. Candidate selection and publish readiness reject mutated facts, incomplete route anatomy, stale candidate identity, unsafe reservation language, undisclosed illustrative media, or broken brand/logo propagation.
+- Browser-authenticated clients cannot call the draft-write RPC directly. The Builder API uses a server-only Supabase credential for writes, retains user-JWT/RLS reads, rejects actor spoofing, and fails closed when that secret is absent; the forward migration is present locally but has not been applied remotely.
+- The archived Restaurant draft remains unavailable historical evidence. Certification comes from the separate production adapter/runtime, not from relabelling old fixtures.
+- Restaurant / Cafe is the next planned research target and must earn its own anatomy, conversion model, palette, imagery, responsive evidence, and factual boundary.
+
+This addendum records local source/runtime promotion only. It does not deploy Builder or marketing, mutate production data, publish a customer site, or authorize commercial release.

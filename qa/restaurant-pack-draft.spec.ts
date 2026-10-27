@@ -17,6 +17,7 @@ import {
   resolveCertifiedIndustryPackByCandidateId,
   resolveCertifiedIndustryPackByCatalogVersion,
   resolveCertifiedIndustryPackById,
+  restaurantIndustryPack,
 } from "../apps/builder/app/industry-packs";
 
 test.describe("Restaurant draft planning contract", () => {
@@ -168,7 +169,9 @@ test.describe("Restaurant draft planning contract", () => {
   });
 
   test("is materially distinct from every certified Dental and Physiotherapy candidate", () => {
-    const certifiedPacks = listCertifiedIndustryPacks();
+    const certifiedPacks = listCertifiedIndustryPacks().filter(
+      (pack) => pack.id !== restaurantDraftPack.identity.id,
+    );
     const assessments = certifiedPacks.flatMap((pack) =>
       pack
         .listCandidates()
@@ -198,19 +201,18 @@ test.describe("Restaurant draft planning contract", () => {
     );
   });
 
-  test("remains planned, unregistered and impossible to select or publish", () => {
+  test("keeps the archived draft unregistered while production resolves the certified pack", () => {
     const availability = INDUSTRY_AVAILABILITY.find(
       (item) => item.id === restaurantDraftPack.identity.id,
     );
 
-    expect(availability).toMatchObject({ status: "planned", rolloutOrder: 2 });
-    expect(availability).not.toHaveProperty("onboarding");
+    expect(availability).toMatchObject({ status: "certified" });
     expect(
       certifiedOnboardingIndustry(restaurantDraftPack.identity.id),
-    ).toBeUndefined();
+    ).toEqual(availability);
     expect(
       resolveCertifiedIndustryPackById(restaurantDraftPack.identity.id),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
     expect(
       resolveCertifiedIndustryPackByCatalogVersion(
         restaurantDraftPack.identity.catalogVersion,
@@ -220,7 +222,7 @@ test.describe("Restaurant draft planning contract", () => {
       resolveCertifiedIndustryPackByCandidateId(
         RESTAURANT_DRAFT_DESIGN_SIGNATURE.candidateId,
       ),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
     expect(
       resolveCertifiedIndustryPack({
         domain: "restaurant",
@@ -228,7 +230,10 @@ test.describe("Restaurant draft planning contract", () => {
         subindustry: "Restaurant",
         services: ["Dining", "Reservations"],
       }),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
+    expect(restaurantDraftPack.identity.certification).toBe(
+      "draft-unregistered",
+    );
     expect(restaurantDraftPack.certificationPlan).toMatchObject({
       requiredCandidateCount: 20,
       stagedCandidateCount: 20,

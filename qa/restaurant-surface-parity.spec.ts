@@ -25,7 +25,10 @@ import {
   createRestaurantDraftScaffold,
   type RestaurantDraftBrief,
 } from "../apps/builder/app/industry-packs/drafts";
-import { resolveCertifiedIndustryPackForSite } from "../apps/builder/app/industry-packs";
+import {
+  resolveCertifiedIndustryPackForSite,
+  restaurantIndustryPack,
+} from "../apps/builder/app/industry-packs";
 
 const PUBLIC_FUNCTIONS_ORIGIN = "https://forms.micirql.com";
 const GENERATED_AT = "2026-10-26T00:00:00.000Z";
@@ -67,7 +70,7 @@ type EditorPreviewPayload = {
   issues?: Array<{ code?: string; message?: string }>;
 };
 
-test.describe("unregistered Restaurant cross-surface parity audit", () => {
+test.describe("archived Restaurant cross-surface parity audit", () => {
   test("all 20 candidates preserve content and action identity from editor preview through live preparation and portable export", async () => {
     test.setTimeout(180_000);
     expect(RESTAURANT_DRAFT_CANDIDATES).toHaveLength(20);
@@ -79,8 +82,8 @@ test.describe("unregistered Restaurant cross-surface parity audit", () => {
       expect(site.generation?.premiumGate.passed, candidate.id).toBe(false);
       expect(
         resolveCertifiedIndustryPackForSite(site),
-        `${candidate.id} must stay outside the certified registry`,
-      ).toBeUndefined();
+        `${candidate.id} identity must resolve to the certified Restaurant pack`,
+      ).toBe(restaurantIndustryPack);
 
       const portable = buildPortableExport(
         published(site, candidate.recipeId),
@@ -215,7 +218,9 @@ test.describe("unregistered Restaurant cross-surface parity audit", () => {
         expect(staticExportBlockers(files, site)).toEqual([]);
         expect(site.generation?.packStatus).toBe("unavailable");
         expect(site.generation?.premiumGate.passed).toBe(false);
-        expect(resolveCertifiedIndustryPackForSite(site)).toBeUndefined();
+        expect(resolveCertifiedIndustryPackForSite(site)).toBe(
+          restaurantIndustryPack,
+        );
       }
     } finally {
       globalThis.fetch = originalFetch;

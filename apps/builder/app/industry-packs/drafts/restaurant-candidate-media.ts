@@ -174,9 +174,11 @@ export function restaurantCandidateMediaSelection(
 }
 
 /**
- * Applies candidate-owned visual-QA media by page and semantic slot. Merchant
- * media always wins: a non-pool image is never replaced, removed or mixed with
- * newly injected stock. Audited stock galleries are rebuilt canonically, so
+ * Applies candidate-owned audited media by page and semantic slot. Existing
+ * non-pool media is never destructively replaced, removed or mixed with newly
+ * injected stock; preserving it here does not certify it. The Restaurant media
+ * gate blocks every non-pool reference until server-side workspace provenance
+ * verification exists. Audited stock galleries are rebuilt canonically, so
  * applying A then B produces the same candidate-owned media as applying B
  * directly, and applying B twice is idempotent.
  */

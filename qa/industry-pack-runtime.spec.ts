@@ -21,11 +21,14 @@ import {
 } from "../apps/builder/app/industry-design-preset-data";
 import {
   PHYSIOTHERAPY_CATALOG_VERSION,
+  RESTAURANT_CATALOG_VERSION,
   dentalIndustryPack,
   dentalIndustryPackRuntime,
   listCertifiedIndustryPackRuntimes,
   physiotherapyIndustryPack,
   physiotherapyIndustryPackRuntime,
+  restaurantIndustryPack,
+  restaurantIndustryPackRuntime,
   resolveCertifiedIndustryPackRuntime,
   resolveCertifiedIndustryPackRuntimeByCandidateId,
   resolveCertifiedIndustryPackRuntimeByCatalogVersion,
@@ -53,6 +56,7 @@ test.describe("certified industry-pack runtimes", () => {
     expect(listCertifiedIndustryPackRuntimes()).toEqual([
       dentalIndustryPackRuntime,
       physiotherapyIndustryPackRuntime,
+      restaurantIndustryPackRuntime,
     ]);
     expect(dentalIndustryPackRuntime.pack).toBe(dentalIndustryPack);
     expect(dentalIndustryPackRuntime.pack.catalogVersion).toBe(
@@ -100,10 +104,7 @@ test.describe("certified industry-pack runtimes", () => {
       languages: ["en"],
     };
     expect(
-      dentalIndustryPackRuntime.createStructuralScaffold(
-        source,
-        scaffoldBrief,
-      ),
+      dentalIndustryPackRuntime.createStructuralScaffold(source, scaffoldBrief),
     ).toEqual(createDentalStructuralScaffold(source, scaffoldBrief));
     const legacySelected = applySelectedDentalCandidate(source, candidate);
     const runtimeSelected = dentalIndustryPackRuntime.applySelectedCandidate(
@@ -157,9 +158,9 @@ test.describe("certified industry-pack runtimes", () => {
     );
     const legacyMedia = applyCertifiedDentalMedia(legacySelected, candidate);
     expect(runtimeMedia).toEqual(legacyMedia);
-    expect(dentalIndustryPackRuntime.certifiedMediaIssues(runtimeMedia)).toEqual(
-      certifiedDentalMediaIssues(legacyMedia),
-    );
+    expect(
+      dentalIndustryPackRuntime.certifiedMediaIssues(runtimeMedia),
+    ).toEqual(certifiedDentalMediaIssues(legacyMedia));
     expect(dentalIndustryPackRuntime.functionPolicy).toEqual({
       contentEnrichment: {
         functionName: "enrich-site-content",
@@ -181,9 +182,13 @@ test.describe("certified industry-pack runtimes", () => {
     altered.theme.brand.colors.primary = "#ff00ff";
     altered.sectionOrder.reverse();
 
-    const result = dentalIndustryPackRuntime.applyCandidate(source, altered.id, {
-      applyCertifiedMedia: false,
-    });
+    const result = dentalIndustryPackRuntime.applyCandidate(
+      source,
+      altered.id,
+      {
+        applyCertifiedMedia: false,
+      },
+    );
     const expected = applyIndustryPreset(source, canonical, {
       applyCertifiedMedia: false,
     });
@@ -191,9 +196,13 @@ test.describe("certified industry-pack runtimes", () => {
     expect(result).toEqual(expected);
     expect(result.theme.brand.colors.primary).not.toBe("#ff00ff");
     expect(() =>
-      dentalIndustryPackRuntime.applyCandidate(source, "clinic-physiotherapy-calm-movement", {
-        applyCertifiedMedia: false,
-      }),
+      dentalIndustryPackRuntime.applyCandidate(
+        source,
+        "clinic-physiotherapy-calm-movement",
+        {
+          applyCertifiedMedia: false,
+        },
+      ),
     ).toThrow(/not owned by certified industry pack clinic-dental/);
   });
 
@@ -211,8 +220,9 @@ test.describe("certified industry-pack runtimes", () => {
     expect(ranked).toHaveLength(20);
     expect(new Set(ranked.map((item) => item.candidate.id)).size).toBe(20);
 
-    const scaffold =
-      physiotherapyIndustryPackRuntime.createStructuralScaffold(source, {
+    const scaffold = physiotherapyIndustryPackRuntime.createStructuralScaffold(
+      source,
+      {
         businessName: "Runtime Physiotherapy",
         industry: "Physiotherapy clinic",
         subindustry: "Physiotherapy",
@@ -221,7 +231,8 @@ test.describe("certified industry-pack runtimes", () => {
         goals: ["Request an appointment"],
         languages: ["en"],
         notes: "Approved opening hours: Monday to Saturday, 9:00–18:00",
-      });
+      },
+    );
     const candidateId = ranked[0]!.candidate.id;
     const selected = physiotherapyIndustryPackRuntime.applySelectedCandidate(
       scaffold,
@@ -284,11 +295,9 @@ test.describe("certified industry-pack runtimes", () => {
         "physiotherapy-draft-2026.10.18",
       ),
     ).toBeUndefined();
-    expect(
-      resolveCertifiedIndustryPackRuntimeByCandidateId(
-        candidateId,
-      ),
-    ).toBe(physiotherapyIndustryPackRuntime);
+    expect(resolveCertifiedIndustryPackRuntimeByCandidateId(candidateId)).toBe(
+      physiotherapyIndustryPackRuntime,
+    );
 
     expect(physiotherapyIndustryPackRuntime.pack).toBe(
       physiotherapyIndustryPack,
@@ -300,14 +309,362 @@ test.describe("certified industry-pack runtimes", () => {
       ),
     ).toThrow(/not owned by certified industry pack clinic-physiotherapy/);
 
-    expect(
-      resolveCertifiedIndustryPackRuntimeById("clinic-dental"),
-    ).toBe(dentalIndustryPackRuntime);
+    expect(resolveCertifiedIndustryPackRuntimeById("clinic-dental")).toBe(
+      dentalIndustryPackRuntime,
+    );
     expect(
       resolveCertifiedIndustryPackRuntimeByCatalogVersion(
         DENTAL_CATALOG_VERSION,
       ),
     ).toBe(dentalIndustryPackRuntime);
+  });
+
+  test("runs certified Restaurant through structured facts, ranking, media and publish validation", () => {
+    const source = dentalSiteFixture();
+    const industryFacts = {
+      kind: "restaurant-facts-v1",
+      businessName: "Runtime Restaurant",
+      cuisines: ["South Indian", "Seasonal vegetarian"],
+      serviceModes: ["Dine-in", "Private dining"],
+      menu: {
+        suppliedAsCurrent: true as const,
+        categories: [
+          {
+            name: "Mains",
+            items: [
+              {
+                name: "Vegetable biryani",
+                description: "Basmati rice and seasonal vegetables",
+                price: "₹420",
+                disclosures: [],
+              },
+            ],
+          },
+        ],
+        disclosureNotes: [
+          "Tell the restaurant about allergies before ordering.",
+        ],
+      },
+      address: "Banjara Hills, Hyderabad, Telangana",
+      mapUrl: "https://maps.google.com/?q=Banjara+Hills",
+      openingHours: ["Monday–Sunday, 12:00–22:30"],
+      phone: "+91 90000 00001",
+      accessibility: ["Step-free entrance supplied by the restaurant."],
+      parking: ["Street parking details supplied by the restaurant."],
+      transit: ["Public transport details supplied by the restaurant."],
+      reservationPolicy: [
+        "Table requests are reviewed by the restaurant and confirmed separately.",
+      ],
+      story: {
+        heading: "About Runtime Restaurant",
+        paragraphs: ["Restaurant story supplied by the restaurant."],
+        principles: [],
+        people: [
+          {
+            name: "Radhika Rao",
+            role: "Host",
+            biography: "Profile supplied by the restaurant.",
+            verified: true as const,
+          },
+        ],
+      },
+    };
+    expect(
+      restaurantIndustryPackRuntime.industryFactsIssues(industryFacts),
+    ).toEqual([]);
+    expect(
+      restaurantIndustryPackRuntime.industryFactsIssues(undefined)[0]?.code,
+    ).toBe("RESTAURANT_FACTS_REQUIRED");
+    expect(
+      restaurantIndustryPackRuntime.industryFactsIssues({
+        ...industryFacts,
+        menu: {
+          suppliedAsCurrent: true,
+          categories: [{ name: "", items: [{ name: "" }] }],
+        },
+      })[0]?.code,
+    ).toBe("RESTAURANT_CURRENT_MENU_REQUIRED");
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          story: undefined,
+        })
+        .some((issue) => issue.code === "RESTAURANT_STORY_REQUIRED"),
+    ).toBeTruthy();
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          mapUrl: undefined,
+        })
+        .some((issue) => issue.code === "RESTAURANT_MAP_URL_REQUIRED"),
+    ).toBeTruthy();
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          phone: undefined,
+          email: undefined,
+        })
+        .some((issue) => issue.code === "RESTAURANT_CONTACT_REQUIRED"),
+    ).toBeTruthy();
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          menu: {
+            suppliedAsCurrent: true,
+            categories: [
+              { name: "Mains", items: [{ name: "Vegetable biryani" }] },
+            ],
+          },
+        })
+        .some((issue) => issue.code === "RESTAURANT_MENU_PRICE_REQUIRED"),
+    ).toBeTruthy();
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          menu: {
+            suppliedAsCurrent: true,
+            categories: [
+              {
+                name: "Mains",
+                items: [
+                  {
+                    name: "Vegetable biryani",
+                    price: "₹420",
+                  },
+                ],
+              },
+            ],
+          },
+        })
+        .some((issue) => issue.code === "RESTAURANT_MENU_DESCRIPTION_REQUIRED"),
+    ).toBeTruthy();
+    expect(
+      restaurantIndustryPackRuntime
+        .industryFactsIssues({
+          ...industryFacts,
+          menu: {
+            suppliedAsCurrent: true,
+            categories: [
+              {
+                name: "Mains",
+                items: [{ name: "Vegetable biryani", price: "420" }],
+              },
+            ],
+          },
+        })
+        .some((issue) => issue.code === "RESTAURANT_MENU_CURRENCY_REQUIRED"),
+    ).toBeTruthy();
+
+    const ranked = restaurantIndustryPackRuntime.rankCandidates({
+      domain: "restaurant",
+      industry: "Restaurant",
+      subindustry: "Restaurant",
+      location: "Hyderabad, Telangana",
+      services: ["Dine-in"],
+      goals: ["Request reservations"],
+      languages: ["en", "te"],
+      industryFacts,
+    });
+    expect(ranked).toHaveLength(20);
+    expect(new Set(ranked.map((item) => item.candidate.id)).size).toBe(20);
+
+    const scaffold = restaurantIndustryPackRuntime.createStructuralScaffold(
+      source,
+      {
+        businessName: "Runtime Restaurant",
+        industry: "Restaurant",
+        subindustry: "Restaurant",
+        location: "Hyderabad, Telangana",
+        services: ["Dine-in"],
+        goals: ["Request reservations"],
+        languages: ["en"],
+        industryFacts,
+      },
+    );
+    const candidateId = ranked[0]!.candidate.id;
+    scaffold.generation!.candidateIds = ranked.map((item) => item.candidate.id);
+    const selected = restaurantIndustryPackRuntime.applySelectedCandidate(
+      scaffold,
+      candidateId,
+    );
+    const withMedia = restaurantIndustryPackRuntime.applyCertifiedMedia(
+      selected,
+      candidateId,
+    );
+    const gate = restaurantIndustryPackRuntime.validateDraft(
+      withMedia,
+      restaurantIndustryPackRuntime.candidateStructureIssues(
+        withMedia,
+        candidateId,
+      ),
+    );
+    expect(gate.passed, JSON.stringify(gate.issues, null, 2)).toBeTruthy();
+    expect(gate.score).toBe(100);
+    expect(restaurantIndustryPackRuntime.contentIssues(withMedia)).toEqual([]);
+    expect(
+      restaurantIndustryPackRuntime.certifiedMediaIssues(withMedia),
+    ).toEqual([]);
+    expect(withMedia.pages.map((page) => page.path)).toEqual([
+      "/",
+      "/menu",
+      "/visit",
+      "/reservations",
+      "/story",
+      "/contact",
+    ]);
+    const storyTeam = withMedia.pages
+      .find((page) => page.path === "/story")
+      ?.sections.find((section) => section.props.title === "People");
+    expect(storyTeam?.hidden).toBe(false);
+    expect(storyTeam?.props.items).toEqual([
+      {
+        title: "Radhika Rao",
+        description: "Host · Profile supplied by the restaurant.",
+        verified: true,
+      },
+    ]);
+    expect(withMedia.generation).toMatchObject({
+      catalogVersion: RESTAURANT_CATALOG_VERSION,
+      packStatus: "certified",
+      selectedCandidateId: candidateId,
+      industryFacts,
+    });
+    expect(
+      restaurantIndustryPackRuntime
+        .rankCandidates({
+          domain: "restaurant",
+          industry: "Restaurant",
+          subindustry: "Restaurant",
+          location: "Hyderabad, Telangana",
+          services: ["Dine-in"],
+          goals: ["Request reservations"],
+          languages: ["en", "te"],
+          industryFacts: withMedia.generation!.industryFacts,
+        })
+        .map((item) => item.candidate.id),
+    ).toEqual(withMedia.generation!.candidateIds);
+
+    const changedManifest = structuredClone(withMedia);
+    changedManifest.generation!.industryFacts!.address = "Invented address";
+    expect(
+      restaurantIndustryPackRuntime.protectedStructureChanged(
+        withMedia,
+        changedManifest,
+      ),
+    ).toBeTruthy();
+
+    const changedMenu = structuredClone(withMedia);
+    const menuItems = changedMenu.pages
+      .find((page) => page.path === "/menu")
+      ?.sections.find((section) =>
+        section.component.componentId.toUpperCase().includes("-SERV-"),
+      )?.props.items as Array<Record<string, unknown>>;
+    menuItems[0]!.title = "Dine-in";
+    expect(
+      restaurantIndustryPackRuntime
+        .validateDraft(changedMenu)
+        .issues.some(
+          (issue) => issue.code === "RESTAURANT_SUPPLIED_FACTS_CHANGED",
+        ),
+    ).toBeTruthy();
+
+    const externalMedia = structuredClone(withMedia);
+    const externalHero = externalMedia.pages[0]!.sections.find((section) =>
+      section.component.componentId.toUpperCase().includes("-HERO-"),
+    )!;
+    externalHero.props.image = {
+      src: "https://merchant.example.test/unverified.jpg",
+      alt: "Unverified external image",
+    };
+    expect(
+      restaurantIndustryPackRuntime
+        .certifiedMediaIssues(externalMedia)
+        .some(
+          (issue) => issue.code === "RESTAURANT_MEDIA_OUTSIDE_CERTIFIED_POOL",
+        ),
+    ).toBeTruthy();
+
+    const forgedMerchantMedia = structuredClone(withMedia);
+    const forgedHero = forgedMerchantMedia.pages[0]!.sections.find((section) =>
+      section.component.componentId.toUpperCase().includes("-HERO-"),
+    )!;
+    forgedHero.props.image = {
+      assetId: "merchant/forged-asset",
+      src: "https://merchant.example.test/forged.jpg",
+      alt: "Claimed merchant image",
+    };
+    expect(
+      restaurantIndustryPackRuntime
+        .certifiedMediaIssues(forgedMerchantMedia)
+        .some(
+          (issue) => issue.code === "RESTAURANT_MEDIA_OUTSIDE_CERTIFIED_POOL",
+        ),
+    ).toBeTruthy();
+
+    const duplicatePageId = structuredClone(withMedia);
+    duplicatePageId.pages[1]!.id = duplicatePageId.pages[0]!.id;
+    expect(
+      restaurantIndustryPackRuntime
+        .validateDraft(duplicatePageId)
+        .issues.some((issue) => issue.code === "RESTAURANT_PAGE_ID_DUPLICATE"),
+    ).toBeTruthy();
+
+    const duplicateSectionId = structuredClone(withMedia);
+    duplicateSectionId.pages[1]!.sections[0]!.id =
+      duplicateSectionId.pages[0]!.sections[0]!.id;
+    expect(
+      restaurantIndustryPackRuntime
+        .validateDraft(duplicateSectionId)
+        .issues.some(
+          (issue) => issue.code === "RESTAURANT_SECTION_ID_DUPLICATE",
+        ),
+    ).toBeTruthy();
+
+    const sparsePage = structuredClone(withMedia);
+    sparsePage.pages
+      .find((page) => page.path === "/visit")!
+      .sections.splice(2, 1);
+    expect(
+      restaurantIndustryPackRuntime
+        .candidateStructureIssues(sparsePage, candidateId)
+        .some((issue) => issue.code === "RESTAURANT_PAGE_ANATOMY_MISMATCH"),
+    ).toBeTruthy();
+
+    const overflowingMenu = structuredClone(withMedia);
+    const overflowingItems = overflowingMenu.pages
+      .find((page) => page.path === "/menu")
+      ?.sections.find((section) =>
+        section.component.componentId.toUpperCase().includes("-SERV-"),
+      )?.props.items as Array<Record<string, unknown>>;
+    overflowingItems[0]!.title = "x".repeat(121);
+    expect(
+      restaurantIndustryPackRuntime
+        .validateDraft(overflowingMenu)
+        .issues.some((issue) => issue.code === "CONTENT_NESTED_VALUE_TOO_LONG"),
+    ).toBeTruthy();
+    withMedia.generation!.premiumGate = gate;
+    expect(() => assertPremiumGate(withMedia)).not.toThrow();
+
+    expect(restaurantIndustryPackRuntime.pack).toBe(restaurantIndustryPack);
+    expect(
+      resolveCertifiedIndustryPackRuntimeForSite({
+        domain: "restaurant",
+        subtype: "restaurant",
+      }),
+    ).toBe(restaurantIndustryPackRuntime);
+    expect(
+      resolveCertifiedIndustryPackRuntimeByCatalogVersion(
+        RESTAURANT_CATALOG_VERSION,
+      ),
+    ).toBe(restaurantIndustryPackRuntime);
+    expect(resolveCertifiedIndustryPackRuntimeByCandidateId(candidateId)).toBe(
+      restaurantIndustryPackRuntime,
+    );
   });
 
   test("publish validation accepts ranked order and rejects incomplete, stale, or unsupported pack identity", () => {

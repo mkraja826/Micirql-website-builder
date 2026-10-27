@@ -64,6 +64,21 @@ export function isPhysiotherapyBriefContext(
   );
 }
 
+export function isRestaurantBriefContext(
+  context: IndustryContentContext,
+): boolean {
+  const persistedSubtype = text(context.subtype);
+  if (persistedSubtype) {
+    return /(?:^|[^a-z])(?:restaurant|dining(?: room)?|eatery|bistro|brasserie|fine[ -]dining|casual[ -]dining)(?:[^a-z]|$)/i.test(
+      persistedSubtype,
+    );
+  }
+  const classification = `${text(context.industry)} ${text(context.subindustry)}`;
+  return /(?:^|[^a-z])(?:restaurant|dining(?: room)?|eatery|bistro|brasserie|fine[ -]dining|casual[ -]dining)(?:[^a-z]|$)/i.test(
+    classification,
+  );
+}
+
 /**
  * Provider output is untrusted. When a persisted, explicitly non-dental site
  * receives dental-only wording, the caller must keep its deterministic copy.

@@ -30,6 +30,7 @@ import {
   resolveCertifiedIndustryPackByCatalogVersion,
   resolveCertifiedIndustryPackById,
   resolveCertifiedIndustryPackForSite,
+  restaurantIndustryPack,
 } from "../apps/builder/app/industry-packs";
 import { buildStaticProject } from "../apps/builder/app/api/publish/export-utils";
 
@@ -463,18 +464,24 @@ test.describe("Restaurant factual reference scaffold", () => {
     expect(contact).not.toContain('name="requestedDate"');
   });
 
-  test("remains planned and absent from every certified selection path", () => {
+  test("keeps the archived scaffold uncertified while production selection resolves Restaurant", () => {
+    const archivedSite = referenceSite();
+
+    expect(archivedSite.generation).toBeUndefined();
+    expect(restaurantDraftPack.identity.certification).toBe(
+      "draft-unregistered",
+    );
     expect(
       INDUSTRY_AVAILABILITY.find(
         (entry) => entry.id === restaurantDraftPack.identity.id,
       ),
-    ).toMatchObject({ status: "planned", rolloutOrder: 2 });
-    expect(listCertifiedIndustryPacks().map((pack) => pack.id)).not.toContain(
+    ).toMatchObject({ status: "certified" });
+    expect(listCertifiedIndustryPacks().map((pack) => pack.id)).toContain(
       restaurantDraftPack.identity.id,
     );
     expect(
       resolveCertifiedIndustryPackById(restaurantDraftPack.identity.id),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
     expect(
       resolveCertifiedIndustryPackByCatalogVersion(
         restaurantDraftPack.identity.catalogVersion,
@@ -485,7 +492,7 @@ test.describe("Restaurant factual reference scaffold", () => {
         domain: "restaurant",
         subtype: "restaurant",
       }),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
     expect(
       resolveCertifiedIndustryPack({
         domain: "restaurant",
@@ -493,7 +500,7 @@ test.describe("Restaurant factual reference scaffold", () => {
         subindustry: "Restaurant",
         services: ["Dine-in", "Table requests"],
       }),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
   });
 });
 

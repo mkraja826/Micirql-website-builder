@@ -15,9 +15,11 @@ type RestaurantDraftMediaEntry = {
 };
 
 /**
- * Licensed internal visual-QA pool. These images exercise Restaurant density,
- * crop and responsive behavior; they are never evidence of a merchant's real
- * menu, location or staff. Production generation must prefer supplied media.
+ * Licensed audited illustrative library shared by the archived visual evidence
+ * and the certified Restaurant fallback. These images exercise density, crop
+ * and responsive behavior and are never evidence of a merchant's real menu,
+ * location or staff. The production gate requires their visible disclosure and
+ * rejects non-library media until ownership and licence can be verified.
  */
 export const RESTAURANT_DRAFT_MEDIA_ENTRIES = [
   entry({

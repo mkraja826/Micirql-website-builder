@@ -43,6 +43,7 @@ import {
   assessCrossIndustryDesignDistinctness,
   candidateDesignSignature,
   listCertifiedIndustryPacks,
+  restaurantIndustryPack,
   resolveCertifiedIndustryPackByCandidateId,
   validateWithinIndustryDesignCatalog,
 } from "../apps/builder/app/industry-packs";
@@ -240,7 +241,9 @@ test.describe("Restaurant Top-20 staging catalog", () => {
       restaurantDraftPack.designGrammar.maximumWithinIndustrySimilarity,
     );
 
-    const certifiedPacks = listCertifiedIndustryPacks();
+    const certifiedPacks = listCertifiedIndustryPacks().filter(
+      (pack) => pack.id !== restaurantIndustryPack.id,
+    );
     expect(certifiedPacks.map(({ id }) => id)).toEqual([
       "clinic-dental",
       "clinic-physiotherapy",
@@ -617,7 +620,7 @@ test.describe("Restaurant Top-20 staging catalog", () => {
     expect(scaffold).toEqual(scaffoldSnapshot);
   });
 
-  test("canonicalizes caller objects, rejects other industries, and remains unregistered", () => {
+  test("canonicalizes archived caller objects while candidate identity resolves to production", () => {
     const scaffold = factualScaffold();
     const canonical = listRestaurantDraftCandidates()[2]!;
     const altered = structuredClone(canonical);
@@ -639,7 +642,7 @@ test.describe("Restaurant Top-20 staging catalog", () => {
     ).toThrow(/restaurant\/restaurant scaffold/);
     expect(
       resolveCertifiedIndustryPackByCandidateId(canonical.id),
-    ).toBeUndefined();
+    ).toBe(restaurantIndustryPack);
 
     const tampered = structuredClone(generated);
     tampered.generation!.premiumGate = {

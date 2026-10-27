@@ -7,6 +7,21 @@ export {
   type PhysiotherapyCandidate,
 } from "./physiotherapy";
 export {
+  RESTAURANT_CATALOG_VERSION,
+  isRestaurantSubtype,
+  listRestaurantCandidates,
+  restaurantIndustryPack,
+  type RestaurantCandidate,
+} from "./restaurant";
+export {
+  RESTAURANT_FACTS_KIND,
+  parseRestaurantIndustryFacts,
+  restaurantBriefFromScaffold,
+  restaurantIndustryFactsIssues,
+  restaurantRankingFacts,
+  type RestaurantIndustryFactsV1,
+} from "./restaurant-facts";
+export {
   listCertifiedIndustryPacks,
   resolveCertifiedIndustryPack,
   resolveCertifiedIndustryPackById,
@@ -43,6 +58,7 @@ export {
 export {
   dentalIndustryPackRuntime,
   physiotherapyIndustryPackRuntime,
+  restaurantIndustryPackRuntime,
   defineCertifiedIndustryPackRuntime,
   listCertifiedIndustryPackRuntimes,
   resolveCertifiedIndustryPackRuntime,

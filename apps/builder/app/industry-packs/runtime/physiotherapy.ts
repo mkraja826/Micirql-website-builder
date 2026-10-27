@@ -345,6 +345,16 @@ export const physiotherapyIndustryPackRuntime =
         remoteFunctionRequired: false,
       }),
     }),
+    industryFactsIssues: (value) =>
+      value == null
+        ? []
+        : [
+            issue(
+              "PHYSIOTHERAPY_STRUCTURED_FACTS_UNSUPPORTED",
+              "Physiotherapy currently uses its certified clinic brief, not another pack's structured facts payload.",
+            ),
+          ],
+    normalizeIndustryFacts: () => undefined,
     rankCandidates: (profile) => {
       const certifiedById = new Map(
         listPhysiotherapyCandidates().map((candidate) => [

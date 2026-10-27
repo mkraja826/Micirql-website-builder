@@ -581,6 +581,7 @@ function protectedStructureSnapshot(site: Site): string {
           selectedCandidateId: site.generation.selectedCandidateId ?? null,
           brandInput: site.generation.brandInput ?? null,
           brandProvenance: site.generation.brandProvenance ?? null,
+          industryFacts: site.generation.industryFacts ?? null,
         }
       : null,
     pages: site.pages.map((page) => ({

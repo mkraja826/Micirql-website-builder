@@ -1,8 +1,10 @@
 # MiCirql marketing current-state audit
 
-Status date: 2026-10-23  
+Status date: 2026-10-27<br />
 Surface audited: `https://micirql.com`  
 Purpose: record the live-site audit, resolved source ownership, and the local truthful replacement gate before any public release
+
+The live capture and original marketing QA result below remain dated 2026-10-23 evidence. A 2026-10-27 Builder source milestone subsequently promoted Restaurant locally; that promotion changes the required marketing manifest and proof, but it did not deploy either surface.
 
 ## Evidence captured
 
@@ -22,8 +24,8 @@ Purpose: record the live-site audit, resolved source ownership, and the local tr
 
 | Current public message                                                                                       | Verified project state                                                                                                                           | Required correction                                                                                                                      |
 | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| “Built for” Clinic, Restaurant, Real estate, SaaS, Construction, and Professional services                   | Dental and Physiotherapy are certified and selectable locally; Restaurant is next and every remaining industry is planned.                       | Replace the undifferentiated list with `Certified`, `In validation`, and `Planned` statuses sourced from a read-only release manifest.   |
-| “MiCirql chooses the structure, design system and functionality.”                                            | Dental and Physiotherapy each have verified independent ranking, 20-direction selection, page anatomy, and visual grammar.                       | Scope the claim to certified industries and explain that each industry owns its own researched pack.                                     |
+| “Built for” Clinic, Restaurant, Real estate, SaaS, Construction, and Professional services                   | Dental, Physiotherapy, and Restaurant are certified and selectable locally; Cafe is the next planned pack and every remaining industry is planned. | Replace the undifferentiated list with `Certified`, `In validation`, and `Planned` statuses sourced from a read-only release manifest.   |
+| “MiCirql chooses the structure, design system and functionality.”                                            | Dental, Physiotherapy, and Restaurant each have verified independent ranking, 20-direction selection, page anatomy, and visual grammar.          | Scope the claim to certified industries and explain that each industry owns its own researched pack.                                     |
 | “Click text, replace images, drag sections, switch themes and tune typography, spacing and motion visually.” | The responsive editor shell, autosave/conflict recovery, media/logo failure, and publish-readiness states are locally gated.                     | Show only interactions proven by the current editor gate; do not imply that local readiness has deployed a site.                          |
 | “Forms, authentication, databases, dashboards and business workflows can be connected.”                      | Forms and platform modules exist, but customer-ready cross-surface, storage and operational evidence is incomplete.                              | Separate currently verified website capabilities from custom/in-validation product engineering work.                                     |
 | “Use a custom domain with MiCirql hosting or export the finished site.”                                      | Publish/export code exists, while production object storage and the full publish-readiness product gate remain incomplete.                       | Do not imply self-serve commercial readiness until the release gate is green; offer a qualified assisted workflow if operationally true. |
@@ -36,15 +38,16 @@ the replacement must use one canonical spelling.
 1. **Evidence-led proposition** — explain that MiCirql builds structured,
    editable websites from certified industry systems rather than one-off generic
    templates.
-2. **Available now** — show Dental and Physiotherapy as independently certified
-   packs and link to real generated evidence.
+2. **Certified locally** — show Dental, Physiotherapy, and Restaurant as independently
+   certified packs, link to real generated evidence, and state that this is not
+   deployment, customer publication, or commercial availability.
 3. **How the Builder works** — `Business brief → Choose direction → Edit →
 readiness check`, using real Builder screenshots and current UI wording.
-4. **Certified Dental proof** — show multiple genuinely different Dental
-   directions, responsive output, page coverage, imagery density and brand/logo
-   preservation.
-5. **Industry validation roadmap** — show Dental and Physiotherapy as `Certified`,
-   Restaurant as the next `Planned` pack, and every later industry truthfully;
+4. **Certified pack proof** — show multiple genuinely different Dental,
+   Physiotherapy, and Restaurant directions, responsive output, page coverage,
+   imagery density, factual boundaries, and brand/logo preservation.
+5. **Industry validation roadmap** — show Dental, Physiotherapy, and Restaurant
+   as `Certified`, Cafe as the next `Planned` pack, and every later industry truthfully;
    marketing labels must never grant generation access.
 6. **Verified capability table** — separate `Available`, `In validation`, and
    `Assisted/custom` functionality.
@@ -70,18 +73,33 @@ Pricing stays absent until billing is decided.
 
 ## Marketing release gate
 
-The local replacement now uses a frozen read-only release manifest, scopes the
-public proposition to certified Dental and Physiotherapy, keeps Restaurant and
-later industries `Planned`, removes unsupported backend/self-serve publish
-claims, and uses the exact official mark. Production-build UI QA passes 9/9 at
+At the 2026-10-23 checkpoint, the local replacement used a frozen read-only
+release manifest, scoped the public proposition to certified Dental and
+Physiotherapy, kept Restaurant and later industries `Planned`, removed
+unsupported backend/self-serve publish claims, and used the exact official mark.
+Production-build UI QA passed 9/9 at
 320, 390, 768, 1024, and 1440 px with navigation, keyboard, touch targets,
 reduced motion, WCAG A/AA, runtime, responsive overflow, and visual baselines.
-The build and `git diff --check` also pass. No deploy, push, or PR occurred.
+The build and `git diff --check` also passed. No deploy, push, or PR occurred at
+that audit checkpoint.
+
+Following the 2026-10-27 local Builder promotion, the marketing source must now
+derive Dental, Physiotherapy, and Restaurant as `Certified` and Cafe as the next
+`Planned` pack. Restaurant proof should identify catalog
+`restaurant-flagship-2026.10.27`, its 20 candidates and six routes, while
+explaining that supplied menu, location, contact, story, and reservation facts
+remain immutable in the Site snapshot and generic enrichment is disabled for
+the pack. This is a required source update and fresh release-gate rerun, not a
+claim that the current live site or the pushed marketing branch already contains
+the promotion.
 
 The replacement cannot be considered complete until:
 
 - production handoff confirms the existing Cloudflare Pages configuration,
   rollback procedure, final copy and deployment authorization;
+- the frozen release manifest, roadmap and certified proof are updated for the
+  three locally certified packs, with Cafe next, and the complete marketing
+  build/visual/accessibility gate is rerun;
 - the canonical mark and approved lockups render correctly on light and dark
   surfaces;
 - industry/status text is generated from a read-only manifest and cannot mutate
@@ -96,4 +114,5 @@ The replacement cannot be considered complete until:
   WCAG 2.2 A/AA checks pass; and
 - no marketing release changes generated-site wildcard routes or Dental output.
 
-No deployment is authorized by this audit.
+No deployment, customer publication, production-data mutation, or commercial
+release is authorized by this audit or the Restaurant promotion addendum.

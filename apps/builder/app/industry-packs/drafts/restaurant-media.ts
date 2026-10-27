@@ -29,15 +29,24 @@ const SUPPORTING_COUNTS = new Map<string, number>([
 
 const PROHIBITED_STOCK_FAMILIES = new Set(["services", "team", "testimonials"]);
 
+type RestaurantImageReference = {
+  assetId: string;
+  source?: string;
+  alt: string;
+};
+
 const VISITOR_DISCLOSURE =
   "Preview imagery is illustrative and may not show this restaurant or its menu.";
 const AUDIT_DISCLOSURE =
   "Illustrative stock photography for layout review; not a verified dish, portion, venue, amenity, ingredient, process, or staff image from this restaurant.";
 
 /**
- * Applies a deterministic internal visual-QA pool. This is deliberately not a
- * production media selector: its visible disclosure prevents stock from being
- * mistaken for merchant evidence, and supplied non-placeholder media wins.
+ * Applies the deterministic audited illustrative library used by both the
+ * archived visual evidence and the certified Restaurant fallback. Its visible
+ * disclosure prevents stock from being mistaken for merchant evidence.
+ * Existing non-placeholder media is preserved during composition, but the
+ * certified gate rejects it until a server-side workspace ownership and
+ * licence resolver is part of publish validation.
  */
 export function applyRestaurantDraftMedia(site: Site, seed = 0): Site {
   const next = structuredClone(site);
@@ -103,6 +112,7 @@ export function restaurantDraftMediaIssues(site: Site): CompositionGateIssue[] {
   for (const page of site.pages) {
     const visibleReferences: Array<{
       assetId: string;
+      source?: string;
       alt: string;
       family: string;
       disclosed: boolean;
@@ -136,7 +146,14 @@ export function restaurantDraftMediaIssues(site: Site): CompositionGateIssue[] {
 
     for (const reference of visibleReferences) {
       siteAssetIds.add(reference.assetId);
-      if (!RESTAURANT_DRAFT_MEDIA_IDS.includes(reference.assetId)) continue;
+      if (!RESTAURANT_DRAFT_MEDIA_IDS.includes(reference.assetId)) {
+        issues.push({
+          code: "RESTAURANT_MEDIA_OUTSIDE_CERTIFIED_POOL",
+          message: `${page.path} contains media outside the registered audited Restaurant library. Workspace uploads remain blocked until the publish gate can verify their ownership and licence server-side.`,
+          severity: "error",
+        });
+        continue;
+      }
       const asset = demoAssetById(reference.assetId);
       if (
         !asset ||
@@ -145,6 +162,8 @@ export function restaurantDraftMediaIssues(site: Site): CompositionGateIssue[] {
         !asset.sourceReference?.startsWith("https://www.pexels.com/") ||
         !asset.domains.includes("restaurant") ||
         !asset.subtypes.includes("restaurant") ||
+        (reference.source !== undefined &&
+          reference.source !== asset.originalUrl) ||
         !reference.alt.toLowerCase().includes("illustrative") ||
         !reference.alt.toLowerCase().includes("not a verified")
       ) {
@@ -301,14 +320,20 @@ function shouldApplyDraftMedia(value: unknown) {
   return demoAssetById(assetId)?.source === "micirql-placeholder";
 }
 
-function imageReferences(
-  value: unknown,
-): Array<{ assetId: string; alt: string }> {
+function imageReferences(value: unknown): RestaurantImageReference[] {
   if (Array.isArray(value)) return value.flatMap(imageReferences);
   if (!isRecord(value)) return [];
   const assetId = text(value.assetId);
   const source = text(value.src) || text(value.originalUrl);
-  if (assetId && source) return [{ assetId, alt: text(value.alt) }];
+  if (assetId || source) {
+    return [
+      {
+        assetId,
+        ...(source ? { source } : {}),
+        alt: text(value.alt),
+      },
+    ];
+  }
   return Object.values(value).flatMap(imageReferences);
 }
 

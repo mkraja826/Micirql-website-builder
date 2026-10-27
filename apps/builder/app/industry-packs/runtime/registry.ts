@@ -9,10 +9,12 @@ import {
 import type { IndustryPackProfile, IndustryPackSiteIdentity } from "../types";
 import { dentalIndustryPackRuntime } from "./dental";
 import { physiotherapyIndustryPackRuntime } from "./physiotherapy";
+import { restaurantIndustryPackRuntime } from "./restaurant";
 
 const CERTIFIED_INDUSTRY_PACK_RUNTIMES = [
   dentalIndustryPackRuntime,
   physiotherapyIndustryPackRuntime,
+  restaurantIndustryPackRuntime,
 ] as const;
 
 export type RegisteredIndustryPackRuntime =

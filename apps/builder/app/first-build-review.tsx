@@ -66,13 +66,18 @@ export function FirstBuildReview({
     () =>
       industryRuntime
         ? industryRuntime
-            .rankCandidates(profile)
+            .rankCandidates({
+              ...profile,
+              industryFacts:
+                draft?.snapshot.generation?.industryFacts ??
+                profile.industryFacts,
+            })
             .map(({ candidate, ...ranking }) => ({
               preset: candidate,
               ...ranking,
             }))
         : [],
-    [industryRuntime, profile],
+    [draft?.snapshot.generation?.industryFacts, industryRuntime, profile],
   );
   const reviewCount = industryRuntime?.pack.reviewCount ?? 0;
   const ordered = useMemo(

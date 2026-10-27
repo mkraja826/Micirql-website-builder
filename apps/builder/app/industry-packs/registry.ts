@@ -1,6 +1,7 @@
 import type { Domain } from "@micirql/schema";
 import { dentalIndustryPack } from "./dental";
 import { physiotherapyIndustryPack } from "./physiotherapy";
+import { restaurantIndustryPack } from "./restaurant";
 import {
   assessCrossIndustryDesignDistinctness,
   candidateDesignSignature,
@@ -11,6 +12,7 @@ import type { IndustryPackProfile, IndustryPackSiteIdentity } from "./types";
 const CERTIFIED_INDUSTRY_PACKS = [
   dentalIndustryPack,
   physiotherapyIndustryPack,
+  restaurantIndustryPack,
 ] as const;
 
 export type RegisteredIndustryPack = (typeof CERTIFIED_INDUSTRY_PACKS)[number];

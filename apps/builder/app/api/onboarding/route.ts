@@ -123,7 +123,9 @@ export async function POST(request: NextRequest) {
     const submittedSubindustry = optionalString(body.subindustry);
     const location = optionalString(body.location);
     const submittedNotes = optionalString(body.notes);
+    const industryFacts = body.industryFacts;
     const recommendationProfile = {
+      businessName,
       industry,
       subindustry: submittedSubindustry,
       location,
@@ -131,7 +133,9 @@ export async function POST(request: NextRequest) {
       goals,
       style_tags: styleTags,
       required_capabilities: requiredCapabilities,
+      languages,
       notes: submittedNotes,
+      industryFacts,
     };
     const requestedPackId = optionalString(body.packId);
     const industryRuntime = requestedPackId
@@ -150,6 +154,21 @@ export async function POST(request: NextRequest) {
         { status: 422 },
       );
     }
+    const industryFactIssues =
+      industryRuntime.industryFactsIssues(industryFacts);
+    if (industryFactIssues.length) {
+      return NextResponse.json(
+        {
+          error: industryFactIssues[0]!.code,
+          code: industryFactIssues[0]!.code,
+          message: industryFactIssues.map((issue) => issue.message).join(" "),
+          issues: industryFactIssues,
+        },
+        { status: 422 },
+      );
+    }
+    const normalizedIndustryFacts =
+      industryRuntime.normalizeIndustryFacts(industryFacts);
 
     // A stable pack ID owns classification. Free-form practice focus remains
     // useful content input but must never switch the selected industry pack.
@@ -168,6 +187,7 @@ export async function POST(request: NextRequest) {
       ...recommendationProfile,
       subindustry,
       notes,
+      industryFacts: normalizedIndustryFacts,
     });
     if (ranked.length !== industryPack.reviewCount) {
       return NextResponse.json(
@@ -248,6 +268,7 @@ export async function POST(request: NextRequest) {
         goals,
         languages,
         notes,
+        industryFacts: normalizedIndustryFacts,
       },
       brandInput,
       brandProvenance,
@@ -256,6 +277,9 @@ export async function POST(request: NextRequest) {
       catalogVersion: industryPack.catalogVersion,
       packStatus: "certified",
       candidateIds: ranked.map((item) => item.candidate.id),
+      ...(normalizedIndustryFacts
+        ? { industryFacts: normalizedIndustryFacts }
+        : {}),
       ...(brandInput ? { brandInput } : {}),
       ...(brandProvenance ? { brandProvenance } : {}),
     };
@@ -315,7 +339,12 @@ export async function POST(request: NextRequest) {
       candidateCount: ranked.length,
       draft: savedDraft,
       qualityWarnings: [],
-      profile: savedProfiles[0] ?? profile,
+      profile: {
+        ...((savedProfiles[0] ?? profile) as Record<string, unknown>),
+        ...(normalizedIndustryFacts
+          ? { industryFacts: normalizedIndustryFacts }
+          : {}),
+      },
     });
   } catch (error) {
     return errorResponse(error);

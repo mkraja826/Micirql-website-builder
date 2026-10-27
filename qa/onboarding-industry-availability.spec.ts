@@ -5,12 +5,12 @@ import {
 } from "../apps/builder/app/industry-availability";
 
 test.describe("onboarding industry availability", () => {
-  test("exposes Dental and Physiotherapy as distinct certified generation payloads", () => {
+  test("exposes Dental, Physiotherapy and Restaurant as distinct certified generation payloads", () => {
     const actionable = INDUSTRY_AVAILABILITY.filter(
       (item) => item.status === "certified",
     );
 
-    expect(actionable).toHaveLength(2);
+    expect(actionable).toHaveLength(3);
     expect(actionable[0]).toMatchObject({
       id: "clinic-dental",
       onboarding: { industry: "dental" },
@@ -37,14 +37,31 @@ test.describe("onboarding industry availability", () => {
     );
   });
 
-  test("keeps Restaurant visible but non-actionable", () => {
+  test("makes Restaurant actionable with its own brief and generation defaults", () => {
     const restaurant = INDUSTRY_AVAILABILITY.find(
       (item) => item.id === "restaurant-restaurant",
     );
-    expect(restaurant).toMatchObject({ status: "planned", rolloutOrder: 2 });
-    expect(restaurant).not.toHaveProperty("onboarding");
-    expect(
-      certifiedOnboardingIndustry("restaurant-restaurant"),
-    ).toBeUndefined();
+    expect(restaurant).toMatchObject({
+      status: "certified",
+      onboarding: {
+        industry: "restaurant",
+        defaultGoals: ["request reservations", "show menu", "plan visits"],
+        defaultCapabilities: [
+          "contact form",
+          "reservation request",
+          "menu",
+          "gallery",
+          "maps",
+        ],
+      },
+      brief: {
+        focusLabel: "Cuisine focus",
+        directionLabel: "Restaurant",
+        servicesPlaceholder: "Dine-in, takeaway, private dining",
+      },
+    });
+    expect(certifiedOnboardingIndustry("restaurant-restaurant")).toEqual(
+      restaurant,
+    );
   });
 });

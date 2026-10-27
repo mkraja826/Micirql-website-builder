@@ -12,6 +12,7 @@ import {
   fallbackImageSubjectForBrief,
   hasIncompatibleDentalLanguage,
   isPhysiotherapyBriefContext,
+  isRestaurantBriefContext,
   secondaryExploreActionLabel,
 } from "./industry-content-policy.ts";
 import {
@@ -160,6 +161,31 @@ Deno.serve(async (req: Request) => {
     const draft = draftRows?.[0];
     if (!draft) return json({ error: "draft_not_found" }, 404);
     brief = withSnapshotIndustryIdentity(brief, draft.snapshot);
+
+    // Restaurant copy is already assembled from the normalized factual
+    // manifest. Generic service enrichment would confuse service modes with
+    // menu items and could overwrite a verified dish while retaining its
+    // price. Until a Restaurant-specific writer exists, the certified policy
+    // is an explicit curated no-op.
+    if (isRestaurantBriefContext(brief)) {
+      return json({
+        ok: true,
+        mode: "curated",
+        provider: "restaurant-structured-brief",
+        model: "restaurant-facts-v1",
+        usage: { input_tokens: 0, output_tokens: 0 },
+        metering: null,
+        enrichment: {
+          total_pages: sitePages(draft.snapshot).length,
+          model_pages: 0,
+          fallback_pages: 0,
+          retry_count: 0,
+          failures: [],
+        },
+        draft: null,
+        content: null,
+      });
+    }
 
     let generated: AiContent;
     let mode: EnrichmentMode = "fallback";

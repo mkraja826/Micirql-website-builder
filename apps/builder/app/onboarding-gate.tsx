@@ -12,6 +12,7 @@ import {
   certifiedOnboardingIndustry,
   INDUSTRY_AVAILABILITY,
 } from "./industry-availability";
+import { restaurantIndustryFactsIssues } from "./industry-packs/restaurant-facts";
 import styles from "./onboarding-gate.module.css";
 import {
   normalizeWorkspaceUploadFailure,
@@ -42,6 +43,16 @@ type FormState = {
   brandAccent: string;
   logoAssetId: string;
   logoName: string;
+  restaurantMenu: string;
+  restaurantMenuDisclosures: string;
+  restaurantMapUrl: string;
+  restaurantPhone: string;
+  restaurantEmail: string;
+  restaurantReservationPolicy: string;
+  restaurantAccessibility: string;
+  restaurantParking: string;
+  restaurantTransit: string;
+  restaurantStory: string;
 };
 
 const BRIEF_STEPS = [
@@ -82,6 +93,16 @@ const initialForm: FormState = {
   brandAccent: "",
   logoAssetId: "",
   logoName: "",
+  restaurantMenu: "",
+  restaurantMenuDisclosures: "",
+  restaurantMapUrl: "",
+  restaurantPhone: "",
+  restaurantEmail: "",
+  restaurantReservationPolicy: "",
+  restaurantAccessibility: "",
+  restaurantParking: "",
+  restaurantTransit: "",
+  restaurantStory: "",
 };
 
 export function OnboardingGate({
@@ -111,6 +132,10 @@ export function OnboardingGate({
   const [form, setForm] = useState<FormState>(initialForm);
   const [briefStep, setBriefStep] = useState(0);
   const authHeaders = { Authorization: "Bearer " + session.access_token };
+
+  useEffect(() => {
+    setError("");
+  }, [form]);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,6 +275,28 @@ export function OnboardingGate({
       );
       return;
     }
+    if (selectedIndustry.id === "restaurant-restaurant") {
+      const factIssues = restaurantIndustryFactsIssues(
+        buildRestaurantIndustryFacts(form),
+      );
+      if (factIssues.length) {
+        const businessStepCodes = new Set([
+          "RESTAURANT_BUSINESS_NAME_REQUIRED",
+          "RESTAURANT_CUISINE_REQUIRED",
+          "RESTAURANT_SERVICE_MODE_REQUIRED",
+          "RESTAURANT_ADDRESS_REQUIRED",
+        ]);
+        setBriefStep(
+          factIssues.some((issue) => businessStepCodes.has(issue.code)) ? 0 : 1,
+        );
+        setError(
+          `Complete the Restaurant brief before reviewing directions. ${factIssues
+            .map((issue) => issue.message)
+            .join(" ")}`,
+        );
+        return;
+      }
+    }
     setBuilding(true);
     setError("");
     try {
@@ -283,6 +330,10 @@ export function OnboardingGate({
           requiredCapabilities: form.requiredCapabilities,
           languages: commaList(form.languages),
           notes: buildBriefNotes(form),
+          industryFacts:
+            selectedIndustry.id === "restaurant-restaurant"
+              ? buildRestaurantIndustryFacts(form)
+              : undefined,
           brandInput,
         }),
       });
@@ -366,15 +417,23 @@ export function OnboardingGate({
     form.brandSecondary,
     form.brandAccent,
   ].filter((value) => /^#[0-9a-f]{6}$/i.test(value.trim())).length;
-  const requiredRemaining = [form.businessName, form.services].filter(
-    (value) => !value.trim(),
-  ).length;
+  const requiredRemaining = [
+    form.businessName,
+    form.services,
+    ...(selectedPack.id === "restaurant-restaurant"
+      ? [form.subindustry, form.location]
+      : []),
+  ].filter((value) => !value.trim()).length;
   const isFinalBriefStep = briefStep === BRIEF_STEPS.length - 1;
   const activeBriefStep = BRIEF_STEPS[briefStep]!;
-  const advanceBrief = () =>
+  const advanceBrief = () => {
+    setError("");
     setBriefStep((current) => Math.min(BRIEF_STEPS.length - 1, current + 1));
-  const returnToPreviousBriefStep = () =>
+  };
+  const returnToPreviousBriefStep = () => {
+    setError("");
     setBriefStep((current) => Math.max(0, current - 1));
+  };
 
   function submitOrAdvance(event: FormEvent) {
     if (!isFinalBriefStep) {
@@ -541,6 +600,24 @@ export function OnboardingGate({
                           subindustry: "",
                           services: "",
                           trustFacts: "",
+                          goals: [...item.onboarding.defaultGoals],
+                          requiredCapabilities: [
+                            ...item.onboarding.defaultCapabilities,
+                          ],
+                          imagePlan:
+                            item.id === "restaurant-restaurant"
+                              ? "Use the certified Restaurant image library for now"
+                              : "Use the certified image library for now",
+                          restaurantMenu: "",
+                          restaurantMenuDisclosures: "",
+                          restaurantMapUrl: "",
+                          restaurantPhone: "",
+                          restaurantEmail: "",
+                          restaurantReservationPolicy: "",
+                          restaurantAccessibility: "",
+                          restaurantParking: "",
+                          restaurantTransit: "",
+                          restaurantStory: "",
                         }))
                       }
                     >
@@ -585,7 +662,11 @@ export function OnboardingGate({
                 </Field>
                 <Field
                   label="Primary location"
-                  helper="City, area or service region"
+                  helper={
+                    selectedPack.id === "restaurant-restaurant"
+                      ? "Approved public street address or precise venue location"
+                      : "City, area or service region"
+                  }
                 >
                   <input
                     placeholder="Hyderabad, Telangana"
@@ -609,8 +690,16 @@ export function OnboardingGate({
                 </Field>
                 <Field
                   className={styles.fullWidth!}
-                  label="Main services"
-                  helper="Separate services with commas"
+                  label={
+                    selectedPack.id === "restaurant-restaurant"
+                      ? "Service modes"
+                      : "Main services"
+                  }
+                  helper={
+                    selectedPack.id === "restaurant-restaurant"
+                      ? "Separate current modes such as dine-in, takeaway or private dining with commas"
+                      : "Separate services with commas"
+                  }
                   required
                 >
                   <textarea
@@ -642,12 +731,22 @@ export function OnboardingGate({
                 <ChoiceGroup
                   label="Main goals"
                   supporting="What should the website help the business achieve?"
-                  values={[
-                    "generate leads",
-                    "book appointments",
-                    "build trust",
-                    "rank in search",
-                  ]}
+                  values={
+                    selectedPack.id === "restaurant-restaurant"
+                      ? [
+                          "request reservations",
+                          "show menu",
+                          "plan visits",
+                          "build trust",
+                          "rank in search",
+                        ]
+                      : [
+                          "generate leads",
+                          "book appointments",
+                          "build trust",
+                          "rank in search",
+                        ]
+                  }
                   selected={form.goals}
                   onChange={(goals) => setForm({ ...form, goals })}
                 />
@@ -669,15 +768,26 @@ export function OnboardingGate({
                 <ChoiceGroup
                   label="Required functionality"
                   supporting="Select only what this business needs now."
-                  values={[
-                    "contact form",
-                    "booking",
-                    "gallery",
-                    "blog",
-                    "maps",
-                    "lead capture",
-                    "multilingual",
-                  ]}
+                  values={
+                    selectedPack.id === "restaurant-restaurant"
+                      ? [
+                          "contact form",
+                          "reservation request",
+                          "menu",
+                          "gallery",
+                          "maps",
+                          "multilingual",
+                        ]
+                      : [
+                          "contact form",
+                          "booking",
+                          "gallery",
+                          "blog",
+                          "maps",
+                          "lead capture",
+                          "multilingual",
+                        ]
+                  }
                   selected={form.requiredCapabilities}
                   onChange={(requiredCapabilities) =>
                     setForm({ ...form, requiredCapabilities })
@@ -711,8 +821,16 @@ export function OnboardingGate({
                     </Field>
                     <Field
                       className={styles.fullWidth!}
-                      label="Verified trust facts"
-                      helper="Clinician names, qualifications, years in practice or other approved proof—never estimates"
+                      label={
+                        selectedPack.id === "restaurant-restaurant"
+                          ? "Verified venue facts"
+                          : "Verified trust facts"
+                      }
+                      helper={
+                        selectedPack.id === "restaurant-restaurant"
+                          ? "Only supplied facts about the venue, people or service—never inferred awards, ratings or compliance"
+                          : "Clinician names, qualifications, years in practice or other approved proof—never estimates"
+                      }
                     >
                       <textarea
                         placeholder={selectedPack.brief.trustFactsPlaceholder}
@@ -723,15 +841,197 @@ export function OnboardingGate({
                         }
                       />
                     </Field>
+                    {selectedPack.id === "restaurant-restaurant" ? (
+                      <>
+                        <Field
+                          className={styles.fullWidth!}
+                          label="Current menu"
+                          helper="One item per line: Category | Item | Description | Price | Disclosures. Menu facts must be supplied by the restaurant."
+                          required
+                        >
+                          <textarea
+                            placeholder={
+                              "Starters | Paneer tikka | Charred paneer and peppers | ₹320 | Contains dairy\nMains | Vegetable biryani | Basmati rice and seasonal vegetables | ₹420 |"
+                            }
+                            rows={6}
+                            value={form.restaurantMenu}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantMenu: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          className={styles.fullWidth!}
+                          label="Menu disclosure notes"
+                          helper="Use only the restaurant's approved allergen, dietary, serving or availability wording"
+                        >
+                          <textarea
+                            placeholder="Tell our team about allergies before ordering. Items may change when the restaurant updates the menu."
+                            rows={3}
+                            value={form.restaurantMenuDisclosures}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantMenuDisclosures: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          className={styles.fullWidth!}
+                          label="Table-request policy"
+                          helper="Explain what happens after a request. The website will never claim that a table is confirmed instantly."
+                          required
+                        >
+                          <textarea
+                            placeholder="Table requests are reviewed by the restaurant. A table is confirmed only after the restaurant responds."
+                            rows={3}
+                            value={form.restaurantReservationPolicy}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantReservationPolicy: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Directions URL"
+                          helper="Required approved HTTPS map link"
+                        >
+                          <input
+                            aria-required="true"
+                            inputMode="url"
+                            placeholder="https://maps.google.com/…"
+                            value={form.restaurantMapUrl}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantMapUrl: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Restaurant phone"
+                          helper="Approved public number—required if email is blank"
+                        >
+                          <input
+                            autoComplete="tel"
+                            inputMode="tel"
+                            placeholder="+91 90000 00000"
+                            value={form.restaurantPhone}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantPhone: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Restaurant email"
+                          helper="Approved public email—required if phone is blank"
+                        >
+                          <input
+                            autoComplete="email"
+                            inputMode="email"
+                            placeholder="hello@example.com"
+                            type="email"
+                            value={form.restaurantEmail}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantEmail: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Accessibility"
+                          helper="Optional verified entrance or seating details"
+                        >
+                          <input
+                            placeholder="Step-free entrance, accessible seating"
+                            value={form.restaurantAccessibility}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantAccessibility: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Parking"
+                          helper="Optional verified parking information"
+                        >
+                          <input
+                            placeholder="Street parking; paid parking nearby"
+                            value={form.restaurantParking}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantParking: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          label="Public transport"
+                          helper="Optional verified arrival information"
+                        >
+                          <input
+                            placeholder="Metro station 400 m away"
+                            value={form.restaurantTransit}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantTransit: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field
+                          className={styles.fullWidth!}
+                          label="Restaurant story"
+                          helper="Required approved origin, approach or hospitality story"
+                        >
+                          <textarea
+                            aria-required="true"
+                            placeholder="Write only the story supplied and approved by the restaurant."
+                            rows={4}
+                            value={form.restaurantStory}
+                            onChange={(event) =>
+                              setForm({
+                                ...form,
+                                restaurantStory: event.target.value,
+                              })
+                            }
+                          />
+                        </Field>
+                      </>
+                    ) : null}
                   </div>
                   <SingleChoiceGroup
                     label="Image plan"
                     supporting="This tells MiCirql whether to reserve space for supplied photography or use the certified library."
-                    values={[
-                      "Use the certified image library for now",
-                      "I have real clinic or team photos",
-                      "Mix real clinic or team photos with the certified library",
-                    ]}
+                    values={
+                      selectedPack.id === "restaurant-restaurant"
+                        ? [
+                            "Use the certified Restaurant image library for now",
+                            "I have real menu or venue photos",
+                            "Mix real menu or venue photos with the certified Restaurant library",
+                          ]
+                        : [
+                            "Use the certified image library for now",
+                            "I have real clinic or team photos",
+                            "Mix real clinic or team photos with the certified library",
+                          ]
+                    }
                     selected={form.imagePlan}
                     onChange={(imagePlan) => setForm({ ...form, imagePlan })}
                   />
@@ -1247,6 +1547,93 @@ function buildBriefNotes(form: FormState) {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function buildRestaurantIndustryFacts(form: FormState) {
+  return {
+    kind: "restaurant-facts-v1",
+    businessName: form.businessName.trim(),
+    cuisines: commaList(form.subindustry),
+    serviceModes: commaList(form.services),
+    menu: {
+      suppliedAsCurrent: true,
+      categories: parseRestaurantMenu(form.restaurantMenu),
+      notes: [],
+      disclosureNotes: factLines(form.restaurantMenuDisclosures),
+    },
+    address: form.location.trim(),
+    ...(form.restaurantMapUrl.trim()
+      ? { mapUrl: form.restaurantMapUrl.trim() }
+      : {}),
+    openingHours: factLines(form.openingHours),
+    accessibility: factLines(form.restaurantAccessibility),
+    parking: factLines(form.restaurantParking),
+    transit: factLines(form.restaurantTransit),
+    visitDetails: factLines(form.trustFacts),
+    ...(form.restaurantPhone.trim()
+      ? { phone: form.restaurantPhone.trim() }
+      : {}),
+    ...(form.restaurantEmail.trim()
+      ? { email: form.restaurantEmail.trim() }
+      : {}),
+    reservationPolicy: factLines(form.restaurantReservationPolicy),
+    partyDetails: [],
+    specialRequestNotes: [],
+    ...(form.restaurantStory.trim()
+      ? {
+          story: {
+            heading: `About ${form.businessName.trim()}`,
+            paragraphs: factLines(form.restaurantStory),
+            principles: [],
+          },
+        }
+      : {}),
+  };
+}
+
+function parseRestaurantMenu(value: string) {
+  const categories = new Map<
+    string,
+    {
+      name: string;
+      items: Array<{
+        name: string;
+        description?: string;
+        price?: string;
+        disclosures: string[];
+      }>;
+    }
+  >();
+  for (const line of value.split(/\r?\n/)) {
+    const [
+      categoryValue,
+      itemValue,
+      descriptionValue,
+      priceValue,
+      disclosureValue,
+    ] = line.split("|").map((part) => part.trim());
+    if (!categoryValue || !itemValue) continue;
+    const key = categoryValue.toLocaleLowerCase("en-US");
+    const category = categories.get(key) ?? {
+      name: categoryValue,
+      items: [],
+    };
+    category.items.push({
+      name: itemValue,
+      ...(descriptionValue ? { description: descriptionValue } : {}),
+      ...(priceValue ? { price: priceValue } : {}),
+      disclosures: disclosureValue ? commaList(disclosureValue) : [],
+    });
+    categories.set(key, category);
+  }
+  return [...categories.values()];
+}
+
+function factLines(value: string) {
+  return value
+    .split(/\r?\n|;/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function shortImagePlan(value: string) {

@@ -102,8 +102,9 @@ test.describe("Builder product chrome: authenticated business brief", () => {
       );
       await expect(physiotherapy).toContainText("Certified");
       await expect(physiotherapy).toHaveAttribute("aria-pressed", "false");
-      await expect(restaurant).toHaveAttribute("data-pack-status", "planned");
-      await expect(restaurant).toContainText("Planned");
+      await expect(restaurant).toHaveAttribute("data-pack-status", "certified");
+      await expect(restaurant).toContainText("Certified");
+      await expect(restaurant).toHaveAttribute("aria-pressed", "false");
 
       await physiotherapy.click();
       await expect(physiotherapy).toHaveAttribute("aria-pressed", "true");
@@ -242,6 +243,263 @@ test.describe("Builder product chrome: authenticated business brief", () => {
       ).toEqual([]);
     });
   }
+
+  test("Restaurant onboarding keeps factual requirements and submits structured facts", async ({
+    page,
+  }) => {
+    const unexpectedApiRequests: string[] = [];
+    const authenticatedRequests: string[] = [];
+    let submittedBrief: Record<string, unknown> | undefined;
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((session) => {
+      window.localStorage.setItem(
+        "micirql.supabase.session",
+        JSON.stringify(session),
+      );
+    }, QA_SESSION);
+    await page.route("**/api/**", async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (request.method() === "POST" && url.pathname === "/api/onboarding") {
+        expect(request.headers().authorization).toBe("Bearer qa-access-token");
+        submittedBrief = request.postDataJSON() as Record<string, unknown>;
+        await route.fulfill({
+          status: 422,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: false,
+            message: "Restaurant payload captured for QA.",
+          }),
+        });
+        return;
+      }
+      await handleBuilderApi(
+        route,
+        authenticatedRequests,
+        unexpectedApiRequests,
+      );
+    });
+
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /open .* in editor/i }).click();
+
+    await page
+      .getByPlaceholder("Implants, orthodontics, family dentistry")
+      .fill("Implants");
+    await page
+      .getByPlaceholder("Dental implants, crowns, root canal treatment")
+      .fill("Dental implants");
+
+    const restaurant = page.locator(
+      '[data-industry-pack="restaurant-restaurant"]',
+    );
+    await restaurant.click();
+    await expect(restaurant).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByPlaceholder("Implants, orthodontics, family dentistry"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByPlaceholder("Dental implants, crowns, root canal treatment"),
+    ).toHaveCount(0);
+
+    await page
+      .locator('input[autocomplete="organization"]')
+      .fill("Radhika Restaurant");
+    await page
+      .getByPlaceholder("Hyderabad, Telangana")
+      .fill("12 Jubilee Hills Road, Hyderabad, Telangana");
+    await page
+      .getByPlaceholder("South Indian, seasonal vegetarian, contemporary")
+      .fill("South Indian, seasonal vegetarian");
+    await page
+      .getByPlaceholder("Dine-in, takeaway, private dining")
+      .fill("Dine-in, takeaway");
+
+    await advanceBusinessBrief(page, 390, "content & goals");
+
+    const goals = page.getByRole("group", { name: "Main goals" });
+    await expect(
+      goals.getByRole("button", { name: /request reservations/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      goals.getByRole("button", { name: /show menu/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      goals.getByRole("button", { name: /plan visits/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    const capabilities = page.getByRole("group", {
+      name: "Required functionality",
+    });
+    await expect(
+      capabilities.getByRole("button", { name: /reservation request/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      capabilities.getByRole("button", { name: /^\+?menu$/i }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await advanceBusinessBrief(page, 390, "brand & media");
+    await advanceBusinessBrief(page, 390, "review");
+    await page
+      .locator("[data-mobile-action]")
+      .getByRole("button", { name: /review 20 directions/i })
+      .click();
+
+    const missingFactsAlert = page.locator('form [role="alert"]');
+    await expect(missingFactsAlert).toContainText(
+      "Complete the Restaurant brief before reviewing directions.",
+    );
+    await expect(missingFactsAlert).toContainText(
+      "Supply the restaurant's approved public HTTPS directions link.",
+    );
+    await expect(missingFactsAlert).toContainText(
+      "Supply at least one approved public restaurant phone number or email address.",
+    );
+    expect(submittedBrief).toBeUndefined();
+
+    const enrichment = page.locator("[data-enrichment-panel]");
+    await enrichment.locator("summary").click();
+    await page
+      .getByPlaceholder("Mon–Sat, 9:00–18:00")
+      .fill("Tue–Sun, 12:00–22:30");
+    await page
+      .getByPlaceholder(/Verified venue story/)
+      .fill("Family-run dining room; step-free entrance");
+    await page
+      .getByPlaceholder(/Starters \| Paneer tikka/)
+      .fill(
+        "Starters | Paneer tikka | Charred paneer and peppers | ₹320 | Contains dairy\nMains | Vegetable biryani | Basmati rice and seasonal vegetables | ₹420 |",
+      );
+    await page
+      .getByPlaceholder(/Tell our team about allergies/)
+      .fill("Tell our team about allergies before ordering.");
+    await page
+      .getByPlaceholder(/Table requests are reviewed/)
+      .fill(
+        "Table requests are reviewed by the restaurant. A table is confirmed only after the restaurant responds.",
+      );
+    await page
+      .getByPlaceholder("https://maps.google.com/…")
+      .fill("https://maps.google.com/example");
+    await page.getByPlaceholder("+91 90000 00000").fill("+91 90000 00001");
+    await page
+      .getByPlaceholder("hello@example.com")
+      .fill("hello@radhikarestaurant.example");
+    await page
+      .getByPlaceholder("Step-free entrance, accessible seating")
+      .fill("Step-free entrance; accessible seating");
+    await page
+      .getByPlaceholder("Street parking; paid parking nearby")
+      .fill("Paid parking nearby");
+    await page
+      .getByPlaceholder("Metro station 400 m away")
+      .fill("Metro station 400 m away");
+    await page
+      .getByPlaceholder(/Write only the story supplied/)
+      .fill("A family-run restaurant focused on seasonal South Indian food.");
+    await page
+      .getByRole("button", {
+        name: /Mix real menu or venue photos with the certified Restaurant library/i,
+      })
+      .click();
+
+    await expectResponsiveShell(page, 390);
+    await expectAccessible(page, "business-brief/restaurant-content");
+    await settlePage(page);
+    await capture(page, "business-brief-restaurant-content-390");
+
+    await advanceBusinessBrief(page, 390, "brand & media");
+    await advanceBusinessBrief(page, 390, "review");
+    const summary = page.getByRole("complementary", { name: "Brief summary" });
+    await expect(summary).toContainText("Radhika Restaurant");
+    await expect(summary).toContainText("Real + certified library");
+    await expect(
+      summary.getByText("MiCirql ranks 20 certified Restaurant directions.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await settlePage(page);
+    await capture(page, "business-brief-restaurant-390");
+
+    await page
+      .locator("[data-mobile-action]")
+      .getByRole("button", { name: /review 20 directions/i })
+      .click();
+    await expect.poll(() => submittedBrief).toBeDefined();
+    expect(submittedBrief).toMatchObject({
+      businessName: "Radhika Restaurant",
+      packId: "restaurant-restaurant",
+      industry: "restaurant",
+      subindustry: "South Indian, seasonal vegetarian",
+      location: "12 Jubilee Hills Road, Hyderabad, Telangana",
+      services: ["Dine-in", "takeaway"],
+      goals: ["request reservations", "show menu", "plan visits"],
+      requiredCapabilities: [
+        "contact form",
+        "reservation request",
+        "menu",
+        "gallery",
+        "maps",
+      ],
+      industryFacts: {
+        kind: "restaurant-facts-v1",
+        businessName: "Radhika Restaurant",
+        cuisines: ["South Indian", "seasonal vegetarian"],
+        serviceModes: ["Dine-in", "takeaway"],
+        address: "12 Jubilee Hills Road, Hyderabad, Telangana",
+        mapUrl: "https://maps.google.com/example",
+        openingHours: ["Tue–Sun, 12:00–22:30"],
+        accessibility: ["Step-free entrance", "accessible seating"],
+        parking: ["Paid parking nearby"],
+        transit: ["Metro station 400 m away"],
+        visitDetails: ["Family-run dining room", "step-free entrance"],
+        phone: "+91 90000 00001",
+        email: "hello@radhikarestaurant.example",
+        reservationPolicy: [
+          "Table requests are reviewed by the restaurant. A table is confirmed only after the restaurant responds.",
+        ],
+        menu: {
+          suppliedAsCurrent: true,
+          categories: [
+            {
+              name: "Starters",
+              items: [
+                {
+                  name: "Paneer tikka",
+                  description: "Charred paneer and peppers",
+                  price: "₹320",
+                  disclosures: ["Contains dairy"],
+                },
+              ],
+            },
+            {
+              name: "Mains",
+              items: [
+                {
+                  name: "Vegetable biryani",
+                  description: "Basmati rice and seasonal vegetables",
+                  price: "₹420",
+                  disclosures: [],
+                },
+              ],
+            },
+          ],
+          notes: [],
+          disclosureNotes: ["Tell our team about allergies before ordering."],
+        },
+      },
+    });
+    await expect(page.locator('form [role="alert"]')).toContainText(
+      "Restaurant payload captured for QA.",
+    );
+    expect(unexpectedApiRequests).toEqual([]);
+    expect(authenticatedRequests.sort()).toEqual([
+      "drafts",
+      "onboarding",
+      "projects",
+    ]);
+  });
 
   test("logo upload failure stays actionable without changing the brief", async ({
     page,

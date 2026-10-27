@@ -4,7 +4,11 @@ export type IndustryAvailability =
       label: string;
       description: string;
       status: "certified";
-      onboarding: { industry: string };
+      onboarding: {
+        industry: string;
+        defaultGoals: readonly string[];
+        defaultCapabilities: readonly string[];
+      };
       brief: {
         focusLabel: string;
         focusHelper: string;
@@ -34,7 +38,11 @@ export const INDUSTRY_AVAILABILITY: readonly IndustryAvailability[] = [
     description:
       "Patient-first clinic structure, treatment discovery and appointment journeys.",
     status: "certified",
-    onboarding: { industry: "dental" },
+    onboarding: {
+      industry: "dental",
+      defaultGoals: ["generate leads", "book appointments"],
+      defaultCapabilities: ["contact form", "booking"],
+    },
     brief: {
       focusLabel: "Dental focus",
       focusHelper: "Optional specialties or patient groups",
@@ -52,7 +60,11 @@ export const INDUSTRY_AVAILABILITY: readonly IndustryAvailability[] = [
     description:
       "Movement-led care journeys for conditions, services and assessment requests.",
     status: "certified",
-    onboarding: { industry: "physiotherapy" },
+    onboarding: {
+      industry: "physiotherapy",
+      defaultGoals: ["generate leads", "book appointments"],
+      defaultCapabilities: ["contact form", "booking"],
+    },
     brief: {
       focusLabel: "Physiotherapy focus",
       focusHelper: "Optional programmes, needs or patient groups",
@@ -69,8 +81,28 @@ export const INDUSTRY_AVAILABILITY: readonly IndustryAvailability[] = [
     id: "restaurant-restaurant",
     label: "Restaurant",
     description: "Menu discovery, venue storytelling and reservation journeys.",
-    status: "planned",
-    rolloutOrder: 2,
+    status: "certified",
+    onboarding: {
+      industry: "restaurant",
+      defaultGoals: ["request reservations", "show menu", "plan visits"],
+      defaultCapabilities: [
+        "contact form",
+        "reservation request",
+        "menu",
+        "gallery",
+        "maps",
+      ],
+    },
+    brief: {
+      focusLabel: "Cuisine focus",
+      focusHelper: "Current cuisines or menu focus; separate with commas",
+      focusPlaceholder: "South Indian, seasonal vegetarian, contemporary",
+      directionLabel: "Restaurant",
+      businessNamePlaceholder: "Radhika Restaurant",
+      servicesPlaceholder: "Dine-in, takeaway, private dining",
+      trustFactsPlaceholder:
+        "Verified venue story, accessibility or people facts—never reviews or awards unless supplied…",
+    },
   },
 ] as const;
 

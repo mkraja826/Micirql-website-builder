@@ -42,6 +42,18 @@ export const dentalIndustryPackRuntime = defineCertifiedIndustryPackRuntime<Indu
         remoteFunctionRequired: false,
       }),
     }),
+    industryFactsIssues: (value) =>
+      value == null
+        ? []
+        : [
+            {
+              code: "DENTAL_STRUCTURED_FACTS_UNSUPPORTED",
+              message:
+                "Dental currently uses its certified generic clinic brief, not another pack's structured facts payload.",
+              severity: "error" as const,
+            },
+          ],
+    normalizeIndustryFacts: () => undefined,
     rankCandidates: rankDentalPresetCandidates,
     createStructuralScaffold: createDentalStructuralScaffold,
     applyCandidate: (site, candidate, options) =>

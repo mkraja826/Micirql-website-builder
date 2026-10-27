@@ -9,6 +9,7 @@ import {
   fallbackImageSubjectForBrief,
   hasIncompatibleDentalLanguage,
   isPhysiotherapyBriefContext,
+  isRestaurantBriefContext,
   secondaryExploreActionLabel,
 } from "../supabase/functions/enrich-site-content/industry-content-policy";
 
@@ -26,6 +27,13 @@ const physiotherapyIdentity = {
   // Persisted identity must win even if stale free text still contains dental
   // vocabulary from an earlier test generation.
   subindustry: "Dental clinic",
+};
+
+const restaurantIdentity = {
+  domain: "restaurant",
+  subtype: "restaurant",
+  industry: "Restaurant",
+  subindustry: "South Indian",
 };
 
 test.describe("enrich-site-content industry boundary", () => {
@@ -93,6 +101,42 @@ test.describe("enrich-site-content industry boundary", () => {
       "an authentic Healthcare clinic environment or relevant detail; do not invent identifiable staff, customers, reviews, products, credentials, or outcomes",
     );
     expect(secondaryExploreActionLabel(genericClinic)).toBe("Explore services");
+  });
+
+  test("binds Restaurant to its persisted identity and curated fact-only enrichment", async () => {
+    expect(isRestaurantBriefContext(restaurantIdentity)).toBeTruthy();
+    expect(
+      isRestaurantBriefContext({
+        ...restaurantIdentity,
+        subtype: "cafe",
+        industry: "Restaurant",
+      }),
+    ).toBeFalsy();
+    expect(secondaryExploreActionLabel(restaurantIdentity)).toBe(
+      "View the menu",
+    );
+
+    const source = await readFile(
+      path.resolve(
+        process.cwd(),
+        "supabase/functions/enrich-site-content/index.ts",
+      ),
+      "utf8",
+    );
+    const identityBinding = source.indexOf(
+      "brief = withSnapshotIndustryIdentity(brief, draft.snapshot);",
+    );
+    const restaurantGuard = source.indexOf(
+      "if (isRestaurantBriefContext(brief))",
+    );
+    const gateway = source.indexOf("const result = await generateWithGateway");
+    expect(identityBinding).toBeGreaterThan(-1);
+    expect(restaurantGuard).toBeGreaterThan(identityBinding);
+    expect(gateway).toBeGreaterThan(restaurantGuard);
+    expect(source.slice(restaurantGuard, gateway)).toContain(
+      'mode: "curated"',
+    );
+    expect(source.slice(restaurantGuard, gateway)).toContain("content: null");
   });
 
   test("quarantines dental-only provider copy and image prompts for explicit non-dental sites", () => {

@@ -1339,7 +1339,13 @@ export function OnboardingGate({
             </small>
           </aside>
         </div>
-        <div className={styles.mobileAction} data-mobile-action>
+        <div
+          className={styles.mobileAction}
+          data-mobile-action
+          data-visible={
+            briefStep > 0 || requiredRemaining === 0 ? "true" : "false"
+          }
+        >
           <span aria-live="polite">
             {briefStep === 0 && requiredRemaining
               ? `${requiredRemaining} required item${requiredRemaining === 1 ? "" : "s"} left`

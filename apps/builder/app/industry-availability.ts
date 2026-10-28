@@ -104,6 +104,14 @@ export const INDUSTRY_AVAILABILITY: readonly IndustryAvailability[] = [
         "Verified venue story, accessibility or people facts—never reviews or awards unless supplied…",
     },
   },
+  {
+    id: "restaurant-cafe",
+    label: "Cafe",
+    description:
+      "A lighter daypart, current-menu, visit and verified order-enquiry journey—distinct from Restaurant reservations.",
+    status: "planned",
+    rolloutOrder: 3,
+  },
 ] as const;
 
 export function certifiedOnboardingIndustry(packId: string) {

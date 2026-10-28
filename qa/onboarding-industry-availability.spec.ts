@@ -64,4 +64,19 @@ test.describe("onboarding industry availability", () => {
       restaurant,
     );
   });
+
+  test("keeps Cafe visible as the next planned but non-selectable pack", () => {
+    const cafe = INDUSTRY_AVAILABILITY.find(
+      (item) => item.id === "restaurant-cafe",
+    );
+    expect(cafe).toEqual({
+      id: "restaurant-cafe",
+      label: "Cafe",
+      description:
+        "A lighter daypart, current-menu, visit and verified order-enquiry journey—distinct from Restaurant reservations.",
+      status: "planned",
+      rolloutOrder: 3,
+    });
+    expect(certifiedOnboardingIndustry("restaurant-cafe")).toBeUndefined();
+  });
 });

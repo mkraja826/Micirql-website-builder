@@ -1,6 +1,6 @@
 # MiCirql industry expansion plan
 
-Status date: 2026-10-27
+Status date: 2026-10-28
 
 ## Current local release baseline
 
@@ -13,7 +13,8 @@ Status date: 2026-10-27
 - Restaurant is registered beside Dental and Physiotherapy at catalog version `restaurant-flagship-2026.10.27`. Its 20 candidates, six pack-owned routes, Restaurant-specific onboarding, structured factual manifest, curated fact-only content policy, licensed illustrative-media disclosures, and Restaurant-owned selection/publish gates are local source truth.
 - Restaurant's normalized business name, menu, visit, contact, story, and reservation facts remain inside the Site snapshot. The saved manifest drives ranking after reload and is protected from generic enrichment; selection and publish validation reject changed facts, incomplete anatomy, duplicate page/section IDs, stale candidate identity, unsafe reservation claims, incomplete menu descriptions/prices/currency, missing directions/contact, and unregistered media.
 - Draft writes now cross a server-only Supabase service-role boundary. A forward migration revokes `save_builder_site_draft` from browser-authenticated roles, while the API keeps user-JWT/RLS reads and records the authenticated actor. The migration is committed as source evidence only and has not been applied to any remote database.
-- Builder UI/UX is owned by this repository. The truthful `micirql.com` redesign is pushed to GitHub `mkraja826/micirql-website` on `codex/truthful-marketing-ui` at `b4be26c`; it remains undeployed. The official live MiCirql SVG mark is mirrored byte-for-byte into Builder. Product chrome remains isolated from generated-site CSS.
+- Cafe now has a primary-source-backed draft contract and `cafe-facts-v1` staging validator. The Builder roadmap shows Cafe as `Planned`, but it remains non-selectable, has zero staged/certified candidates, and is absent from the certified runtime registry. Its five-route daypart/menu/visit/order/story journey explicitly rejects Restaurant reservation inheritance. See [`cafe-industry-research.md`](./cafe-industry-research.md).
+- Builder UI/UX is owned by this repository. The truthful `micirql.com` redesign is pushed to GitHub `mkraja826/micirql-website` on `codex/truthful-marketing-ui` at `ffbcbe8`; it remains undeployed. The official live MiCirql SVG mark is mirrored byte-for-byte into Builder. Product chrome remains isolated from generated-site CSS.
 
 ## Execution checkpoint — 2026-10-23
 
@@ -65,8 +66,8 @@ Current ownership:
 
 | Surface                | Source in this workspace | Current state                                                                                                                                                                                                                                                   |
 | ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `builder.micirql.com`  | `apps/builder`           | Auth, dashboard, onboarding, certified design review, responsive editor, media/logo failure, and truthful publish readiness use neutral product chrome and pass 33/33; the durable private adapter is local and still needs authorized deployment verification. |
-| `micirql.com`          | Separate located repo    | Truthful replacement pushed on `codex/truthful-marketing-ui` at `b4be26c`; production build plus five-width homepage/product-portfolio visual, WCAG, motion, overflow, metadata, route, and form gates pass 15/15; not deployed.                                |
+| `builder.micirql.com`  | `apps/builder`           | Auth, dashboard, onboarding, certified design review, responsive editor, media/logo failure, and truthful publish readiness use neutral product chrome and pass the current local product-chrome gates; the durable private adapter is local and still needs authorized deployment verification. |
+| `micirql.com`          | Separate located repo    | Truthful replacement pushed on `codex/truthful-marketing-ui` at `ffbcbe8`; production build plus five-width homepage/product-portfolio visual, WCAG, motion, overflow, metadata, route, and form gates pass 15/15; not deployed.                                |
 | Generated public sites | `apps/live`              | Separate wildcard/form routing; must not claim the root marketing domain.                                                                                                                                                                                       |
 | Internal documentation | `apps/docs`              | Not the public marketing site and must not be repurposed accidentally.                                                                                                                                                                                          |
 
@@ -356,9 +357,15 @@ The factual reference scaffold, 20-candidate responsive route matrix, three-brie
 
 This promotion authorizes local source/runtime certification only. It does not deploy Builder or marketing, mutate production data, publish a customer website, approve a merchant's identity/media, or grant commercial release acceptance.
 
+### Cafe research and contract checkpoint — 2026-10-28
+
+The first Cafe milestone is implemented as source, not certification. Official Schema.org, Google Business Profile, FSSAI, and W3C evidence now drives a separate `restaurant-cafe` contract, a `cafe-facts-v1` validator, and a visible non-selectable Builder roadmap card. The contract owns five routes—Home, Menu, Visit, Order, and Story—plus its own counter/daypart visual grammar, palette, moderate typography, image rules, responsive rules, and conditional order journey. It rejects inherited Restaurant reservation fields and prevents unverified external order links, menu descriptions, prices, currency, disclosures, contacts, directions, hours, people, amenities, or claims from entering staging.
+
+Cafe still has zero candidates and remains outside the certified registry. This checkpoint does not claim a rendered site, visual acceptance, accessibility acceptance, deployment, database migration, customer publication, or commercial availability.
+
 ### Next implementation step
 
-Begin primary-source research and factual-boundary design for Restaurant / Cafe as the next planned pack. Cafe must earn its own lighter visit/menu/order-enquiry anatomy, UI grammar, palette, imagery and responsive evidence; it must not inherit Restaurant / Restaurant merely by changing colors or copy. Keep the complete Dental, Physiotherapy, and Restaurant preservation gates green. No deployment, customer publishing, database mutation, or commercial release is authorized by this checkpoint.
+Build the factual Cafe reference scaffold from `cafe-facts-v1`, then render Home, Menu, Visit, Order, and Story at 320, 390, 768, 1024, and 1440 px. Senior UI/UX review must accept the distinct counter/daypart system before any Top-20 candidate work begins. Keep the complete Dental, Physiotherapy, and Restaurant preservation gates green. No deployment, customer publishing, database mutation, or commercial release is authorized by this checkpoint.
 
 ## Research basis
 

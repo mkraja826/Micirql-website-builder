@@ -92,6 +92,7 @@ test.describe("Builder product chrome: authenticated business brief", () => {
       const restaurant = page.locator(
         '[data-industry-pack="restaurant-restaurant"]',
       );
+      const cafe = page.locator('[data-industry-pack="restaurant-cafe"]');
       await expect(dental).toHaveAttribute("data-pack-selected", "true");
       await expect(dental).toHaveAttribute("data-pack-status", "certified");
       await expect(dental).toContainText("Certified");
@@ -105,6 +106,15 @@ test.describe("Builder product chrome: authenticated business brief", () => {
       await expect(restaurant).toHaveAttribute("data-pack-status", "certified");
       await expect(restaurant).toContainText("Certified");
       await expect(restaurant).toHaveAttribute("aria-pressed", "false");
+      await expect(cafe).toHaveAttribute("data-pack-status", "planned");
+      await expect(cafe).toContainText("Planned");
+      await expect(cafe).toContainText("Scheduled after current validation");
+      await expect(cafe).not.toHaveAttribute("aria-pressed", /.+/);
+      expect(await cafe.evaluate((element) => element.tagName)).toBe("ARTICLE");
+      await expect(page.locator("[data-mobile-action]")).toBeHidden();
+      if (viewport.width === 390 || viewport.width === 1440) {
+        await capture(page, `business-brief-pack-roadmap-${viewport.width}`);
+      }
 
       await physiotherapy.click();
       await expect(physiotherapy).toHaveAttribute("aria-pressed", "true");

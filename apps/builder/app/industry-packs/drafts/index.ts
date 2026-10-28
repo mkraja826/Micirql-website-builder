@@ -1,4 +1,21 @@
 export {
+  CAFE_DRAFT_CATALOG_VERSION,
+  CAFE_DRAFT_PAGE_PATHS,
+  CAFE_DRAFT_REQUIRED_ACTIONS,
+  CAFE_DRAFT_RESEARCH_BASIS,
+  cafeDraftPack,
+} from "./cafe";
+export {
+  CAFE_FACTS_KIND,
+  cafeIndustryFactsIssues,
+  parseCafeIndustryFacts,
+  type CafeIndustryFactsV1,
+  type CafeMenuCategory,
+  type CafeMenuItem,
+  type CafeOrderJourney,
+  type SuppliedCurrentCafeMenu,
+} from "./cafe-facts";
+export {
   PHYSIOTHERAPY_DRAFT_CATALOG_VERSION,
   PHYSIOTHERAPY_DRAFT_DESIGN_SIGNATURE,
   PHYSIOTHERAPY_DRAFT_HOME_SECTION_ORDER,

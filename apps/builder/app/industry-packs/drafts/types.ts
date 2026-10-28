@@ -126,7 +126,7 @@ export type DraftIndustryPackContract = {
   };
   certificationPlan: {
     requiredCandidateCount: 20;
-    stagedCandidateCount: 20;
+    stagedCandidateCount: number;
     certifiedCandidateCount: 0;
     /** Compatibility field: counts candidates that completed certification. */
     currentCandidateCount: 0;

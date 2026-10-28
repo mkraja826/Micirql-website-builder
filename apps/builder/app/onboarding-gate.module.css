@@ -1280,7 +1280,6 @@ button.industryCard:focus-visible {
     bottom: calc(10px + env(safe-area-inset-bottom));
     left: 12px;
     min-height: 64px;
-    display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
@@ -1291,6 +1290,10 @@ button.industryCard:focus-visible {
     color: #fff;
     box-shadow: 0 16px 44px rgb(23 21 32 / 30%);
     backdrop-filter: blur(18px);
+  }
+
+  .mobileAction[data-visible="true"] {
+    display: grid;
   }
 
   .mobileAction > span {

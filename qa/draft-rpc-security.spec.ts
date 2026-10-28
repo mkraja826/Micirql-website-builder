@@ -99,6 +99,9 @@ test.describe.serial("Builder draft RPC security boundary", () => {
         ...(typeof init?.body === "string" ? { body: init.body } : {}),
       };
       calls.push(call);
+      if (call.url.endsWith("/rest/v1/rpc/has_workspace_role")) {
+        return Response.json(true);
+      }
       if (call.url.endsWith("/rest/v1/rpc/save_builder_site_draft")) {
         return Response.json(2);
       }
@@ -121,22 +124,32 @@ test.describe.serial("Builder draft RPC security boundary", () => {
     });
 
     expect(saved.revision).toBe(2);
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(3);
     expect(calls[0]!.method).toBe("POST");
-    expect(calls[0]!.headers.get("apikey")).toBe(SERVICE_KEY);
+    expect(calls[0]!.headers.get("apikey")).toBe(PUBLIC_KEY);
     expect(calls[0]!.headers.get("authorization")).toBe(
-      `Bearer ${SERVICE_KEY}`,
+      `Bearer ${tokenFor(USER_ID)}`,
     );
     expect(JSON.parse(calls[0]!.body!)).toMatchObject({
+      target_workspace_id: WORKSPACE_ID,
+      allowed_roles: ["owner", "admin", "editor"],
+    });
+
+    expect(calls[1]!.method).toBe("POST");
+    expect(calls[1]!.headers.get("apikey")).toBe(SERVICE_KEY);
+    expect(calls[1]!.headers.get("authorization")).toBe(
+      `Bearer ${SERVICE_KEY}`,
+    );
+    expect(JSON.parse(calls[1]!.body!)).toMatchObject({
       p_workspace_id: WORKSPACE_ID,
       p_site_id: SITE_ID,
       p_expected_revision: 1,
       p_updated_by: USER_ID,
     });
 
-    expect(calls[1]!.url).toContain("/rest/v1/workspace_drafts?");
-    expect(calls[1]!.headers.get("apikey")).toBe(PUBLIC_KEY);
-    expect(calls[1]!.headers.get("authorization")).toBe(
+    expect(calls[2]!.url).toContain("/rest/v1/workspace_drafts?");
+    expect(calls[2]!.headers.get("apikey")).toBe(PUBLIC_KEY);
+    expect(calls[2]!.headers.get("authorization")).toBe(
       `Bearer ${tokenFor(USER_ID)}`,
     );
   });
@@ -153,6 +166,9 @@ test.describe.serial("Builder draft RPC security boundary", () => {
         headers: new Headers(init?.headers),
       };
       calls.push(call);
+      if (call.url.endsWith("/rest/v1/rpc/has_workspace_role")) {
+        return Response.json(true);
+      }
       if (call.url.endsWith("/rest/v1/rpc/save_builder_site_draft")) {
         return Response.json(2);
       }
@@ -173,10 +189,42 @@ test.describe.serial("Builder draft RPC security boundary", () => {
       expectedRevision: 1,
     });
 
-    expect(calls[0]!.headers.get("apikey")).toBe(currentSecret);
-    expect(calls[0]!.headers.get("authorization")).toBeNull();
-    expect(calls[1]!.headers.get("apikey")).toBe(PUBLIC_KEY);
-    expect(calls[1]!.headers.get("authorization")).toBe(
+    expect(calls[0]!.headers.get("apikey")).toBe(PUBLIC_KEY);
+    expect(calls[0]!.headers.get("authorization")).toBe(
+      `Bearer ${tokenFor(USER_ID)}`,
+    );
+    expect(calls[1]!.headers.get("apikey")).toBe(currentSecret);
+    expect(calls[1]!.headers.get("authorization")).toBeNull();
+    expect(calls[2]!.headers.get("apikey")).toBe(PUBLIC_KEY);
+    expect(calls[2]!.headers.get("authorization")).toBe(
+      `Bearer ${tokenFor(USER_ID)}`,
+    );
+  });
+
+  test("does not promote a read-only member to the server write role", async () => {
+    const calls: Array<{ url: string; headers: Headers }> = [];
+    globalThis.fetch = async (input, init) => {
+      const call = {
+        url: String(input),
+        headers: new Headers(init?.headers),
+      };
+      calls.push(call);
+      if (call.url.endsWith("/rest/v1/rpc/has_workspace_role")) {
+        return Response.json(false);
+      }
+      throw new Error("A read-only member reached a draft write or reload.");
+    };
+
+    await expect(
+      saveSupabaseDraft(requestFor(USER_ID), {
+        snapshot: siteFixture(),
+        expectedRevision: 1,
+      }),
+    ).rejects.toThrow("INSUFFICIENT_WORKSPACE_ROLE");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toContain("/rest/v1/rpc/has_workspace_role");
+    expect(calls[0]!.headers.get("apikey")).toBe(PUBLIC_KEY);
+    expect(calls[0]!.headers.get("authorization")).toBe(
       `Bearer ${tokenFor(USER_ID)}`,
     );
   });

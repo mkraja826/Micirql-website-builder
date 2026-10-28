@@ -488,6 +488,35 @@ test.describe("certified industry-pack runtimes", () => {
     );
     const candidateId = ranked[0]!.candidate.id;
     scaffold.generation!.candidateIds = ranked.map((item) => item.candidate.id);
+
+    // PostgreSQL jsonb preserves values but not object-key insertion order.
+    // Every direction must therefore pass the fact-preservation gate after the
+    // structural scaffold has been saved and loaded through workspace_drafts.
+    const persistedScaffold = reorderJsonObjectKeysForStorage(scaffold);
+    for (const { candidate } of ranked) {
+      const persistedSelected =
+        restaurantIndustryPackRuntime.applySelectedCandidate(
+          persistedScaffold,
+          candidate.id,
+        );
+      const persistedWithMedia =
+        restaurantIndustryPackRuntime.applyCertifiedMedia(
+          persistedSelected,
+          candidate.id,
+        );
+      const persistedGate = restaurantIndustryPackRuntime.validateDraft(
+        persistedWithMedia,
+        restaurantIndustryPackRuntime.candidateStructureIssues(
+          persistedWithMedia,
+          candidate.id,
+        ),
+      );
+      expect(
+        persistedGate.passed,
+        `${candidate.id}\n${JSON.stringify(persistedGate.issues, null, 2)}`,
+      ).toBeTruthy();
+    }
+
     const selected = restaurantIndustryPackRuntime.applySelectedCandidate(
       scaffold,
       candidateId,
@@ -565,13 +594,17 @@ test.describe("certified industry-pack runtimes", () => {
         section.component.componentId.toUpperCase().includes("-SERV-"),
       )?.props.items as Array<Record<string, unknown>>;
     menuItems[0]!.title = "Dine-in";
-    expect(
-      restaurantIndustryPackRuntime
-        .validateDraft(changedMenu)
-        .issues.some(
-          (issue) => issue.code === "RESTAURANT_SUPPLIED_FACTS_CHANGED",
-        ),
-    ).toBeTruthy();
+    const changedFactIssue = restaurantIndustryPackRuntime
+      .validateDraft(changedMenu)
+      .issues.find(
+        (issue) => issue.code === "RESTAURANT_SUPPLIED_FACTS_CHANGED",
+      );
+    expect(changedFactIssue).toEqual(
+      expect.objectContaining({
+        message:
+          "The rendered /menu services facts no longer matches the normalized Restaurant brief.",
+      }),
+    );
 
     const externalMedia = structuredClone(withMedia);
     const externalHero = externalMedia.pages[0]!.sections.find((section) =>
@@ -833,4 +866,19 @@ function dentalSiteFixture(): Site {
     integrations: [],
     domains: [],
   });
+}
+
+function reorderJsonObjectKeysForStorage<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => reorderJsonObjectKeysForStorage(item)) as T;
+  }
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(
+        ([left], [right]) =>
+          left.length - right.length || left.localeCompare(right),
+      )
+      .map(([key, item]) => [key, reorderJsonObjectKeysForStorage(item)]),
+  ) as T;
 }

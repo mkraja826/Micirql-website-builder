@@ -65,8 +65,7 @@ export function supabaseHeaders(request: NextRequest) {
   };
 }
 
-function supabaseServiceHeaders() {
-  const key = serviceRoleKey();
+function supabaseServiceHeaders(key = serviceRoleKey()) {
   return {
     apikey: key,
     ...(isLegacyJwt(key) ? { authorization: `Bearer ${key}` } : {}),
@@ -133,6 +132,8 @@ export async function saveSupabaseDraft(
     error.status = 403;
     throw error;
   }
+  const serverKey = serviceRoleKey();
+  await assertWorkspaceDraftEditor(request, input.snapshot.workspaceId);
   const response = await fetch(
     `${cfg.url}/rest/v1/rpc/save_builder_site_draft`,
     {
@@ -140,7 +141,7 @@ export async function saveSupabaseDraft(
       // The browser role cannot execute this RPC. The authenticated user's JWT
       // remains the authority for the surrounding API route and for the RLS
       // reload below; only this server-side write crosses the service boundary.
-      headers: supabaseServiceHeaders(),
+      headers: supabaseServiceHeaders(serverKey),
       body: JSON.stringify({
         p_workspace_id: input.snapshot.workspaceId,
         p_site_id: input.snapshot.siteId,
@@ -171,6 +172,31 @@ export async function saveSupabaseDraft(
     );
   }
   return saved;
+}
+
+async function assertWorkspaceDraftEditor(
+  request: NextRequest,
+  workspaceId: string,
+) {
+  const cfg = config();
+  if (!cfg) throw new Error("Supabase draft store is not configured.");
+  const response = await fetch(`${cfg.url}/rest/v1/rpc/has_workspace_role`, {
+    method: "POST",
+    headers: supabaseHeaders(request),
+    body: JSON.stringify({
+      target_workspace_id: workspaceId,
+      allowed_roles: ["owner", "admin", "editor"],
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw httpError(response.status, await response.text());
+  if ((await response.json()) !== true) {
+    const error = new Error("INSUFFICIENT_WORKSPACE_ROLE") as Error & {
+      status?: number;
+    };
+    error.status = 403;
+    throw error;
+  }
 }
 
 function normalize(row: RemoteDraft): DraftRecord {

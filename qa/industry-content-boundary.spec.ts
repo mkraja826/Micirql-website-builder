@@ -133,10 +133,55 @@ test.describe("enrich-site-content industry boundary", () => {
     expect(identityBinding).toBeGreaterThan(-1);
     expect(restaurantGuard).toBeGreaterThan(identityBinding);
     expect(gateway).toBeGreaterThan(restaurantGuard);
-    expect(source.slice(restaurantGuard, gateway)).toContain(
-      'mode: "curated"',
-    );
+    expect(source.slice(restaurantGuard, gateway)).toContain('mode: "curated"');
     expect(source.slice(restaurantGuard, gateway)).toContain("content: null");
+  });
+
+  test("keeps RLS authorization on reads and the service role on certification writes", async () => {
+    const source = await readFile(
+      path.resolve(
+        process.cwd(),
+        "supabase/functions/enrich-site-content/index.ts",
+      ),
+      "utf8",
+    );
+
+    const authenticatedClient = source.indexOf(
+      "const client = createClient(supabaseUrl, anonKey",
+    );
+    const authenticatedUser = source.indexOf(
+      "const { data: userData, error: userError } = await client.auth.getUser()",
+    );
+    const editorRoleCheck = source.indexOf(
+      'await client.rpc(\n      "has_workspace_role"',
+    );
+    const rlsRead = source.indexOf('.from("workspace_drafts")');
+    const serviceClient = source.indexOf(
+      "const writeClient = createClient(supabaseUrl, serviceRoleKey",
+    );
+    const serviceWrite = source.indexOf(
+      'await writeClient.rpc(\n      "save_builder_site_draft"',
+    );
+
+    expect(source).toContain(
+      'const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")',
+    );
+    expect(source).toContain(
+      'throw new Error("server draft credential is not configured")',
+    );
+    expect(source).toContain('allowed_roles: ["owner", "admin", "editor"]');
+    expect(source).toContain(
+      'return json({ error: "insufficient_workspace_role" }, 403)',
+    );
+    expect(authenticatedClient).toBeGreaterThan(-1);
+    expect(authenticatedUser).toBeGreaterThan(authenticatedClient);
+    expect(editorRoleCheck).toBeGreaterThan(authenticatedUser);
+    expect(rlsRead).toBeGreaterThan(editorRoleCheck);
+    expect(serviceClient).toBeGreaterThan(rlsRead);
+    expect(serviceWrite).toBeGreaterThan(serviceClient);
+    expect(source).not.toContain(
+      'await client.rpc(\n      "save_builder_site_draft"',
+    );
   });
 
   test("quarantines dental-only provider copy and image prompts for explicit non-dental sites", () => {

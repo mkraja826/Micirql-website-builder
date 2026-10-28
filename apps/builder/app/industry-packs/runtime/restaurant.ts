@@ -144,8 +144,8 @@ function restaurantCandidateStructureIssues(
     );
   }
   if (
-    JSON.stringify(site.theme.brand.typography) !==
-    JSON.stringify(candidate.theme.brand.typography)
+    canonicalJson(site.theme.brand.typography) !==
+    canonicalJson(candidate.theme.brand.typography)
   ) {
     issues.push(
       issue(
@@ -155,8 +155,8 @@ function restaurantCandidateStructureIssues(
     );
   }
   if (
-    JSON.stringify(site.theme.modifiers) !==
-      JSON.stringify(candidate.theme.modifiers) ||
+    canonicalJson(site.theme.modifiers) !==
+      canonicalJson(candidate.theme.modifiers) ||
     site.theme.brand.density !== candidate.theme.brand.density ||
     site.theme.brand.shape !== candidate.theme.brand.shape ||
     site.theme.brand.motion !== candidate.theme.brand.motion
@@ -174,7 +174,7 @@ function restaurantCandidateStructureIssues(
     site.generation?.brandProvenance,
   ).brand.colors;
   if (
-    JSON.stringify(site.theme.brand.colors) !== JSON.stringify(expectedColors)
+    canonicalJson(site.theme.brand.colors) !== canonicalJson(expectedColors)
   ) {
     issues.push(
       issue(
@@ -504,7 +504,7 @@ function restaurantSuppliedFactManifestIssues(
   );
   const actualFacts = restaurantMerchantFactSnapshot(site);
   const expectedFacts = restaurantMerchantFactSnapshot(expected);
-  if (JSON.stringify(actualFacts) === JSON.stringify(expectedFacts)) return [];
+  if (canonicalJson(actualFacts) === canonicalJson(expectedFacts)) return [];
   return [
     issue(
       "RESTAURANT_SUPPLIED_FACTS_CHANGED",
@@ -580,7 +580,7 @@ function firstMerchantFactDifference(
       );
       if (!actualSection)
         return `${expectedPage.path} ${expectedSection.family} section`;
-      if (JSON.stringify(actualSection) !== JSON.stringify(expectedSection)) {
+      if (canonicalJson(actualSection) !== canonicalJson(expectedSection)) {
         return `${expectedPage.path} ${expectedSection.family} facts`;
       }
     }
@@ -832,8 +832,8 @@ function brandPreservationIssues(site: Site): CompositionGateIssue[] {
 function assertSuppliedBrandPreserved(before: Site, after: Site) {
   const issues = brandPreservationIssues(after);
   if (
-    JSON.stringify(before.generation?.brandProvenance ?? null) !==
-    JSON.stringify(after.generation?.brandProvenance ?? null)
+    canonicalJson(before.generation?.brandProvenance ?? null) !==
+    canonicalJson(after.generation?.brandProvenance ?? null)
   ) {
     issues.push(
       issue(
@@ -848,7 +848,7 @@ function assertSuppliedBrandPreserved(before: Site, after: Site) {
 }
 
 function factualSnapshot(site: Site): string {
-  return JSON.stringify({
+  return canonicalJson({
     schemaVersion: site.schemaVersion,
     siteId: site.siteId,
     workspaceId: site.workspaceId,
@@ -896,6 +896,24 @@ function restaurantFactProps(
     delete props.eyebrow;
   }
   return props;
+}
+
+/**
+ * PostgreSQL jsonb does not preserve object-key insertion order. Fact and
+ * design-token comparisons therefore canonicalize object keys while retaining
+ * array order, which remains meaningful for pages, sections and content lists.
+ */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, nested) => {
+    if (!nested || typeof nested !== "object" || Array.isArray(nested)) {
+      return nested;
+    }
+    return Object.fromEntries(
+      Object.entries(nested as Record<string, unknown>).sort(
+        ([left], [right]) => left.localeCompare(right),
+      ),
+    );
+  });
 }
 
 function pushLengthIssue(

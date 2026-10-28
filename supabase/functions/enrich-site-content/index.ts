@@ -133,6 +133,7 @@ Deno.serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const client = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authorization } },
     });
@@ -150,6 +151,17 @@ Deno.serve(async (req: Request) => {
     let brief = normalizeBrief(body.brief ?? {});
     if (!brief.businessName || !brief.industry)
       return json({ error: "business_brief_required" }, 400);
+
+    const { data: canEditDraft, error: roleError } = await client.rpc(
+      "has_workspace_role",
+      {
+        target_workspace_id: workspaceId,
+        allowed_roles: ["owner", "admin", "editor"],
+      },
+    );
+    if (roleError) throw roleError;
+    if (!canEditDraft)
+      return json({ error: "insufficient_workspace_role" }, 403);
 
     const { data: draftRows, error: draftError } = await client
       .from("workspace_drafts")
@@ -242,7 +254,16 @@ Deno.serve(async (req: Request) => {
     );
 
     const snapshot = mergeContent(draft.snapshot, generated, brief);
-    const { data: saved, error: saveError } = await client.rpc(
+    if (!serviceRoleKey) {
+      throw new Error("server draft credential is not configured");
+    }
+    // The authenticated client above proves the caller and enforces RLS for
+    // the draft read. Certification snapshots are server-owned, so only this
+    // write crosses the service-role boundary required by the hardened RPC.
+    const writeClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: saved, error: saveError } = await writeClient.rpc(
       "save_builder_site_draft",
       {
         p_workspace_id: workspaceId,
@@ -818,9 +839,10 @@ function fallbackSectionContent(
 
   return {
     id,
-    props: dental || physiotherapy
-      ? mergeCuratedDentalSectionProps(family, section?.props, props)
-      : props,
+    props:
+      dental || physiotherapy
+        ? mergeCuratedDentalSectionProps(family, section?.props, props)
+        : props,
   };
 }
 
